@@ -1,0 +1,16 @@
+<service>
+  <id>EmaisBackend</id>
+  <name>E Mais Consultoria — Backend</name>
+  <description>Sistema de Gestão E Mais Consultoria</description>
+  <executable>C:\emais-service\venv\Scripts\python.exe</executable>
+  <arguments>-m uvicorn main:app --host 127.0.0.1 --port 8000</arguments>
+  <workingdirectory>C:\emais-service\app\backend</workingdirectory>
+  <logpath>C:\emais-service\logs</logpath>
+  <log mode="roll-by-size">
+    <sizeThreshold>10240</sizeThreshold>
+    <keepFiles>3</keepFiles>
+  </log>
+  <onfailure action="restart" delay="5 sec"/>
+  <onfailure action="restart" delay="10 sec"/>
+  <onfailure action="none"/>
+</service>
