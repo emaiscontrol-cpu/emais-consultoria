@@ -11,7 +11,7 @@
 
 1. Abra o VS Code
 2. Menu: **File → Open Folder**
-3. Selecione a pasta `emals_consultoria`
+3. Selecione a pasta `emais_consultoria`
 
 ---
 
@@ -71,8 +71,8 @@ Você verá:
 ✅ Banco populado com sucesso!
 
 Usuários criados:
-  admin@emals.com.br       → senha: admin123      (Administrador)
-  consultor@emals.com.br   → senha: consultor123  (Consultor)
+  admin@emais.com.br       → senha: admin123      (Administrador)
+  consultor@emais.com.br   → senha: consultor123  (Consultor)
   joao@redeforte.com.br    → senha: cliente123    (Cliente — Rede Forte)
 ```
 
@@ -103,7 +103,7 @@ Na interface Swagger, você pode testar todos os endpoints diretamente!
 ## Estrutura de arquivos
 
 ```
-emals_consultoria/
+emais_consultoria/
 ├── backend/
 │   ├── main.py          ← Aplicação principal FastAPI
 │   ├── database.py      ← Configuração do banco SQLite
