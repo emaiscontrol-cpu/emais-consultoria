@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Shopping dos Cosméticos | Orçamento Integrado 2026</title>
+    <!-- Font Awesome 6 (ícones modernos) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <!-- Google Fonts: Inter e JetBrains Mono para dados -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.2/firebase-firestore-compat.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: #f0f2f8;
+            color: #1a2634;
+        }
+
+        /* ===== LOADING ===== */
+        #loading-screen {
+            position: fixed; inset: 0;
+            background: #f0f2f8;
+            display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+            z-index: 9999; gap: 20px;
+        }
+        .spinner {
+            width: 44px; height: 44px;
+            border: 4px solid #e2e8f0;
+            border-top-color: #1c4e6f;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        #loading-screen p { font-size: 0.9rem; color: #5b6e8c; font-weight: 500; }
+
+        /* ===== LOGIN ===== */
+        #login-screen {
+            display: none; min-height: 100vh;
+            align-items: center; justify-content: center; padding: 24px;
+        }
+        .login-card {
+            width: 100%; max-width: 420px; background: white;
+            border-radius: 32px; box-shadow: 0 20px 35px -12px rgba(0,0,0,0.12); overflow: hidden;
+        }
+        .login-header {
+            background: linear-gradient(135deg, #0b2a3e 0%, #1c4e6f 100%);
+            padding: 32px 32px 28px; position: relative; overflow: hidden;
+        }
+        .login-header-icon {
+            width: 52px; height: 52px; background: rgba(255,255,255,0.12);
+            border-radius: 16px; display: flex; align-items: center; justify-content: center;
+            margin-bottom: 16px;
+        }
+        .login-header-icon i { font-size: 1.5rem; color: white; }
+        .login-header h1 { font-size: 1.5rem; font-weight: 700; color: white; }
+        .login-header p { font-size: 0.83rem; color: rgba(255,255,255,0.7); margin-top: 6px; }
+        .login-body { padding: 32px; }
+        .login-field { margin-bottom: 18px; }
+        .login-field label {
+            display: block; font-size: 0.8rem; font-weight: 600; color: #5b6e8c;
+            margin-bottom: 7px; text-transform: uppercase; letter-spacing: 0.4px;
+        }
+        .login-input-wrap { position: relative; }
+        .login-input-wrap i { position: absolute; left: 14px; top: 50%; transform: translateY(-50%); color: #9aacbe; }
+        .login-input {
+            width: 100%; padding: 11px 14px 11px 38px; border: 1.5px solid #e2e8f0;
+            border-radius: 12px; font-family: 'Inter', sans-serif; font-size: 0.9rem;
+            color: #1a2634; background: #f8fafc; outline: none; transition: border 0.2s;
+        }
+        .login-input:focus { border-color: #1c4e6f; background: white; }
+        .login-btn {
+            width: 100%; padding: 13px; margin-top: 8px;
+            background: linear-gradient(135deg, #0b2a3e, #1c4e6f);
+            color: white; border: none; border-radius: 12px;
+            font-size: 0.9rem; font-weight: 600; font-family: 'Inter', sans-serif;
+            cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+        }
+        .login-btn:disabled { opacity: 0.7; cursor: not-allowed; }
+        .login-error {
+            display: none; align-items: center; gap: 8px;
+            background: #fff0f0; border: 1px solid #fca5a5;
+            border-radius: 10px; padding: 10px 14px; margin-bottom: 14px;
+            font-size: 0.82rem; color: #b91c1c;
+        }
+        .login-error.show { display: flex; }
+
+        /* ===== APP ===== */
+        #app { display: none; padding: 28px 24px 48px 24px; }
+
+        /* container principal */
+        .dashboard-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 32px;
+            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.1);
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        /* cabeçalho */
+        .header {
+            background: linear-gradient(135deg, #0b2a3e 0%, #1c4e6f 100%);
+            color: white;
+            padding: 24px 32px;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .header h1 i {
+            font-size: 2rem;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
+        }
+
+        .header .sub {
+            font-size: 0.85rem;
+            opacity: 0.8;
+            margin-top: 8px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+        }
+
+        /* navegação por abas estilo botões de acesso rápido */
+        .tab-nav {
+            display: flex;
+            flex-wrap: wrap;
+            background: #ffffff;
+            border-bottom: 1px solid #e2e8f0;
+            padding: 8px 24px 0 24px;
+            gap: 8px;
+        }
+
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 12px 20px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            font-family: 'Inter', sans-serif;
+            color: #4a5b6e;
+            border-radius: 20px 20px 0 0;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .tab-btn i {
+            font-size: 1rem;
+        }
+
+        .tab-btn:hover {
+            background: #eef2ff;
+            color: #0f3b5c;
+        }
+
+        .tab-btn.active {
+            background: #f8fafc;
+            color: #1e5a7d;
+            border-bottom: 3px solid #1e5a7d;
+            box-shadow: 0 -2px 5px rgba(0,0,0,0.02);
+        }
+
+        /* conteúdo das abas */
+        .tab-content {
+            display: none;
+            padding: 28px 32px;
+            background: #fefefe;
+            animation: fadeIn 0.25s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(4px);}
+            to { opacity: 1; transform: translateY(0);}
+        }
+
+        /* cartões e tabelas responsivas */
+        .card-dashboard {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03), 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #eef2f6;
+            overflow-x: auto;
+            margin-bottom: 28px;
+        }
+
+        .card-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #edf2f7;
+            font-weight: 700;
+            font-size: 1.1rem;
+            background: #fafcff;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        th {
+            background: #f1f5f9;
+            padding: 12px 8px;
+            text-align: center;
+            font-weight: 600;
+            color: #1e2a3a;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.75rem;
+            letter-spacing: 0.3px;
+        }
+
+        td {
+            padding: 10px 8px;
+            border-bottom: 1px solid #ecf3fa;
+            text-align: right;
+        }
+
+        td:first-child, th:first-child {
+            text-align: left;
+            font-weight: 500;
+            background: white;
+            position: sticky;
+            left: 0;
+            background-color: white;
+        }
+
+        .badge-up {
+            color: #15803d;
+            background: #e0f2e9;
+            padding: 2px 8px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+        }
+
+        .badge-down {
+            color: #b91c1c;
+            background: #fee2e2;
+            padding: 2px 8px;
+            border-radius: 20px;
+        }
+
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 18px;
+            margin-bottom: 28px;
+        }
+
+        .kpi-card {
+            background: white;
+            border-radius: 24px;
+            border: 1px solid #e9edf2;
+            padding: 16px 18px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.02);
+        }
+
+        .kpi-title {
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: #5b6e8c;
+            margin-bottom: 8px;
+        }
+
+        .kpi-value {
+            font-size: 1.7rem;
+            font-weight: 700;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .progress-bar {
+            background: #e2e8f0;
+            border-radius: 12px;
+            height: 8px;
+            width: 100%;
+            margin: 8px 0;
+        }
+
+        .progress-fill {
+            background: #2b7a4b;
+            width: 0%;
+            height: 8px;
+            border-radius: 12px;
+        }
+
+        hr {
+            margin: 20px 0;
+            border-color: #eef2f8;
+        }
+
+        .footer-note {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 30px;
+            color: #6c7a91;
+            border-top: 1px solid #e4e9f0;
+            padding-top: 20px;
+        }
+
+        @media (max-width: 720px) {
+            body { padding: 16px; }
+            .tab-content { padding: 20px 16px; }
+            .kpi-value { font-size: 1.3rem; }
+            th, td { font-size: 0.7rem; padding: 6px 4px;}
+        }
+    </style>
+</head>
+<body>
+
+<!-- ===== LOADING ===== -->
+<div id="loading-screen">
+    <div class="spinner"></div>
+    <p>Carregando...</p>
+</div>
+
+<!-- ===== LOGIN ===== -->
+<div id="login-screen">
+    <div class="login-card">
+        <div class="login-header">
+            <div class="login-header-icon"><i class="fas fa-store"></i></div>
+            <h1>ECO | Orçamento</h1>
+            <p>Acesso restrito — faça login para continuar</p>
+        </div>
+        <div class="login-body">
+            <div class="login-error" id="login-error">
+                <i class="fas fa-circle-exclamation"></i>
+                <span id="login-error-text"></span>
+            </div>
+            <form onsubmit="doLogin(event)">
+                <div class="login-field">
+                    <label>E-mail</label>
+                    <div class="login-input-wrap">
+                        <i class="fas fa-envelope"></i>
+                        <input id="login-email" type="email" class="login-input" placeholder="seu@email.com" required autocomplete="username">
+                    </div>
+                </div>
+                <div class="login-field">
+                    <label>Senha</label>
+                    <div class="login-input-wrap">
+                        <i class="fas fa-lock"></i>
+                        <input id="login-password" type="password" class="login-input" placeholder="••••••••" required autocomplete="current-password">
+                    </div>
+                </div>
+                <button type="submit" class="login-btn" id="login-btn">
+                    <i class="fas fa-right-to-bracket"></i> Entrar
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- ===== ACESSO NEGADO ===== -->
+<div id="acesso-negado" style="display:none; min-height:100vh; align-items:center; justify-content:center; padding:24px;">
+    <div style="max-width:420px; width:100%; background:white; border-radius:32px; overflow:hidden; box-shadow:0 20px 35px -12px rgba(0,0,0,0.12); text-align:center;">
+        <div style="background:linear-gradient(135deg,#0b2a3e,#1c4e6f); padding:32px;">
+            <div style="width:60px;height:60px;background:rgba(255,255,255,0.12);border-radius:16px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px;">
+                <i id="acesso-negado-icone" class="fas fa-lock" style="font-size:1.6rem;color:white;"></i>
+            </div>
+            <h2 id="acesso-negado-titulo" style="color:white;font-size:1.3rem;font-weight:700;">Acesso Não Autorizado</h2>
+            <p id="acesso-negado-subtitulo" style="color:rgba(255,255,255,0.7);font-size:0.85rem;margin-top:8px;">Você não tem permissão para acessar este módulo.</p>
+        </div>
+        <div style="padding:28px;">
+            <p id="acesso-negado-msg" style="color:#5b6e8c;font-size:0.85rem;margin-bottom:20px;">Entre em contato com o administrador para solicitar acesso.</p>
+            <button id="acesso-negado-retry" onclick="location.reload()" style="display:none;width:100%;padding:12px;background:#e2e8f0;color:#1a2634;border:none;border-radius:12px;font-size:0.9rem;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;margin-bottom:10px;">
+                <i class="fas fa-rotate-right"></i> Tentar Novamente
+            </button>
+            <button onclick="doLogout()" style="width:100%;padding:12px;background:linear-gradient(135deg,#0b2a3e,#1c4e6f);color:white;border:none;border-radius:12px;font-size:0.9rem;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;">
+                <i class="fas fa-right-from-bracket"></i> Sair
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== DASHBOARD ===== -->
+<div id="app">
+<div class="dashboard-container">
+    <div class="header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;">
+        <div>
+            <h1><i class="fas fa-store"></i> SHOPPING DOS COSMÉTICOS</h1>
+            <div class="sub">
+                <span>Plano Orçamentário 2026 · Goiás / DF — Análise Integrada</span>
+                <span><i class="fas fa-chart-line"></i> E Mais Control · Trabalho Autoral</span>
+            </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+            <div style="display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,0.12);border-radius:20px;padding:6px 14px;font-size:0.8rem;">
+                <i class="fas fa-user-circle"></i>
+                <span id="user-email-display">—</span>
+            </div>
+            <button onclick="doLogout()" style="display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:white;border-radius:20px;padding:6px 14px;font-size:0.8rem;font-weight:600;font-family:'Inter',sans-serif;cursor:pointer;">
+                <i class="fas fa-right-from-bracket"></i> Sair
+            </button>
+        </div>
+    </div>
+
+    <!-- Barra de módulos -->
+    <div id="module-nav" style="display:flex;align-items:center;gap:8px;padding:10px 24px;background:#f8fafc;border-bottom:1px solid #e2e8f0;flex-wrap:wrap;">
+        <span style="font-size:0.72rem;font-weight:600;color:#9aacbe;text-transform:uppercase;letter-spacing:0.5px;margin-right:4px;"><i class="fas fa-th-large"></i> Módulos:</span>
+        <a href="index.html" id="link-fluxo" style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:0.8rem;font-weight:600;text-decoration:none;color:#5b6e8c;background:white;border:1.5px solid #e2e8f0;">
+            <i class="fas fa-stream"></i> Fluxo de Caixa
+        </a>
+        <a href="orcamento.html" id="link-orcamento" style="display:inline-flex;align-items:center;gap:6px;padding:5px 14px;border-radius:20px;font-size:0.8rem;font-weight:600;text-decoration:none;color:white;background:linear-gradient(135deg,#0b2a3e,#1c4e6f);border:1.5px solid transparent;box-shadow:0 3px 10px rgba(28,78,111,0.22);">
+            <i class="fas fa-store"></i> Orçamento
+        </a>
+    </div>
+
+    <!-- Botões de navegação (abas) -->
+    <div class="tab-nav">
+        <button class="tab-btn active" data-tab="dashboard"><i class="fas fa-chalkboard-user"></i> DASHBOARD</button>
+        <button class="tab-btn" data-tab="plano"><i class="fas fa-table-list"></i> PLANO ORÇAMENTÁRIO</button>
+        <button class="tab-btn" data-tab="cenarios"><i class="fas fa-chart-simple"></i> CENÁRIOS</button>
+        <button class="tab-btn" data-tab="dre"><i class="fas fa-coins"></i> DRE MENSAL</button>
+        <button class="tab-btn" data-tab="pacotes"><i class="fas fa-cubes"></i> DASH-PKG</button>
+        <button class="tab-btn" data-tab="analise"><i class="fas fa-magnifying-glass-chart"></i> ANÁLISE & ALERTAS</button>
+    </div>
+
+    <!-- ================= ABA 1 - DASHBOARD (resumo executivo) ================= -->
+    <div id="dashboard" class="tab-content active">
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-title"><i class="fas fa-chart-simple"></i> FATURAMENTO BRUTO (acum.)</div><div class="kpi-value">R$ 18.324.389</div><div class="progress-bar"><div class="progress-fill" style="width: 86%"></div></div><div>86% meta</div></div>
+            <div class="kpi-card"><div class="kpi-title"><i class="fas fa-tag"></i> RECEITA LÍQUIDA</div><div class="kpi-value">R$ 13.428.570</div><div>Margem bruta 39,2%</div></div>
+            <div class="kpi-card"><div class="kpi-title"><i class="fas fa-chart-line"></i> EBITDA</div><div class="kpi-value">R$ 1.284.550</div><div>Margem EBITDA: 9,57%</div></div>
+            <div class="kpi-card"><div class="kpi-title"><i class="fas fa-percent"></i> MARGEM LÍQUIDA</div><div class="kpi-value">5,2%</div><div>Lucro líquido ~R$ 698k</div></div>
+        </div>
+        <div class="card-dashboard">
+            <div class="card-header"><i class="fas fa-receipt"></i> DRE RESUMIDO (Realizado jan-mar vs Orçado)</div>
+            <table>
+                <thead><tr><th>Indicador</th><th>Realizado (R$)</th><th>Orçado (R$)</th><th>∆ %</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td>Faturamento Bruto</td><td>34.624.152</td><td>36.800.000</td><td>-5,91%</td><td><span class="badge-down">▼ abaixo</span></td></tr>
+                    <tr><td>Deduções</td><td>7.110.244</td><td>7.691.000</td><td>-7,55%</td><td><span class="badge-up">▲ economia</span></td></tr>
+                    <tr><td>Custos Variáveis (CMV)</td><td>14.745.989</td><td>15.110.500</td><td>-2,41%</td><td><span class="badge-up">▲ controle</span></td></tr>
+                    <tr><td>Despesas Fixas (Pessoal)</td><td>3.495.285</td><td>3.650.000</td><td>-4,24%</td><td><span class="badge-up">▲ eficiência</span></td></tr>
+                    <tr><td>EBITDA</td><td>1.284.550</td><td>1.492.000</td><td>-13,9%</td><td><span class="badge-down">⚠️ gap</span></td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="card-dashboard">
+            <div class="card-header"><i class="fas fa-warning"></i> Principais desvios (vs orçado)</div>
+            <table><thead><tr><th>Conta</th><th>Desvio R$</th><th>% realiz./orc.</th><th>Sinal</th></tr></thead>
+            <tbody>
+                <tr><td>Receita Bruta</td><td>-2.175.848</td><td>94,1%</td><td>🔴</td></tr>
+                <tr><td>Custos Variáveis</td><td>+364.511 (menor)</td><td>97,6%</td><td>🟢</td></tr>
+                <tr><td>Despesas com Terceiros</td><td>+48.200</td><td>114%</td><td>🔴</td></tr>
+                <tr><td>Manutenções</td><td>+15.850</td><td>107%</td><td>🟡</td></tr>
+            </tbody></table>
+        </div>
+        <div class="footer-note">📊 Dados dinâmicos com base no orçamento Realista | Fechamento acumulado até Março/2026</div>
+    </div>
+
+    <!-- ================= ABA 2 - PLANO ORÇAMENTÁRIO (exemplo mensal) ================= -->
+    <div id="plano" class="tab-content">
+        <div class="card-dashboard">
+            <div class="card-header"><i class="fas fa-calendar-alt"></i> Plano Orçamentário 2026 · Cenário Realista (valores R$ mil)</div>
+            <table>
+                <thead><tr><th>Conta</th><th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th><th>Mai</th><th>Jun</th><th>Total</th></tr></thead>
+                <tbody>
+                    <tr><td>Faturamento Bruto</td><td>11.404</td><td>10.820</td><td>12.350</td><td>12.100</td><td>12.580</td><td>12.000</td><td>71.254</td></tr>
+                    <tr><td>Deduções</td><td>2.394</td><td>2.272</td><td>2.600</td><td>2.750</td><td>2.850</td><td>2.720</td><td>15.586</td></tr>
+                    <tr><td>Receita Líquida</td><td>9.010</td><td>8.548</td><td>9.750</td><td>9.350</td><td>9.730</td><td>9.280</td><td>55.668</td></tr>
+                    <tr><td>Custos Variáveis (CMV)</td><td>4.883</td><td>4.621</td><td>5.283</td><td>5.129</td><td>5.227</td><td>4.986</td><td>30.129</td></tr>
+                    <tr><td>Margem de Contribuição I</td><td>4.127</td><td>3.927</td><td>4.467</td><td>4.221</td><td>4.503</td><td>4.294</td><td>25.539</td></tr>
+                    <tr><td>Custos Fixos Diretos (Pessoal)</td><td>1.062</td><td>1.265</td><td>1.028</td><td>1.028</td><td>1.027</td><td>964</td><td>6.374</td></tr>
+                    <tr><td>Despesas Fixas Indiretas</td><td>2.432</td><td>2.421</td><td>2.371</td><td>2.384</td><td>2.456</td><td>2.388</td><td>14.452</td></tr>
+                    <tr><td><strong>EBITDA</strong></td><td><strong>1.055</strong></td><td><strong>1.021</strong></td><td><strong>1.254</strong></td><td><strong>1.112</strong></td><td><strong>1.304</strong></td><td><strong>1.220</strong></td><td><strong>6.967</strong></td></tr>
+                </tbody>
+            </table>
+            <div class="footer-note" style="margin-top:12px;">💡 Células orçadas baseadas no cenário ativo "Realista" (referência DASH!C3). Valores em milhares de reais.</div>
+        </div>
+    </div>
+
+    <!-- ================= ABA 3 - CENÁRIOS ================= -->
+    <div id="cenarios" class="tab-content">
+        <div class="kpi-grid">
+            <div class="kpi-card"><div class="kpi-title"><i class="fas fa-rocket"></i> Super Otimista</div><div class="kpi-value">R$ 179,4 MM</div><div>Receita anual +11% vs Realista</div></div>
+            <div class="kpi-card"><div class="kpi-title"><i class="fas fa-chart-line"></i> Otimista</div><div class="kpi-value">R$ 175,8 MM</div><div>Crescimento moderado</div></div>
+            <div class="kpi-card"><div class="kpi-title"><i class="fas fa-chart-simple"></i> Realista (ativo)</div><div class="kpi-value">R$ 171,3 MM</div><div>Base de planejamento</div></div>
+        </div>
+        <div class="card-dashboard">
+            <div class="card-header">📊 Projeção mensal de Receita Bruta por cenário (R$ milhões)</div>
+            <table>
+                <thead><tr><th>Cenário</th><th>Jan</th><th>Fev</th><th>Mar</th><th>Abr</th><th>Mai</th><th>Jun</th><th>Jul</th><th>Ago</th><th>Set</th><th>Out</th><th>Nov</th><th>Dez</th></tr></thead>
+                <tbody>
+                    <tr><td>🚀 Super Otimista</td><td>11,40</td><td>10,82</td><td>12,64</td><td>12,35</td><td>12,88</td><td>12,34</td><td>13,52</td><td>12,55</td><td>12,15</td><td>12,75</td><td>17,79</td><td>18,95</td></tr>
+                    <tr><td>📈 Otimista</td><td>11,40</td><td>10,82</td><td>12,55</td><td>12,25</td><td>12,69</td><td>12,14</td><td>13,30</td><td>12,34</td><td>12,00</td><td>12,60</td><td>17,65</td><td>18,70</td></tr>
+                    <tr><td><strong>📊 Realista</strong></td><td><strong>11,40</strong></td><td><strong>10,82</strong></td><td><strong>12,35</strong></td><td><strong>12,10</strong></td><td><strong>12,58</strong></td><td><strong>12,00</strong></td><td><strong>13,15</strong></td><td><strong>12,17</strong></td><td><strong>11,85</strong></td><td><strong>12,49</strong></td><td><strong>17,50</strong></td><td><strong>18,54</strong></td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ================= ABA 4 - DRE MENSAL (síntese) ================= -->
+    <div id="dre" class="tab-content">
+        <div class="card-dashboard">
+            <div class="card-header"><i class="fas fa-chart-pie"></i> DRE Consolidado - Primeiro Trimestre (Real vs Orçado)</div>
+            <table>
+                <thead><tr><th>Demonstração</th><th>Realizado (R$)</th><th>Orçado (R$)</th><th>Variação %</th></tr></thead>
+                <tbody>
+                    <tr><td>Receita Bruta</td><td>34.624.152</td><td>36.800.000</td><td>-5,9%</td></tr><tr><td>Deduções</td><td>7.110.244</td><td>7.691.000</td><td>-7,5%</td></tr>
+                    <tr><td>Receita Líquida</td><td>27.513.908</td><td>29.109.000</td><td>-5,5%</td></tr>
+                    <tr><td>Custos Variáveis</td><td>14.745.989</td><td>15.110.500</td><td>-2,4%</td></tr>
+                    <tr><td>Margem Bruta</td><td>12.767.919</td><td>13.998.500</td><td>-8,8%</td></tr>
+                    <tr><td>Despesas Variáveis</td><td>574.542</td><td>582.000</td><td>-1,3%</td></tr>
+                    <tr><td>Pessoal (fixo direto)</td><td>3.495.285</td><td>3.650.000</td><td>-4,2%</td></tr>
+                    <tr><td>Outros Custos Fixos</td><td>4.413.542</td><td>4.274.500</td><td>+3,3%</td></tr>
+                    <tr><td><strong>EBITDA</strong></td><td><strong>4.284.550</strong></td><td><strong>5.492.000</strong></td><td><strong>-22%</strong></td></tr>
+                    <tr><td>Resultado Financeiro</td><td>-139.200</td><td>-85.000</td><td>+63,8%</td></tr>
+                    <tr><td>Lucro Líquido</td><td>2.989.880</td><td>3.614.000</td><td>-17,3%</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- ================= ABA 5 - DASH-PKG (análise por pacote) ================= -->
+    <div id="pacotes" class="tab-content">
+        <div class="card-dashboard">
+            <div class="card-header"><i class="fas fa-cube"></i> Execução orçamentária por Pacote (YTD Março)</div>
+            <table>
+                <thead><tr><th>Pacote</th><th>Realizado (R$)</th><th>Orçado (R$)</th><th>Execução %</th><th>Status</th></tr></thead>
+                <tbody>
+                    <tr><td>🟡 Comercial</td><td>1.852.000</td><td>1.910.200</td><td>96,9%</td><td>✅</td></tr>
+                    <tr><td>🟢 CMV</td><td>14.745.989</td><td>15.110.500</td><td>97,6%</td><td>🟢 controle</td></tr>
+                    <tr><td>🟠 Administrativo</td><td>5.927.420</td><td>5.749.300</td><td>103,1%</td><td>⚠️ +3%</td></tr>
+                    <tr><td>🞣 Marketing</td><td>113.402</td><td>98.000</td><td>115,7%</td><td>🔴 acima</td></tr>
+                    <tr><td>🔵 Financeiro</td><td>692.240</td><td>722.150</td><td>95,9%</td><td>✅</td></tr>
+                    <tr><td>🔴 Tributário</td><td>527.556</td><td>511.500</td><td>103,1%</td><td>🟡</td></tr>
+                    <tr><td>⚠️ Perdas (Trocas/Dev)</td><td>62.743</td><td>57.000</td><td>110%</td><td>🔴 atenção</td></tr>
+                </tbody>
+            </table>
+            <div class="footer-note">📦 Pacotes orçamentários conforme tabela de gestão: Comercial, CMV, Administrativo, Marketing, etc.</div>
+        </div>
+    </div>
+
+    <!-- ================= ABA 6 - ANÁLISE & ALERTAS ================= -->
+    <div id="analise" class="tab-content">
+        <div class="card-dashboard">
+            <div class="card-header"><i class="fas fa-triangle-exclamation"></i> Principais pontos de atenção (Insights)</div>
+            <div style="padding: 14px 20px;">
+                <p><strong>🔴 1. Receita abaixo da meta</strong> — Gap de R$ 3,3MM (-13,3%) vs orçado. Perda estrutural em todas as frentes de venda. Recomenda-se revisão do forecast e ações comerciais agressivas.</p>
+                <p><strong>🔴 2. Margem EBITDA comprometida</strong> — Real 4,5% vs Orçado 10,4%, queda de -5,9pp. Alavancagem operacional negativa. Necessário reavaliar ponto de equilíbrio.</p>
+                <p><strong>🟡 3. Custo de compras (CMV) elevado</strong> — 80,9% da Receita Líquida, acima do orçado (75%). Renegociação com fornecedores urgente.</p>
+                <p><strong>🟢 4. Custos operacionais bem controlados</strong> — Economia de ~R$ 441K em pessoal, taxas e aluguel. Destaque para conteúdo de eficiência.</p>
+                <p><strong>🔴 5. Investimentos fora do orçamento</strong> — Adiantamentos de R$ 1,08MM sem previsão, empréstimos 5x acima do planejado (R$ 102K vs 20K). Alerta de fluxo de caixa.</p>
+                <p><strong>🟡 6. Alta concentração de risco em pessoal</strong> — 43,8% dos custos operacionais. Qualquer reajuste salarial impacta forte no EBITDA.</p>
+                <hr>
+                <p><i class="fas fa-chart-simple"></i> <strong>Recomendações estratégicas:</strong> revisão de mix de produtos, campanhas de recuperação de vendas, renegociação com fornecedores e cortes pontuais em despesas não essenciais.</p>
+            </div>
+        </div>
+        <div class="card-dashboard">
+            <div class="card-header"><i class="fas fa-chart-line"></i> Cascata de resultados (% sobre Receita Líquida)</div>
+            <table>
+                <thead><tr><th>Indicador</th><th>Realizado</th><th>Orçado</th><th>Gap pp</th></tr></thead>
+                <tbody>
+                    <tr><td>Compras (CMV)</td><td>53,6%</td><td>50,3%</td><td>+3,3pp 🔴</td></tr>
+                    <tr><td>Despesas com Pessoal</td><td>12,7%</td><td>12,8%</td><td>-0,1pp 🟢</td></tr>
+                    <tr><td>Custos Fixos Indiretos</td><td>16,0%</td><td>15,4%</td><td>+0,6pp 🟡</td></tr>
+                    <tr><td>Margem EBITDA</td><td>4,50%</td><td>10,39%</td><td>-5,89pp 🔴</td></tr>
+                </tbody>
+            </table>
+        </div>
+        <div class="footer-note">⚠️ Semáforos: 🟢 economia / meta atingida | 🟡 atenção | 🔴 fora de controle. Dados extraídos do arquivo A-25 e painéis de reajustes.</div>
+    </div>
+
+    <div class="footer-note" style="border-top: none; margin-top: 0; padding-bottom: 24px;">
+        <i class="fas fa-copyright"></i> E Mais Control — Trabalho Autoral | Todos os direitos reservados. Dashboard integrado com base no arquivo "ORCAMENTO - SC 3.11.xlsx" (abas CAPA, PAINEL, PLANO, CENÁRIOS, DRE, DASH-PKG, ANA-DETALHE).
+    </div>
+</div>
+</div><!-- /#app -->
+
+<script>
+    // Mecanismo de abas
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.tab-content');
+
+    function activateTab(tabId) {
+        contents.forEach(content => content.classList.remove('active'));
+        const activeContent = document.getElementById(tabId);
+        if(activeContent) activeContent.classList.add('active');
+        tabs.forEach(btn => {
+            btn.classList.remove('active');
+            if(btn.getAttribute('data-tab') === tabId) btn.classList.add('active');
+        });
+    }
+
+    tabs.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const tabName = btn.getAttribute('data-tab');
+            activateTab(tabName);
+        });
+    });
+
+    if(window.location.hash) {
+        const hashTab = window.location.hash.substring(1);
+        if(['dashboard','plano','cenarios','dre','pacotes','analise'].includes(hashTab)) {
+            activateTab(hashTab);
+        }
+    }
+</script>
+
+<script>
+/* ===== FIREBASE ===== */
+const firebaseConfig = {
+    apiKey:            "AIzaSyCjkIlEKG2eYZYTouJbhPlBYdCpIfFba_w",
+    authDomain:        "fluxo-de-caixa-90548.firebaseapp.com",
+    projectId:         "fluxo-de-caixa-90548",
+    storageBucket:     "fluxo-de-caixa-90548.firebasestorage.app",
+    messagingSenderId: "927888904603",
+    appId:             "1:927888904603:web:137f761a96164dd804513e"
+};
+
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+async function carregarPermissoes(user) {
+    try {
+        const snap = await db.collection('usuarios')
+            .where('email', '==', user.email).limit(1).get();
+        if (snap.empty) return { ok: false, tipo: 'sem-cadastro' };
+        return { ok: true, modulos: snap.docs[0].data().modulos || [] };
+    } catch (e) {
+        console.error('Firestore erro:', e.code, e.message);
+        return { ok: false, tipo: 'erro-conexao', detalhe: e.code || e.message };
+    }
+}
+
+function mostrarAcessoNegado(titulo, subtitulo, msg, retry) {
+    document.getElementById('login-screen').style.display  = 'none';
+    document.getElementById('app').style.display           = 'none';
+    document.getElementById('acesso-negado-titulo').textContent    = titulo;
+    document.getElementById('acesso-negado-subtitulo').textContent = subtitulo;
+    document.getElementById('acesso-negado-msg').textContent       = msg;
+    document.getElementById('acesso-negado-retry').style.display   = retry ? '' : 'none';
+    document.getElementById('acesso-negado').style.display         = 'flex';
+}
+
+function atualizarNavModulos(modulos) {
+    const linkFluxo = document.getElementById('link-fluxo');
+    const linkOrc   = document.getElementById('link-orcamento');
+    if (linkFluxo) linkFluxo.style.display = modulos.includes('fluxo-caixa') ? 'inline-flex' : 'none';
+    if (linkOrc)   linkOrc.style.display   = modulos.includes('orcamento')   ? 'inline-flex' : 'none';
+}
+
+auth.onAuthStateChanged(async user => {
+    document.getElementById('loading-screen').style.display = 'none';
+    if (user) {
+        const resultado = await carregarPermissoes(user);
+
+        if (!resultado.ok) {
+            if (resultado.tipo === 'sem-cadastro') {
+                mostrarAcessoNegado(
+                    'Acesso Não Cadastrado',
+                    'Seu usuário não foi encontrado no sistema.',
+                    'E-mail: ' + user.email + ' — Contate o administrador para liberar acesso.',
+                    false
+                );
+            } else {
+                mostrarAcessoNegado(
+                    'Erro de Conexão',
+                    'Não foi possível verificar as permissões.',
+                    'Detalhe: ' + resultado.detalhe + ' — Tente novamente ou contate o administrador.',
+                    true
+                );
+            }
+            return;
+        }
+
+        const modulos = resultado.modulos;
+        if (!modulos.includes('orcamento')) {
+            mostrarAcessoNegado(
+                'Acesso Não Autorizado',
+                'Você não tem permissão para este módulo.',
+                'E-mail: ' + user.email + ' — Contate o administrador para solicitar acesso.',
+                false
+            );
+            return;
+        }
+
+        document.getElementById('login-screen').style.display  = 'none';
+        document.getElementById('acesso-negado').style.display = 'none';
+        document.getElementById('app').style.display           = 'block';
+        document.getElementById('user-email-display').textContent = user.email;
+        atualizarNavModulos(modulos);
+    } else {
+        document.getElementById('login-screen').style.display  = 'flex';
+        document.getElementById('app').style.display           = 'none';
+        document.getElementById('acesso-negado').style.display = 'none';
+        const btn = document.getElementById('login-btn');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Entrar'; }
+    }
+});
+
+function doLogin(e) {
+    e.preventDefault();
+    const email    = document.getElementById('login-email').value.trim();
+    const password = document.getElementById('login-password').value;
+    const errEl    = document.getElementById('login-error');
+    const errTxt   = document.getElementById('login-error-text');
+    const btn      = document.getElementById('login-btn');
+
+    errEl.classList.remove('show');
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Entrando...';
+
+    const msgs = {
+        'auth/user-not-found':         'Usuário não encontrado.',
+        'auth/wrong-password':         'Senha incorreta.',
+        'auth/invalid-credential':     'E-mail ou senha incorretos.',
+        'auth/invalid-email':          'E-mail inválido.',
+        'auth/too-many-requests':      'Muitas tentativas. Aguarde alguns minutos.',
+        'auth/network-request-failed': 'Erro de conexão. Verifique a internet.'
+    };
+
+    auth.setPersistence(firebase.auth.Auth.Persistence.SESSION).then(() => {
+        return auth.signInWithEmailAndPassword(email, password);
+    }).catch(err => {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fas fa-right-to-bracket"></i> Entrar';
+        errTxt.textContent = msgs[err.code] || 'Erro: ' + err.message;
+        errEl.classList.add('show');
+    });
+}
+
+function doLogout() {
+    auth.signOut();
+}
+</script>
+</body>
+</html>

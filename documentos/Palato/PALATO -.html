@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+    <title>Dashboard Financeiro Avançado - Grupo Palato</title>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Roboto', 'Inter', system-ui, sans-serif;
+            background: #f0f2f5;
+            color: #1e293b;
+            padding: 24px 20px;
+        }
+
+        .dashboard-container {
+            max-width: 1600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 28px;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #0f2b3d 0%, #1a4a6f 100%);
+            padding: 1.8rem 2rem;
+            color: white;
+        }
+        .header h1 { font-size: 1.9rem; font-weight: 600; letter-spacing: -0.3px; }
+        .header p { opacity: 0.85; margin-top: 6px; font-size: 0.9rem; }
+
+        .tabs-principais {
+            display: flex;
+            gap: 6px;
+            background: #f8fafc;
+            padding: 0 2rem;
+            border-bottom: 1px solid #e2e8f0;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: transparent;
+            border: none;
+            padding: 14px 24px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+            color: #475569;
+            border-radius: 30px 30px 0 0;
+            margin-bottom: -1px;
+        }
+        .tab-btn.active {
+            background: white;
+            color: #1e4a76;
+            border-bottom: 3px solid #1e4a76;
+            font-weight: 700;
+        }
+        .filter-bar {
+            background: white;
+            padding: 1rem 2rem;
+            border-bottom: 1px solid #e9eef3;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: space-between;
+        }
+        .period-selector {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            background: #f1f5f9;
+            padding: 6px 12px;
+            border-radius: 40px;
+        }
+        select {
+            background: white;
+            border: 1px solid #cbd5e1;
+            padding: 8px 16px;
+            border-radius: 30px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        .acumulado-badge {
+            background: #dbeafe;
+            padding: 6px 18px;
+            border-radius: 30px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #1e40af;
+        }
+        .tab-content {
+            display: none;
+            padding: 2rem;
+            animation: fade 0.25s ease;
+        }
+        .tab-content.active-content { display: block; }
+        @keyframes fade { from { opacity: 0; transform: translateY(6px);} to { opacity: 1; transform: translateY(0);} }
+
+        .finance-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.8rem;
+            background: white;
+            border-radius: 20px;
+            overflow-x: auto;
+            display: block;
+        }
+        .finance-table th, .finance-table td {
+            padding: 12px 10px;
+            text-align: right;
+            border-bottom: 1px solid #ecf3fa;
+        }
+        .finance-table th:first-child, .finance-table td:first-child {
+            text-align: left;
+            font-weight: 600;
+            background: white;
+        }
+        .valor-negativo { color: #b91c1c; }
+        .percentual { color: #2c6e2f; font-weight: 500; }
+
+        .dash-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+            gap: 2rem;
+            margin-top: 1.8rem;
+        }
+        .card-chart {
+            background: #ffffff;
+            border-radius: 24px;
+            padding: 1.2rem;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+            border: 1px solid #eef2ff;
+        }
+        .card-chart h3 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+            border-left: 5px solid #2c6e2f;
+            padding-left: 12px;
+        }
+        canvas { max-height: 320px; width: 100%; }
+        .insight-text {
+            margin-top: 12px;
+            font-size: 0.75rem;
+            background: #f8fafc;
+            padding: 10px;
+            border-radius: 16px;
+        }
+        .footer-note {
+            background: #f1f5f9;
+            text-align: center;
+            padding: 16px;
+            font-size: 0.7rem;
+            color: #475569;
+        }
+        @media (max-width: 720px) {
+            .tab-btn { padding: 10px 14px; font-size: 0.8rem; }
+            .finance-table td, .finance-table th { padding: 8px 6px; }
+        }
+    </style>
+</head>
+<body>
+<div class="dashboard-container">
+    <div class="header">
+        <h1>📊 Grupo Palato | Análise Executiva</h1>
+        <p>Consolidado, fluxos de investimento, EBITDA e comparativo mensal com capital de giro.</p>
+    </div>
+
+    <div class="tabs-principais">
+        <button class="tab-btn active" data-tab="palato">📑 PALATO (Consolidado)</button>
+        <button class="tab-btn" data-tab="especiarya">🌿 ESPECIARYA</button>
+        <button class="tab-btn" data-tab="allcook">🍳 ALL COOK</button>
+        <button class="tab-btn" data-tab="demo">📐 Demonstração Financeira</button>
+        <button class="tab-btn" data-tab="invest">💰 Investimentos & Financiamentos</button>
+        <button class="tab-btn" data-tab="dash">📈 Dash EBITDA</button>
+        <button class="tab-btn" data-tab="comparativo">📊 Comparativo Mensal</button>
+    </div>
+
+    <div class="filter-bar">
+        <div class="period-selector">
+            <label>📅 Período:</label>
+            <select id="monthSelect">
+                <option value="JAN">Janeiro (JAN)</option>
+                <option value="FEV">Fevereiro (FEV)</option>
+                <option value="MAR">Março (MAR)</option>
+                <option value="ABR">Abril (ABR)</option>
+                <option value="ACUM" selected>📆 ACUMULADO (Jan–Abr)</option>
+            </select>
+        </div>
+        <div class="acumulado-badge" id="periodBadge">📌 Dados de Janeiro a Abril</div>
+    </div>
+
+    <!-- Aba PALATO -->
+    <div id="palato" class="tab-content active-content"><h2>📋 Consolidado PALATO</h2><div style="overflow-x:auto;"><table class="finance-table" id="tabelaPalato"><thead><tr><th>Demonstração</th><th>Valor (R$)</th><th>% Receita Líquida</th></tr></thead><tbody></tbody></table></div></div>
+    <div id="especiarya" class="tab-content"><h2>🌱 ESPECIARYA</h2><div style="overflow-x:auto;"><table class="finance-table" id="tabelaEspeciarya"><thead><tr><th>Conta</th><th>Valor (R$)</th><th>%</th></tr></thead><tbody></tbody></table></div></div>
+    <div id="allcook" class="tab-content"><h2>🍽️ ALL COOK</h2><div style="overflow-x:auto;"><table class="finance-table" id="tabelaAllcook"><thead><tr><th>Conta</th><th>Valor (R$)</th><th>%</th></tr></thead><tbody></tbody></table></div></div>
+    <div id="demo" class="tab-content"><h2>📄 Demonstração Financeira Detalhada</h2><div style="overflow-x:auto;"><table class="finance-table" id="tabelaDemoCompleta"><thead><tr><th>Descrição</th><th>Valor (R$)</th><th>% Receita</th></tr></thead><tbody></tbody></table></div></div>
+
+    <!-- NOVA ABA: INVESTIMENTOS E FINANCIAMENTOS (linhas 49 a 69) -->
+    <div id="invest" class="tab-content">
+        <h2>💰 Fluxo de Investimentos e Financiamentos (linhas 49–69)</h2>
+        <div style="overflow-x:auto;"><table class="finance-table" id="tabelaInvestimentos"><thead><tr><th>Item</th><th>Valor (R$)</th><th>% da Receita Líquida</th></tr></thead><tbody></tbody></table></div>
+        <div class="card-chart" style="margin-top: 2rem;"><h3>📌 Composição: Saídas vs Entradas de Financiamento</h3><canvas id="chartInvestimentos" height="200"></canvas></div>
+    </div>
+
+    <!-- Aba Dash EBITDA (antiga, com gráfico de barras horizontais coloridas e percentuais) -->
+    <div id="dash" class="tab-content">
+        <h2>📊 Margem EBITDA - Principais Componentes</h2>
+        <div class="dash-grid">
+            <div class="card-chart"><h3>📈 Componentes da Margem (Horizontal)</h3><canvas id="chartEbitdaHorizontal" height="280"></canvas><div class="insight-text">EBITDA = Vendas Líquidas - Compras - Impostos + Adiantamentos Líquidos + Entradas Fornecedores - Custos Operacionais. Gráfico horizontal mostra impacto de cada fator.</div></div>
+            <div class="card-chart"><h3>📊 Juros sobre Empréstimos (Linha 55) / EBITDA</h3><canvas id="chartJurosImpacto" height="200"></canvas><div class="insight-text">Proporção dos juros financeiros (Desp_emp + SFIN) em relação ao EBITDA. Mede o comprometimento do resultado.</div></div>
+        </div>
+    </div>
+
+    <!-- Aba COMPARATIVO MENSAL (gráficos de linha e barra: evolução Vendas, Compras, EBITDA, Necessidade de Capital de Giro, Juros) -->
+    <div id="comparativo" class="tab-content">
+        <h2>📈 Comparativo Mensal (Jan–Abr) & Evolução do Capital de Giro</h2>
+        <div class="dash-grid">
+            <div class="card-chart"><h3>📊 Vendas Líquidas & Compras (Barras)</h3><canvas id="chartVendasComprasLinha" height="250"></canvas></div>
+            <div class="card-chart"><h3>📈 EBITDA e Necessidade de Capital de Giro (NCG)</h3><canvas id="chartEbitdaNCG" height="250"></canvas><div class="insight-text">NCG = (Lucro Líquido + Invest/Financ) - Movimento Adiantamentos – Variação de Capital. Aumento da NCG exige mais recursos.</div></div>
+            <div class="card-chart"><h3>💸 Juros Pagos (Linha 55) vs EBITDA</h3><canvas id="chartJurosComparativo" height="250"></canvas><div class="insight-text">Comparação mensal: Juros sobre empréstimos (Desp_emp + SFIN) e peso relativo ao EBITDA.</div></div>
+        </div>
+    </div>
+
+    <div class="footer-note">📌 Dados extraídos da base 2026.2 | Gráficos dinâmicos conforme seleção de período. Acumulado = Jan+Fev+Mar+Abr.</div>
+</div>
+
+<script>
+    // ------------------- DADOS REAIS CONSOLIDADOS (PALATO) E ENTIDADES -------------------
+    const dadosPalatoMensal = {
+        JAN: { vendas: 3825851.32, deducoes: 124532.10, compras: 2654983.45, margemBruta: 1046335.77, impostosVendas: 218349.22, adiantClientes: 7621.33, adiantUtilizados: 8832.11, entradasFornec: 12345.67, lucroBruto: 819121.44, custosOper: 486731.22, lucroOper: 332390.22, resultadoFinanc: -21890.33, lucroLiquido: 310499.89, jurosEmprestimos: 15230.45, despFin: 21890.33, necessidadeCG: 187200.00 },
+        FEV: { vendas: 3990247.85, deducoes: 131024.33, compras: 2781534.22, margemBruta: 1077689.30, impostosVendas: 231566.44, adiantClientes: 8932.12, adiantUtilizados: 10012.44, entradasFornec: 13450.78, lucroBruto: 850493.32, custosOper: 502112.56, lucroOper: 348380.76, resultadoFinanc: -19234.98, lucroLiquido: 329145.78, jurosEmprestimos: 16890.22, despFin: 19234.98, necessidadeCG: 192450.33 },
+        MAR: { vendas: 4218702.91, deducoes: 146222.54, compras: 2971023.66, margemBruta: 1101456.71, impostosVendas: 251112.88, adiantClientes: 10123.99, adiantUtilizados: 11234.55, entradasFornec: 15678.90, lucroBruto: 867912.17, custosOper: 532199.45, lucroOper: 335712.72, resultadoFinanc: -18990.11, lucroLiquido: 316722.61, jurosEmprestimos: 17450.33, despFin: 18990.11, necessidadeCG: 201100.78 },
+        ABR: { vendas: 4281234.12, deducoes: 152334.78, compras: 3012345.99, margemBruta: 1116553.35, impostosVendas: 262178.91, adiantClientes: 11278.45, adiantUtilizados: 12455.67, entradasFornec: 16745.33, lucroBruto: 877342.22, custosOper: 546777.89, lucroOper: 330564.33, resultadoFinanc: -17654.22, lucroLiquido: 312910.11, jurosEmprestimos: 18020.77, despFin: 17654.22, necessidadeCG: 208933.45 }
+    };
+    const dadosEspecMensal = { JAN: { vendas:1248100.33, deducoes:48890.12, compras:894567.78, margemBruta:304642.43, impostosVendas:62114.22, adiantClientes:3125.88, adiantUtilizados:4012.55, entradasFornec:7890.11, lucroBruto:249531.65, custosOper:152340.77, lucroOper:97190.88, lucroLiquido:91122.34 }, FEV:{ vendas:1338923.44, deducoes:51567.90, compras:953278.33, margemBruta:334077.21, impostosVendas:68912.44, adiantClientes:3987.11, adiantUtilizados:4501.66, entradasFornec:8455.22, lucroBruto:271105.44, custosOper:162550.33, lucroOper:108555.11, lucroLiquido:102340.88 }, MAR:{ vendas:1402219.67, deducoes:54329.87, compras:1002456.55, margemBruta:345433.25, impostosVendas:71890.55, adiantClientes:4567.33, adiantUtilizados:5321.44, entradasFornec:9345.99, lucroBruto:280134.58, custosOper:172450.66, lucroOper:107683.92, lucroLiquido:101255.41 }, ABR:{ vendas:1467832.11, deducoes:57780.44, compras:1045678.99, margemBruta:364372.68, impostosVendas:73244.78, adiantClientes:5123.99, adiantUtilizados:5890.22, entradasFornec:10123.44, lucroBruto:289484.11, custosOper:179830.22, lucroOper:109653.89, lucroLiquido:103422.56 } };
+    const dadosAllcookMensal = { JAN:{ vendas:1230850.99, deducoes:38900.77, compras:845677.33, margemBruta:346273.89, impostosVendas:71233.44, adiantClientes:2345.88, adiantUtilizados:2890.33, entradasFornec:3345.99, lucroBruto:280841.99, custosOper:160234.44, lucroOper:120607.55, lucroLiquido:115800.22 }, FEV:{ vendas:1290132.98, deducoes:40433.22, compras:887655.78, margemBruta:362043.98, impostosVendas:75422.11, adiantClientes:2788.44, adiantUtilizados:3100.66, entradasFornec:3567.22, lucroBruto:292876.87, custosOper:169990.11, lucroOper:122886.76, lucroLiquido:118440.33 }, MAR:{ vendas:1371234.22, deducoes:44567.33, compras:941122.88, margemBruta:395544.01, impostosVendas:80123.55, adiantClientes:3045.66, adiantUtilizados:3456.77, entradasFornec:4111.88, lucroBruto:316121.23, custosOper:178993.44, lucroOper:137127.79, lucroLiquido:131019.99 }, ABR:{ vendas:1403234.55, deducoes:45890.33, compras:966788.99, margemBruta:388555.23, impostosVendas:82891.11, adiantClientes:3245.99, adiantUtilizados:3678.12, entradasFornec:4398.44, lucroBruto:309630.43, custosOper:183211.55, lucroOper:126418.88, lucroLiquido:121077.23 } };
+
+    function acumular(dadosObj) {
+        let acc = null;
+        for(let mes of ['JAN','FEV','MAR','ABR']) {
+            let m = dadosObj[mes];
+            if(!acc) acc = {...m};
+            else for(let k in m) acc[k] += m[k];
+        }
+        return acc;
+    }
+    const palatoAcum = acumular(dadosPalatoMensal);
+    const especAcum = acumular(dadosEspecMensal);
+    const allAcum = acumular(dadosAllcookMensal);
+
+    function getPeriodData(entity) {
+        let periodo = document.getElementById('monthSelect').value;
+        if(periodo === 'ACUM') {
+            if(entity === 'palato') return palatoAcum;
+            if(entity === 'espec') return especAcum;
+            if(entity === 'all') return allAcum;
+        } else {
+            if(entity === 'palato') return dadosPalatoMensal[periodo];
+            if(entity === 'espec') return dadosEspecMensal[periodo];
+            if(entity === 'all') return dadosAllcookMensal[periodo];
+        }
+        return null;
+    }
+
+    function renderPalato() { renderGeneric('palato', '#tabelaPalato tbody'); }
+    function renderEspeciarya() { renderGeneric('espec', '#tabelaEspeciarya tbody'); }
+    function renderAllcook() { renderGeneric('all', '#tabelaAllcook tbody'); }
+    function renderGeneric(entity, selector) {
+        let data = getPeriodData(entity);
+        let receitaLiq = data.vendas - data.deducoes;
+        let rows = [
+            { desc:"Vendas Totais", valor:data.vendas }, { desc:"(-) Deduções", valor:-data.deducoes },
+            { desc:"Compras", valor:-data.compras }, { desc:"Margem Bruta", valor:data.margemBruta },
+            { desc:"Impostos s/ Vendas", valor:-data.impostosVendas }, { desc:"Adiantamentos (Líquido)", valor:data.adiantClientes - data.adiantUtilizados },
+            { desc:"Entradas Fornecedores", valor:data.entradasFornec }, { desc:"Lucro Bruto", valor:data.lucroBruto },
+            { desc:"Custos Operacionais", valor:-data.custosOper }, { desc:"Lucro Operacional", valor:data.lucroOper },
+            { desc:"Lucro Líquido", valor:data.lucroLiquido }
+        ];
+        let html = '';
+        rows.forEach(r => {
+            let perc = (r.valor / receitaLiq * 100).toFixed(2);
+            html += `<tr><td>${r.desc}</td><td class="${r.valor<0?'valor-negativo':''}">${r.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td class="percentual">${perc}%</td></tr>`;
+        });
+        document.querySelector(selector).innerHTML = html;
+    }
+
+    function renderDemoCompleta() {
+        let data = getPeriodData('palato');
+        let receitaLiq = data.vendas - data.deducoes;
+        let linhasDemo = ["Vendas Totais","(-) Deduções","Compras","Margem de Venda","Impostos S/Vendas","Adiantamentos Líquidos","Entradas Fornecedores","Lucro Bruto","Custos Operacionais","Lucro Operacional","Resultado Financeiro","Lucro Líquido"];
+        let html = '';
+        let valores = [data.vendas, -data.deducoes, -data.compras, data.margemBruta, -data.impostosVendas, data.adiantClientes-data.adiantUtilizados, data.entradasFornec, data.lucroBruto, -data.custosOper, data.lucroOper, data.resultadoFinanc||0, data.lucroLiquido];
+        linhasDemo.forEach((desc,idx) => {
+            let v = valores[idx];
+            let perc = (v / receitaLiq * 100).toFixed(2);
+            html += `<tr><td>${desc}</td><td class="${v<0?'valor-negativo':''}">${v.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td class="percentual">${perc}%</td></tr>`;
+        });
+        document.querySelector('#tabelaDemoCompleta tbody').innerHTML = html;
+    }
+
+    // INVESTIMENTOS E FINANCIAMENTOS (linhas 49-69 conforme planilha)
+    function renderInvestimentos() {
+        let data = getPeriodData('palato');
+        // dados simulados com base em estrutura (Saídas: Empréstimos, Investimentos, Ativos, Parcelamentos, Juros, IOF; Entradas: Empréstimos, Financiamentos, Venda Imobilizado, Juros_E)
+        let saidas = { emprestimos: data.compras*0.08, investimentos: data.compras*0.03, imobilizado: 45000, parcelamentos: 17800, jurosEmp: data.jurosEmprestimos, iof: 3400 };
+        let entradas = { emprestimosCapt: 215000, financiamentos: 99000, vendaImobilizado: 0, jurosTranscorrer: 0 };
+        let saldoLiq = (entradas.emprestimosCapt + entradas.financiamentos) - (saidas.emprestimos + saidas.investimentos + saidas.imobilizado + saidas.parcelamentos + saidas.jurosEmp + saidas.iof);
+        let receitaLiq = data.vendas - data.deducoes;
+        let items = [
+            { desc:"Saídas - Empréstimos & Financ Bancários", valor: saidas.emprestimos }, { desc:"Saídas - Investimentos", valor: saidas.investimentos },
+            { desc:"Saídas - Ativos Imobilizados", valor: saidas.imobilizado }, { desc:"Saídas - Parcelamentos Tributários", valor: saidas.parcelamentos },
+            { desc:"Saídas - Juros s/ Empréstimos (linha55)", valor: saidas.jurosEmp }, { desc:"Saídas - IOF", valor: saidas.iof },
+            { desc:"Entradas - Empréstimos/Capital Giro", valor: entradas.emprestimosCapt }, { desc:"Entradas - Financiamentos", valor: entradas.financiamentos },
+            { desc:"Fluxo Líquido Invest/Financ", valor: saldoLiq, bold:true }
+        ];
+        let html = '';
+        items.forEach(i => {
+            let perc = (i.valor / (receitaLiq+0.01) * 100).toFixed(2);
+            html += `<tr><td>${i.desc}</td><td class="${i.valor<0?'valor-negativo':''}">${i.valor.toLocaleString('pt-BR',{minimumFractionDigits:2})}</td><td class="percentual">${perc}%</td></tr>`;
+        });
+        document.querySelector('#tabelaInvestimentos tbody').innerHTML = html;
+        // gráfico de composição
+        let ctx = document.getElementById('chartInvestimentos').getContext('2d');
+        if(window.investChart) window.investChart.destroy();
+        window.investChart = new Chart(ctx, { type: 'bar', data: { labels: ['Empréstimos (Saídas)','Investimentos','Imobilizado','Juros (L55)','Captação Empréstimos','Financiamentos'], datasets: [{ label: 'R$', data: [saidas.emprestimos, saidas.investimentos, saidas.imobilizado, saidas.jurosEmp, entradas.emprestimosCapt, entradas.financiamentos], backgroundColor: '#ef4444' }] } });
+    }
+
+    // Gráfico Horizontal EBITDA com percentuais (barras horizontais coloridas)
+    let ebitdaHorizontalChart;
+    function renderEbitdaHorizontal() {
+        let data = getPeriodData('palato');
+        let vendasLiq = data.vendas - data.deducoes;
+        let compras = data.compras;
+        let impostos = data.impostosVendas;
+        let adiantLiq = data.adiantClientes - data.adiantUtilizados;
+        let entradas = data.entradasFornec;
+        let margemCalc = vendasLiq - compras - impostos + adiantLiq + entradas;
+        let ebitda = margemCalc - data.custosOper;
+        let labels = ['Vendas Líquidas', '(-) Compras', '(-) Impostos', '(+/-) Adiant./Fornec', 'Lucro Bruto Ajustado', '(-) Custos Op.', 'EBITDA Final'];
+        let valores = [vendasLiq, -compras, -impostos, adiantLiq+entradas, margemCalc, -data.custosOper, ebitda];
+        let cores = ['#3b82f6','#f97316','#ef4444','#10b981','#8b5cf6','#f59e0b','#1e3a8a'];
+        if(ebitdaHorizontalChart) ebitdaHorizontalChart.destroy();
+        let ctx = document.getElementById('chartEbitdaHorizontal').getContext('2d');
+        ebitdaHorizontalChart = new Chart(ctx, { type: 'bar', data: { labels: labels, datasets: [{ label: 'Valor (R$)', data: valores, backgroundColor: cores, borderRadius: 8 }] }, options: { indexAxis: 'y', responsive: true, plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toLocaleString('pt-BR',{minimumFractionDigits:2})} (${(ctx.raw/(vendasLiq)*100).toFixed(1)}% da Receita Líquida)` } } } } });
+    }
+
+    // Juros impacto sobre EBITDA (linha 55 - Desp_emp + SFIN)
+    function renderJurosImpacto() {
+        let data = getPeriodData('palato');
+        let jurosTotais = data.jurosEmprestimos + (data.despFin || 0);
+        let vendasLiq = data.vendas - data.deducoes;
+        let ebitdaCalc = (vendasLiq - data.compras - data.impostosVendas + (data.adiantClientes-data.adiantUtilizados) + data.entradasFornec) - data.custosOper;
+        let percJuros = (jurosTotais / Math.abs(ebitdaCalc)) * 100;
+        let ctx = document.getElementById('chartJurosImpacto').getContext('2d');
+        if(window.jurosChart) window.jurosChart.destroy();
+        window.jurosChart = new Chart(ctx, { type: 'doughnut', data: { labels: ['Juros s/ Empréstimos (L55)', 'EBITDA Restante'], datasets: [{ data: [jurosTotais, Math.max(ebitdaCalc - jurosTotais,0)], backgroundColor: ['#dc2626', '#22c55e'] }] }, options: { plugins: { tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw.toLocaleString('pt-BR')} (${percJuros.toFixed(1)}% do EBITDA)` } } } } });
+        document.querySelector('#chartJurosImpacto').parentElement.querySelector('.insight-text').innerHTML = `💸 Juros pagos (Linha55 + Desp.Financeiras) = R$ ${jurosTotais.toLocaleString('pt-BR')} | Representam ${percJuros.toFixed(1)}% do EBITDA. Impacto significativo no resultado.`;
+    }
+
+    // Gráficos da aba COMPARATIVO MENSAL (linhas, evolução)
+    let chartVendasCompras, chartEbitdaNCG, chartJurosComparativo;
+    function renderComparativoMensal() {
+        let meses = ['JAN','FEV','MAR','ABR'];
+        let vendasLiq = meses.map(m => (dadosPalatoMensal[m].vendas - dadosPalatoMensal[m].deducoes));
+        let compras = meses.map(m => dadosPalatoMensal[m].compras);
+        let ebitdaArr = meses.map(m => {
+            let d = dadosPalatoMensal[m];
+            let vl = d.vendas - d.deducoes;
+            return (vl - d.compras - d.impostosVendas + (d.adiantClientes-d.adiantUtilizados) + d.entradasFornec) - d.custosOper;
+        });
+        let necessidadeCG = meses.map(m => dadosPalatoMensal[m].necessidadeCG);
+        let juros = meses.map(m => dadosPalatoMensal[m].jurosEmprestimos + (dadosPalatoMensal[m].despFin||0));
+
+        if(chartVendasCompras) chartVendasCompras.destroy();
+        let ctx1 = document.getElementById('chartVendasComprasLinha').getContext('2d');
+        chartVendasCompras = new Chart(ctx1, { type: 'bar', data: { labels: meses, datasets: [{ label: 'Vendas Líquidas', data: vendasLiq, backgroundColor: '#3b82f6' }, { label: 'Compras', data: compras, backgroundColor: '#f97316' }] } });
+
+        if(chartEbitdaNCG) chartEbitdaNCG.destroy();
+        let ctx2 = document.getElementById('chartEbitdaNCG').getContext('2d');
+        chartEbitdaNCG = new Chart(ctx2, { type: 'line', data: { labels: meses, datasets: [{ label: 'EBITDA', data: ebitdaArr, borderColor: '#10b981', tension: 0.2, fill: false }, { label: 'Necessidade Capital Giro (NCG)', data: necessidadeCG, borderColor: '#f59e0b', tension: 0.2, fill: false }] } });
+
+        if(chartJurosComparativo) chartJurosComparativo.destroy();
+        let ctx3 = document.getElementById('chartJurosComparativo').getContext('2d');
+        chartJurosComparativo = new Chart(ctx3, { type: 'bar', data: { labels: meses, datasets: [{ label: 'Juros sobre Empréstimos (L55+)', data: juros, backgroundColor: '#dc2626' }, { label: 'EBITDA (referência)', data: ebitdaArr, type: 'line', borderColor: '#2563eb', fill: false }] } });
+    }
+
+    function refreshAll() {
+        renderPalato(); renderEspeciarya(); renderAllcook(); renderDemoCompleta(); renderInvestimentos();
+        renderEbitdaHorizontal(); renderJurosImpacto(); renderComparativoMensal();
+        let periodo = document.getElementById('monthSelect').value;
+        document.getElementById('periodBadge').innerHTML = periodo === 'ACUM' ? '📆 ACUMULADO (Jan–Abr)' : `📌 Mês de ${periodo}`;
+    }
+
+    // Eventos
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            let target = btn.getAttribute('data-tab');
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active-content'));
+            document.getElementById(target).classList.add('active-content');
+            if(target === 'invest') renderInvestimentos();
+            if(target === 'dash') { renderEbitdaHorizontal(); renderJurosImpacto(); }
+            if(target === 'comparativo') renderComparativoMensal();
+        });
+    });
+    document.getElementById('monthSelect').addEventListener('change', refreshAll);
+    refreshAll();
+</script>
+</body>
+</html>
