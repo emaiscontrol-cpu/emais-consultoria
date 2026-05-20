@@ -1,6 +1,6 @@
 import axios from 'axios'
 
-const api = axios.create({ baseURL: '/api' })
+const api = axios.create({ baseURL: '/api', headers: { 'ngrok-skip-browser-warning': '1' } })
 
 api.interceptors.request.use(cfg => {
   const token = localStorage.getItem('token')

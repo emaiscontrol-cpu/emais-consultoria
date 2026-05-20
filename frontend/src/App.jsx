@@ -11,6 +11,7 @@ import Usuarios from './pages/Usuarios'
 import Notificacoes from './pages/Notificacoes'
 import HistoricoAtividades from './pages/HistoricoAtividades'
 import Relatorios from './pages/Relatorios'
+import Manual from './pages/Manual'
 import './index.css'
 
 function ProtectedLayout() {
@@ -30,6 +31,7 @@ function ProtectedLayout() {
           <Route path="/notificacoes"   element={<Notificacoes />} />
           <Route path="/historico"      element={<HistoricoAtividades />} />
           <Route path="/relatorios"     element={<Relatorios />} />
+          <Route path="/manual"         element={<Manual />} />
         </Routes>
       </div>
     </div>

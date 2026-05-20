@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2 } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
 import { authAPI, notificacoesAPI } from '../services/api'
@@ -98,6 +98,9 @@ export default function Sidebar() {
             </NavLink>
             <NavLink to="/historico" className={({isActive})=>`nav-item${isActive?' active':''}`}>
               <History size={16}/> Histórico
+            </NavLink>
+            <NavLink to="/manual" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+              <BookOpen size={16}/> Manual
             </NavLink>
             {isAdmin && (
               <NavLink to="/usuarios" className={({isActive})=>`nav-item${isActive?' active':''}`}>
