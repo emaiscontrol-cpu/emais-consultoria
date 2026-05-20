@@ -1,3 +1,4 @@
+import logo from '../assets/logo.png'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -52,25 +53,10 @@ export default function Login() {
           }} />
         ))}
 
-        {/* Logo SVG mark */}
-        <svg width="76" height="76" viewBox="0 0 76 76" fill="none" style={{ marginBottom:22 }}>
-          <rect width="76" height="76" rx="20" fill="rgba(0,163,220,.18)"/>
-          <rect width="76" height="76" rx="20" fill="url(#lGrad)" opacity=".5"/>
-          <defs>
-            <linearGradient id="lGrad" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#00A3DC" stopOpacity=".5"/>
-              <stop offset="100%" stopColor="#0A1C4E" stopOpacity="0"/>
-            </linearGradient>
-          </defs>
-          {/* E letterform */}
-          <rect x="18" y="19" width="28" height="5.5" rx="2.75" fill="#00A3DC"/>
-          <rect x="18" y="35.25" width="21" height="5.5" rx="2.75" fill="rgba(255,255,255,.70)"/>
-          <rect x="18" y="51.5" width="28" height="5.5" rx="2.75" fill="#00A3DC"/>
-          <rect x="18" y="19" width="5.5" height="38" rx="2.75" fill="white"/>
-          {/* Plus sign */}
-          <rect x="52" y="29" width="14" height="4.5" rx="2.25" fill="#00A3DC"/>
-          <rect x="57.25" y="23.75" width="4.5" height="14" rx="2.25" fill="#00A3DC"/>
-        </svg>
+        {/* Company logo mark */}
+        <div style={{ width:84, height:84, overflow:'hidden', borderRadius:16, marginBottom:22, background:'rgba(255,255,255,0.95)' }}>
+          <img src={logo} alt="E Mais" style={{ width:309, height:'auto', display:'block', marginLeft:-113 }} />
+        </div>
 
         <div style={{ color:'#fff', fontSize:26, fontWeight:800, marginBottom:8, textAlign:'center', letterSpacing:'-.4px' }}>
           E Mais Consultoria

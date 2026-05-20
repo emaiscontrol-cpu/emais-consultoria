@@ -1,3 +1,4 @@
+import logo from '../assets/logo.png'
 import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
@@ -47,15 +48,9 @@ export default function Sidebar() {
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:5 }}>
-          <svg width="28" height="28" viewBox="0 0 28 28" fill="none" style={{ flexShrink:0 }}>
-            <rect width="28" height="28" rx="7" fill="#00A3DC"/>
-            <rect x="6" y="6.5" width="11" height="2.5" rx="1.25" fill="white"/>
-            <rect x="6" y="12.75" width="8" height="2.5" rx="1.25" fill="rgba(255,255,255,.65)"/>
-            <rect x="6" y="19" width="11" height="2.5" rx="1.25" fill="white"/>
-            <rect x="6" y="6.5" width="2.5" height="15" rx="1.25" fill="white"/>
-            <rect x="19.5" y="10.5" width="6" height="2" rx="1" fill="white"/>
-            <rect x="21.5" y="8.5" width="2" height="6" rx="1" fill="white"/>
-          </svg>
+          <div style={{ width:40, height:40, overflow:'hidden', borderRadius:8, background:'rgba(255,255,255,0.95)', flexShrink:0 }}>
+            <img src={logo} alt="E Mais" style={{ width:147, height:'auto', display:'block', marginLeft:-54 }} />
+          </div>
           <div className="sidebar-brand-name">E Mais Consultoria</div>
         </div>
         <div className="sidebar-brand-sub">Sistema de Gestão</div>
