@@ -97,4 +97,18 @@ export const subtarefasAPI = {
   deletar:   id          => api.delete(`/subtarefas/${id}`),
 }
 
+export const controladoriaAPI = {
+  resumo:              (mes, ano)  => api.get('/controladoria/resumo', { params: { mes, ano } }),
+  categorias:          ()          => api.get('/controladoria/categorias'),
+  criarCategoria:      data        => api.post('/controladoria/categorias', data),
+  deletarCategoria:    id          => api.delete(`/controladoria/categorias/${id}`),
+  lancamentos:         params      => api.get('/controladoria/lancamentos', { params }),
+  criarLancamento:     data        => api.post('/controladoria/lancamentos', data),
+  atualizarLancamento: (id, data)  => api.put(`/controladoria/lancamentos/${id}`, data),
+  deletarLancamento:   id          => api.delete(`/controladoria/lancamentos/${id}`),
+  orcamento:           params      => api.get('/controladoria/orcamento', { params }),
+  criarOrcamento:      data        => api.post('/controladoria/orcamento', data),
+  deletarOrcamento:    id          => api.delete(`/controladoria/orcamento/${id}`),
+}
+
 export default api

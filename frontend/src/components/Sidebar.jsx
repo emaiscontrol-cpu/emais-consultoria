@@ -1,6 +1,6 @@
 import logo from '../assets/logo.png'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen, TrendingUp, BarChart3, Target, Landmark } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
 import { authAPI, notificacoesAPI } from '../services/api'
@@ -40,8 +40,9 @@ export default function Sidebar() {
     } finally { setSalvando(false) }
   }
 
-  const isAdmin    = ['admin'].includes(usuario?.perfil)
-  const isConsultor= ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
+  const isAdmin          = ['admin'].includes(usuario?.perfil)
+  const isConsultor      = ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
+  const isControladoria  = ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
 
   return (
     <>
@@ -83,6 +84,24 @@ export default function Sidebar() {
           <NavLink to="/clientes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
             <Building2 size={16}/> Clientes
           </NavLink>
+        )}
+
+        {isControladoria && (
+          <>
+            <div className="nav-section">Controladoria</div>
+            <NavLink to="/controladoria" end className={({isActive})=>`nav-item${isActive?' active':''}`}>
+              <Landmark size={16}/> Visão Geral
+            </NavLink>
+            <NavLink to="/controladoria/fluxo-de-caixa" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+              <TrendingUp size={16}/> Fluxo de Caixa
+            </NavLink>
+            <NavLink to="/controladoria/dre" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+              <BarChart3 size={16}/> DRE
+            </NavLink>
+            <NavLink to="/controladoria/orcamento" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+              <Target size={16}/> Orçamento
+            </NavLink>
+          </>
         )}
 
         {isConsultor && (

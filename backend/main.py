@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria
 
 Base.metadata.create_all(bind=engine)
 
@@ -46,6 +46,9 @@ app.include_router(notificacoes.router,   prefix="/api/notificacoes",   tags=["N
 app.include_router(relatorios.router,     prefix="/api/relatorios",     tags=["Relatórios"])
 app.include_router(historico.router,      prefix="/api/historico",      tags=["Histórico"])
 app.include_router(subtarefas.router,     prefix="/api/subtarefas",     tags=["Subtarefas"])
+app.include_router(controladoria.router,  prefix="/api/controladoria",  tags=["Controladoria"])
+
+app.version = "2.0.0"
 
 # Servir o frontend React (arquivos estáticos do build)
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"

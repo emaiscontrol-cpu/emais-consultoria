@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Enum
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Enum, Date
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -232,3 +232,52 @@ class ModeloTarefa(Base):
     requer_validacao = Column(Boolean, default=False)
     duracao_dias     = Column(Integer, nullable=True)
     fase             = relationship("ModeloFase", back_populates="tarefas")
+
+
+# ─── MÓDULO CONTROLADORIA ────────────────────────────────────────────────────
+
+class CategoriaFinanceira(Base):
+    __tablename__ = "categorias_financeiras"
+    id        = Column(Integer, primary_key=True, index=True)
+    nome      = Column(String(200), nullable=False)
+    tipo      = Column(String(20), nullable=False)   # 'receita' | 'despesa'
+    pai_id    = Column(Integer, ForeignKey("categorias_financeiras.id"), nullable=True)
+    ativo     = Column(Boolean, default=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    pai       = relationship("CategoriaFinanceira", remote_side="CategoriaFinanceira.id", back_populates="filhos")
+    filhos    = relationship("CategoriaFinanceira", back_populates="pai")
+    lancamentos = relationship("Lancamento", back_populates="categoria")
+
+
+class Lancamento(Base):
+    __tablename__ = "lancamentos"
+    id           = Column(Integer, primary_key=True, index=True)
+    tipo         = Column(String(20), nullable=False)   # 'receita' | 'despesa'
+    descricao    = Column(String(500), nullable=False)
+    valor        = Column(Float, nullable=False)
+    data         = Column(Date, nullable=False)
+    categoria_id = Column(Integer, ForeignKey("categorias_financeiras.id"), nullable=True)
+    projeto_id   = Column(Integer, ForeignKey("projetos.id"), nullable=True)
+    cliente_id   = Column(Integer, ForeignKey("clientes.id"), nullable=True)
+    usuario_id   = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    observacao   = Column(Text, nullable=True)
+    criado_em    = Column(DateTime(timezone=True), server_default=func.now())
+    categoria    = relationship("CategoriaFinanceira", back_populates="lancamentos")
+    projeto      = relationship("Projeto")
+    cliente      = relationship("Cliente")
+    usuario      = relationship("Usuario")
+
+
+class OrcamentoLinha(Base):
+    __tablename__ = "orcamento_linhas"
+    id              = Column(Integer, primary_key=True, index=True)
+    categoria_id    = Column(Integer, ForeignKey("categorias_financeiras.id"), nullable=False)
+    cliente_id      = Column(Integer, ForeignKey("clientes.id"), nullable=True)
+    projeto_id      = Column(Integer, ForeignKey("projetos.id"), nullable=True)
+    ano             = Column(Integer, nullable=False)
+    mes             = Column(Integer, nullable=True)   # None = meta anual
+    valor_previsto  = Column(Float, nullable=False)
+    criado_em       = Column(DateTime(timezone=True), server_default=func.now())
+    categoria       = relationship("CategoriaFinanceira")
+    cliente         = relationship("Cliente")
+    projeto         = relationship("Projeto")

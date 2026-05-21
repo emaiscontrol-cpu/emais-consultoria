@@ -12,6 +12,7 @@ import Notificacoes from './pages/Notificacoes'
 import HistoricoAtividades from './pages/HistoricoAtividades'
 import Relatorios from './pages/Relatorios'
 import Manual from './pages/Manual'
+import ControladoriaIndex from './pages/controladoria/Index'
 import './index.css'
 
 function ProtectedLayout() {
@@ -31,7 +32,11 @@ function ProtectedLayout() {
           <Route path="/notificacoes"   element={<Notificacoes />} />
           <Route path="/historico"      element={<HistoricoAtividades />} />
           <Route path="/relatorios"     element={<Relatorios />} />
-          <Route path="/manual"         element={<Manual />} />
+          <Route path="/manual"                        element={<Manual />} />
+          <Route path="/controladoria"                 element={<ControladoriaIndex />} />
+          <Route path="/controladoria/fluxo-de-caixa" element={<ControladoriaIndex />} />
+          <Route path="/controladoria/dre"             element={<ControladoriaIndex />} />
+          <Route path="/controladoria/orcamento"       element={<ControladoriaIndex />} />
         </Routes>
       </div>
     </div>
