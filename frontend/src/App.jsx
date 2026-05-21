@@ -13,6 +13,7 @@ import HistoricoAtividades from './pages/HistoricoAtividades'
 import Relatorios from './pages/Relatorios'
 import Manual from './pages/Manual'
 import ControladoriaIndex from './pages/controladoria/Index'
+import FluxoCaixa from './pages/controladoria/FluxoCaixa'
 import './index.css'
 
 function ProtectedLayout() {
@@ -34,7 +35,7 @@ function ProtectedLayout() {
           <Route path="/relatorios"     element={<Relatorios />} />
           <Route path="/manual"                        element={<Manual />} />
           <Route path="/controladoria"                 element={<ControladoriaIndex />} />
-          <Route path="/controladoria/fluxo-de-caixa" element={<ControladoriaIndex />} />
+          <Route path="/controladoria/fluxo-de-caixa" element={<FluxoCaixa />} />
           <Route path="/controladoria/dre"             element={<ControladoriaIndex />} />
           <Route path="/controladoria/orcamento"       element={<ControladoriaIndex />} />
         </Routes>

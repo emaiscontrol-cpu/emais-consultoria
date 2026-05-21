@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa
 
 Base.metadata.create_all(bind=engine)
 
@@ -47,6 +47,7 @@ app.include_router(relatorios.router,     prefix="/api/relatorios",     tags=["R
 app.include_router(historico.router,      prefix="/api/historico",      tags=["Histórico"])
 app.include_router(subtarefas.router,     prefix="/api/subtarefas",     tags=["Subtarefas"])
 app.include_router(controladoria.router,  prefix="/api/controladoria",  tags=["Controladoria"])
+app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["Fluxo de Caixa"])
 
 app.version = "2.0.0"
 

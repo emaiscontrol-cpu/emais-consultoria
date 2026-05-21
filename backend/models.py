@@ -268,6 +268,57 @@ class Lancamento(Base):
     usuario      = relationship("Usuario")
 
 
+# ─── FLUXO DE CAIXA ──────────────────────────────────────────────────────────
+
+class PlanoContas(Base):
+    __tablename__ = "planos_contas"
+    id         = Column(Integer, primary_key=True, index=True)
+    nome       = Column(String(200), nullable=False)
+    descricao  = Column(Text, nullable=True)
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    ativo      = Column(Boolean, default=True)
+    criado_em  = Column(DateTime(timezone=True), server_default=func.now())
+    cliente    = relationship("Cliente")
+    contas     = relationship("ContaFC", back_populates="plano", order_by="ContaFC.ordem")
+
+
+class ContaFC(Base):
+    __tablename__ = "contas_fc"
+    id       = Column(Integer, primary_key=True, index=True)
+    plano_id = Column(Integer, ForeignKey("planos_contas.id"), nullable=False)
+    codigo   = Column(String(50), nullable=True)
+    nome     = Column(String(300), nullable=False)
+    tipo     = Column(String(20), nullable=False)   # 'entrada' | 'saida'
+    classe   = Column(String(100), nullable=True)
+    pai_id   = Column(Integer, ForeignKey("contas_fc.id"), nullable=True)
+    nivel    = Column(Integer, default=1)
+    ordem    = Column(Integer, default=0)
+    ativo    = Column(Boolean, default=True)
+    plano    = relationship("PlanoContas", back_populates="contas")
+    pai      = relationship("ContaFC", remote_side="ContaFC.id", back_populates="filhos", foreign_keys="ContaFC.pai_id")
+    filhos   = relationship("ContaFC", back_populates="pai", foreign_keys="ContaFC.pai_id")
+
+
+class ValorMensalFC(Base):
+    __tablename__ = "valores_mensais_fc"
+    id       = Column(Integer, primary_key=True, index=True)
+    conta_id = Column(Integer, ForeignKey("contas_fc.id"), nullable=False)
+    ano      = Column(Integer, nullable=False)
+    mes      = Column(Integer, nullable=False)
+    valor    = Column(Float, default=0.0)
+    conta    = relationship("ContaFC")
+
+
+class SaldoInicialFC(Base):
+    __tablename__ = "saldos_iniciais_fc"
+    id       = Column(Integer, primary_key=True, index=True)
+    plano_id = Column(Integer, ForeignKey("planos_contas.id"), nullable=False)
+    ano      = Column(Integer, nullable=False)
+    mes      = Column(Integer, nullable=False)
+    valor    = Column(Float, default=0.0)
+    plano    = relationship("PlanoContas")
+
+
 class OrcamentoLinha(Base):
     __tablename__ = "orcamento_linhas"
     id              = Column(Integer, primary_key=True, index=True)
