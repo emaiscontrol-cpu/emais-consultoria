@@ -15,7 +15,7 @@ backend/*.db-wal
 
 # Node
 frontend/node_modules/
-frontend/dist/
+# frontend/dist/ — incluído no repo para deploy sem Node.js no servidor
 
 # OS
 .DS_Store
