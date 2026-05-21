@@ -270,6 +270,16 @@ class Lancamento(Base):
 
 # ─── FLUXO DE CAIXA ──────────────────────────────────────────────────────────
 
+class AgrupadorFC(Base):
+    __tablename__ = "agrupadores_fc"
+    id        = Column(Integer, primary_key=True, index=True)
+    nome      = Column(String(200), nullable=False, unique=True)
+    padrao    = Column(Boolean, default=True)
+    ativo     = Column(Boolean, default=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+
+
+
 class PlanoContas(Base):
     __tablename__ = "planos_contas"
     id         = Column(Integer, primary_key=True, index=True)
@@ -289,7 +299,9 @@ class ContaFC(Base):
     codigo   = Column(String(50), nullable=True)
     nome     = Column(String(300), nullable=False)
     tipo     = Column(String(20), nullable=False)   # 'entrada' | 'saida'
-    classe   = Column(String(100), nullable=True)
+    classe       = Column(String(100), nullable=True)   # legado
+    agrupador_id = Column(Integer, ForeignKey("agrupadores_fc.id"), nullable=True)
+    agrupador    = relationship("AgrupadorFC")
     pai_id   = Column(Integer, ForeignKey("contas_fc.id"), nullable=True)
     nivel    = Column(Integer, default=1)
     ordem    = Column(Integer, default=0)

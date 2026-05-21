@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
-import { Plus, Trash2, ChevronRight, ChevronDown, Upload, Settings } from 'lucide-react'
+import { Plus, Trash2, ChevronRight, ChevronDown, Settings, Wand2 } from 'lucide-react'
 import { fluxoCaixaAPI, clientesAPI } from '../../services/api'
 import toast from 'react-hot-toast'
 
@@ -39,21 +39,22 @@ function CelulaEdit({ value, onSave, disabled }) {
 
   return (
     <div onClick={abrir} style={{ textAlign:'right', fontSize:12, cursor: disabled ? 'default' : 'pointer',
-      padding:'2px 4px', borderRadius:2, ...fmtColor(value),
-      background: !disabled && value === 0 ? 'transparent' : 'transparent',
-      ':hover': { background: '#F3F4F6' } }}>
+      padding:'2px 4px', borderRadius:2, ...fmtColor(value) }}>
       {value !== 0 ? fmt(value) : <span style={{ color:'#D1D5DB' }}>—</span>}
     </div>
   )
 }
 
 // ── Modal Conta ───────────────────────────────────────────────────────────────
-function ModalConta({ planoId, contas, conta, onSave, onClose }) {
+function ModalConta({ planoId, contas, agrupadores, conta, onSave, onClose }) {
   const [form, setForm] = useState({
-    codigo: conta?.codigo ?? '', nome: conta?.nome ?? '',
-    tipo: conta?.tipo ?? 'entrada', classe: conta?.classe ?? '',
-    pai_id: conta?.pai_id ?? '', ordem: conta?.ordem ?? 0,
-    plano_id: planoId,
+    codigo:      conta?.codigo      ?? '',
+    nome:        conta?.nome        ?? '',
+    tipo:        conta?.tipo        ?? 'entrada',
+    agrupador_id:conta?.agrupador_id ?? '',
+    pai_id:      conta?.pai_id      ?? '',
+    ordem:       conta?.ordem       ?? 0,
+    plano_id:    planoId,
   })
   const [salvando, setSalvando] = useState(false)
 
@@ -62,7 +63,12 @@ function ModalConta({ planoId, contas, conta, onSave, onClose }) {
     if (!form.nome.trim()) return toast.error('Informe o nome da conta')
     setSalvando(true)
     try {
-      const payload = { ...form, pai_id: form.pai_id || null, nivel: form.pai_id ? 2 : 1 }
+      const payload = {
+        ...form,
+        agrupador_id: form.agrupador_id || null,
+        pai_id:       form.pai_id       || null,
+        nivel:        form.pai_id ? 2 : 1,
+      }
       if (conta) await fluxoCaixaAPI.atualizarConta(conta.id, payload)
       else       await fluxoCaixaAPI.criarConta(payload)
       toast.success(conta ? 'Conta atualizada' : 'Conta criada')
@@ -76,7 +82,7 @@ function ModalConta({ planoId, contas, conta, onSave, onClose }) {
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.4)', zIndex:1000,
       display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ background:'#fff', borderRadius:10, padding:28, width:440,
+      <div style={{ background:'#fff', borderRadius:10, padding:28, width:460,
         boxShadow:'0 8px 32px rgba(0,0,0,.18)' }}>
         <div style={{ fontWeight:700, fontSize:16, marginBottom:20 }}>
           {conta ? 'Editar Conta' : 'Nova Conta'}
@@ -108,9 +114,12 @@ function ModalConta({ planoId, contas, conta, onSave, onClose }) {
               </select>
             </div>
             <div className="form-group" style={{ margin:0 }}>
-              <label>Classe / Agrupador</label>
-              <input value={form.classe} placeholder="Ex: Cartões de Crédito"
-                onChange={e => setForm(f=>({...f, classe:e.target.value}))} />
+              <label>Agrupador</label>
+              <select value={form.agrupador_id}
+                onChange={e => setForm(f=>({...f, agrupador_id:e.target.value}))}>
+                <option value="">— Nenhum —</option>
+                {agrupadores.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
+              </select>
             </div>
           </div>
           <div className="form-group">
@@ -134,17 +143,23 @@ function ModalConta({ planoId, contas, conta, onSave, onClose }) {
 
 // ── Modal Plano ───────────────────────────────────────────────────────────────
 function ModalPlano({ clienteId, onSave, onClose }) {
-  const [nome, setNome]         = useState('')
-  const [desc, setDesc]         = useState('')
-  const [salvando, setSalvando] = useState(false)
+  const [nome,        setNome]        = useState('')
+  const [desc,        setDesc]        = useState('')
+  const [template,    setTemplate]    = useState(true)
+  const [salvando,    setSalvando]    = useState(false)
 
   const salvar = async e => {
     e.preventDefault()
     if (!nome.trim()) return toast.error('Informe o nome do plano')
     setSalvando(true)
     try {
-      await fluxoCaixaAPI.criarPlano({ nome, descricao: desc, cliente_id: clienteId })
-      toast.success('Plano criado!')
+      const { data: plano } = await fluxoCaixaAPI.criarPlano({ nome, descricao: desc, cliente_id: clienteId })
+      if (template) {
+        await fluxoCaixaAPI.aplicarTemplate(plano.id)
+        toast.success('Plano criado com template padrão!')
+      } else {
+        toast.success('Plano criado!')
+      }
       onSave()
     } catch { toast.error('Erro ao criar plano') }
     finally { setSalvando(false) }
@@ -153,7 +168,7 @@ function ModalPlano({ clienteId, onSave, onClose }) {
   return (
     <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.4)', zIndex:1000,
       display:'flex', alignItems:'center', justifyContent:'center' }}>
-      <div style={{ background:'#fff', borderRadius:10, padding:28, width:400,
+      <div style={{ background:'#fff', borderRadius:10, padding:28, width:420,
         boxShadow:'0 8px 32px rgba(0,0,0,.18)' }}>
         <div style={{ fontWeight:700, fontSize:16, marginBottom:20 }}>Novo Plano de Contas</div>
         <form onSubmit={salvar}>
@@ -167,7 +182,13 @@ function ModalPlano({ clienteId, onSave, onClose }) {
             <input value={desc} placeholder="Opcional"
               onChange={e => setDesc(e.target.value)} />
           </div>
-          <div style={{ display:'flex', gap:8, justifyContent:'flex-end', marginTop:20 }}>
+          <label style={{ display:'flex', alignItems:'center', gap:8, fontSize:13,
+            cursor:'pointer', color:'#374151', marginBottom:20 }}>
+            <input type="checkbox" checked={template} onChange={e => setTemplate(e.target.checked)} />
+            <Wand2 size={14} style={{ color:'#6366F1' }} />
+            Aplicar Plano de Contas padrão automaticamente
+          </label>
+          <div style={{ display:'flex', gap:8, justifyContent:'flex-end' }}>
             <button type="button" className="btn" onClick={onClose}>Cancelar</button>
             <button type="submit" className="btn btn-primary" disabled={salvando}>
               {salvando ? 'Criando...' : 'Criar'}
@@ -187,16 +208,18 @@ export default function FluxoCaixa() {
   const [planoId,     setPlanoId]     = useState('')
   const [ano,         setAno]         = useState(new Date().getFullYear())
   const [contas,      setContas]      = useState([])
-  const [valores,     setValores]     = useState({})   // { "id_mes": valor }
-  const [saldos,      setSaldos]      = useState({})   // { mes: valor }
+  const [agrupadores, setAgrupadores] = useState([])
+  const [valores,     setValores]     = useState({})
+  const [saldos,      setSaldos]      = useState({})
   const [loading,     setLoading]     = useState(false)
-  const [modalConta,  setModalConta]  = useState(null) // null | 'new' | conta obj
+  const [modalConta,  setModalConta]  = useState(null)
   const [modalPlano,  setModalPlano]  = useState(false)
-  const [expandidos,  setExpandidos]  = useState({})   // { contaId: bool }
+  const [expandidos,  setExpandidos]  = useState({})
 
   // ── carregamentos ─────────────────────────────────────────────────────────
   useEffect(() => {
     clientesAPI.listar().then(r => setClientes(r.data)).catch(() => {})
+    fluxoCaixaAPI.agrupadores().then(r => setAgrupadores(r.data)).catch(() => {})
   }, [])
 
   useEffect(() => {
@@ -222,7 +245,6 @@ export default function FluxoCaixa() {
       const salMap = {}
       s.data.forEach(x => { salMap[x.mes] = x.valor })
       setSaldos(salMap)
-      // auto-expande pais com filhos
       const exp = {}
       c.data.forEach(cc => { if (cc.tem_filhos) exp[cc.id] = true })
       setExpandidos(exp)
@@ -245,8 +267,7 @@ export default function FluxoCaixa() {
 
   const getSaldoInicial = useCallback((mes) => {
     if (mes === 1) return saldos[1] ?? 0
-    const prev = getSaldoInicial(mes - 1) + totalTipo('entrada', mes - 1) - totalTipo('saida', mes - 1)
-    return prev
+    return getSaldoInicial(mes - 1) + totalTipo('entrada', mes - 1) - totalTipo('saida', mes - 1)
   }, [saldos, totalTipo])
 
   const getSaldoFinal = useCallback((mes) =>
@@ -275,6 +296,17 @@ export default function FluxoCaixa() {
     } catch { toast.error('Erro ao excluir') }
   }
 
+  const aplicarTemplate = async () => {
+    if (!window.confirm('Aplicar o Plano de Contas padrão? As contas atuais serão substituídas.')) return
+    try {
+      await fluxoCaixaAPI.aplicarTemplate(planoId)
+      toast.success('Template aplicado com sucesso!')
+      carregarDados()
+    } catch (err) {
+      toast.error(err?.response?.data?.detail ?? 'Erro ao aplicar template')
+    }
+  }
+
   // ── render helpers ────────────────────────────────────────────────────────
   const totalAnual = (fn, ...args) =>
     Array.from({ length: 12 }, (_, i) => fn(...args, i + 1)).reduce((a, b) => a + b, 0)
@@ -282,18 +314,6 @@ export default function FluxoCaixa() {
   const thStyle = { background:'#0A1C4E', color:'#fff', fontSize:11, fontWeight:700,
     textAlign:'right', padding:'6px 6px', whiteSpace:'nowrap', position:'sticky', top:0, zIndex:2 }
   const thLeft  = { ...thStyle, textAlign:'left', minWidth:220, position:'sticky', left:0, zIndex:3 }
-
-  const rowSaldo = (label, fn, mes, editavel, bold) => {
-    const v = fn(mes)
-    return (
-      <td style={{ padding:'4px 6px', ...fmtColor(v), fontWeight: bold ? 700 : 400,
-        background: bold ? '#F0FDF4' : '#fff', fontSize:12 }}>
-        {editavel
-          ? <CelulaEdit value={v} onSave={val => saveSaldo(mes, val)} />
-          : <div style={{ textAlign:'right', ...fmtColor(v) }}>{fmt(v)}</div>}
-      </td>
-    )
-  }
 
   const renderContas = (tipo) => {
     const raiz = contas.filter(c => c.tipo === tipo && !c.pai_id)
@@ -305,6 +325,7 @@ export default function FluxoCaixa() {
     const temFilhos= filhos.length > 0
     const expand   = expandidos[conta.id] ?? true
     const bgRow    = depth === 0 ? '#FAFAFA' : '#fff'
+    const label    = conta.agrupador ?? conta.classe
 
     return [
       <tr key={conta.id} style={{ background: bgRow }}>
@@ -321,8 +342,8 @@ export default function FluxoCaixa() {
             }
             {conta.codigo && <span style={{ color:'#9CA3AF', fontSize:11, marginRight:4 }}>{conta.codigo}</span>}
             {conta.nome}
-            {conta.classe && <span style={{ marginLeft:6, fontSize:10, color:'#fff', background:'#6366F1',
-              borderRadius:99, padding:'1px 6px' }}>{conta.classe}</span>}
+            {label && <span style={{ marginLeft:6, fontSize:10, color:'#fff', background:'#6366F1',
+              borderRadius:99, padding:'1px 6px', flexShrink:0 }}>{label}</span>}
           </div>
         </td>
         {Array.from({ length: 12 }, (_, i) => {
@@ -396,7 +417,7 @@ export default function FluxoCaixa() {
           </div>
         </div>
         <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
-          {planoId && (
+          {planoId && contas.length > 0 && (
             <button className="btn btn-sm" onClick={() => setModalConta('new')}>
               <Plus size={14}/> Nova Conta
             </button>
@@ -449,7 +470,7 @@ export default function FluxoCaixa() {
       {clienteId && !planoId && (
         <div className="card" style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>
           {planos.length === 0
-            ? <>Nenhum Plano de Contas cadastrado para este cliente. <br/>
+            ? <>Nenhum Plano de Contas cadastrado para este cliente.<br/>
                 <button className="btn btn-primary btn-sm" style={{ marginTop:12 }}
                   onClick={() => setModalPlano(true)}>
                   <Plus size={13}/> Criar Plano de Contas
@@ -521,36 +542,40 @@ export default function FluxoCaixa() {
                     {rowTotal('TOTAL SAÍDAS', 'saida', '#FEE2E2')}
 
                     {/* Saldo Final */}
-                    {Array.from({ length: 1 }, () => (
-                      <tr key="sf" style={{ background:'#1E3A5F' }}>
-                        <td style={{ padding:'8px', fontSize:13, fontWeight:800, color:'#fff',
-                          position:'sticky', left:0, background:'#1E3A5F', borderRight:'1px solid rgba(255,255,255,.1)' }}>
-                          Saldo Final
-                        </td>
-                        {Array.from({ length: 12 }, (_, i) => {
-                          const v = getSaldoFinal(i + 1)
-                          return (
-                            <td key={i} style={{ padding:'6px', textAlign:'right', fontSize:13,
-                              fontWeight:800, color: v < 0 ? '#FCA5A5' : '#6EE7B7' }}>
-                              {fmt(v)}
-                            </td>
-                          )
-                        })}
-                        <td style={{ padding:'6px', textAlign:'right', fontSize:13, fontWeight:800,
-                          color: getSaldoFinal(12) < 0 ? '#FCA5A5' : '#6EE7B7' }}>
-                          {fmt(totalAnual(totalTipo, 'entrada') - totalAnual(totalTipo, 'saida'))}
-                        </td>
-                        <td style={{ background:'#1E3A5F' }} />
-                      </tr>
-                    ))}
+                    <tr style={{ background:'#1E3A5F' }}>
+                      <td style={{ padding:'8px', fontSize:13, fontWeight:800, color:'#fff',
+                        position:'sticky', left:0, background:'#1E3A5F', borderRight:'1px solid rgba(255,255,255,.1)' }}>
+                        Saldo Final
+                      </td>
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const v = getSaldoFinal(i + 1)
+                        return (
+                          <td key={i} style={{ padding:'6px', textAlign:'right', fontSize:13,
+                            fontWeight:800, color: v < 0 ? '#FCA5A5' : '#6EE7B7' }}>
+                            {fmt(v)}
+                          </td>
+                        )
+                      })}
+                      <td style={{ padding:'6px', textAlign:'right', fontSize:13, fontWeight:800,
+                        color: getSaldoFinal(12) < 0 ? '#FCA5A5' : '#6EE7B7' }}>
+                        {fmt(totalAnual(totalTipo, 'entrada') - totalAnual(totalTipo, 'saida'))}
+                      </td>
+                      <td style={{ background:'#1E3A5F' }} />
+                    </tr>
                   </tbody>
                 </table>
 
                 {contas.length === 0 && (
-                  <div style={{ padding:32, textAlign:'center', color:'var(--text-muted)' }}>
-                    Nenhuma conta cadastrada. <button className="btn-link"
-                      style={{ color:'var(--brand)', fontWeight:600, border:'none', background:'none', cursor:'pointer' }}
-                      onClick={() => setModalConta('new')}>Adicionar conta</button>
+                  <div style={{ padding:40, textAlign:'center', color:'var(--text-muted)' }}>
+                    <div style={{ marginBottom:16 }}>Nenhuma conta cadastrada neste plano.</div>
+                    <div style={{ display:'flex', gap:10, justifyContent:'center', flexWrap:'wrap' }}>
+                      <button className="btn btn-primary btn-sm" onClick={aplicarTemplate}>
+                        <Wand2 size={13}/> Aplicar Plano Padrão
+                      </button>
+                      <button className="btn btn-sm" onClick={() => setModalConta('new')}>
+                        <Plus size={13}/> Adicionar conta manualmente
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -564,6 +589,7 @@ export default function FluxoCaixa() {
         <ModalConta
           planoId={planoId}
           contas={contas}
+          agrupadores={agrupadores}
           conta={modalConta === 'new' ? null : modalConta}
           onSave={() => { setModalConta(null); carregarDados() }}
           onClose={() => setModalConta(null)}

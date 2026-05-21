@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from models import PlanoContas, ContaFC, ValorMensalFC, SaldoInicialFC
+from models import PlanoContas, ContaFC, ValorMensalFC, SaldoInicialFC, AgrupadorFC
 from auth import get_usuario_atual
 from schemas import UsuarioOut
 from pydantic import BaseModel
@@ -29,6 +29,7 @@ class ContaIn(BaseModel):
     nome: str
     tipo: str           # 'entrada' | 'saida'
     classe: Optional[str] = None
+    agrupador_id: Optional[int] = None
     pai_id: Optional[int] = None
     nivel: int = 1
     ordem: int = 0
@@ -38,6 +39,7 @@ class ContaUpdate(BaseModel):
     nome: Optional[str] = None
     tipo: Optional[str] = None
     classe: Optional[str] = None
+    agrupador_id: Optional[int] = None
     pai_id: Optional[int] = None
     ordem: Optional[int] = None
 
@@ -60,6 +62,39 @@ class ImportContaItem(BaseModel):
     classe: Optional[str] = None
     codigo_pai: Optional[str] = None
     ordem: int = 0
+
+class AgrupadorIn(BaseModel):
+    nome: str
+    padrao: bool = False
+
+
+# ── Agrupadores ───────────────────────────────────────────────────────────────
+
+@router.get("/agrupadores")
+def listar_agrupadores(db: Session = Depends(get_db),
+                       u: UsuarioOut = Depends(get_usuario_atual)):
+    check(u)
+    return [{"id": a.id, "nome": a.nome, "padrao": a.padrao}
+            for a in db.query(AgrupadorFC).filter(AgrupadorFC.ativo == True).order_by(AgrupadorFC.nome).all()]
+
+@router.post("/agrupadores", status_code=201)
+def criar_agrupador(data: AgrupadorIn, db: Session = Depends(get_db),
+                    u: UsuarioOut = Depends(get_usuario_atual)):
+    check(u)
+    if db.query(AgrupadorFC).filter(AgrupadorFC.nome == data.nome, AgrupadorFC.ativo == True).first():
+        raise HTTPException(400, "Agrupador já existe")
+    a = AgrupadorFC(nome=data.nome, padrao=data.padrao)
+    db.add(a); db.commit(); db.refresh(a)
+    return {"id": a.id, "nome": a.nome, "padrao": a.padrao}
+
+@router.delete("/agrupadores/{id}")
+def deletar_agrupador(id: int, db: Session = Depends(get_db),
+                      u: UsuarioOut = Depends(get_usuario_atual)):
+    check(u)
+    a = db.get(AgrupadorFC, id)
+    if not a: raise HTTPException(404, "Agrupador não encontrado")
+    a.ativo = False; db.commit()
+    return {"ok": True}
 
 
 # ── Planos de Contas ──────────────────────────────────────────────────────────
@@ -113,6 +148,8 @@ def _conta_out(c):
     return {
         "id": c.id, "plano_id": c.plano_id, "codigo": c.codigo,
         "nome": c.nome, "tipo": c.tipo, "classe": c.classe,
+        "agrupador_id": c.agrupador_id,
+        "agrupador": c.agrupador.nome if c.agrupador else None,
         "pai_id": c.pai_id, "nivel": c.nivel, "ordem": c.ordem,
         "tem_filhos": len(c.filhos) > 0,
     }
@@ -154,6 +191,34 @@ def deletar_conta(id: int, db: Session = Depends(get_db),
     if not c: raise HTTPException(404, "Conta não encontrada")
     c.ativo = False; db.commit()
     return {"ok": True}
+
+@router.post("/planos/{plano_id}/template", status_code=201)
+def aplicar_template(plano_id: int, db: Session = Depends(get_db),
+                     u: UsuarioOut = Depends(get_usuario_atual)):
+    """Importa o plano de contas padrão para um plano vazio."""
+    check(u)
+    p = db.get(PlanoContas, plano_id)
+    if not p: raise HTTPException(404, "Plano não encontrado")
+    tem_contas = db.query(ContaFC).filter(ContaFC.plano_id == plano_id, ContaFC.ativo == True).count()
+    if tem_contas > 0:
+        raise HTTPException(400, "Plano já possui contas. Exclua-as antes de aplicar o template.")
+    from seed_controladoria import seed_plano_template, PLANO_PADRAO, AGRUPADORES
+    # garante agrupadores
+    from seed_controladoria import seed_agrupadores
+    seed_agrupadores(db)
+    agrup_map = {a.nome: a.id for a in db.query(AgrupadorFC).filter(AgrupadorFC.ativo == True).all()}
+    from seed_controladoria import PLANO_PADRAO
+    codigo_map = {}
+    for ordem, (codigo, nome, tipo, agrup_nome, codigo_pai) in enumerate(PLANO_PADRAO):
+        pai_id       = codigo_map.get(codigo_pai) if codigo_pai else None
+        agrupador_id = agrup_map.get(agrup_nome)
+        c = ContaFC(plano_id=plano_id, codigo=codigo, nome=nome, tipo=tipo,
+                    agrupador_id=agrupador_id, pai_id=pai_id,
+                    nivel=2 if pai_id else 1, ordem=ordem)
+        db.add(c); db.flush()
+        codigo_map[codigo] = c.id
+    db.commit()
+    return {"importadas": len(PLANO_PADRAO)}
 
 @router.post("/planos/{plano_id}/importar", status_code=201)
 def importar_contas(plano_id: int, contas: list[ImportContaItem],

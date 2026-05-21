@@ -98,19 +98,23 @@ export const subtarefasAPI = {
 }
 
 export const fluxoCaixaAPI = {
-  planos:        clienteId  => api.get('/fluxo/planos', { params: { cliente_id: clienteId } }),
-  criarPlano:    data        => api.post('/fluxo/planos', data),
-  atualizarPlano:(id, data)  => api.put(`/fluxo/planos/${id}`, data),
-  deletarPlano:  id          => api.delete(`/fluxo/planos/${id}`),
-  contas:        planoId     => api.get(`/fluxo/planos/${planoId}/contas`),
-  criarConta:    data        => api.post('/fluxo/contas', data),
-  atualizarConta:(id, data)  => api.put(`/fluxo/contas/${id}`, data),
-  deletarConta:  id          => api.delete(`/fluxo/contas/${id}`),
-  importar:      (id, lista) => api.post(`/fluxo/planos/${id}/importar`, lista),
-  valores:       (planoId, ano) => api.get(`/fluxo/valores/${planoId}/${ano}`),
-  salvarValor:   data        => api.post('/fluxo/valores', data),
-  saldos:        (planoId, ano) => api.get(`/fluxo/saldos/${planoId}/${ano}`),
-  salvarSaldo:   data        => api.post('/fluxo/saldos', data),
+  planos:           clienteId  => api.get('/fluxo/planos', { params: { cliente_id: clienteId } }),
+  criarPlano:       data        => api.post('/fluxo/planos', data),
+  atualizarPlano:   (id, data)  => api.put(`/fluxo/planos/${id}`, data),
+  deletarPlano:     id          => api.delete(`/fluxo/planos/${id}`),
+  contas:           planoId     => api.get(`/fluxo/planos/${planoId}/contas`),
+  criarConta:       data        => api.post('/fluxo/contas', data),
+  atualizarConta:   (id, data)  => api.put(`/fluxo/contas/${id}`, data),
+  deletarConta:     id          => api.delete(`/fluxo/contas/${id}`),
+  importar:         (id, lista) => api.post(`/fluxo/planos/${id}/importar`, lista),
+  aplicarTemplate:  id          => api.post(`/fluxo/planos/${id}/template`),
+  agrupadores:      ()          => api.get('/fluxo/agrupadores'),
+  criarAgrupador:   data        => api.post('/fluxo/agrupadores', data),
+  deletarAgrupador: id          => api.delete(`/fluxo/agrupadores/${id}`),
+  valores:          (planoId, ano) => api.get(`/fluxo/valores/${planoId}/${ano}`),
+  salvarValor:      data        => api.post('/fluxo/valores', data),
+  saldos:           (planoId, ano) => api.get(`/fluxo/saldos/${planoId}/${ano}`),
+  salvarSaldo:      data        => api.post('/fluxo/saldos', data),
 }
 
 export const controladoriaAPI = {

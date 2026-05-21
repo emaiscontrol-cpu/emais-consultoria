@@ -14,12 +14,22 @@ with engine.connect() as conn:
     for stmt in [
         "ALTER TABLE tarefas ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE fases ADD COLUMN bloqueado_por_anterior BOOLEAN NOT NULL DEFAULT 1",
+        "ALTER TABLE contas_fc ADD COLUMN agrupador_id INTEGER REFERENCES agrupadores_fc(id)",
     ]:
         try:
             conn.execute(text(stmt))
             conn.commit()
         except Exception:
             pass  # column already exists
+
+# Seed dados padrão (executa apenas uma vez)
+from database import SessionLocal
+from seed_controladoria import seed_agrupadores
+_db = SessionLocal()
+try:
+    seed_agrupadores(_db)
+finally:
+    _db.close()
 
 app = FastAPI(
     title="E Mais Consultoria — Sistema de Gestão",
