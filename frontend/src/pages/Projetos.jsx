@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { projetosAPI, clientesAPI } from '../services/api'
 import { Badge, Progress, LoadingPage, Modal } from '../components/shared'
 import { useAuth } from '../contexts/AuthContext'
-import { FolderKanban, FileDown, Plus, X } from 'lucide-react'
+import { FolderKanban, FileDown, Plus, X, Pencil, Trash2 } from 'lucide-react'
 import { relatoriosAPI } from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -23,6 +23,10 @@ export default function Projetos() {
   const isConsultor = ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
   const [busca, setBusca] = useState('')
   const [exportando, setExportando] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [editingId,    setEditingId]    = useState(null)
+  const [formEdit,     setFormEdit]     = useState({ nome:'', descricao:'', cliente_id:'', data_inicio:'', data_fim_prev:'' })
+  const [savingEdit,   setSavingEdit]   = useState(false)
 
   const handleExportar = async () => {
     setExportando(true)
@@ -90,6 +94,47 @@ export default function Projetos() {
     }
   }
 
+  const handleAbrirEditar = (e, p) => {
+    e.stopPropagation()
+    setEditingId(p.id)
+    setFormEdit({
+      nome: p.nome,
+      descricao: p.descricao || '',
+      cliente_id: String(p.cliente_id || ''),
+      data_inicio: p.data_inicio ? new Date(p.data_inicio).toISOString().slice(0,10) : '',
+      data_fim_prev: p.data_fim_prev ? new Date(p.data_fim_prev).toISOString().slice(0,10) : '',
+    })
+    setShowEditModal(true)
+  }
+
+  const handleSalvarEdicao = async () => {
+    setSavingEdit(true)
+    try {
+      await projetosAPI.atualizar(editingId, {
+        nome: formEdit.nome,
+        descricao: formEdit.descricao || null,
+        cliente_id: parseInt(formEdit.cliente_id),
+        data_inicio: formEdit.data_inicio || null,
+        data_fim_prev: formEdit.data_fim_prev || null,
+      })
+      toast.success('Projeto atualizado!')
+      setShowEditModal(false)
+      const { data } = await projetosAPI.listar()
+      setProjetos(data)
+    } catch { toast.error('Erro ao atualizar projeto') }
+    finally { setSavingEdit(false) }
+  }
+
+  const handleExcluir = async (e, p) => {
+    e.stopPropagation()
+    if (!confirm(`Excluir o projeto "${p.nome}"? Esta ação não pode ser desfeita.`)) return
+    try {
+      await projetosAPI.deletar(p.id)
+      toast.success('Projeto excluído!')
+      setProjetos(prev => prev.filter(x => x.id !== p.id))
+    } catch { toast.error('Erro ao excluir projeto') }
+  }
+
   if (loading) return <LoadingPage />
 
   return (
@@ -153,7 +198,19 @@ export default function Projetos() {
                     <td className="text-muted text-sm">
                       {p.data_fim_prev ? new Date(p.data_fim_prev).toLocaleDateString('pt-BR') : '—'}
                     </td>
-                    <td><button className="btn btn-sm btn-ghost">Ver →</button></td>
+                    <td onClick={e => e.stopPropagation()} style={{ whiteSpace:'nowrap' }}>
+                      <button className="btn btn-sm btn-ghost" onClick={() => navigate(`/projetos/${p.id}`)}>Ver →</button>
+                      {isConsultor && (<>
+                        <button className="btn btn-sm btn-ghost" style={{ padding:'3px 6px', marginLeft:2 }} title="Editar projeto"
+                          onClick={e => handleAbrirEditar(e, p)}>
+                          <Pencil size={13} />
+                        </button>
+                        <button className="btn btn-sm btn-ghost" style={{ padding:'3px 6px', marginLeft:2, color:'var(--red)' }} title="Excluir projeto"
+                          onClick={e => handleExcluir(e, p)}>
+                          <Trash2 size={13} />
+                        </button>
+                      </>)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -161,6 +218,42 @@ export default function Projetos() {
           </div>
         )}
       </div>
+
+      {showEditModal && (
+        <Modal title="Editar projeto" onClose={() => setShowEditModal(false)}
+          footer={<>
+            <button className="btn" onClick={() => setShowEditModal(false)}>Cancelar</button>
+            <button className="btn btn-primary" onClick={handleSalvarEdicao} disabled={savingEdit || !formEdit.nome || !formEdit.cliente_id}>
+              {savingEdit ? 'Salvando...' : 'Salvar'}
+            </button>
+          </>}>
+          <div className="form-group">
+            <label>Nome do projeto *</label>
+            <input value={formEdit.nome} onChange={e => setFormEdit(f => ({...f, nome: e.target.value}))} />
+          </div>
+          <div className="form-group">
+            <label>Cliente *</label>
+            <select value={formEdit.cliente_id} onChange={e => setFormEdit(f => ({...f, cliente_id: e.target.value}))}>
+              <option value="">Selecionar cliente...</option>
+              {clientes.map(c => <option key={c.id} value={c.id}>{c.razao_social}</option>)}
+            </select>
+          </div>
+          <div className="form-group">
+            <label>Descrição</label>
+            <textarea value={formEdit.descricao} onChange={e => setFormEdit(f => ({...f, descricao: e.target.value}))} />
+          </div>
+          <div className="form-row">
+            <div className="form-group">
+              <label>Data de início</label>
+              <input type="date" value={formEdit.data_inicio} onChange={e => setFormEdit(f => ({...f, data_inicio: e.target.value}))} />
+            </div>
+            <div className="form-group">
+              <label>Previsão de término</label>
+              <input type="date" value={formEdit.data_fim_prev} onChange={e => setFormEdit(f => ({...f, data_fim_prev: e.target.value}))} />
+            </div>
+          </div>
+        </Modal>
+      )}
 
       {showModal && (
         <Modal title="Novo projeto" onClose={() => { setShowModal(false); setShowNovoCliente(false) }}
