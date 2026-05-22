@@ -16,4 +16,4 @@ jobs:
         run: git pull origin main
 
       - name: Reiniciar backend
-        run: Restart-Service EmaisBackend
+        run: schtasks /run /tn "RestartEmaisBackend"
