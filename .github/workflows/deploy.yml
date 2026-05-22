@@ -16,4 +16,8 @@ jobs:
         run: git pull origin main
 
       - name: Reiniciar backend
-        run: schtasks /run /tn "RestartEmaisBackend"
+        run: |
+          (Get-WmiObject Win32_Service -Filter "Name='EmaisBackend'").StopService()
+          Start-Sleep -Seconds 3
+          (Get-WmiObject Win32_Service -Filter "Name='EmaisBackend'").StartService()
+        shell: powershell
