@@ -1,7 +1,8 @@
 # release.ps1 — Publica nova versão do E Mais Consultoria
 #
 # Uso:
-#   .\release.ps1          (2.0.0 → 2.0.0a → 2.0.0b  — ajuste/melhoria)
+#   .\release.ps1          (2.0.0 → 2.0.0a → 2.0.0b  — ajuste/melhoria, notifica usuários)
+#   .\release.ps1 beta     (2.0.0a → 2.0.0a-beta      — deploy silencioso para validação)
 #   .\release.ps1 minor    (2.0.0b → 2.1.0            — funcionalidade nova)
 #   .\release.ps1 major    (2.1.0  → 3.0.0            — implementação robusta)
 
@@ -10,13 +11,14 @@ param([string]$tipo = "letra")
 $mainPy = "$PSScriptRoot\backend\main.py"
 $pkgJson = "$PSScriptRoot\electron-client\package.json"
 
-# Ler versão atual do backend (suporta sufixo de letra: 2.0.0a)
+# Ler versão atual do backend (suporta 2.0.0, 2.0.0a, 2.0.0a-beta)
 $content = Get-Content $mainPy -Raw
-if ($content -match 'app\.version\s*=\s*"(\d+)\.(\d+)\.(\d+)([a-z]*)"') {
-    $major = [int]$Matches[1]
-    $minor = [int]$Matches[2]
-    $patch = [int]$Matches[3]
-    $letra = $Matches[4]
+if ($content -match 'app\.version\s*=\s*"(\d+)\.(\d+)\.(\d+)([a-z]*)(-beta)?"') {
+    $major  = [int]$Matches[1]
+    $minor  = [int]$Matches[2]
+    $patch  = [int]$Matches[3]
+    $letra  = $Matches[4]
+    $isBeta = $Matches[5] -eq '-beta'
 } else {
     Write-Host "Versão não encontrada em main.py" -ForegroundColor Red
     exit 1
@@ -24,30 +26,40 @@ if ($content -match 'app\.version\s*=\s*"(\d+)\.(\d+)\.(\d+)([a-z]*)"') {
 
 # Calcular nova versão
 switch ($tipo) {
+    "beta" {
+        # Se já é beta, mantém base; senão incrementa letra e adiciona -beta
+        if (-not $isBeta) {
+            if ($letra -eq '') { $letra = 'a' }
+            elseif ($letra -eq 'z') { Write-Host "Sufixo esgotado. Use .\release.ps1 minor." -ForegroundColor Red; exit 1 }
+            else { $letra = [char]([int][char]$letra + 1) }
+        }
+        $novaVersao = "$major.$minor.$patch$letra-beta"
+    }
     "major" {
         $major++; $minor = 0; $patch = 0; $letra = ''
+        $novaVersao = "$major.$minor.$patch"
     }
     "minor" {
         $minor++; $patch = 0; $letra = ''
+        $novaVersao = "$major.$minor.$patch"
     }
     default {
-        # Incrementa a letra: '' → 'a', 'a' → 'b', ..., 'z' → erro
-        if ($letra -eq '') {
-            $letra = 'a'
-        } elseif ($letra -eq 'z') {
-            Write-Host "Sufixo de letra esgotado (z). Use .\release.ps1 minor para avançar a versão." -ForegroundColor Red
-            exit 1
+        # Release oficial — remove -beta se existia, ou incrementa letra
+        if ($isBeta) {
+            $novaVersao = "$major.$minor.$patch$letra"  # promove beta para oficial
         } else {
-            $letra = [char]([int][char]$letra + 1)
+            if ($letra -eq '') { $letra = 'a' }
+            elseif ($letra -eq 'z') { Write-Host "Sufixo esgotado. Use .\release.ps1 minor." -ForegroundColor Red; exit 1 }
+            else { $letra = [char]([int][char]$letra + 1) }
+            $novaVersao = "$major.$minor.$patch$letra"
         }
     }
 }
-$novaVersao = "$major.$minor.$patch$letra"
 
 Write-Host "Publicando versão $novaVersao..." -ForegroundColor Cyan
 
 # Atualizar backend/main.py
-(Get-Content $mainPy -Raw) -replace 'app\.version\s*=\s*"[\d\.a-z]+"', "app.version = `"$novaVersao`"" |
+(Get-Content $mainPy -Raw) -replace 'app\.version\s*=\s*"[\d\.a-z-]+"', "app.version = `"$novaVersao`"" |
     Set-Content $mainPy -Encoding UTF8
 
 # Atualizar electron-client/package.json

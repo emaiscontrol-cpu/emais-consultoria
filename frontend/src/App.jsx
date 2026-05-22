@@ -26,10 +26,14 @@ function AvisoNovaVersao() {
     fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
       .then(r => r.json())
       .then(d => {
+        const v = d.version
+        const isBeta = v.includes('-beta')
         if (!versaoSalva) {
-          localStorage.setItem('emais_versao', d.version)
-        } else if (d.version !== versaoSalva) {
-          setNovaVersao(d.version)
+          localStorage.setItem('emais_versao', v)
+        } else if (v !== versaoSalva && !isBeta) {
+          setNovaVersao(v)
+        } else if (!isBeta) {
+          localStorage.setItem('emais_versao', v)
         }
       })
       .catch(() => {})
