@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+﻿from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -22,7 +22,7 @@ with engine.connect() as conn:
         except Exception:
             pass  # column already exists
 
-# Seed dados padrão (executa apenas uma vez)
+# Seed dados padrÃ£o (executa apenas uma vez)
 from database import SessionLocal
 from seed_controladoria import seed_agrupadores
 _db = SessionLocal()
@@ -32,7 +32,7 @@ finally:
     _db.close()
 
 app = FastAPI(
-    title="E Mais Consultoria — Sistema de Gestão",
+    title="E Mais Consultoria â€” Sistema de GestÃ£o",
     version="1.0.0",
     redirect_slashes=False
 )
@@ -45,27 +45,27 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router,      prefix="/api/auth",      tags=["Autenticação"])
-app.include_router(usuarios.router,  prefix="/api/usuarios",  tags=["Usuários"])
+app.include_router(auth.router,      prefix="/api/auth",      tags=["AutenticaÃ§Ã£o"])
+app.include_router(usuarios.router,  prefix="/api/usuarios",  tags=["UsuÃ¡rios"])
 app.include_router(clientes.router,  prefix="/api/clientes",  tags=["Clientes"])
 app.include_router(projetos.router,  prefix="/api/projetos",  tags=["Projetos"])
 app.include_router(fases.router,     prefix="/api/fases",     tags=["Fases"])
 app.include_router(tarefas.router,   prefix="/api/tarefas",   tags=["Tarefas"])
 app.include_router(dashboard.router,      prefix="/api/dashboard",      tags=["Dashboard"])
-app.include_router(notificacoes.router,   prefix="/api/notificacoes",   tags=["Notificações"])
-app.include_router(relatorios.router,     prefix="/api/relatorios",     tags=["Relatórios"])
-app.include_router(historico.router,      prefix="/api/historico",      tags=["Histórico"])
+app.include_router(notificacoes.router,   prefix="/api/notificacoes",   tags=["NotificaÃ§Ãµes"])
+app.include_router(relatorios.router,     prefix="/api/relatorios",     tags=["RelatÃ³rios"])
+app.include_router(historico.router,      prefix="/api/historico",      tags=["HistÃ³rico"])
 app.include_router(subtarefas.router,     prefix="/api/subtarefas",     tags=["Subtarefas"])
 app.include_router(controladoria.router,  prefix="/api/controladoria",  tags=["Controladoria"])
 app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["Fluxo de Caixa"])
 
-app.version = "2.0.0"
+app.version = "2.0.0a"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
     return {"version": app.version}
 
-# Servir o frontend React (arquivos estáticos do build)
+# Servir o frontend React (arquivos estÃ¡ticos do build)
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
@@ -73,10 +73,11 @@ if FRONTEND_DIST.exists():
     @app.get("/")
     @app.get("/{full_path:path}")
     def serve_frontend(full_path: str = ""):
-        # Rotas da API já foram registradas antes — qualquer outra rota serve o index.html
+        # Rotas da API jÃ¡ foram registradas antes â€” qualquer outra rota serve o index.html
         index = FRONTEND_DIST / "index.html"
         return FileResponse(index)
 else:
     @app.get("/")
     def root():
-        return {"message": "E Mais Consultoria API — Online"}
+        return {"message": "E Mais Consultoria API â€” Online"}
+

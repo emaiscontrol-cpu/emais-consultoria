@@ -1,0 +1,41 @@
+﻿{
+    "name":  "emais-consultoria",
+    "version":  "2.0.0a",
+    "description":  "E Mais Consultoria â€” Sistema de GestÃ£o",
+    "main":  "main.js",
+    "scripts":  {
+                    "start":  "set \"ELECTRON_RUN_AS_NODE=\" \u0026\u0026 electron .",
+                    "build":  "electron-builder --win --x64",
+                    "build:icon":  "node convert-icon.js"
+                },
+    "build":  {
+                  "appId":  "br.com.emaiscontrol.consultoria",
+                  "productName":  "E Mais Consultoria",
+                  "copyright":  "Â© 2026 E Mais Consultoria",
+                  "directories":  {
+                                      "output":  "dist"
+                                  },
+                  "win":  {
+                              "target":  "nsis",
+                              "icon":  "assets/icon.ico",
+                              "sign":  null,
+                              "signingHashAlgorithms":  null
+                          },
+                  "nsis":  {
+                               "oneClick":  false,
+                               "allowToChangeInstallationDirectory":  true,
+                               "installerIcon":  "assets/icon.ico",
+                               "uninstallerIcon":  "assets/icon.ico",
+                               "installerHeaderIcon":  "assets/icon.ico",
+                               "createDesktopShortcut":  true,
+                               "createStartMenuShortcut":  true,
+                               "shortcutName":  "E Mais Consultoria"
+                           }
+              },
+    "devDependencies":  {
+                            "electron":  "^31.0.0",
+                            "electron-builder":  "^24.13.3",
+                            "jimp":  "^0.22.12",
+                            "png-to-ico":  "^2.1.8"
+                        }
+}
