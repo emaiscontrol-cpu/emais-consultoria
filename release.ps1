@@ -38,8 +38,13 @@ $pkg = Get-Content $pkgJson -Raw | ConvertFrom-Json
 $pkg.version = $novaVersao
 $pkg | ConvertTo-Json -Depth 10 | Set-Content $pkgJson -Encoding UTF8
 
-# Commit e push
-git -C $PSScriptRoot add backend/main.py electron-client/package.json
+# Build do frontend
+Write-Host "Compilando frontend..." -ForegroundColor Cyan
+Set-Location "$PSScriptRoot\frontend"
+npm run build
+
+# Commit e push (inclui o dist compilado)
+git -C $PSScriptRoot add backend/main.py electron-client/package.json frontend/dist
 git -C $PSScriptRoot commit -m "Release v$novaVersao"
 git -C $PSScriptRoot push origin main
 

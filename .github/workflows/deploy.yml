@@ -15,20 +15,6 @@ jobs:
         working-directory: C:\emals-app
         run: git pull origin main
 
-      - name: Instalar dependências do frontend
-        working-directory: C:\emals-app\frontend
-        shell: cmd
-        run: |
-          set PATH=%PATH%;C:\Program Files\nodejs;C:\Users\administrator\AppData\Roaming\npm
-          npm ci --prefer-offline
-
-      - name: Build do frontend
-        working-directory: C:\emals-app\frontend
-        shell: cmd
-        run: |
-          set PATH=%PATH%;C:\Program Files\nodejs;C:\Users\administrator\AppData\Roaming\npm
-          npm run build
-
       - name: Reiniciar backend
         working-directory: C:\emals-service
         run: .\emals-backend.exe restart
