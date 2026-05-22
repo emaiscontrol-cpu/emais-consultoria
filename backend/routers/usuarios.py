@@ -29,7 +29,10 @@ def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db
     if not u:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     for k, v in data.model_dump(exclude_none=True).items():
-        setattr(u, k, v)
+        if k == "senha":
+            u.senha_hash = hash_senha(v)
+        else:
+            setattr(u, k, v)
     db.commit(); db.refresh(u)
     return u
 

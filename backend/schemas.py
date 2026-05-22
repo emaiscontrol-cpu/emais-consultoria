@@ -32,6 +32,7 @@ class UsuarioUpdate(BaseModel):
     email: Optional[str] = None
     perfil: Optional[PerfilEnum] = None
     ativo: Optional[bool] = None
+    senha: Optional[str] = None
 
 # ── CLIENTE ───────────────────────────────────────────
 class ClienteCreate(BaseModel):
