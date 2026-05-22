@@ -1,0 +1,25 @@
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+    steps:
+      - name: Atualizar código
+        working-directory: C:\emals-app
+        run: git pull origin main
+
+      - name: Instalar dependências do frontend
+        working-directory: C:\emals-app\frontend
+        run: npm ci --prefer-offline
+
+      - name: Build do frontend
+        working-directory: C:\emals-app\frontend
+        run: npm run build
+
+      - name: Reiniciar backend
+        working-directory: C:\emals-service
+        run: .\emals-backend.exe restart

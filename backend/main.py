@@ -61,6 +61,10 @@ app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["F
 
 app.version = "2.0.0"
 
+@app.get("/api/version", tags=["Sistema"])
+def get_version():
+    return {"version": app.version}
+
 # Servir o frontend React (arquivos estáticos do build)
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():
