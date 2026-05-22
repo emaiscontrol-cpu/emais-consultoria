@@ -1,19 +1,22 @@
 # release.ps1 — Publica nova versão do E Mais Consultoria
-# Uso: .\release.ps1 patch   (1.0.0 -> 1.0.1)
-#      .\release.ps1 minor   (1.0.0 -> 1.1.0)
-#      .\release.ps1 major   (1.0.0 -> 2.0.0)
+#
+# Uso:
+#   .\release.ps1          (2.0.0 → 2.0.0a → 2.0.0b  — ajuste/melhoria)
+#   .\release.ps1 minor    (2.0.0b → 2.1.0            — funcionalidade nova)
+#   .\release.ps1 major    (2.1.0  → 3.0.0            — implementação robusta)
 
-param([string]$tipo = "patch")
+param([string]$tipo = "letra")
 
 $mainPy = "$PSScriptRoot\backend\main.py"
 $pkgJson = "$PSScriptRoot\electron-client\package.json"
 
-# Ler versão atual do backend
+# Ler versão atual do backend (suporta sufixo de letra: 2.0.0a)
 $content = Get-Content $mainPy -Raw
-if ($content -match 'app\.version\s*=\s*"(\d+)\.(\d+)\.(\d+)"') {
+if ($content -match 'app\.version\s*=\s*"(\d+)\.(\d+)\.(\d+)([a-z]*)"') {
     $major = [int]$Matches[1]
     $minor = [int]$Matches[2]
     $patch = [int]$Matches[3]
+    $letra = $Matches[4]
 } else {
     Write-Host "Versão não encontrada em main.py" -ForegroundColor Red
     exit 1
@@ -21,16 +24,30 @@ if ($content -match 'app\.version\s*=\s*"(\d+)\.(\d+)\.(\d+)"') {
 
 # Calcular nova versão
 switch ($tipo) {
-    "major" { $major++; $minor = 0; $patch = 0 }
-    "minor" { $minor++; $patch = 0 }
-    default { $patch++ }
+    "major" {
+        $major++; $minor = 0; $patch = 0; $letra = ''
+    }
+    "minor" {
+        $minor++; $patch = 0; $letra = ''
+    }
+    default {
+        # Incrementa a letra: '' → 'a', 'a' → 'b', ..., 'z' → erro
+        if ($letra -eq '') {
+            $letra = 'a'
+        } elseif ($letra -eq 'z') {
+            Write-Host "Sufixo de letra esgotado (z). Use .\release.ps1 minor para avançar a versão." -ForegroundColor Red
+            exit 1
+        } else {
+            $letra = [char]([int][char]$letra + 1)
+        }
+    }
 }
-$novaVersao = "$major.$minor.$patch"
+$novaVersao = "$major.$minor.$patch$letra"
 
 Write-Host "Publicando versão $novaVersao..." -ForegroundColor Cyan
 
 # Atualizar backend/main.py
-(Get-Content $mainPy -Raw) -replace 'app\.version\s*=\s*"[\d\.]+"', "app.version = `"$novaVersao`"" |
+(Get-Content $mainPy -Raw) -replace 'app\.version\s*=\s*"[\d\.a-z]+"', "app.version = `"$novaVersao`"" |
     Set-Content $mainPy -Encoding UTF8
 
 # Atualizar electron-client/package.json

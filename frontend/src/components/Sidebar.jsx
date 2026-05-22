@@ -15,11 +15,14 @@ export default function Sidebar() {
   const [salvando, setSalvando] = useState(false)
 
   const [qtdAlertas, setQtdAlertas] = useState(0)
+  const [versao,     setVersao]     = useState('')
 
   useEffect(() => {
     notificacoesAPI.listar()
       .then(r => setQtdAlertas(r.data.length))
       .catch(() => {})
+    fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
+      .then(r => r.json()).then(d => setVersao(d.version)).catch(() => {})
   }, [])
 
   const handleLogout = () => { logout(); navigate('/login') }
@@ -55,6 +58,7 @@ export default function Sidebar() {
           <div className="sidebar-brand-name">E Mais Consultoria</div>
         </div>
         <div className="sidebar-brand-sub">Sistema de Gestão</div>
+        {versao && <div style={{ fontSize:10, color:'rgba(255,255,255,.30)', marginTop:2, letterSpacing:'.04em' }}>v{versao}</div>}
       </div>
 
       <nav className="sidebar-nav">

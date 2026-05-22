@@ -1,5 +1,5 @@
 import logo from '../assets/logo.png'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -15,6 +15,12 @@ export default function Login() {
   const navigate  = useNavigate()
   const [form, setForm] = useState({ email: '', senha: '' })
   const [loading, setLoading] = useState(false)
+  const [versao, setVersao] = useState('')
+
+  useEffect(() => {
+    fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
+      .then(r => r.json()).then(d => setVersao(d.version)).catch(() => {})
+  }, [])
 
   const handleSubmit = async e => {
     e.preventDefault()
@@ -78,8 +84,15 @@ export default function Login() {
           ))}
         </div>
 
-        <div style={{ position:'absolute', bottom:20, color:'rgba(255,255,255,.18)', fontSize:11 }}>
-          E Mais Consultoria © {new Date().getFullYear()}
+        <div style={{ position:'absolute', bottom:20, display:'flex', flexDirection:'column', alignItems:'center', gap:4 }}>
+          <div style={{ color:'rgba(255,255,255,.18)', fontSize:11 }}>
+            E Mais Consultoria © {new Date().getFullYear()}
+          </div>
+          {versao && (
+            <div style={{ color:'rgba(255,255,255,.25)', fontSize:10, fontWeight:600, letterSpacing:'.05em' }}>
+              v{versao}
+            </div>
+          )}
         </div>
       </div>
 
