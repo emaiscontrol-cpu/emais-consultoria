@@ -17,11 +17,17 @@ jobs:
 
       - name: Instalar dependências do frontend
         working-directory: C:\emals-app\frontend
-        run: npm ci --prefer-offline
+        shell: cmd
+        run: |
+          set PATH=%PATH%;C:\Program Files\nodejs;C:\Users\administrator\AppData\Roaming\npm
+          npm ci --prefer-offline
 
       - name: Build do frontend
         working-directory: C:\emals-app\frontend
-        run: npm run build
+        shell: cmd
+        run: |
+          set PATH=%PATH%;C:\Program Files\nodejs;C:\Users\administrator\AppData\Roaming\npm
+          npm run build
 
       - name: Reiniciar backend
         working-directory: C:\emals-service
