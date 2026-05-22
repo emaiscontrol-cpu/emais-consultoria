@@ -8,6 +8,9 @@ jobs:
   deploy:
     runs-on: self-hosted
     steps:
+      - name: Permissão de diretório
+        run: git config --global --add safe.directory C:/emals-app
+
       - name: Atualizar código
         working-directory: C:\emals-app
         run: git pull origin main
