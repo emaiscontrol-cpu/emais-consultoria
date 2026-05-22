@@ -16,5 +16,4 @@ jobs:
         run: git pull origin main
 
       - name: Reiniciar backend
-        working-directory: C:\emals-service
-        run: .\emals-backend.exe restart
+        run: Restart-Service EmaisBackend
