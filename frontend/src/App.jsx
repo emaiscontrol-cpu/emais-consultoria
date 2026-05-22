@@ -18,25 +18,21 @@ import FluxoCaixa from './pages/controladoria/FluxoCaixa'
 import './index.css'
 
 function AvisoNovaVersao() {
-  const versaoAtual = useRef(null)
   const [novaVersao, setNovaVersao] = useState(null)
 
   useEffect(() => {
-    const checar = () => {
-      fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
-        .then(r => r.json())
-        .then(d => {
-          if (versaoAtual.current === null) {
-            versaoAtual.current = d.version
-          } else if (d.version !== versaoAtual.current) {
-            setNovaVersao(d.version)
-          }
-        })
-        .catch(() => {})
-    }
-    checar()
-    const id = setInterval(checar, 5 * 60 * 1000)
-    return () => clearInterval(id)
+    // Verifica versão uma única vez ao montar (quando o usuário loga)
+    const versaoSalva = localStorage.getItem('emais_versao')
+    fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
+      .then(r => r.json())
+      .then(d => {
+        if (!versaoSalva) {
+          localStorage.setItem('emais_versao', d.version)
+        } else if (d.version !== versaoSalva) {
+          setNovaVersao(d.version)
+        }
+      })
+      .catch(() => {})
   }, [])
 
   if (!novaVersao) return null
@@ -51,7 +47,7 @@ function AvisoNovaVersao() {
     }}>
       <span>Nova versão disponível — <strong>v{novaVersao}</strong>. Deseja atualizar agora?</span>
       <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => window.location.reload()}
+        <button onClick={() => { localStorage.setItem('emais_versao', novaVersao); window.location.reload() }}
           style={{ background: '#fff', color: '#0096CF', border: 'none', padding: '6px 16px',
             borderRadius: 4, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
           Atualizar agora
