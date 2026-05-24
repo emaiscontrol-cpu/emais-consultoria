@@ -64,7 +64,7 @@ app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["F
 app.include_router(planos.router,         prefix="/api/planos",         tags=["Planos de Contas"])
 app.include_router(balancete.router,      prefix="/api/balancete",      tags=["Balancete"])
 
-app.version = "2.0.0d"
+app.version = "2.0.0e"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -85,6 +85,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
