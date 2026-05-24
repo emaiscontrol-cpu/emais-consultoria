@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Enum, Date
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Enum, Date, UniqueConstraint
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -338,9 +338,61 @@ class OrcamentoLinha(Base):
     cliente_id      = Column(Integer, ForeignKey("clientes.id"), nullable=True)
     projeto_id      = Column(Integer, ForeignKey("projetos.id"), nullable=True)
     ano             = Column(Integer, nullable=False)
-    mes             = Column(Integer, nullable=True)   # None = meta anual
+    mes             = Column(Integer, nullable=True)
     valor_previsto  = Column(Float, nullable=False)
     criado_em       = Column(DateTime(timezone=True), server_default=func.now())
     categoria       = relationship("CategoriaFinanceira")
     cliente         = relationship("Cliente")
     projeto         = relationship("Projeto")
+
+
+# ─── PLANOS DE CONTAS (templates reutilizáveis) ───────────────────────────────
+
+class Plano(Base):
+    __tablename__ = "planos"
+    id        = Column(Integer, primary_key=True, index=True)
+    nome      = Column(String(200), nullable=False)
+    descricao = Column(Text, nullable=True)
+    ativo     = Column(Boolean, default=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    itens     = relationship("PlanoItem", back_populates="plano",
+                             order_by="PlanoItem.ordem", cascade="all, delete-orphan")
+    vinculos  = relationship("ClientePlano", back_populates="plano", cascade="all, delete-orphan")
+
+
+class PlanoItem(Base):
+    __tablename__ = "planos_itens"
+    id          = Column(Integer, primary_key=True, index=True)
+    plano_id    = Column(Integer, ForeignKey("planos.id"), nullable=False)
+    agrupamento = Column(String(60), nullable=False)
+    descricao   = Column(String(300), nullable=False)
+    conta       = Column(String(30), nullable=True)    # código contábil ex: 111101
+    tipo        = Column(String(20), nullable=True)    # TT, CX, CS, CB, etc.
+    modulo      = Column(String(20), nullable=True)    # F | D | O | F,D | F,D,O etc.
+    movimento   = Column(String(50), nullable=True)    # Entrada/Saída ou Receita/Despesa
+    ordem       = Column(Integer, default=0)
+    plano       = relationship("Plano", back_populates="itens")
+
+
+class BalanceteLancamento(Base):
+    """Valor mensal de uma conta contábil para um cliente."""
+    __tablename__ = "balancete_lancamentos"
+    __table_args__ = (UniqueConstraint("cliente_id", "ano", "mes", "conta"),)
+    id         = Column(Integer, primary_key=True, index=True)
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    ano        = Column(Integer, nullable=False)
+    mes        = Column(Integer, nullable=False)   # 1-12
+    conta      = Column(String(30), nullable=False) # chave → PlanoItem.conta
+    valor      = Column(Float, default=0.0)
+    cliente    = relationship("Cliente")
+
+
+class ClientePlano(Base):
+    """Um cliente tem no máximo um plano."""
+    __tablename__ = "cliente_plano"
+    __table_args__ = (UniqueConstraint("cliente_id"),)
+    id         = Column(Integer, primary_key=True, index=True)
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False, unique=True)
+    plano_id   = Column(Integer, ForeignKey("planos.id"), nullable=False)
+    cliente    = relationship("Cliente")
+    plano      = relationship("Plano", back_populates="vinculos")
