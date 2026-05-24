@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete
 
 Base.metadata.create_all(bind=engine)
 
@@ -15,6 +15,9 @@ with engine.connect() as conn:
         "ALTER TABLE tarefas ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE fases ADD COLUMN bloqueado_por_anterior BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE contas_fc ADD COLUMN agrupador_id INTEGER REFERENCES agrupadores_fc(id)",
+        "ALTER TABLE planos_itens ADD COLUMN modulo TEXT",
+        "ALTER TABLE planos_itens ADD COLUMN conta TEXT",
+        "ALTER TABLE planos DROP COLUMN tipo",
     ]:
         try:
             conn.execute(text(stmt))
@@ -58,8 +61,10 @@ app.include_router(historico.router,      prefix="/api/historico",      tags=["H
 app.include_router(subtarefas.router,     prefix="/api/subtarefas",     tags=["Subtarefas"])
 app.include_router(controladoria.router,  prefix="/api/controladoria",  tags=["Controladoria"])
 app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["Fluxo de Caixa"])
+app.include_router(planos.router,         prefix="/api/planos",         tags=["Planos de Contas"])
+app.include_router(balancete.router,      prefix="/api/balancete",      tags=["Balancete"])
 
-app.version = "2.0.0c"
+app.version = "2.0.0d"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -80,6 +85,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
