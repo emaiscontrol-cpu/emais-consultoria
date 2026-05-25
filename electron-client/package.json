@@ -1,11 +1,11 @@
 ﻿{
     "name":  "emais-consultoria",
-    "version":  "2.0.0f",
+    "version":  "2.0.0g",
     "description":  "E Mais Consultoria â€” Sistema de GestÃ£o",
     "main":  "main.js",
     "scripts":  {
                     "start":  "set \"ELECTRON_RUN_AS_NODE=\" \u0026\u0026 electron .",
-                    "build":  "electron-builder --win --x64",
+                    "build":  "electron-builder --win --x64 --config.directories.output=\"C:\\Temp\\emais-build\"",
                     "build:icon":  "node convert-icon.js"
                 },
     "build":  {
@@ -13,7 +13,7 @@
                   "productName":  "E Mais Consultoria",
                   "copyright":  "Â© 2026 E Mais Consultoria",
                   "directories":  {
-                                      "output":  "dist"
+                                      "output":  "C:\\Temp\\emais-build"
                                   },
                   "win":  {
                               "target":  "nsis",
