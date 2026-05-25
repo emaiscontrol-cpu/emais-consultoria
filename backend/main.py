@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes
 
 Base.metadata.create_all(bind=engine)
 
@@ -63,8 +63,9 @@ app.include_router(controladoria.router,  prefix="/api/controladoria",  tags=["C
 app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["Fluxo de Caixa"])
 app.include_router(planos.router,         prefix="/api/planos",         tags=["Planos de Contas"])
 app.include_router(balancete.router,      prefix="/api/balancete",      tags=["Balancete"])
+app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
 
-app.version = "2.0.0e"
+app.version = "2.0.0f"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -85,6 +86,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

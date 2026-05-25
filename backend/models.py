@@ -387,6 +387,18 @@ class BalanceteLancamento(Base):
     cliente    = relationship("Cliente")
 
 
+class Anotacao(Base):
+    """Anotações de consultores por cliente."""
+    __tablename__ = "anotacoes"
+    id         = Column(Integer, primary_key=True, index=True)
+    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    usuario    = Column(String(120), nullable=False)
+    data       = Column(Date, nullable=False)
+    texto      = Column(Text, nullable=False)
+    criado_em  = Column(DateTime(timezone=True), server_default=func.now())
+    cliente    = relationship("Cliente")
+
+
 class ClientePlano(Base):
     """Um cliente tem no máximo um plano."""
     __tablename__ = "cliente_plano"
