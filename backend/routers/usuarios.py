@@ -28,7 +28,10 @@ def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db
     u = db.query(models.Usuario).get(id)
     if not u:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    for k, v in data.model_dump(exclude_none=True).items():
+    payload = data.model_dump(exclude_none=True)
+    if payload.pop("remover_cliente", False):
+        u.cliente_id = None
+    for k, v in payload.items():
         if k == "senha":
             u.senha_hash = hash_senha(v)
         else:
@@ -37,10 +40,12 @@ def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db
     return u
 
 @router.delete("/{id}")
-def desativar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("admin"))):
+def excluir(id: int, db: Session = Depends(get_db), atual=Depends(get_usuario_atual), _=Depends(requer_perfil("admin"))):
+    if atual.id == id:
+        raise HTTPException(status_code=400, detail="Você não pode excluir seu próprio usuário")
     u = db.query(models.Usuario).get(id)
     if not u:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
-    u.ativo = False
+    db.delete(u)
     db.commit()
     return {"ok": True}

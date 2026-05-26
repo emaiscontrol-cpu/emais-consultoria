@@ -23,7 +23,10 @@ class AnotacaoIn(BaseModel):
 
 
 @router.get("/cliente/{cliente_id}")
-def listar(cliente_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
+def listar(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_current_user)):
+    # perfis restritos só acessam dados do seu cliente
+    if usuario.perfil in ("cliente", "ger_projeto") and usuario.cliente_id and usuario.cliente_id != cliente_id:
+        raise HTTPException(403, "Acesso negado")
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(404, "Cliente não encontrado")

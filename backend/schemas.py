@@ -33,6 +33,8 @@ class UsuarioUpdate(BaseModel):
     perfil: Optional[PerfilEnum] = None
     ativo: Optional[bool] = None
     senha: Optional[str] = None
+    cliente_id: Optional[int] = None
+    remover_cliente: Optional[bool] = None  # True = desvincula o cliente
 
 # ── CLIENTE ───────────────────────────────────────────
 class ClienteCreate(BaseModel):

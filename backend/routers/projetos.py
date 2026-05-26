@@ -30,8 +30,8 @@ def listar(
     usuario = Depends(get_usuario_atual)
 ):
     q = db.query(models.Projeto)
-    # cliente só vê seus próprios projetos
-    if usuario.perfil == "cliente":
+    # perfis restritos só veem projetos do seu cliente vinculado
+    if usuario.perfil in ("cliente", "ger_projeto") and usuario.cliente_id:
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
     elif cliente_id:
         q = q.filter(models.Projeto.cliente_id == cliente_id)
