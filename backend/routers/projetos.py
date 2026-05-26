@@ -31,7 +31,7 @@ def listar(
 ):
     q = db.query(models.Projeto)
     # perfis restritos só veem projetos do seu cliente vinculado
-    if usuario.perfil in ("cliente", "ger_projeto") and usuario.cliente_id:
+    if usuario.perfil in ("cliente", "ger_projeto", "ti") and usuario.cliente_id:
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
     elif cliente_id:
         q = q.filter(models.Projeto.cliente_id == cliente_id)

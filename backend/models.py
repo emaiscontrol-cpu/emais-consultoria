@@ -9,6 +9,7 @@ class PerfilEnum(str, enum.Enum):
     consultor    = "consultor"
     ger_projeto  = "ger_projeto"
     cliente      = "cliente"
+    ti           = "ti"
 
 class StatusTarefa(str, enum.Enum):
     pendente     = "pendente"
