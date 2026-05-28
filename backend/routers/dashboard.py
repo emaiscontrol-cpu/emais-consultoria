@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timezone
@@ -37,6 +37,71 @@ def resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
             models.Tarefa.data_prazo < agora
         ).count(),
     }
+
+@router.get("/cliente/{cliente_id}")
+def dashboard_cliente(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
+    # perfis restritos só acessam seu próprio cliente
+    if usuario.perfil in ("cliente", "ger_projeto", "ti") and usuario.cliente_id and usuario.cliente_id != cliente_id:
+        raise HTTPException(403, "Acesso negado")
+
+    cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
+    if not cliente:
+        raise HTTPException(404, "Cliente não encontrado")
+
+    projetos = db.query(models.Projeto).filter(models.Projeto.cliente_id == cliente_id).all()
+    agora = datetime.now(timezone.utc)
+
+    projetos_data = []
+    total_tarefas = total_concluidas = total_andamento = total_pendentes = total_atrasadas = 0
+
+    for p in projetos:
+        fases_data = []
+        p_tarefas = p_conc = p_and = p_pend = p_atras = 0
+
+        for f in sorted(p.fases, key=lambda x: x.ordem):
+            tarefas = [t for t in f.tarefas if t.ativo]
+            conc  = sum(1 for t in tarefas if t.status == "concluida")
+            and_  = sum(1 for t in tarefas if t.status == "em_andamento")
+            pend  = sum(1 for t in tarefas if t.status == "pendente")
+            atras = sum(1 for t in tarefas if t.status != "concluida" and t.data_prazo and t.data_prazo.replace(tzinfo=timezone.utc) < agora)
+
+            fases_data.append({
+                "id": f.id, "nome": f.nome, "ordem": f.ordem,
+                "status": f.status, "progresso": round(f.progresso, 1),
+                "total": len(tarefas), "concluidas": conc,
+                "andamento": and_, "pendentes": pend, "atrasadas": atras,
+            })
+            p_tarefas += len(tarefas); p_conc += conc; p_and += and_
+            p_pend += pend; p_atras += atras
+
+        projetos_data.append({
+            "id": p.id, "nome": p.nome, "status": p.status,
+            "progresso": round(p.progresso, 1),
+            "data_inicio": p.data_inicio.isoformat() if p.data_inicio else None,
+            "data_fim_prev": p.data_fim_prev.isoformat() if p.data_fim_prev else None,
+            "fases": fases_data,
+            "total_tarefas": p_tarefas, "concluidas": p_conc,
+            "andamento": p_and, "pendentes": p_pend, "atrasadas": p_atras,
+        })
+        total_tarefas += p_tarefas; total_concluidas += p_conc
+        total_andamento += p_and; total_pendentes += p_pend; total_atrasadas += p_atras
+
+    return {
+        "cliente": {"id": cliente.id, "razao_social": cliente.razao_social},
+        "projetos": projetos_data,
+        "resumo": {
+            "total_projetos": len(projetos),
+            "total_tarefas": total_tarefas,
+            "concluidas": total_concluidas,
+            "andamento": total_andamento,
+            "pendentes": total_pendentes,
+            "atrasadas": total_atrasadas,
+            "progresso_geral": round(
+                sum(p["progresso"] for p in projetos_data) / len(projetos_data), 1
+            ) if projetos_data else 0,
+        },
+    }
+
 
 @router.get("/projetos-resumo")
 def projetos_resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):

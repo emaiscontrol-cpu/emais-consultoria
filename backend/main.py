@@ -65,7 +65,7 @@ app.include_router(planos.router,         prefix="/api/planos",         tags=["P
 app.include_router(balancete.router,      prefix="/api/balancete",      tags=["Balancete"])
 app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
 
-app.version = "2.0.0i"
+app.version = "2.0.0j"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -86,6 +86,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
