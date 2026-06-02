@@ -157,14 +157,18 @@ class ResponsavelTarefa(Base):
 
 class Subtarefa(Base):
     __tablename__ = "subtarefas"
-    id          = Column(Integer, primary_key=True, index=True)
-    tarefa_id   = Column(Integer, ForeignKey("tarefas.id"), nullable=False)
-    nome        = Column(String(300), nullable=False)
-    status      = Column(Enum(StatusSubtarefa), default=StatusSubtarefa.a_fazer)
-    data_prazo  = Column(DateTime(timezone=True), nullable=True)
-    ordem       = Column(Integer, default=0)
-    criado_em   = Column(DateTime(timezone=True), server_default=func.now())
-    tarefa      = relationship("Tarefa", back_populates="subtarefas")
+    id             = Column(Integer, primary_key=True, index=True)
+    tarefa_id      = Column(Integer, ForeignKey("tarefas.id"), nullable=False)
+    nome           = Column(String(300), nullable=False)
+    status         = Column(Enum(StatusSubtarefa), default=StatusSubtarefa.a_fazer)
+    data_prazo     = Column(DateTime(timezone=True), nullable=True)
+    data_inicio    = Column(DateTime(timezone=True), nullable=True)
+    data_fim       = Column(DateTime(timezone=True), nullable=True)
+    responsavel_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    ordem          = Column(Integer, default=0)
+    criado_em      = Column(DateTime(timezone=True), server_default=func.now())
+    tarefa         = relationship("Tarefa", back_populates="subtarefas")
+    responsavel    = relationship("Usuario", foreign_keys=[responsavel_id])
 
 
 class Comentario(Base):

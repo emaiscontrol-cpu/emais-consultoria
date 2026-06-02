@@ -29,6 +29,7 @@ export const authAPI = {
 export const dashboardAPI = {
   resumo:         () => api.get('/dashboard/resumo'),
   projetosResumo: () => api.get('/dashboard/projetos-resumo'),
+  cliente:        id => api.get(`/dashboard/cliente/${id}`),
 }
 
 export const clientesAPI = {
@@ -73,7 +74,7 @@ export const usuariosAPI = {
   listar:   ()       => api.get('/usuarios/'),
   criar:    data     => api.post('/usuarios/', data),
   atualizar:(id,d)   => api.put(`/usuarios/${id}`, d),
-  desativar: id      => api.delete(`/usuarios/${id}`),
+  excluir:  id       => api.delete(`/usuarios/${id}`),
 }
 
 export const notificacoesAPI = {
@@ -129,6 +130,45 @@ export const controladoriaAPI = {
   orcamento:           params      => api.get('/controladoria/orcamento', { params }),
   criarOrcamento:      data        => api.post('/controladoria/orcamento', data),
   deletarOrcamento:    id          => api.delete(`/controladoria/orcamento/${id}`),
+}
+
+export const planosAPI = {
+  listar:              ()              => api.get('/planos'),
+  criar:               data            => api.post('/planos', data),
+  obter:               id              => api.get(`/planos/${id}`),
+  atualizar:           (id, data)      => api.put(`/planos/${id}`, data),
+  excluir:             id              => api.delete(`/planos/${id}`),
+  adicionarItem:       (id, data)      => api.post(`/planos/${id}/itens`, data),
+  atualizarItem:       (id, iid, d)    => api.put(`/planos/${id}/itens/${iid}`, d),
+  excluirItem:         (id, iid)       => api.delete(`/planos/${id}/itens/${iid}`),
+  importar:            (id, arquivo)   => {
+    const fd = new FormData(); fd.append('arquivo', arquivo)
+    return api.post(`/planos/${id}/importar`, fd)
+  },
+  clientesDoPlano:     id              => api.get(`/planos/${id}/clientes`),
+  vincularCliente:     (id, cid)       => api.put(`/planos/${id}/clientes/${cid}`),
+  desvincularCliente:  (id, cid)       => api.delete(`/planos/${id}/clientes/${cid}`),
+  planoPorClienteModulo: (cid, mod)    => api.get(`/planos/cliente/${cid}/modulo/${mod}`),
+}
+
+export const balanceteAPI = {
+  obter:          (cid, ano, mes)             => api.get(`/balancete/cliente/${cid}/ano/${ano}/mes/${mes}`),
+  upsert:         (cid, ano, mes, conta, valor) =>
+    api.put(`/balancete/cliente/${cid}/ano/${ano}/mes/${mes}/conta/${conta}`, { valor }),
+  importar:       (cid, ano, mes, arquivo)    => {
+    const fd = new FormData()
+    fd.append('arquivo', arquivo)
+    return api.post(`/balancete/importar?cliente_id=${cid}&ano=${ano}&mes=${mes}`, fd)
+  },
+  periodos:       cid                         => api.get(`/balancete/cliente/${cid}/periodos`),
+  deletarPeriodo: (cid, ano, mes)             => api.delete(`/balancete/cliente/${cid}/ano/${ano}/mes/${mes}`),
+}
+
+export const anotacoesAPI = {
+  listar:    clienteId         => api.get(`/anotacoes/cliente/${clienteId}`),
+  criar:     (clienteId, data) => api.post(`/anotacoes/cliente/${clienteId}`, data),
+  atualizar: (id, data)        => api.put(`/anotacoes/${id}`, data),
+  deletar:   id                => api.delete(`/anotacoes/${id}`),
 }
 
 export default api

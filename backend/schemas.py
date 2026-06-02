@@ -119,12 +119,18 @@ class SubtarefaCreate(BaseModel):
     tarefa_id: int
     nome: str
     data_prazo: Optional[datetime] = None
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    responsavel_id: Optional[int] = None
     ordem: int = 0
 
 class SubtarefaUpdate(BaseModel):
     status: Optional[StatusSubtarefa] = None
     nome: Optional[str] = None
     data_prazo: Optional[datetime] = None
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    responsavel_id: Optional[int] = None
 
 class SubtarefaOut(BaseModel):
     id: int
@@ -132,6 +138,10 @@ class SubtarefaOut(BaseModel):
     nome: str
     status: StatusSubtarefa
     data_prazo: Optional[datetime]
+    data_inicio: Optional[datetime] = None
+    data_fim: Optional[datetime] = None
+    responsavel_id: Optional[int] = None
+    responsavel: Optional[UsuarioOut] = None
     ordem: int
     class Config:
         from_attributes = True

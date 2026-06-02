@@ -1,4 +1,4 @@
-import logo from '../assets/logo.png'
+import logo from '../assets/logo.jpeg'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -60,8 +60,8 @@ export default function Login() {
         ))}
 
         {/* Company logo mark */}
-        <div style={{ width:84, height:84, overflow:'hidden', borderRadius:16, marginBottom:22, background:'rgba(255,255,255,0.95)' }}>
-          <img src={logo} alt="E Mais" style={{ width:309, height:'auto', display:'block', marginLeft:-113 }} />
+        <div style={{ width:84, height:84, marginBottom:22 }}>
+          <img src={logo} alt="E Mais" style={{ width:84, height:84, display:'block', borderRadius:'50%', objectFit:'cover' }} />
         </div>
 
         <div style={{ color:'#fff', fontSize:26, fontWeight:800, marginBottom:8, textAlign:'center', letterSpacing:'-.4px' }}>

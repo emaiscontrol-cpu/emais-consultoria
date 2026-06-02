@@ -18,6 +18,9 @@ with engine.connect() as conn:
         "ALTER TABLE planos_itens ADD COLUMN modulo TEXT",
         "ALTER TABLE planos_itens ADD COLUMN conta TEXT",
         "ALTER TABLE planos DROP COLUMN tipo",
+        "ALTER TABLE subtarefas ADD COLUMN responsavel_id INTEGER REFERENCES usuarios(id)",
+        "ALTER TABLE subtarefas ADD COLUMN data_inicio DATETIME",
+        "ALTER TABLE subtarefas ADD COLUMN data_fim DATETIME",
     ]:
         try:
             conn.execute(text(stmt))
@@ -65,7 +68,7 @@ app.include_router(planos.router,         prefix="/api/planos",         tags=["P
 app.include_router(balancete.router,      prefix="/api/balancete",      tags=["Balancete"])
 app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
 
-app.version = "2.0.0j"
+app.version = "2.0.0k"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -86,6 +89,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

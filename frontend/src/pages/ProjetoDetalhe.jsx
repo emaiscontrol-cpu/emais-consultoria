@@ -12,8 +12,19 @@ const SUB_STATUS = {
   concluida:{ label:'Concluído', cor:'var(--green)', bg:'var(--green-light)', next:'a_fazer'   },
 }
 
-function SubtarefaItem({ sub, onUpdate, onDelete, readonly }) {
+const fmtData = iso => iso ? new Date(iso).toLocaleDateString('pt-BR') : null
+
+function SubtarefaItem({ sub, onUpdate, onDelete, readonly, usuarios }) {
   const cfg = SUB_STATUS[sub.status] || SUB_STATUS.a_fazer
+  const [editando, setEditando] = useState(false)
+  const [saving,   setSaving]   = useState(false)
+  const [form, setForm] = useState({
+    nome:          sub.nome,
+    responsavel_id: sub.responsavel_id ? String(sub.responsavel_id) : '',
+    data_inicio:   sub.data_inicio ? sub.data_inicio.slice(0,10) : '',
+    data_fim:      sub.data_fim    ? sub.data_fim.slice(0,10)    : '',
+  })
+
   const toggle = async () => {
     if (readonly) return
     try {
@@ -21,32 +32,92 @@ function SubtarefaItem({ sub, onUpdate, onDelete, readonly }) {
       onUpdate()
     } catch { toast.error('Erro ao atualizar') }
   }
+
+  const salvar = async () => {
+    if (!form.nome.trim()) return
+    setSaving(true)
+    try {
+      await subtarefasAPI.atualizar(sub.id, {
+        nome:          form.nome.trim(),
+        responsavel_id: form.responsavel_id ? parseInt(form.responsavel_id) : null,
+        data_inicio:   form.data_inicio || null,
+        data_fim:      form.data_fim    || null,
+      })
+      setEditando(false)
+      onUpdate()
+    } catch { toast.error('Erro ao salvar') }
+    finally { setSaving(false) }
+  }
+
   return (
-    <div style={{ display:'flex', alignItems:'center', gap:8, padding:'5px 0', borderBottom:'0.5px solid var(--border)' }}>
-      <button onClick={toggle} title={`Status: ${cfg.label} — clique para avançar`}
-        style={{ flexShrink:0, width:20, height:20, borderRadius:4, border:`1.5px solid ${cfg.cor}`,
-          background: sub.status === 'concluida' ? cfg.cor : cfg.bg,
-          display:'flex', alignItems:'center', justifyContent:'center', cursor: readonly ? 'default' : 'pointer' }}>
-        {sub.status === 'concluida' && <Check size={11} color="#fff" />}
-      </button>
-      <span style={{ flex:1, fontSize:12, textDecoration: sub.status === 'concluida' ? 'line-through' : 'none',
-        color: sub.status === 'concluida' ? 'var(--text-3)' : 'var(--text)' }}>
-        {sub.nome}
-      </span>
-      {sub.data_prazo && (
-        <span style={{ fontSize:10, color:'var(--text-3)', whiteSpace:'nowrap' }}>
-          {new Date(sub.data_prazo).toLocaleDateString('pt-BR')}
-        </span>
-      )}
-      <span style={{ fontSize:10, fontWeight:600, color:cfg.cor, background:cfg.bg,
-        padding:'1px 7px', borderRadius:99, whiteSpace:'nowrap' }}>
-        {cfg.label}
-      </span>
-      {!readonly && (
-        <button className="btn btn-ghost btn-sm" style={{ padding:'2px 4px', color:'var(--text-3)' }}
-          onClick={() => onDelete(sub.id)}>
-          <Trash2 size={11} />
+    <div style={{ padding:'6px 0', borderBottom:'0.5px solid var(--border)' }}>
+      <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+        <button onClick={toggle} title={`Status: ${cfg.label} — clique para avançar`}
+          style={{ flexShrink:0, width:20, height:20, borderRadius:4, border:`1.5px solid ${cfg.cor}`,
+            background: sub.status === 'concluida' ? cfg.cor : cfg.bg,
+            display:'flex', alignItems:'center', justifyContent:'center', cursor: readonly ? 'default' : 'pointer' }}>
+          {sub.status === 'concluida' && <Check size={11} color="#fff" />}
         </button>
+        <span style={{ flex:1, fontSize:12, textDecoration: sub.status === 'concluida' ? 'line-through' : 'none',
+          color: sub.status === 'concluida' ? 'var(--text-3)' : 'var(--text)' }}>
+          {sub.nome}
+        </span>
+        <span style={{ fontSize:10, fontWeight:600, color:cfg.cor, background:cfg.bg,
+          padding:'1px 7px', borderRadius:99, whiteSpace:'nowrap' }}>
+          {cfg.label}
+        </span>
+        {!readonly && (
+          <>
+            <button className="btn btn-ghost btn-sm" style={{ padding:'2px 4px', color:'var(--text-3)' }}
+              onClick={() => setEditando(v => !v)} title="Editar">
+              <Pencil size={11} />
+            </button>
+            <button className="btn btn-ghost btn-sm" style={{ padding:'2px 4px', color:'var(--text-3)' }}
+              onClick={() => onDelete(sub.id)} title="Excluir">
+              <Trash2 size={11} />
+            </button>
+          </>
+        )}
+      </div>
+
+      {(sub.responsavel || sub.data_inicio || sub.data_fim || sub.data_prazo) && !editando && (
+        <div style={{ display:'flex', gap:12, marginTop:3, marginLeft:28, fontSize:10, color:'var(--text-3)', flexWrap:'wrap' }}>
+          {sub.responsavel && <span>👤 {sub.responsavel.nome}</span>}
+          {sub.data_inicio && <span>▶ {fmtData(sub.data_inicio)}</span>}
+          {sub.data_fim    && <span>◼ {fmtData(sub.data_fim)}</span>}
+          {sub.data_prazo  && <span>⏰ prazo {fmtData(sub.data_prazo)}</span>}
+        </div>
+      )}
+
+      {editando && (
+        <div style={{ marginTop:6, marginLeft:28 }}>
+          <div style={{ display:'flex', gap:6, marginBottom:5 }}>
+            <input value={form.nome} autoFocus
+              onChange={e=>setForm(f=>({...f,nome:e.target.value}))}
+              style={{ flex:1, fontSize:12, padding:'4px 8px' }}
+              onKeyDown={e=>e.key==='Enter'&&salvar()} />
+          </div>
+          <div style={{ display:'flex', gap:6, marginBottom:5 }}>
+            <select value={form.responsavel_id}
+              onChange={e=>setForm(f=>({...f,responsavel_id:e.target.value}))}
+              style={{ flex:1, fontSize:12, padding:'4px 8px' }}>
+              <option value="">Responsável (opcional)</option>
+              {(usuarios||[]).map(u=><option key={u.id} value={u.id}>{u.nome}</option>)}
+            </select>
+            <input type="date" value={form.data_inicio}
+              onChange={e=>setForm(f=>({...f,data_inicio:e.target.value}))}
+              style={{ width:130, fontSize:12, padding:'4px 8px' }} title="Data início" />
+            <input type="date" value={form.data_fim}
+              onChange={e=>setForm(f=>({...f,data_fim:e.target.value}))}
+              style={{ width:130, fontSize:12, padding:'4px 8px' }} title="Data fim" />
+          </div>
+          <div style={{ display:'flex', gap:5, justifyContent:'flex-end' }}>
+            <button className="btn btn-sm" onClick={()=>setEditando(false)}>Cancelar</button>
+            <button className="btn btn-primary btn-sm" onClick={salvar} disabled={saving||!form.nome.trim()}>
+              {saving?'...':'Salvar'}
+            </button>
+          </div>
+        </div>
       )}
     </div>
   )
@@ -59,8 +130,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
   const [comentarios,  setComentarios]  = useState([])
   const [subtarefas,   setSubtarefas]   = useState(tarefa.subtarefas || [])
   const [novoComent,   setNovoComent]   = useState('')
-  const [novaSub,      setNovaSub]      = useState('')
-  const [novoPrazoSub, setNovoPrazoSub] = useState('')
+  const [novaSubForm,  setNovaSubForm]  = useState({ nome:'', responsavel_id:'', data_inicio:'', data_fim:'' })
   const [loadingComent, setLoadingComent] = useState(false)
   const [savingSub,    setSavingSub]    = useState(false)
   const [formEdit, setFormEdit] = useState({
@@ -182,16 +252,19 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
   }
 
   const adicionarSub = async () => {
-    if (!novaSub.trim()) return
+    if (!novaSubForm.nome.trim()) return
     setSavingSub(true)
     try {
       await subtarefasAPI.criar({
         tarefa_id: tarefa.id,
-        nome: novaSub.trim(),
-        data_prazo: novoPrazoSub || null,
+        nome: novaSubForm.nome.trim(),
+        responsavel_id: novaSubForm.responsavel_id ? parseInt(novaSubForm.responsavel_id) : null,
+        data_inicio: novaSubForm.data_inicio || null,
+        data_fim: novaSubForm.data_fim || null,
         ordem: subtarefas.length,
       })
-      setNovaSub(''); setNovoPrazoSub('')
+      setNovaSubForm({ nome:'', responsavel_id:'', data_inicio:'', data_fim:'' })
+      setShowAddSub(false)
       await recarregarSubs()
     } catch { toast.error('Erro ao adicionar subtarefa') }
     finally { setSavingSub(false) }
@@ -306,25 +379,46 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
       {/* Painel de subtarefas */}
       {showSubs && (
         <div style={{ padding:'8px 12px 12px 36px', background:'var(--bg)' }}>
-          <div style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:8 }}>
-            Subtarefas
+          <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
+            <span style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', letterSpacing:'.05em' }}>
+              Subtarefas
+            </span>
+            <button className="btn btn-ghost btn-sm" style={{ padding:'2px 5px' }} title="Fechar"
+              onClick={() => setShowSubs(false)}>
+              <X size={12} />
+            </button>
           </div>
-          {subtarefas.length === 0 && (
+          {subtarefas.length === 0 && !showAddSub && (
             <div style={{ fontSize:12, color:'var(--text-3)', marginBottom:8 }}>Nenhuma subtarefa ainda.</div>
           )}
           {subtarefas.map(s => (
-            <SubtarefaItem key={s.id} sub={s} onUpdate={recarregarSubs} onDelete={deletarSub} readonly={false} />
+            <SubtarefaItem key={s.id} sub={s} onUpdate={recarregarSubs} onDelete={deletarSub} readonly={false} usuarios={usuarios} />
           ))}
           {isConsultor && (
-            <div style={{ display:'flex', gap:6, marginTop:10 }}>
-              <input value={novaSub} onChange={e=>setNovaSub(e.target.value)}
-                placeholder="Nova subtarefa..." style={{ flex:1, fontSize:12, padding:'5px 9px' }}
-                onKeyDown={e=>e.key==='Enter'&&adicionarSub()} />
-              <input type="date" value={novoPrazoSub} onChange={e=>setNovoPrazoSub(e.target.value)}
-                style={{ width:140, fontSize:12, padding:'5px 9px' }} title="Prazo (opcional)" />
-              <button className="btn btn-primary btn-sm" onClick={adicionarSub} disabled={savingSub || !novaSub.trim()}>
-                {savingSub ? '...' : <Plus size={13}/>}
-              </button>
+            <div style={{ marginTop:10 }}>
+              <div style={{ display:'flex', gap:6, marginBottom:6 }}>
+                <input value={novaSubForm.nome}
+                  onChange={e=>setNovaSubForm(f=>({...f,nome:e.target.value}))}
+                  placeholder="Nova subtarefa..." style={{ flex:1, fontSize:12, padding:'5px 9px' }}
+                  onKeyDown={e=>e.key==='Enter'&&adicionarSub()} />
+                <button className="btn btn-primary btn-sm" onClick={adicionarSub} disabled={savingSub || !novaSubForm.nome.trim()}>
+                  {savingSub ? '...' : <Plus size={13}/>}
+                </button>
+              </div>
+              <div style={{ display:'flex', gap:6 }}>
+                <select value={novaSubForm.responsavel_id}
+                  onChange={e=>setNovaSubForm(f=>({...f,responsavel_id:e.target.value}))}
+                  style={{ flex:1, fontSize:12, padding:'5px 9px' }}>
+                  <option value="">Responsável (opcional)</option>
+                  {usuarios.map(u=><option key={u.id} value={u.id}>{u.nome}</option>)}
+                </select>
+                <input type="date" value={novaSubForm.data_inicio}
+                  onChange={e=>setNovaSubForm(f=>({...f,data_inicio:e.target.value}))}
+                  style={{ width:130, fontSize:12, padding:'5px 9px' }} title="Data início" />
+                <input type="date" value={novaSubForm.data_fim}
+                  onChange={e=>setNovaSubForm(f=>({...f,data_fim:e.target.value}))}
+                  style={{ width:130, fontSize:12, padding:'5px 9px' }} title="Data fim" />
+              </div>
             </div>
           )}
         </div>

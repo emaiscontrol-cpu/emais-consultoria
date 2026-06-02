@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, FileSpreadsheet, Target, ArrowRight } from 'lucide-react'
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Target, ArrowRight } from 'lucide-react'
 import { controladoriaAPI } from '../../services/api'
 
 const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })

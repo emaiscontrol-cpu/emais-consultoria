@@ -1,6 +1,6 @@
-import logo from '../assets/logo.png'
+import logo from '../assets/logo.jpeg'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen, TrendingUp, BarChart3, Target, Landmark } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen, Landmark, List, FileSpreadsheet, NotebookPen, PieChart } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
 import { authAPI, notificacoesAPI } from '../services/api'
@@ -43,17 +43,19 @@ export default function Sidebar() {
     } finally { setSalvando(false) }
   }
 
-  const isAdmin          = ['admin'].includes(usuario?.perfil)
-  const isConsultor      = ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
-  const isControladoria  = ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
+  const isAdmin         = ['admin'].includes(usuario?.perfil)
+  // perfis que têm acesso restrito ao cliente vinculado quando possuem cliente_id
+  const isRestrito      = ['cliente','ger_projeto','ti'].includes(usuario?.perfil) && !!usuario?.cliente_id
+  const isConsultor     = isRestrito || ['admin','consultor','ger_projeto','ti'].includes(usuario?.perfil)
+  const isControladoria = isRestrito || ['admin','consultor','ger_projeto','ti'].includes(usuario?.perfil)
 
   return (
     <>
     <aside className="sidebar">
       <div className="sidebar-brand">
         <div style={{ display:'flex', alignItems:'center', gap:9, marginBottom:5 }}>
-          <div style={{ width:40, height:40, overflow:'hidden', borderRadius:8, background:'rgba(255,255,255,0.95)', flexShrink:0 }}>
-            <img src={logo} alt="E Mais" style={{ width:147, height:'auto', display:'block', marginLeft:-54 }} />
+          <div style={{ width:40, height:40, overflow:'hidden', borderRadius:'50%', flexShrink:0 }}>
+            <img src={logo} alt="E Mais" style={{ width:40, height:40, display:'block', objectFit:'cover' }} />
           </div>
           <div className="sidebar-brand-name">E Mais Consultoria</div>
         </div>
@@ -72,6 +74,11 @@ export default function Sidebar() {
           <FolderKanban size={16}/> Projetos
         </NavLink>
 
+        <NavLink to="/dashboard-cliente" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+          <PieChart size={16}/> Dashboard Cliente
+        </NavLink>
+
+
         <NavLink to="/notificacoes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
           <div style={{ position:'relative', display:'inline-flex' }}>
             <Bell size={16}/>
@@ -84,7 +91,7 @@ export default function Sidebar() {
           {' '}Notificações
         </NavLink>
 
-        {isConsultor && (
+        {['admin','consultor'].includes(usuario?.perfil) && (
           <NavLink to="/clientes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
             <Building2 size={16}/> Clientes
           </NavLink>
@@ -94,16 +101,22 @@ export default function Sidebar() {
           <>
             <div className="nav-section">Controladoria</div>
             <NavLink to="/controladoria" end className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <Landmark size={16}/> Visão Geral
+              <Landmark size={16}/> Controladoria
             </NavLink>
-            <NavLink to="/controladoria/fluxo-de-caixa" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <TrendingUp size={16}/> Fluxo de Caixa
+            <NavLink to="/controladoria/planos" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+              <List size={16}/> Planos de Contas
             </NavLink>
-            <NavLink to="/controladoria/dre" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <BarChart3 size={16}/> DRE
+            <NavLink to="/controladoria/balancetes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+              <FileSpreadsheet size={16}/> Balancetes
             </NavLink>
-            <NavLink to="/controladoria/orcamento" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <Target size={16}/> Orçamento
+          </>
+        )}
+
+        {isConsultor && (
+          <>
+            <div className="nav-section">Clientes</div>
+            <NavLink to="/anotacoes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+              <NotebookPen size={16}/> Anotações
             </NavLink>
           </>
         )}
@@ -137,7 +150,7 @@ export default function Sidebar() {
               {usuario?.nome}
             </div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,.40)' }}>
-              {{ admin:'Administrador', consultor:'Consultor', ger_projeto:'Ger. Projeto', cliente:'Cliente' }[usuario?.perfil]}
+              {{ admin:'Administrador', consultor:'Consultor', ger_projeto:'Ger. Projeto', cliente:'Cliente', ti:'T.I' }[usuario?.perfil]}
             </div>
           </div>
         </div>

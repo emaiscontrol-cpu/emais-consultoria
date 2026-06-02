@@ -15,6 +15,12 @@ import Relatorios from './pages/Relatorios'
 import Manual from './pages/Manual'
 import ControladoriaIndex from './pages/controladoria/Index'
 import FluxoCaixa from './pages/controladoria/FluxoCaixa'
+import DRE from './pages/controladoria/DRE'
+import Orcamento from './pages/controladoria/Orcamento'
+import Planos from './pages/controladoria/Planos'
+import Balancetes from './pages/controladoria/Balancetes'
+import Anotacoes from './pages/Anotacoes'
+import DashboardCliente from './pages/DashboardCliente'
 import './index.css'
 
 function AvisoNovaVersao() {
@@ -87,8 +93,12 @@ function ProtectedLayout() {
           <Route path="/manual"                        element={<Manual />} />
           <Route path="/controladoria"                 element={<ControladoriaIndex />} />
           <Route path="/controladoria/fluxo-de-caixa" element={<FluxoCaixa />} />
-          <Route path="/controladoria/dre"             element={<ControladoriaIndex />} />
-          <Route path="/controladoria/orcamento"       element={<ControladoriaIndex />} />
+          <Route path="/controladoria/dre"             element={<DRE />} />
+          <Route path="/controladoria/orcamento"       element={<Orcamento />} />
+          <Route path="/controladoria/planos"      element={<Planos />} />
+          <Route path="/controladoria/balancetes" element={<Balancetes />} />
+          <Route path="/anotacoes"               element={<Anotacoes />} />
+          <Route path="/dashboard-cliente"       element={<DashboardCliente />} />
         </Routes>
       </div>
     </div>
