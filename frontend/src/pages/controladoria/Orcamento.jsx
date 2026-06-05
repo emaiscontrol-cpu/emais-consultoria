@@ -135,31 +135,32 @@ export default function Orcamento() {
     }))
   }, [clienteId, ano])
 
-  // ── Estilos por tipo de linha — mesma hierarquia visual do Planos.jsx ──
+  // ── Estilos por tipo — hierarquia visual DRE ──────────────────────────────
+  const BG = {
+    RES: '#0d3320',
+    TT:  '#0A1C4E',
+    GRP: '#071230',
+    NN:  'transparent',
+  }
   const estiloLinha = (tipo) => {
-    if (tipo === 'RES') return {
-      background: 'linear-gradient(90deg,#e6f4ec 0%,#f2faf5 60%,transparent 100%)',
-      borderLeft: '3px solid var(--green,#22c55e)',
-      fontWeight: 700, fontSize: 13,
-    }
-    if (tipo === 'TT') return {
-      background: 'linear-gradient(90deg,#e8f0ff 0%,#f4f7ff 60%,transparent 100%)',
-      borderLeft: '3px solid var(--brand)',
-      fontWeight: 700, fontSize: 13,
-    }
-    if (tipo === 'GRP') return {
-      background: 'linear-gradient(90deg,#dce8ff 0%,#eef4ff 60%,transparent 100%)',
-      borderLeft: '3px solid var(--brand)',
-      fontWeight: 800, fontSize: 13,
-    }
-    return { borderLeft: '3px solid transparent' }
+    if (tipo === 'RES') return { background: BG.RES, borderLeft: '3px solid #22c55e', fontWeight: 700, fontSize: 13 }
+    if (tipo === 'TT')  return { background: BG.TT,  borderLeft: '3px solid var(--brand)', fontWeight: 700, fontSize: 13 }
+    if (tipo === 'GRP') return { background: BG.GRP, borderLeft: '3px solid var(--brand)', fontWeight: 800, fontSize: 13 }
+    return { background: BG.NN, borderLeft: '3px solid transparent' }
   }
 
   const corTexto = (tipo) => {
-    if (tipo === 'RES') return 'var(--green,#16a34a)'
-    if (tipo === 'TT')  return 'var(--brand)'
-    if (tipo === 'GRP') return 'var(--brand)'
+    if (tipo === 'RES') return '#4ade80'
+    if (tipo === 'TT')  return '#e2e8ff'
+    if (tipo === 'GRP') return '#94a8ff'
     return 'var(--text)'
+  }
+
+  const bgSticky = (tipo) => {
+    if (tipo === 'RES') return BG.RES
+    if (tipo === 'TT')  return BG.TT
+    if (tipo === 'GRP') return BG.GRP
+    return 'var(--surface,#fff)'
   }
 
   const total12 = (conta) =>
@@ -249,12 +250,12 @@ export default function Orcamento() {
 
                 if (linha.tipo === 'GRP') {
                   return (
-                    <tr key={linha.item_id} style={{ ...estilo, borderBottom: '1px solid var(--border)' }}>
+                    <tr key={linha.item_id} style={{ ...estilo, borderBottom: '1px solid rgba(255,255,255,.06)' }}>
                       <td colSpan={14} style={{
-                        padding: '8px 14px',
+                        padding: '9px 14px',
                         textTransform: 'uppercase',
-                        letterSpacing: '.05em',
-                        fontSize: 13, fontWeight: 800,
+                        letterSpacing: '.07em',
+                        fontSize: 11, fontWeight: 800,
                         color: corTexto('GRP'),
                       }}>
                         {linha.descricao}
@@ -263,25 +264,25 @@ export default function Orcamento() {
                   )
                 }
 
+                const isTitulo = linha.tipo === 'TT' || linha.tipo === 'RES'
+
                 return (
                   <tr key={linha.item_id}
-                    style={{ ...estilo, borderBottom: '1px solid var(--border)' }}
-                    onMouseEnter={e => { if (!estilo.background) e.currentTarget.style.background = 'var(--bg,#f9fafb)' }}
-                    onMouseLeave={e => { if (!estilo.background) e.currentTarget.style.background = '' }}>
+                    style={{ ...estilo, borderBottom: isTitulo ? '1px solid rgba(255,255,255,.08)' : '1px solid var(--border)' }}
+                    onMouseEnter={e => { if (editavel) e.currentTarget.style.background = 'var(--bg,#f9fafb)' }}
+                    onMouseLeave={e => { if (editavel) e.currentTarget.style.background = '' }}>
 
                     {/* Nome da conta */}
                     <td style={{
                       padding: '6px 12px',
                       paddingLeft: editavel ? 28 : 14,
                       position: 'sticky', left: 0, zIndex: 1,
-                      background: estilo.background
-                        ? estilo.background.replace('transparent','var(--surface,#fff)')
-                        : 'var(--surface,#fff)',
+                      background: bgSticky(linha.tipo),
                       color: corTexto(linha.tipo),
                       fontWeight: estilo.fontWeight || 400,
                       fontSize: estilo.fontSize || 12,
-                      textTransform: (linha.tipo === 'TT' || linha.tipo === 'RES') ? 'uppercase' : 'none',
-                      letterSpacing: (linha.tipo === 'TT' || linha.tipo === 'RES') ? '.03em' : 'normal',
+                      textTransform: isTitulo ? 'uppercase' : 'none',
+                      letterSpacing: isTitulo ? '.04em' : 'normal',
                     }}>
                       {linha.descricao}
                     </td>
@@ -310,8 +311,8 @@ export default function Orcamento() {
                     <td style={{ textAlign: 'right', padding: '5px 10px',
                       fontWeight: estilo.fontWeight || 600,
                       color: corTexto(linha.tipo),
-                      borderLeft: '2px solid var(--border)',
-                      background: estilo.background || 'var(--bg)' }}>
+                      borderLeft: isTitulo ? '2px solid rgba(255,255,255,.1)' : '2px solid var(--border)',
+                      background: bgSticky(linha.tipo) }}>
                       {(() => {
                         const t = total12(linha.conta)
                         return t !== 0
