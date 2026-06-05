@@ -28,8 +28,13 @@ export default function Login() {
     try {
       await login(form.email, form.senha)
       navigate('/')
-    } catch {
-      toast.error('Email ou senha inválidos')
+    } catch (err) {
+      const msg = err?.response?.data?.detail
+      if (msg) {
+        toast.error(msg)
+      } else {
+        toast.error('Email ou senha inválidos')
+      }
     } finally {
       setLoading(false)
     }

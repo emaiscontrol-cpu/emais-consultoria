@@ -11,6 +11,8 @@ def login(req: schemas.LoginRequest, db: Session = Depends(get_db)):
     usuario = db.query(models.Usuario).filter(models.Usuario.email == req.email).first()
     if not usuario or not verificar_senha(req.senha, usuario.senha_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou senha inválidos")
+    if not usuario.ativo:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta desativada. Entre em contato com o administrador.")
     token = criar_token({"sub": usuario.email, "perfil": usuario.perfil})
     return {"access_token": token, "token_type": "bearer", "usuario": usuario}
 
