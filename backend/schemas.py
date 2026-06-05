@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, field_validator
 from typing import Optional, List
 from datetime import datetime
 from models import PerfilEnum, StatusTarefa, StatusFase, StatusProjeto, StatusSubtarefa
@@ -43,6 +43,11 @@ class ClienteCreate(BaseModel):
     contato_nome: Optional[str] = None
     contato_email: Optional[str] = None
     contato_fone: Optional[str] = None
+
+    @field_validator('cnpj', 'contato_nome', 'contato_email', 'contato_fone', mode='before')
+    @classmethod
+    def vazio_para_none(cls, v):
+        return None if v == '' else v
 
 class ClienteOut(BaseModel):
     id: int

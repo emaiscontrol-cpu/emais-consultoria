@@ -20,13 +20,9 @@ def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)
 
 @router.post("/", response_model=schemas.ClienteOut)
 def criar(data: schemas.ClienteCreate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
-    try:
-        cliente = models.Cliente(**data.model_dump())
-        db.add(cliente); db.commit(); db.refresh(cliente)
-        return cliente
-    except Exception as exc:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=f"{type(exc).__name__}: {exc}")
+    cliente = models.Cliente(**data.model_dump())
+    db.add(cliente); db.commit(); db.refresh(cliente)
+    return cliente
 
 @router.put("/{id}", response_model=schemas.ClienteOut)
 def atualizar(id: int, data: schemas.ClienteCreate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
