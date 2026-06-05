@@ -9,28 +9,24 @@ const ANO_ATUAL = new Date().getFullYear()
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
 function calcularTotais(linhas, vals) {
-  // vals: { conta: { 1: v, 2: v, ... 12: v } }
-  const v = (conta, m) => vals[conta]?.[m] ?? 0
-
-  const calculados = {
-    RLQ:    m => v('FAT',m) - v('DED',m),
-    MV:     m => v('RLQ',m) - v('CMV',m),
-    ML:     m => v('MV',m)  - v('PSS',m),
-    MC:     m => v('ML',m)  - v('DV',m),
-    MC2:    m => v('MC',m)  - v('CFD',m),
-    TCI:    m => ['A1','A3','A4','A8','A10','A14','A16','A23','A7','A5','A11','B5']
-                  .reduce((s, c) => s + v(c, m), 0),
-    EBITDA: m => v('MC2',m) - v('TCI',m) + v('ORO',m),
-  }
-
-  // Re-injeta os totais calculados em vals para que dependências encadeadas funcionem
   const result = { ...vals }
-  for (const conta of Object.keys(calculados)) {
+  // v lê de result para que cálculos em cascata funcionem (RLQ→MV→ML→MC→MC2→EBITDA)
+  const v = (conta, m) => result[conta]?.[m] ?? 0
+
+  const calcular = (conta, fn) => {
     result[conta] = {}
-    for (let m = 1; m <= 12; m++) {
-      result[conta][m] = calculados[conta](m)
-    }
+    for (let m = 1; m <= 12; m++) result[conta][m] = fn(m)
   }
+
+  calcular('RLQ',    m => v('FAT',m) - v('DED',m))
+  calcular('MV',     m => v('RLQ',m) - v('CMV',m))
+  calcular('ML',     m => v('MV',m)  - v('PSS',m))
+  calcular('MC',     m => v('ML',m)  - v('DV',m))
+  calcular('MC2',    m => v('MC',m)  - v('CFD',m))
+  calcular('TCI',    m => ['A1','A3','A4','A8','A10','A14','A16','A23','A7','A5','A11','B5']
+                            .reduce((s, c) => s + v(c, m), 0))
+  calcular('EBITDA', m => v('MC2',m) - v('TCI',m) + v('ORO',m))
+
   return result
 }
 
@@ -139,22 +135,25 @@ export default function Orcamento() {
     }))
   }, [clienteId, ano])
 
-  // ── Estilos por tipo de linha ─────────────────────────────────────────────
+  // ── Estilos por tipo de linha — mesma hierarquia visual do Template de Planos ──
   const estiloLinha = (tipo) => {
     if (tipo === 'RES') return {
-      background: '#071e10', fontWeight: 800, fontSize: 14,
-      borderTop: '2px solid #1a7a3a',
+      background: 'linear-gradient(90deg,#0d3320 0%,#0a2218 60%,transparent 100%)',
+      borderLeft: '3px solid #22c55e',
+      fontWeight: 800, fontSize: 13,
     }
     if (tipo === 'TT') return {
-      background: 'rgba(0,150,207,.07)', fontWeight: 700, fontSize: 12,
+      background: 'linear-gradient(90deg,rgba(0,150,207,.10) 0%,rgba(0,150,207,.04) 60%,transparent 100%)',
+      borderLeft: '3px solid var(--brand)',
+      fontWeight: 700, fontSize: 13,
     }
     if (tipo === 'GRP') return {
-      background: '#0A1C4E', fontWeight: 800, fontSize: 14,
-      letterSpacing: '.07em', color: '#fff',
-      borderTop: '3px solid rgba(0,150,207,.4)',
-      borderBottom: '1px solid rgba(0,150,207,.2)',
+      background: '#0A1C4E',
+      borderLeft: '3px solid var(--brand)',
+      fontWeight: 800, fontSize: 13,
+      color: '#fff',
     }
-    return {}
+    return { borderLeft: '3px solid transparent' }
   }
 
   const corTexto = (tipo) => {
@@ -252,8 +251,10 @@ export default function Orcamento() {
                   return (
                     <tr key={linha.item_id} style={estilo}>
                       <td colSpan={14} style={{
-                        padding: '10px 14px', textTransform: 'uppercase',
-                        ...estilo,
+                        padding: '9px 14px',
+                        textTransform: 'uppercase',
+                        letterSpacing: '.06em',
+                        fontSize: 13, fontWeight: 800, color: '#fff',
                       }}>
                         {linha.descricao}
                       </td>
@@ -275,9 +276,9 @@ export default function Orcamento() {
                       background: estilo.background || 'var(--surface)',
                       color: corTexto(linha.tipo),
                       fontWeight: estilo.fontWeight || 400,
-                      fontSize: estilo.fontSize,
-                      textTransform: (linha.tipo === 'RES') ? 'uppercase' : 'none',
-                      letterSpacing: (linha.tipo === 'RES') ? '.05em' : 'normal',
+                      fontSize: estilo.fontSize || 12,
+                      textTransform: (linha.tipo === 'TT' || linha.tipo === 'RES') ? 'uppercase' : 'none',
+                      letterSpacing: (linha.tipo === 'TT' || linha.tipo === 'RES') ? '.03em' : 'normal',
                     }}>
                       {linha.descricao}
                     </td>

@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 5173,
     proxy: {
-      '/api': { target: 'https://earlobe-feeble-aground.ngrok-free.dev', changeOrigin: true, headers: { 'ngrok-skip-browser-warning': '1' } }
+      '/api': { target: 'http://localhost:8000', changeOrigin: true }
     }
   }
 })
