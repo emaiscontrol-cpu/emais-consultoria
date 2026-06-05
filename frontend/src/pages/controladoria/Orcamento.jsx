@@ -15,7 +15,8 @@ function calcularTotais(linhas, vals) {
   const calculados = {
     RLQ:    m => v('FAT',m) - v('DED',m),
     MV:     m => v('RLQ',m) - v('CMV',m),
-    MC:     m => v('MV',m)  - v('DV',m),
+    ML:     m => v('MV',m)  - v('PSS',m),
+    MC:     m => v('ML',m)  - v('DV',m),
     MC2:    m => v('MC',m)  - v('CFD',m),
     TCI:    m => ['A1','A3','A4','A8','A10','A14','A16','A23','A7','A5','A11','B5']
                   .reduce((s, c) => s + v(c, m), 0),
@@ -139,16 +140,25 @@ export default function Orcamento() {
   }, [clienteId, ano])
 
   // ── Estilos por tipo de linha ─────────────────────────────────────────────
-  const estiloLinha = (tipo, agrup) => {
-    if (tipo === 'RES') return { background: '#0a2a1a', fontWeight: 700, fontSize: 13 }
-    if (tipo === 'TT')  return { background: 'var(--bg)', fontWeight: 600 }
-    if (tipo === 'GRP') return { background: 'var(--border)', fontWeight: 700, fontSize: 11,
-      textTransform: 'uppercase', letterSpacing: '.06em', color: 'var(--text-3)' }
+  const estiloLinha = (tipo) => {
+    if (tipo === 'RES') return {
+      background: '#071e10', fontWeight: 800, fontSize: 14,
+      borderTop: '2px solid #1a7a3a',
+    }
+    if (tipo === 'TT') return {
+      background: 'rgba(0,150,207,.07)', fontWeight: 700, fontSize: 12,
+    }
+    if (tipo === 'GRP') return {
+      background: '#0A1C4E', fontWeight: 800, fontSize: 14,
+      letterSpacing: '.07em', color: '#fff',
+      borderTop: '3px solid rgba(0,150,207,.4)',
+      borderBottom: '1px solid rgba(0,150,207,.2)',
+    }
     return {}
   }
 
   const corTexto = (tipo) => {
-    if (tipo === 'RES') return 'var(--green)'
+    if (tipo === 'RES') return '#4ade80'
     if (tipo === 'TT')  return 'var(--brand)'
     return 'var(--text)'
   }
@@ -234,14 +244,17 @@ export default function Orcamento() {
             </thead>
             <tbody>
               {dados.linhas.map((linha, idx) => {
-                const estilo    = estiloLinha(linha.tipo, linha.agrupamento)
+                const estilo    = estiloLinha(linha.tipo)
                 const editavel  = linha.tipo == null
                 const vConta    = valsCalculados[linha.conta] || {}
 
                 if (linha.tipo === 'GRP') {
                   return (
                     <tr key={linha.item_id} style={estilo}>
-                      <td colSpan={14} style={{ padding: '7px 12px', ...estilo }}>
+                      <td colSpan={14} style={{
+                        padding: '10px 14px', textTransform: 'uppercase',
+                        ...estilo,
+                      }}>
                         {linha.descricao}
                       </td>
                     </tr>
@@ -255,10 +268,17 @@ export default function Orcamento() {
                     onMouseLeave={e => { if (!estilo.background) e.currentTarget.style.background = '' }}>
 
                     {/* Nome da conta */}
-                    <td style={{ padding: '5px 12px', position: 'sticky', left: 0,
-                      background: estilo.background || 'var(--surface)', zIndex: 1,
-                      color: corTexto(linha.tipo), fontWeight: estilo.fontWeight,
-                      paddingLeft: editavel ? 24 : 12 }}>
+                    <td style={{
+                      padding: '6px 12px',
+                      paddingLeft: editavel ? 28 : 14,
+                      position: 'sticky', left: 0, zIndex: 1,
+                      background: estilo.background || 'var(--surface)',
+                      color: corTexto(linha.tipo),
+                      fontWeight: estilo.fontWeight || 400,
+                      fontSize: estilo.fontSize,
+                      textTransform: (linha.tipo === 'RES') ? 'uppercase' : 'none',
+                      letterSpacing: (linha.tipo === 'RES') ? '.05em' : 'normal',
+                    }}>
                       {linha.descricao}
                     </td>
 
