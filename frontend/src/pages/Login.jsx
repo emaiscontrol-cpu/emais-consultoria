@@ -29,11 +29,10 @@ export default function Login() {
       await login(form.email, form.senha)
       navigate('/')
     } catch (err) {
-      const msg = err?.response?.data?.detail
-      if (msg) {
-        toast.error(msg)
+      if (!err.response) {
+        toast.error('Servidor indisponível. Aguarde e tente novamente.')
       } else {
-        toast.error('Email ou senha inválidos')
+        toast.error(err.response.data?.detail || 'Email ou senha inválidos')
       }
     } finally {
       setLoading(false)
