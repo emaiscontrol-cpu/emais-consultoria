@@ -24,6 +24,7 @@ with engine.connect() as conn:
         "ALTER TABLE subtarefas ADD COLUMN responsavel_id INTEGER REFERENCES usuarios(id)",
         "ALTER TABLE subtarefas ADD COLUMN data_inicio DATETIME",
         "ALTER TABLE subtarefas ADD COLUMN data_fim DATETIME",
+        "ALTER TABLE usuarios ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
         # Tabela nova — create_all já cria, mas garante caso banco antigo
         """CREATE TABLE IF NOT EXISTS orcamento_valores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -92,7 +93,7 @@ app.include_router(balancete.router,      prefix="/api/balancete",      tags=["B
 app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
 app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["Orçamento"])
 
-app.version = "2.1.0d"
+app.version = "2.1.0e"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -113,6 +114,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
