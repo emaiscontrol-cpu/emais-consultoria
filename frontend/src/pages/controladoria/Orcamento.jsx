@@ -135,30 +135,30 @@ export default function Orcamento() {
     }))
   }, [clienteId, ano])
 
-  // ── Estilos por tipo de linha — mesma hierarquia visual do Template de Planos ──
+  // ── Estilos por tipo de linha — mesma hierarquia visual do Planos.jsx ──
   const estiloLinha = (tipo) => {
     if (tipo === 'RES') return {
-      background: 'linear-gradient(90deg,#0d3320 0%,#0a2218 60%,transparent 100%)',
-      borderLeft: '3px solid #22c55e',
-      fontWeight: 800, fontSize: 13,
+      background: 'linear-gradient(90deg,#e6f4ec 0%,#f2faf5 60%,transparent 100%)',
+      borderLeft: '3px solid var(--green,#22c55e)',
+      fontWeight: 700, fontSize: 13,
     }
     if (tipo === 'TT') return {
-      background: 'linear-gradient(90deg,rgba(0,150,207,.10) 0%,rgba(0,150,207,.04) 60%,transparent 100%)',
+      background: 'linear-gradient(90deg,#e8f0ff 0%,#f4f7ff 60%,transparent 100%)',
       borderLeft: '3px solid var(--brand)',
       fontWeight: 700, fontSize: 13,
     }
     if (tipo === 'GRP') return {
-      background: '#0A1C4E',
+      background: 'linear-gradient(90deg,#dce8ff 0%,#eef4ff 60%,transparent 100%)',
       borderLeft: '3px solid var(--brand)',
       fontWeight: 800, fontSize: 13,
-      color: '#fff',
     }
     return { borderLeft: '3px solid transparent' }
   }
 
   const corTexto = (tipo) => {
-    if (tipo === 'RES') return '#4ade80'
+    if (tipo === 'RES') return 'var(--green,#16a34a)'
     if (tipo === 'TT')  return 'var(--brand)'
+    if (tipo === 'GRP') return 'var(--brand)'
     return 'var(--text)'
   }
 
@@ -249,12 +249,13 @@ export default function Orcamento() {
 
                 if (linha.tipo === 'GRP') {
                   return (
-                    <tr key={linha.item_id} style={estilo}>
+                    <tr key={linha.item_id} style={{ ...estilo, borderBottom: '1px solid var(--border)' }}>
                       <td colSpan={14} style={{
-                        padding: '9px 14px',
+                        padding: '8px 14px',
                         textTransform: 'uppercase',
-                        letterSpacing: '.06em',
-                        fontSize: 13, fontWeight: 800, color: '#fff',
+                        letterSpacing: '.05em',
+                        fontSize: 13, fontWeight: 800,
+                        color: corTexto('GRP'),
                       }}>
                         {linha.descricao}
                       </td>
@@ -265,7 +266,7 @@ export default function Orcamento() {
                 return (
                   <tr key={linha.item_id}
                     style={{ ...estilo, borderBottom: '1px solid var(--border)' }}
-                    onMouseEnter={e => { if (!estilo.background) e.currentTarget.style.background = 'var(--bg)' }}
+                    onMouseEnter={e => { if (!estilo.background) e.currentTarget.style.background = 'var(--bg,#f9fafb)' }}
                     onMouseLeave={e => { if (!estilo.background) e.currentTarget.style.background = '' }}>
 
                     {/* Nome da conta */}
@@ -273,7 +274,9 @@ export default function Orcamento() {
                       padding: '6px 12px',
                       paddingLeft: editavel ? 28 : 14,
                       position: 'sticky', left: 0, zIndex: 1,
-                      background: estilo.background || 'var(--surface)',
+                      background: estilo.background
+                        ? estilo.background.replace('transparent','var(--surface,#fff)')
+                        : 'var(--surface,#fff)',
                       color: corTexto(linha.tipo),
                       fontWeight: estilo.fontWeight || 400,
                       fontSize: estilo.fontSize || 12,
