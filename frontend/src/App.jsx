@@ -21,6 +21,9 @@ import Planos from './pages/controladoria/Planos'
 import Balancetes from './pages/controladoria/Balancetes'
 import Anotacoes from './pages/Anotacoes'
 import DashboardCliente from './pages/DashboardCliente'
+import DashboardFases from './pages/DashboardFases'
+import DashboardTarefas from './pages/DashboardTarefas'
+import DashboardSubtarefas from './pages/DashboardSubtarefas'
 import './index.css'
 
 function AvisoNovaVersao() {
@@ -98,7 +101,10 @@ function ProtectedLayout() {
           <Route path="/controladoria/planos"      element={<Planos />} />
           <Route path="/controladoria/balancetes" element={<Balancetes />} />
           <Route path="/anotacoes"               element={<Anotacoes />} />
-          <Route path="/dashboard-cliente"       element={<DashboardCliente />} />
+          <Route path="/dashboard-cliente"        element={<DashboardCliente />} />
+          <Route path="/dashboard/fases"          element={<DashboardFases />} />
+          <Route path="/dashboard/tarefas"        element={<DashboardTarefas />} />
+          <Route path="/dashboard/subtarefas"     element={<DashboardSubtarefas />} />
         </Routes>
       </div>
     </div>

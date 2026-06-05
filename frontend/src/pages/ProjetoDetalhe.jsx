@@ -264,7 +264,6 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
         ordem: subtarefas.length,
       })
       setNovaSubForm({ nome:'', responsavel_id:'', data_inicio:'', data_fim:'' })
-      setShowAddSub(false)
       await recarregarSubs()
     } catch { toast.error('Erro ao adicionar subtarefa') }
     finally { setSavingSub(false) }
@@ -388,7 +387,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
               <X size={12} />
             </button>
           </div>
-          {subtarefas.length === 0 && !showAddSub && (
+          {subtarefas.length === 0 && (
             <div style={{ fontSize:12, color:'var(--text-3)', marginBottom:8 }}>Nenhuma subtarefa ainda.</div>
           )}
           {subtarefas.map(s => (

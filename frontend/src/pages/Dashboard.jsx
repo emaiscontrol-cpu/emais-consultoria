@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import { ChevronDown, ChevronUp } from 'lucide-react'
 import { dashboardAPI, projetosAPI, relatoriosAPI } from '../services/api'
 import { Badge, Progress, LoadingPage } from '../components/shared'
+import { useAuth } from '../contexts/AuthContext'
 import {
   PieChart, Pie, Cell, Tooltip, Legend, Label, ResponsiveContainer,
   LineChart, Line, XAxis, YAxis, CartesianGrid,
+  BarChart, Bar,
 } from 'recharts'
 import toast from 'react-hot-toast'
 
@@ -26,6 +29,11 @@ const COR = {
   azul:     '#1E88E5',
   cinza:    '#757575',
   bloqueada:'#444',
+}
+
+const STATUS_LABEL = {
+  concluida: 'Concluída', em_andamento: 'Em andamento', pendente: 'Pendente',
+  bloqueada: 'Bloqueada', atrasada: 'Atrasada', pausado: 'Pausado',
 }
 
 const STATUS_BAR = {
@@ -51,13 +59,18 @@ const sectionLabel = {
 function LegendaPizza({ payload = [] }) {
   return (
     <ul style={{ listStyle:'none', padding:0, margin:0, display:'flex', flexDirection:'column', gap:7 }}>
-      {payload.map(e => (
-        <li key={e.value} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11 }}>
-          <span style={{ width:10, height:10, borderRadius:2, background:e.color, flexShrink:0, display:'inline-block' }}/>
-          <span style={{ color:D.text2, flex:1 }}>{e.value}</span>
-          <span style={{ fontWeight:700, color:D.text }}>{e.payload?.value ?? 0}</span>
-        </li>
-      ))}
+      {payload.map((e, i) => {
+        const cor   = e.color ?? e.payload?.color ?? ''
+        const label = labelPizza(cor) ?? e.value ?? ''
+        const valor = e.payload?.value ?? 0
+        return (
+          <li key={i} style={{ display:'flex', alignItems:'center', gap:8, fontSize:11 }}>
+            <span style={{ width:10, height:10, borderRadius:2, background:cor, flexShrink:0, display:'inline-block' }}/>
+            <span style={{ color:D.text2, flex:1 }}>{label}</span>
+            <span style={{ fontWeight:700, color:D.text }}>{valor}</span>
+          </li>
+        )
+      })}
     </ul>
   )
 }
@@ -100,10 +113,30 @@ function DonutGeral({ data, total, perc }) {
           )}/>
         </Pie>
         <Legend content={LegendaPizza} layout="vertical" align="right" verticalAlign="middle"/>
-        <Tooltip formatter={(v, n) => [v, n]}
-          contentStyle={{ background:D.card2, border:`1px solid ${D.border}`, borderRadius:8, color:D.text }}/>
       </PieChart>
     </ResponsiveContainer>
+  )
+}
+
+function labelPizza(cor) {
+  const c = (cor || '').toLowerCase()
+  if (c.includes('a32d2d')) return 'Parado'
+  if (c.includes('c97d10')) return 'Em andamento'
+  if (c.includes('3b6d11')) return 'Feito'
+  return null
+}
+
+function TooltipDonut({ active, payload }) {
+  if (!active || !payload?.length) return null
+  const item  = payload[0]
+  const cor   = item?.payload?.color ?? item?.color ?? item?.fill ?? ''
+  const nome  = labelPizza(cor) ?? 'Parado'
+  const valor = item?.value ?? item?.payload?.value ?? 0
+  return (
+    <div style={{ background:D.card2, border:`1px solid ${D.border}`, borderRadius:8,
+      padding:'7px 12px', fontSize:12, color:D.text }}>
+      <span style={{ color:cor, marginRight:6 }}>●</span>{nome}: <strong>{valor}</strong>
+    </div>
   )
 }
 
@@ -127,79 +160,160 @@ function DonutFase({ data, total, perc }) {
             </g>
           )}/>
         </Pie>
-        <Tooltip formatter={(v, n) => [v, n]}
-          contentStyle={{ background:D.card2, border:`1px solid ${D.border}`, borderRadius:8, color:D.text }}/>
       </PieChart>
     </ResponsiveContainer>
   )
 }
 
-function Gantt({ itens }) {
-  const comDatas = itens.filter(g => g.inicio && g.fim)
-  if (!comDatas.length) return (
+function ProgressoFases({ itens, porFase }) {
+  const [aberto, setAberto] = useState({})
+
+  const grupos = []
+  let atual = null
+  for (const item of itens) {
+    if (item.tipo === 'fase') { atual = { fase: item, tarefas: [] }; grupos.push(atual) }
+    else if (atual) atual.tarefas.push(item)
+  }
+
+  if (!grupos.length) return (
     <p style={{ color:D.text2, fontSize:12, padding:'20px 0', textAlign:'center' }}>
-      Adicione datas de início e fim às fases/tarefas para visualizar o cronograma.
+      Nenhuma fase cadastrada neste projeto.
     </p>
   )
 
-  const ms   = d => new Date(d).getTime()
-  const all  = comDatas.flatMap(g => [ms(g.inicio), ms(g.fim)])
-  const min  = Math.min(...all), max = Math.max(...all)
-  const span = Math.max(1, max - min)
+  const cor    = s => STATUS_BAR[s] || '#555'
+  const toggle = id => setAberto(p => ({ ...p, [id]: !p[id] }))
 
-  const LABEL = 180, CHART = 560, ROW = 30, PAD = 10
-
-  const ticks = Array.from({ length: 7 }, (_, i) => ({
-    x: LABEL + CHART * i / 6,
-    label: new Date(min + span * i / 6).toLocaleDateString('pt-BR', { day:'2-digit', month:'short' }),
-  }))
+  // Quais fases estão expandidas
+  const expandidas = grupos.filter(g => aberto[g.fase.id])
 
   return (
-    <div style={{ overflowX:'auto' }}>
-      <svg width={LABEL + CHART} height={PAD * 2 + 22 + comDatas.length * ROW}
-        style={{ fontFamily:'inherit', display:'block' }}>
-        {ticks.map((t, i) => (
-          <g key={i}>
-            <text x={t.x} y={14} fontSize={9} fill={D.text2} textAnchor="middle">{t.label}</text>
-            <line x1={t.x} x2={t.x} y1={20} y2={PAD + 22 + comDatas.length * ROW}
-              stroke={D.grid} strokeWidth={1}/>
-          </g>
-        ))}
-        {comDatas.map((g, i) => {
-          const y   = PAD + 22 + i * ROW
-          const x1  = LABEL + ((ms(g.inicio) - min) / span) * CHART
-          const x2  = LABEL + ((ms(g.fim)    - min) / span) * CHART
-          const bW  = Math.max(6, x2 - x1)
-          const cor = STATUS_BAR[g.status] || D.cinza
-          const h   = g.tipo === 'fase' ? 16 : 10
-          const bY  = y + (ROW - h) / 2 - 2
+    <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:20, alignItems:'start' }}>
+
+      {/* ── Esquerda: accordion de fases ── */}
+      <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+        {grupos.map(({ fase, tarefas }) => {
+          const exp = !!aberto[fase.id]
           return (
-            <g key={g.id}>
-              {i % 2 === 0 && <rect x={0} y={y - 2} width={LABEL + CHART} height={ROW} fill={D.stripe}/>}
-              <text x={g.tipo === 'fase' ? 4 : 14} y={y + ROW / 2 - 1}
-                fontSize={g.tipo === 'fase' ? 11 : 10}
-                fontWeight={g.tipo === 'fase' ? 700 : 400}
-                fill={g.tipo === 'fase' ? D.text : D.text2}
-                dominantBaseline="middle">
-                {g.nome.length > 25 ? g.nome.slice(0, 25) + '…' : g.nome}
-              </text>
-              <rect x={x1} y={bY} width={bW} height={h} rx={3} fill={cor} opacity={0.2}/>
-              <rect x={x1} y={bY} width={Math.max(0, bW * g.progresso / 100)} height={h} rx={3} fill={cor}/>
-              {bW > 32 && (
-                <text x={x1 + bW / 2} y={bY + h / 2} fontSize={8} fill="#fff"
-                  textAnchor="middle" dominantBaseline="middle" fontWeight={700}>
-                  {Math.round(g.progresso)}%
-                </text>
+            <div key={fase.id} style={{ borderRadius:8, overflow:'hidden',
+              border: exp ? `1px solid ${cor(fase.status)}55` : `1px solid ${D.border}`,
+              background: exp ? 'rgba(255,255,255,.04)' : D.card2,
+              transition:'border .2s, background .2s' }}>
+
+              <div style={{ display:'flex', alignItems:'center', gap:12,
+                padding:'10px 14px', cursor:'pointer' }} onClick={() => toggle(fase.id)}>
+                <div style={{ flex:1 }}>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:6 }}>
+                    <span style={{ fontSize:12, fontWeight:700, color:D.text }}>{fase.nome}</span>
+                    <span style={{ fontSize:9, fontWeight:700, color:cor(fase.status),
+                      background:`${cor(fase.status)}22`, padding:'1px 8px', borderRadius:99 }}>
+                      {STATUS_LABEL[fase.status] || fase.status}
+                    </span>
+                    {tarefas.length > 0 && (
+                      <span style={{ fontSize:9, color:D.text2 }}>{tarefas.length} tarefa(s)</span>
+                    )}
+                  </div>
+                  <div style={{ display:'flex', alignItems:'center', gap:10 }}>
+                    <div style={{ flex:1, height:8, background:'rgba(255,255,255,.08)',
+                      borderRadius:99, overflow:'hidden' }}>
+                      <div style={{ width:`${Math.min(fase.progresso,100)}%`, height:'100%',
+                        borderRadius:99, background:cor(fase.status), transition:'width .4s' }}/>
+                    </div>
+                    <span style={{ fontSize:12, fontWeight:800, color:D.text, minWidth:38, textAlign:'right' }}>
+                      {Math.round(fase.progresso)}%
+                    </span>
+                  </div>
+                </div>
+                <button style={{ background:'transparent', border:'none',
+                  color:D.text2, cursor:'pointer', padding:4, display:'flex' }}>
+                  {exp ? <ChevronUp size={15}/> : <ChevronDown size={15}/>}
+                </button>
+              </div>
+
+              {exp && (
+                <div style={{ borderTop:`1px solid ${D.border}`, padding:'8px 14px 12px 24px' }}>
+                  {tarefas.length === 0
+                    ? <p style={{ color:D.text2, fontSize:11, margin:0 }}>Sem tarefas.</p>
+                    : tarefas.map(t => (
+                      <div key={t.id} style={{ display:'flex', alignItems:'center',
+                        gap:10, padding:'5px 0', borderBottom:`0.5px solid ${D.border}` }}>
+                        <div style={{ flex:1 }}>
+                          <div style={{ fontSize:11, color:D.text2, marginBottom:4 }}>{t.nome}</div>
+                          <div style={{ display:'flex', alignItems:'center', gap:8 }}>
+                            <div style={{ flex:1, height:4, background:'rgba(255,255,255,.06)',
+                              borderRadius:99, overflow:'hidden' }}>
+                              <div style={{ width:`${Math.min(t.progresso,100)}%`, height:'100%',
+                                borderRadius:99, background:cor(t.status) }}/>
+                            </div>
+                            <span style={{ fontSize:10, fontWeight:700, color:D.text2,
+                              minWidth:28, textAlign:'right' }}>{Math.round(t.progresso)}%</span>
+                          </div>
+                        </div>
+                        <span style={{ fontSize:9, fontWeight:700, color:cor(t.status),
+                          background:`${cor(t.status)}22`, padding:'1px 7px',
+                          borderRadius:99, whiteSpace:'nowrap' }}>
+                          {STATUS_LABEL[t.status] || t.status}
+                        </span>
+                      </div>
+                    ))
+                  }
+                </div>
               )}
-            </g>
+            </div>
           )
         })}
-      </svg>
+      </div>
+
+      {/* ── Direita: barras de progresso por fase (sempre o mesmo gráfico) ── */}
+      <div>
+        <div style={{ fontSize:10, fontWeight:700, color:D.text2,
+          textTransform:'uppercase', letterSpacing:'.07em', marginBottom:12 }}>
+          Progresso por fase (%)
+        </div>
+        <ResponsiveContainer width="100%" height={Math.max(200, grupos.length * 52 + 60)}>
+          <BarChart data={grupos.map(g => ({
+            nome: g.fase.nome.length > 14 ? g.fase.nome.slice(0,14)+'…' : g.fase.nome,
+            Progresso: Math.round(g.fase.progresso),
+            status: g.fase.status,
+            id: g.fase.id,
+          }))} margin={{ left:0, right:16, top:8, bottom:40 }}>
+            <CartesianGrid strokeDasharray="3 3" stroke={D.grid} vertical={false}/>
+            <XAxis dataKey="nome" tick={{ fontSize:9, fill:D.text2 }}
+              angle={-30} textAnchor="end" interval={0}/>
+            <YAxis domain={[0,100]} tick={{ fontSize:9, fill:D.text2 }}
+              tickFormatter={v => `${v}%`}/>
+            <Tooltip
+              cursor={false}
+              formatter={v => [`${v}%`, 'Progresso']}
+              contentStyle={{ background:D.card2, border:`1px solid ${D.border}`,
+                color:D.text, borderRadius:8, fontSize:12 }}/>
+            <Bar dataKey="Progresso" radius={[4,4,0,0]} maxBarSize={48}
+              activeBar={false}
+              background={props => <rect {...props} fill="transparent" stroke="none"/>}>
+              {grupos.map(g => {
+                const exp = !!aberto[g.fase.id]
+                const temExp = expandidas.length > 0
+                return (
+                  <Cell key={g.fase.id}
+                    fill={cor(g.fase.status)}
+                    opacity={temExp ? (exp ? 1 : 0.25) : 0.85}
+                    stroke={exp ? cor(g.fase.status) : 'none'}
+                    strokeWidth={exp ? 2 : 0}/>
+                )
+              })}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
+      </div>
+
     </div>
   )
 }
 
+const PROJ_KEY = 'emais_dash_projeto'
+
 export default function Dashboard() {
+  const { usuario } = useAuth()
   const [resumo,      setResumo]      = useState(null)
   const [loading,     setLoading]     = useState(true)
   const [projetos,    setProjetos]    = useState([])
@@ -207,12 +321,24 @@ export default function Dashboard() {
   const [dados,       setDados]       = useState(null)
   const [loadingGraf, setLoadingGraf] = useState(false)
 
+  const isCliente = usuario?.perfil === 'cliente'
+
+  const handleProjeto = (id) => {
+    setProjetoId(id)
+    if (id) localStorage.setItem(PROJ_KEY, id)
+  }
+
   useEffect(() => {
     Promise.all([dashboardAPI.resumo(), projetosAPI.listar()])
       .then(([r, p]) => {
         setResumo(r.data)
         setProjetos(p.data)
-        if (p.data.length) setProjetoId(String(p.data[0].id))
+        if (!p.data.length) return
+        const saved  = localStorage.getItem(PROJ_KEY)
+        const valido = saved && p.data.find(x => String(x.id) === saved)
+        const id     = valido ? saved : String(p.data[0].id)
+        setProjetoId(id)
+        localStorage.setItem(PROJ_KEY, id)
       })
       .catch(() => toast.error('Erro ao carregar dashboard'))
       .finally(() => setLoading(false))
@@ -267,12 +393,20 @@ export default function Dashboard() {
       <div style={{ background: D.bg, borderRadius:12, padding:20, marginTop:8 }}>
         <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:20 }}>
           <div style={{ fontSize:13, fontWeight:700, color:D.text }}>Análise do projeto</div>
-          <select value={projetoId} onChange={e => setProjetoId(e.target.value)}
-            style={{ fontSize:13, padding:'7px 14px', minWidth:270, fontWeight:600,
-              background:D.card2, color:D.text, border:`1px solid ${D.border}`,
-              borderRadius:8, outline:'none' }}>
-            {projetos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
-          </select>
+          {isCliente ? (
+            <div style={{ fontSize:13, fontWeight:600, color:D.text,
+              background:D.card2, border:`1px solid ${D.border}`,
+              borderRadius:8, padding:'7px 14px', minWidth:270 }}>
+              {projetos.find(p => String(p.id) === projetoId)?.nome ?? '—'}
+            </div>
+          ) : (
+            <select value={projetoId} onChange={e => handleProjeto(e.target.value)}
+              style={{ fontSize:13, padding:'7px 14px', minWidth:270, fontWeight:600,
+                background:D.card2, color:D.text, border:`1px solid ${D.border}`,
+                borderRadius:8, outline:'none' }}>
+              {projetos.map(p => <option key={p.id} value={p.id}>{p.nome}</option>)}
+            </select>
+          )}
         </div>
 
         {loadingGraf && (
@@ -328,11 +462,11 @@ export default function Dashboard() {
             </div>
           </div>
 
-          {/* Cronograma Gantt */}
+          {/* Progresso por Fase */}
           <div style={{ ...cardDark, marginBottom:14 }}>
             <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:14 }}>
-              <div style={sectionLabel}>Cronograma</div>
-              <div style={{ display:'flex', gap:14 }}>
+              <div style={sectionLabel}>Progresso por Fase</div>
+              <div style={{ display:'flex', gap:12 }}>
                 {[
                   { cor: COR.verde,     label:'Concluída'    },
                   { cor: COR.azul,      label:'Em andamento' },
@@ -341,51 +475,15 @@ export default function Dashboard() {
                   { cor: COR.vermelho,  label:'Atrasada'     },
                 ].map(l => (
                   <div key={l.label} style={{ display:'flex', alignItems:'center', gap:5, fontSize:10, color:D.text2 }}>
-                    <span style={{ width:12, height:6, borderRadius:3, background:l.cor, display:'inline-block' }}/>
+                    <span style={{ width:10, height:10, borderRadius:2, background:l.cor, display:'inline-block' }}/>
                     {l.label}
                   </div>
                 ))}
               </div>
             </div>
-            <Gantt itens={dados.gantt}/>
+            <ProgressoFases itens={dados.gantt} porFase={dados.por_fase}/>
           </div>
 
-          {/* Pizza por fase */}
-          {dados.por_fase.length > 0 && (<>
-            <div style={{ ...sectionLabel, marginBottom:12 }}>Status por Fase</div>
-            <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fill, minmax(220px, 1fr))', gap:12 }}>
-              {dados.por_fase.map(fase => {
-                const p = fase.total > 0 ? Math.round(fase.concluidas / fase.total * 100) : 0
-                return (
-                  <div key={fase.nome} style={{ ...cardDark, padding:'16px 18px' }}>
-                    <div style={{ fontSize:10, color:D.text2, marginBottom:3 }}>Fase {fase.ordem}</div>
-                    <div style={{ fontSize:12, fontWeight:700, color:D.text, marginBottom:6,
-                      whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis' }}>
-                      {fase.nome}
-                    </div>
-                    <DonutFase data={fase.pizza} total={fase.total} perc={p}/>
-                    <div style={{ display:'flex', flexDirection:'column', gap:5, marginTop:8 }}>
-                      {[
-                        { label:'Feito',        val: fase.concluidas,   cor: COR.verde   },
-                        { label:'Em andamento', val: fase.em_andamento, cor: COR.amarelo },
-                        { label:'Parado',       val: fase.paradas,      cor: COR.vermelho},
-                      ].map(l => (
-                        <div key={l.label} style={{ display:'flex', alignItems:'center', gap:7, fontSize:11 }}>
-                          <span style={{ width:8, height:8, borderRadius:2, background:l.cor,
-                            flexShrink:0, display:'inline-block' }}/>
-                          <span style={{ color:D.text2, flex:1 }}>{l.label}</span>
-                          <span style={{ fontWeight:700, color:D.text }}>{l.val}</span>
-                          <span style={{ color:D.text2, minWidth:38, textAlign:'right' }}>
-                            ({fase.total > 0 ? Math.round(l.val / fase.total * 100) : 0}%)
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                )
-              })}
-            </div>
-          </>)}
         </>)}
 
         {!loadingGraf && !dados && projetos.length === 0 && (

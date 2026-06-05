@@ -164,6 +164,13 @@ export const balanceteAPI = {
   deletarPeriodo: (cid, ano, mes)             => api.delete(`/balancete/cliente/${cid}/ano/${ano}/mes/${mes}`),
 }
 
+export const orcamentoAPI = {
+  clientesComPlano: ()                        => api.get('/orcamento/clientes'),
+  obter:            (clienteId, ano)          => api.get(`/orcamento/cliente/${clienteId}/ano/${ano}`),
+  salvar:           (clienteId, ano, itemId, mes, valor) =>
+    api.put(`/orcamento/cliente/${clienteId}/ano/${ano}/item/${itemId}/mes/${mes}`, { valor }),
+}
+
 export const anotacoesAPI = {
   listar:    clienteId         => api.get(`/anotacoes/cliente/${clienteId}`),
   criar:     (clienteId, data) => api.post(`/anotacoes/cliente/${clienteId}`, data),

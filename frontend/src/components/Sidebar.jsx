@@ -1,11 +1,60 @@
 import logo from '../assets/logo.jpeg'
-import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen, Landmark, List, FileSpreadsheet, NotebookPen, PieChart } from 'lucide-react'
+import { NavLink, useNavigate, useLocation } from 'react-router-dom'
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen, Landmark, List, FileSpreadsheet, NotebookPen, PieChart, ChevronDown, ChevronUp, Layers, ListTodo, AlignLeft } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
 import { authAPI, notificacoesAPI } from '../services/api'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+
+const DASH_SUB = [
+  { to: '/',                      label: 'Geral',         icon: LayoutDashboard, end: true },
+  { to: '/dashboard/fases',       label: 'Por Fase',      icon: Layers },
+  { to: '/dashboard/tarefas',     label: 'Por Tarefa',    icon: ListTodo },
+  { to: '/dashboard/subtarefas',  label: 'Por Subtarefa', icon: AlignLeft },
+]
+
+function DashGroup() {
+  const location = useLocation()
+  const isDashActive = location.pathname === '/' || location.pathname.startsWith('/dashboard')
+  const [open, setOpen] = useState(isDashActive)
+
+  useEffect(() => { if (isDashActive) setOpen(true) }, [isDashActive])
+
+  return (
+    <div>
+      <button
+        onClick={() => setOpen(v => !v)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 9, width: '100%',
+          padding: '9px 14px', borderRadius: 7, cursor: 'pointer', border: 'none',
+          background: isDashActive ? 'rgba(255,255,255,.13)' : 'transparent',
+          color: isDashActive ? '#fff' : 'rgba(255,255,255,.62)',
+          fontSize: 13, fontWeight: isDashActive ? 600 : 400,
+          transition: 'background .15s, color .15s',
+        }}
+        onMouseEnter={e => { if (!isDashActive) e.currentTarget.style.background = 'rgba(255,255,255,.07)' }}
+        onMouseLeave={e => { if (!isDashActive) e.currentTarget.style.background = 'transparent' }}
+      >
+        <LayoutDashboard size={16} />
+        <span style={{ flex: 1, textAlign: 'left' }}>Dashboard</span>
+        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+      </button>
+
+      {open && (
+        <div style={{ paddingLeft: 10, marginTop: 2 }}>
+          {DASH_SUB.map(({ to, label, icon: Icon, end }) => (
+            <NavLink key={to} to={to} end={end}
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+              <Icon size={13} /> {label}
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
 
 export default function Sidebar() {
   const { usuario, logout } = useAuth()
@@ -66,9 +115,7 @@ export default function Sidebar() {
       <nav className="sidebar-nav">
         <div className="nav-section">Principal</div>
 
-        <NavLink to="/" end className={({isActive})=>`nav-item${isActive?' active':''}`}>
-          <LayoutDashboard size={16}/> Dashboard
-        </NavLink>
+        <DashGroup />
 
         <NavLink to="/projetos" className={({isActive})=>`nav-item${isActive?' active':''}`}>
           <FolderKanban size={16}/> Projetos

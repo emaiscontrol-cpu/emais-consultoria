@@ -292,7 +292,7 @@ export default function Anotacoes() {
           <form onSubmit={handleSalvar}>
             <div className="form-row">
               <div className="form-group">
-                <label>Data</label>
+                <label>Data *</label>
                 <input type="date" value={form.data} onChange={e => setForm(f => ({...f, data: e.target.value}))} required />
               </div>
               <div className="form-group">
@@ -301,7 +301,7 @@ export default function Anotacoes() {
               </div>
             </div>
             <div className="form-group">
-              <label>Anotação</label>
+              <label>Anotação *</label>
               <textarea
                 rows={5}
                 value={form.texto}

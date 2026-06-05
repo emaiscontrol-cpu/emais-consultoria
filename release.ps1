@@ -72,8 +72,8 @@ Write-Host "Compilando frontend..." -ForegroundColor Cyan
 Set-Location "$PSScriptRoot\frontend"
 npm run build
 
-# Commit e push (inclui o dist compilado)
-git -C $PSScriptRoot add backend/main.py electron-client/package.json frontend/dist
+# Commit e push (inclui backend completo + dist compilado)
+git -C $PSScriptRoot add backend/ electron-client/package.json frontend/dist ORCAMENTO/
 git -C $PSScriptRoot commit -m "Release v$novaVersao"
 git -C $PSScriptRoot push origin main
 

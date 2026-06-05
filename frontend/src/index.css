@@ -1,5 +1,10 @@
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
+/* Remove hover background das barras do recharts */
+.recharts-bar-background-rectangle,
+.recharts-bar-background,
+.recharts-layer.recharts-bar-background { display: none !important; }
+
 /* Scrollbar elegante cilíndrica */
 ::-webkit-scrollbar { width:10px; height:10px; }
 ::-webkit-scrollbar-track {
@@ -102,6 +107,7 @@ tr:last-child td { border-bottom:none; }
 tr:hover td { background:var(--bg); }
 .form-group { display:flex; flex-direction:column; gap:5px; margin-bottom:14px; }
 label { font-size:12px; font-weight:600; color:var(--text-2); }
+label .req { color:var(--red); margin-left:2px; }
 input,select,textarea { padding:8px 11px; border:0.5px solid var(--border-md); border-radius:var(--radius-sm); font-size:13px; font-family:inherit; color:var(--text); background:var(--surface); transition:border-color .12s; width:100%; }
 input:focus,select:focus,textarea:focus { outline:none; border-color:var(--brand); box-shadow:0 0 0 3px rgba(0,150,207,.12); }
 textarea { resize:vertical; min-height:72px; }
