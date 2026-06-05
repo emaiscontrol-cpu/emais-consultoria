@@ -58,7 +58,7 @@ def seed_orcamento(db):
         descricao="Template DRE para varejo — estrutura baseada no modelo SC (importado da planilha ORCAMENTO - SC 3.11.xlsx)",
     )
     db.add(plano)
-    db.flush()  # gera o plano.id
+    db.flush()
 
     for ordem, agrup, conta, desc, tipo, mov in ITENS_VAREJO_SC:
         db.add(PlanoItem(
