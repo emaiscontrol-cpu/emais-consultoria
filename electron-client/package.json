@@ -1,7 +1,8 @@
 ﻿{
     "name":  "emais-consultoria",
-    "version":  "2.0.0l",
-    "description":  "E Mais Consultoria â€” Sistema de GestÃ£o",
+    "version":  "2.0.0m",
+    "description":  "E Mais Consultoria - Sistema de Gestao",
+    "author":  "E Mais Consultoria",
     "main":  "main.js",
     "scripts":  {
                     "start":  "set \"ELECTRON_RUN_AS_NODE=\" \u0026\u0026 electron .",
@@ -11,7 +12,7 @@
     "build":  {
                   "appId":  "br.com.emaiscontrol.consultoria",
                   "productName":  "E Mais Consultoria",
-                  "copyright":  "Â© 2026 E Mais Consultoria",
+                  "copyright":  "2026 E Mais Consultoria",
                   "directories":  {
                                       "output":  "C:\\Temp\\emais-build"
                                   },
