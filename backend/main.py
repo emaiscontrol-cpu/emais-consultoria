@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento
 
 Base.metadata.create_all(bind=engine)
 
@@ -21,6 +21,16 @@ with engine.connect() as conn:
         "ALTER TABLE subtarefas ADD COLUMN responsavel_id INTEGER REFERENCES usuarios(id)",
         "ALTER TABLE subtarefas ADD COLUMN data_inicio DATETIME",
         "ALTER TABLE subtarefas ADD COLUMN data_fim DATETIME",
+        # Tabela nova — create_all já cria, mas garante caso banco antigo
+        """CREATE TABLE IF NOT EXISTS orcamento_valores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plano_item_id INTEGER NOT NULL REFERENCES planos_itens(id),
+            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+            ano INTEGER NOT NULL,
+            mes INTEGER NOT NULL,
+            valor REAL DEFAULT 0.0,
+            UNIQUE(plano_item_id, cliente_id, ano, mes)
+        )""",
     ]:
         try:
             conn.execute(text(stmt))
@@ -31,9 +41,14 @@ with engine.connect() as conn:
 # Seed dados padrÃ£o (executa apenas uma vez)
 from database import SessionLocal
 from seed_controladoria import seed_agrupadores
+from seed_orcamento import seed_orcamento
 _db = SessionLocal()
 try:
     seed_agrupadores(_db)
+    try:
+        seed_orcamento(_db)
+    except Exception as _e:
+        print(f"[warning] seed_orcamento: {_e}")
 finally:
     _db.close()
 
@@ -67,8 +82,9 @@ app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["F
 app.include_router(planos.router,         prefix="/api/planos",         tags=["Planos de Contas"])
 app.include_router(balancete.router,      prefix="/api/balancete",      tags=["Balancete"])
 app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
+app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["Orçamento"])
 
-app.version = "2.0.0o"
+app.version = "2.0.0p"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -89,6 +105,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
