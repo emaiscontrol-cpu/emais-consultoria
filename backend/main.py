@@ -45,6 +45,7 @@ with engine.connect() as conn:
 from database import SessionLocal
 from seed_controladoria import seed_agrupadores
 from seed_orcamento import seed_orcamento
+from seed_dre import seed_dre
 _db = SessionLocal()
 try:
     seed_agrupadores(_db)
@@ -52,6 +53,10 @@ try:
         seed_orcamento(_db)
     except Exception as _e:
         print(f"[warning] seed_orcamento: {_e}")
+    try:
+        seed_dre(_db)
+    except Exception as _e:
+        print(f"[warning] seed_dre: {_e}")
 finally:
     _db.close()
 
@@ -87,7 +92,7 @@ app.include_router(balancete.router,      prefix="/api/balancete",      tags=["B
 app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
 app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["Orçamento"])
 
-app.version = "2.0.0s"
+app.version = "2.0.0t"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -108,6 +113,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
