@@ -6,7 +6,10 @@ from pathlib import Path
 from database import engine, Base
 from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento
 
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+except Exception as _ce:
+    print(f"[warning] create_all: {_ce}")
 
 # Add missing columns to existing tables (safe to run on every startup)
 from sqlalchemy import text
@@ -84,7 +87,7 @@ app.include_router(balancete.router,      prefix="/api/balancete",      tags=["B
 app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
 app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["Orçamento"])
 
-app.version = "2.0.0q"
+app.version = "2.0.0r"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -105,6 +108,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

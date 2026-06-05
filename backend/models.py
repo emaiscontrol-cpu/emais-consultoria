@@ -345,8 +345,6 @@ class OrcamentoValor(Base):
     mes           = Column(Integer, nullable=False)   # 1–12
     valor         = Column(Float, default=0.0)
     __table_args__ = (UniqueConstraint("plano_item_id", "cliente_id", "ano", "mes"),)
-    plano_item    = relationship("PlanoItem", viewonly=True)
-    cliente       = relationship("Cliente",   viewonly=True)
 
 
 class OrcamentoLinha(Base):
