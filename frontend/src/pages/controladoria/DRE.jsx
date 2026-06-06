@@ -46,8 +46,9 @@ export default function DRE() {
   const [vals,       setVals]       = useState({})
   const [loading,    setLoading]    = useState(false)
 
-  // ── Expandir/recolher grupos ──────────────────────────────────────────────
-  const [recolhidos, setRecolhidos] = useState(new Set())
+  // ── Expandir/recolher grupos (GRP) ───────────────────────────────────────
+  const [recolhidos,   setRecolhidos]   = useState(new Set())
+  const [recolhidosTT, setRecolhidosTT] = useState(new Set())
 
   const grpParent = useMemo(() => {
     const map = {}
@@ -59,12 +60,31 @@ export default function DRE() {
     return map
   }, [dados?.linhas])
 
+  // Cada linha NN pertence ao próximo TT abaixo dela (dentro do mesmo GRP)
+  const ttParent = useMemo(() => {
+    const map = {}
+    const linhas = dados?.linhas || []
+    for (let i = 0; i < linhas.length; i++) {
+      if (linhas[i].tipo !== null) continue // só NN
+      for (let j = i + 1; j < linhas.length; j++) {
+        if (linhas[j].tipo === 'GRP') break
+        if (linhas[j].tipo === 'TT') { map[linhas[i].item_id] = linhas[j].item_id; break }
+      }
+    }
+    return map
+  }, [dados?.linhas])
+
   const grpIds = useMemo(
     () => (dados?.linhas || []).filter(l => l.tipo === 'GRP').map(l => l.item_id),
     [dados?.linhas]
   )
+  const ttIds = useMemo(
+    () => (dados?.linhas || []).filter(l => l.tipo === 'TT').map(l => l.item_id),
+    [dados?.linhas]
+  )
 
   const todosRecolhidos = grpIds.length > 0 && grpIds.every(id => recolhidos.has(id))
+                       && ttIds.every(id => recolhidosTT.has(id))
 
   const toggleGrp = id => setRecolhidos(prev => {
     const next = new Set(prev)
@@ -72,11 +92,24 @@ export default function DRE() {
     return next
   })
 
-  const toggleTudo = () =>
-    setRecolhidos(todosRecolhidos ? new Set() : new Set(grpIds))
+  const toggleTT = id => setRecolhidosTT(prev => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
+
+  const toggleTudo = () => {
+    if (todosRecolhidos) {
+      setRecolhidos(new Set())
+      setRecolhidosTT(new Set())
+    } else {
+      setRecolhidos(new Set(grpIds))
+      setRecolhidosTT(new Set(ttIds))
+    }
+  }
 
   // Ao trocar de cliente/ano/unidade, reset collapse
-  useEffect(() => { setRecolhidos(new Set()) }, [clienteId, ano, unidade])
+  useEffect(() => { setRecolhidos(new Set()); setRecolhidosTT(new Set()) }, [clienteId, ano, unidade])
 
   // ── Carregar clientes ────────────────────────────────────────────────────
   useEffect(() => {
@@ -292,10 +325,10 @@ export default function DRE() {
               </thead>
               <tbody>
                 {dados.linhas.map(linha => {
-                  // Ocultar linhas cujo grupo pai está recolhido
-                  if (linha.tipo !== 'GRP' && recolhidos.has(grpParent[linha.item_id])) {
-                    return null
-                  }
+                  // Ocultar se GRP pai recolhido
+                  if (linha.tipo !== 'GRP' && recolhidos.has(grpParent[linha.item_id])) return null
+                  // Ocultar NN se TT pai recolhido
+                  if (linha.tipo === null && recolhidosTT.has(ttParent[linha.item_id])) return null
 
                   const estilo = estiloLinha(linha.tipo)
                   const vConta = vals[linha.conta] || {}
@@ -321,19 +354,30 @@ export default function DRE() {
                     )
                   }
 
-                  const ehNN = linha.tipo == null
+                  const ehNN  = linha.tipo === null
+                  const ehTT  = linha.tipo === 'TT'
+                  const ttRecolhido = ehTT && recolhidosTT.has(linha.item_id)
 
                   return (
-                    <tr key={linha.item_id} style={{ ...estilo, borderBottom: '1px solid var(--border)' }}>
+                    <tr key={linha.item_id}
+                      style={{ ...estilo, borderBottom: '1px solid var(--border)', cursor: ehTT ? 'pointer' : 'default' }}
+                      onClick={ehTT ? () => toggleTT(linha.item_id) : undefined}
+                    >
                       <td style={{
                         padding: '5px 12px',
-                        paddingLeft: ehNN ? 28 : 14,
+                        paddingLeft: ehNN ? 32 : 14,
                         position: 'sticky', left: 0, zIndex: 1,
                         background: bgSticky(linha.tipo),
                         color: corTexto(linha.tipo),
                         fontWeight: estilo.fontWeight || 400,
                         fontSize: estilo.fontSize || 12,
+                        userSelect: ehTT ? 'none' : 'auto',
                       }}>
+                        {ehTT && (
+                          <span style={{ fontSize: 10, opacity: .6, marginRight: 6 }}>
+                            {ttRecolhido ? '▶' : '▼'}
+                          </span>
+                        )}
                         {linha.descricao}
                       </td>
 
