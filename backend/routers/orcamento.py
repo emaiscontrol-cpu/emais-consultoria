@@ -15,6 +15,10 @@ router = APIRouter()
 class ValorUpsert(BaseModel):
     valor: float
 
+class ValorDreUpsert(BaseModel):
+    valor: float
+    unidade: str
+
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -129,6 +133,57 @@ def salvar_valor(
             cliente_id=cliente_id,
             ano=ano,
             mes=mes,
+            valor=body.valor,
+        )
+        db.add(reg)
+
+    db.commit()
+    return {"ok": True, "valor": reg.valor}
+
+
+@router.put("/dre/cliente/{cliente_id}/ano/{ano}/item/{item_id}/mes/{mes}")
+def salvar_valor_dre(
+    cliente_id: int,
+    ano: int,
+    item_id: int,
+    mes: int,
+    body: ValorDreUpsert,
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+        raise HTTPException(403, "Acesso negado")
+    if not 1 <= mes <= 12:
+        raise HTTPException(400, "Mês inválido (1–12)")
+
+    plano = _get_plano_cliente(cliente_id, db)
+    if not plano:
+        raise HTTPException(404, "Cliente sem plano vinculado")
+
+    item = db.query(models.PlanoItem).filter(
+        models.PlanoItem.id == item_id,
+        models.PlanoItem.plano_id == plano.id,
+    ).first()
+    if not item:
+        raise HTTPException(404, "Item não encontrado no plano do cliente")
+
+    reg = db.query(models.OrcamentoUnidadeValor).filter(
+        models.OrcamentoUnidadeValor.plano_item_id == item_id,
+        models.OrcamentoUnidadeValor.cliente_id    == cliente_id,
+        models.OrcamentoUnidadeValor.ano           == ano,
+        models.OrcamentoUnidadeValor.mes           == mes,
+        models.OrcamentoUnidadeValor.unidade       == body.unidade,
+    ).first()
+
+    if reg:
+        reg.valor = body.valor
+    else:
+        reg = models.OrcamentoUnidadeValor(
+            plano_item_id=item_id,
+            cliente_id=cliente_id,
+            ano=ano,
+            mes=mes,
+            unidade=body.unidade,
             valor=body.valor,
         )
         db.add(reg)

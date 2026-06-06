@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react'
-import { clientesAPI, orcamentoAPI } from '../../services/api'
+import { clientesAPI, orcamentoAPI, planosAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -11,7 +11,6 @@ const fmt = v =>
     ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v)
     : '—'
 
-// ── Estilos por tipo ──────────────────────────────────────────────────────────
 const estiloLinha = tipo => {
   if (tipo === 'RES') return { background: 'linear-gradient(90deg,#dcfce7 0%,#f0faf4 60%,transparent 100%)', borderLeft: '3px solid #22c55e', fontWeight: 700, fontSize: 13 }
   if (tipo === 'TT')  return { background: 'linear-gradient(90deg,#e8f0ff 0%,#f4f7ff 60%,transparent 100%)', borderLeft: '3px solid var(--brand)', fontWeight: 700, fontSize: 13 }
@@ -31,6 +30,243 @@ const bgSticky = tipo => {
   return 'var(--surface,#fff)'
 }
 
+// ── Modal de edição do template ───────────────────────────────────────────────
+function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
+  const [itens, setItens] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [editKey, setEditKey] = useState(null)
+  const [editVal, setEditVal] = useState('')
+  const [novaLinha, setNovaLinha] = useState({ descricao: '', tipo: 'NN', agrupamento: '', conta: '' })
+  const [salvandoNova, setSalvandoNova] = useState(false)
+
+  useEffect(() => {
+    planosAPI.obter(planoId)
+      .then(r => {
+        const dreItens = (r.data.itens || []).filter(i =>
+          i.modulo && i.modulo.toUpperCase().split(',').map(s => s.trim()).includes('D')
+        )
+        setItens(dreItens.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)))
+      })
+      .catch(() => toast.error('Erro ao carregar template'))
+      .finally(() => setLoading(false))
+  }, [planoId])
+
+  const iniciarEdicao = (item, field) => {
+    setEditKey(`${item.id}-${field}`)
+    setEditVal(item[field] ?? '')
+  }
+
+  const salvarCampo = async (item, field) => {
+    const val = field === 'tipo' || field === 'conta' ? (editVal || null) : editVal
+    setEditKey(null)
+    try {
+      await planosAPI.atualizarItem(planoId, item.id, { [field]: val })
+      setItens(prev => prev.map(i => i.id === item.id ? { ...i, [field]: val } : i))
+      onReload()
+    } catch {
+      toast.error('Erro ao salvar')
+    }
+  }
+
+  const excluirItem = async (item) => {
+    if (!window.confirm(`Excluir "${item.descricao}"?\nOs valores históricos desta linha serão removidos permanentemente.`)) return
+    try {
+      await planosAPI.excluirItem(planoId, item.id)
+      setItens(prev => prev.filter(i => i.id !== item.id))
+      onReload()
+      toast.success('Linha removida')
+    } catch {
+      toast.error('Erro ao excluir')
+    }
+  }
+
+  const adicionarLinha = async () => {
+    if (!novaLinha.descricao.trim()) { toast.error('Descrição obrigatória'); return }
+    setSalvandoNova(true)
+    try {
+      const ordemMax = Math.max(0, ...itens.map(i => i.ordem ?? 0))
+      const r = await planosAPI.adicionarItem(planoId, {
+        ...novaLinha,
+        conta: novaLinha.conta || null,
+        modulo: 'D',
+        ordem: ordemMax + 1,
+      })
+      setItens(prev => [...prev, r.data])
+      setNovaLinha({ descricao: '', tipo: 'NN', agrupamento: '', conta: '' })
+      onReload()
+      toast.success('Linha adicionada')
+    } catch {
+      toast.error('Erro ao adicionar linha')
+    } finally {
+      setSalvandoNova(false)
+    }
+  }
+
+  const tipoBadgeStyle = tipo => ({
+    display: 'inline-block', cursor: 'pointer', padding: '2px 7px',
+    borderRadius: 4, fontSize: 11, fontWeight: 600,
+    background: tipo === 'TT' ? '#e8f0ff' : tipo === 'RES' ? '#dcfce7' : tipo === 'GRP' ? '#f0f0f8' : '#f5f5f5',
+    color: tipo === 'TT' ? 'var(--brand)' : tipo === 'RES' ? '#16a34a' : tipo === 'GRP' ? 'var(--brand)' : 'var(--text-2)',
+  })
+
+  const inputStyle = { fontSize: 12, width: '100%', padding: '3px 5px', border: '1px solid var(--brand)', borderRadius: 4, outline: 'none' }
+
+  return (
+    <div
+      style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px 16px', overflowY: 'auto' }}
+      onClick={e => e.target === e.currentTarget && onClose()}
+    >
+      <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 940, boxShadow: '0 8px 40px rgba(0,0,0,.22)', marginBottom: 20 }}>
+        {/* Header */}
+        <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <span style={{ fontWeight: 700, fontSize: 15 }}>Editar Template DRE</span>
+          <span style={{ fontSize: 11, background: 'var(--brand-light)', color: 'var(--brand)', padding: '2px 8px', borderRadius: 4 }}>{planoNome}</span>
+          <span style={{ fontSize: 11, color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', padding: '2px 8px', borderRadius: 4 }}>
+            ⚠ Alterações afetam todos os clientes com este plano
+          </span>
+          <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--text-3)', lineHeight: 1 }}>×</button>
+        </div>
+
+        {/* Body */}
+        {loading ? (
+          <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>Carregando...</div>
+        ) : (
+          <div style={{ maxHeight: 'calc(100vh - 220px)', overflowY: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 5 }}>
+                  {[['Tipo', 80], ['Agrupamento', 120], ['Descrição', null], ['Conta', 140], ['', 48]].map(([h, w], i) => (
+                    <th key={i} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.04em', borderBottom: '2px solid var(--brand)', width: w || undefined }}>
+                      {h}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {itens.map(item => (
+                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
+                    {/* Tipo */}
+                    <td style={{ padding: '4px 12px' }}>
+                      {editKey === `${item.id}-tipo` ? (
+                        <select value={editVal} onChange={e => setEditVal(e.target.value)}
+                          onBlur={() => salvarCampo(item, 'tipo')} autoFocus style={{ fontSize: 12, width: 72 }}>
+                          <option value="">—</option>
+                          <option value="TT">TT</option>
+                          <option value="NN">NN</option>
+                          <option value="RES">RES</option>
+                          <option value="GRP">GRP</option>
+                        </select>
+                      ) : (
+                        <span style={tipoBadgeStyle(item.tipo)} onClick={() => iniciarEdicao(item, 'tipo')}>
+                          {item.tipo || '—'}
+                        </span>
+                      )}
+                    </td>
+                    {/* Agrupamento */}
+                    <td style={{ padding: '4px 12px' }}>
+                      {editKey === `${item.id}-agrupamento` ? (
+                        <input value={editVal} onChange={e => setEditVal(e.target.value)}
+                          onBlur={() => salvarCampo(item, 'agrupamento')}
+                          onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'agrupamento'); if (e.key === 'Escape') setEditKey(null) }}
+                          autoFocus style={inputStyle} />
+                      ) : (
+                        <span onClick={() => iniciarEdicao(item, 'agrupamento')}
+                          style={{ cursor: 'pointer', display: 'block', minHeight: 20, padding: '1px 2px', color: item.agrupamento ? 'inherit' : '#d1d5db' }}>
+                          {item.agrupamento || '—'}
+                        </span>
+                      )}
+                    </td>
+                    {/* Descrição */}
+                    <td style={{ padding: '4px 12px' }}>
+                      {editKey === `${item.id}-descricao` ? (
+                        <input value={editVal} onChange={e => setEditVal(e.target.value)}
+                          onBlur={() => salvarCampo(item, 'descricao')}
+                          onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'descricao'); if (e.key === 'Escape') setEditKey(null) }}
+                          autoFocus style={inputStyle} />
+                      ) : (
+                        <span onClick={() => iniciarEdicao(item, 'descricao')}
+                          style={{ cursor: 'pointer', display: 'block', minHeight: 20, padding: '1px 2px', fontWeight: (item.tipo === 'TT' || item.tipo === 'RES' || item.tipo === 'GRP') ? 600 : 400 }}>
+                          {item.descricao}
+                        </span>
+                      )}
+                    </td>
+                    {/* Conta */}
+                    <td style={{ padding: '4px 12px' }}>
+                      {editKey === `${item.id}-conta` ? (
+                        <input value={editVal} onChange={e => setEditVal(e.target.value)}
+                          onBlur={() => salvarCampo(item, 'conta')}
+                          onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'conta'); if (e.key === 'Escape') setEditKey(null) }}
+                          autoFocus style={{ ...inputStyle, fontFamily: 'monospace' }} />
+                      ) : (
+                        <span onClick={() => iniciarEdicao(item, 'conta')}
+                          style={{ cursor: 'pointer', display: 'block', minHeight: 20, padding: '1px 2px', color: 'var(--text-3)', fontFamily: 'monospace', fontSize: 11 }}>
+                          {item.conta || '—'}
+                        </span>
+                      )}
+                    </td>
+                    {/* Excluir */}
+                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                      <button onClick={() => excluirItem(item)} title="Excluir linha"
+                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 18, lineHeight: 1, padding: '1px 5px' }}>
+                        ×
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+
+                {/* Nova linha */}
+                <tr style={{ background: '#f9fafb', borderTop: '2px dashed var(--border)' }}>
+                  <td style={{ padding: '8px 12px' }}>
+                    <select value={novaLinha.tipo} onChange={e => setNovaLinha(p => ({ ...p, tipo: e.target.value }))}
+                      style={{ fontSize: 12, width: 72 }}>
+                      <option value="NN">NN</option>
+                      <option value="TT">TT</option>
+                      <option value="RES">RES</option>
+                      <option value="GRP">GRP</option>
+                    </select>
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <input value={novaLinha.agrupamento} onChange={e => setNovaLinha(p => ({ ...p, agrupamento: e.target.value }))}
+                      placeholder="Agrupamento"
+                      style={{ fontSize: 12, width: '100%', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 4 }} />
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <input value={novaLinha.descricao} onChange={e => setNovaLinha(p => ({ ...p, descricao: e.target.value }))}
+                      placeholder="Descrição da linha *"
+                      onKeyDown={e => e.key === 'Enter' && adicionarLinha()}
+                      style={{ fontSize: 12, width: '100%', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 4 }} />
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <input value={novaLinha.conta} onChange={e => setNovaLinha(p => ({ ...p, conta: e.target.value }))}
+                      placeholder="Conta"
+                      style={{ fontSize: 12, width: '100%', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 4, fontFamily: 'monospace' }} />
+                  </td>
+                  <td style={{ padding: '8px 10px', textAlign: 'center' }}>
+                    <button onClick={adicionarLinha} disabled={salvandoNova || !novaLinha.descricao.trim()}
+                      style={{ background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 6, padding: '5px 10px', fontSize: 12, cursor: 'pointer', fontWeight: 600, opacity: (!novaLinha.descricao.trim() || salvandoNova) ? .45 : 1 }}>
+                      {salvandoNova ? '...' : '+ Add'}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
+            {itens.length} linha{itens.length !== 1 ? 's' : ''} · Clique em qualquer campo para editar
+          </span>
+          <button onClick={onClose} style={{ padding: '8px 24px', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
+            Fechar
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ── DRE principal ─────────────────────────────────────────────────────────────
 export default function DRE() {
   const { usuario } = useAuth()
   const isCliente = usuario?.perfil === 'cliente'
@@ -47,16 +283,22 @@ export default function DRE() {
   const [loading,    setLoading]    = useState(false)
 
   // ── Expandir/recolher (2 níveis) ─────────────────────────────────────────
-  // Nível 1: primeiro TT de cada agrupamento (cabeçalho de seção)
-  // Nível 2: TTs subsequentes no mesmo agrupamento (sub-grupos com contas NN)
   const [recolhidosL1, setRecolhidosL1] = useState(new Set())
   const [recolhidosL2, setRecolhidosL2] = useState(new Set())
 
+  // ── Edição de valores ─────────────────────────────────────────────────────
+  const [modoEdicao,  setModoEdicao]  = useState(false)
+  const [editando,    setEditando]    = useState(null)   // {item_id, mes}
+  const [editVal,     setEditVal]     = useState('')
+
+  // ── Modal template ────────────────────────────────────────────────────────
+  const [modalTemplate, setModalTemplate] = useState(false)
+
   const hierarquia = useMemo(() => {
-    const nivel   = {}   // item_id → 1 | 2
-    const paiL1   = {}   // item_id (L2 TT ou NN) → item_id do L1 pai
-    const paiL2   = {}   // item_id (NN) → item_id do L2 TT pai
-    const vistoAgr = {}  // agrupamento → primeiro TT item_id
+    const nivel   = {}
+    const paiL1   = {}
+    const paiL2   = {}
+    const vistoAgr = {}
     let l1Atual = null, l2Atual = null
 
     for (const l of dados?.linhas || []) {
@@ -99,13 +341,10 @@ export default function DRE() {
     else { setRecolhidosL1(new Set(l1Ids)); setRecolhidosL2(new Set(l2Ids)) }
   }
 
-  // aliases para compatibilidade com código existente
-  const recolhidos  = recolhidosL1
-  const grpParent   = hierarquia.paiL1
-  const grpIds      = l1Ids
+  const grpIds = l1Ids
 
-  // Ao trocar de cliente/ano/unidade, reset collapse
   useEffect(() => { setRecolhidosL1(new Set()); setRecolhidosL2(new Set()) }, [clienteId, ano, unidade])
+  useEffect(() => { if (!modoEdicao) { setEditando(null); setEditVal('') } }, [modoEdicao])
 
   // ── Carregar clientes ────────────────────────────────────────────────────
   useEffect(() => {
@@ -142,7 +381,7 @@ export default function DRE() {
     detectarAno()
   }, [clienteId])
 
-  // ── Ao trocar ano manualmente: recarrega unidades ─────────────────────────
+  // ── Ao trocar ano manualmente ─────────────────────────────────────────────
   useEffect(() => {
     if (!clienteId) return
     orcamentoAPI.unidades(clienteId, ano)
@@ -155,28 +394,49 @@ export default function DRE() {
   }, [ano])
 
   // ── Carregar DRE ─────────────────────────────────────────────────────────
-  useEffect(() => {
+  const carregarDre = () => {
     if (!clienteId) { setDados(null); setVals({}); return }
     setLoading(true)
     orcamentoAPI.obterDre(clienteId, ano, unidade)
       .then(r => {
         setDados(r.data)
         const m = {}
-        for (const linha of r.data.linhas || []) {
-          m[linha.conta] = linha.valores
-        }
+        for (const linha of r.data.linhas || []) m[linha.conta] = linha.valores
         setVals(m)
       })
       .catch(() => toast.error('Erro ao carregar DRE'))
       .finally(() => setLoading(false))
-  }, [clienteId, ano, unidade])
+  }
+
+  useEffect(carregarDre, [clienteId, ano, unidade])
+
+  // ── Salvar valor editado ─────────────────────────────────────────────────
+  const handleCelulaSave = async (item_id, mes, conta) => {
+    const v = parseFloat(String(editVal).replace(',', '.')) || 0
+    setEditando(null)
+    setEditVal('')
+    try {
+      await orcamentoAPI.salvarDre(clienteId, ano, item_id, mes, v, unidade)
+      setVals(prev => ({ ...prev, [conta]: { ...(prev[conta] || {}), [mes]: v } }))
+    } catch {
+      toast.error('Erro ao salvar valor')
+    }
+  }
 
   const total12 = conta =>
     Object.values(vals[conta] || {}).reduce((s, v) => s + (v || 0), 0)
 
   const anos = Array.from({ length: 5 }, (_, i) => ANO_ATUAL - 2 + i)
-
   const nomeUnidade = u => u === 'CONSOLIDADO' ? 'Consolidado' : u
+
+  // ── Botões da barra azul ─────────────────────────────────────────────────
+  const btnBarStyle = (ativo) => ({
+    background: ativo ? '#fffbeb' : 'rgba(255,255,255,.15)',
+    border: ativo ? '1px solid #fcd34d' : '1px solid rgba(255,255,255,.3)',
+    color: ativo ? '#b45309' : '#fff',
+    borderRadius: 6, padding: '4px 12px', fontSize: 11, fontWeight: 600,
+    cursor: 'pointer', whiteSpace: 'nowrap',
+  })
 
   return (
     <div className="page">
@@ -210,9 +470,7 @@ export default function DRE() {
           <select value={unidade} onChange={e => setUnidade(e.target.value)}
             style={{ fontSize: 13, padding: '8px 14px', minWidth: 220 }}>
             {unidades.map(u => (
-              <option key={u} value={u}>
-                {u === 'CONSOLIDADO' ? 'Consolidado (todas as unidades)' : u}
-              </option>
+              <option key={u} value={u}>{u === 'CONSOLIDADO' ? 'Consolidado (todas as unidades)' : u}</option>
             ))}
           </select>
         )}
@@ -230,9 +488,7 @@ export default function DRE() {
       </div>
 
       {/* Estados vazios */}
-      {!clienteId && (
-        <div className="empty-state">Selecione um cliente para visualizar o DRE.</div>
-      )}
+      {!clienteId && <div className="empty-state">Selecione um cliente para visualizar o DRE.</div>}
 
       {clienteId && !loading && dados?.plano === null && (
         <div className="empty-state">
@@ -243,8 +499,8 @@ export default function DRE() {
 
       {clienteId && !loading && dados?.plano && unidades.length === 0 && (
         <div className="empty-state">
-          Este cliente não possui dados de DRE importados para {ano}.<br/>
-          O DRE exibe dados históricos importados via planilha Excel.<br/>
+          Este cliente não possui dados de DRE importados para {ano}.<br />
+          O DRE exibe dados históricos importados via planilha Excel.<br />
           Somente clientes com importação realizada exibem resultados aqui.
         </div>
       )}
@@ -262,7 +518,7 @@ export default function DRE() {
           <div style={{
             background: 'linear-gradient(90deg, var(--brand) 0%, #1a4fa8 100%)',
             color: '#fff', padding: '10px 16px', borderRadius: '8px 8px 0 0',
-            display: 'flex', alignItems: 'center', gap: 16, fontSize: 13,
+            display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, flexWrap: 'wrap',
           }}>
             <span style={{ fontWeight: 700, fontSize: 14 }}>{dados.plano.nome}</span>
             <span style={{ opacity: .7 }}>·</span>
@@ -273,19 +529,27 @@ export default function DRE() {
                 <span style={{ fontWeight: 600 }}>{nomeUnidade(unidade)}</span>
               </>
             )}
-            {/* Botão global expandir/recolher */}
-            {grpIds.length > 0 && (
-              <button onClick={toggleTudo} style={{
-                marginLeft: 'auto',
-                background: 'rgba(255,255,255,.15)',
-                border: '1px solid rgba(255,255,255,.3)',
-                color: '#fff', borderRadius: 6,
-                padding: '4px 12px', fontSize: 11, fontWeight: 600,
-                cursor: 'pointer', whiteSpace: 'nowrap',
-              }}>
-                {todosRecolhidos ? '▼ Expandir tudo' : '▶ Recolher tudo'}
-              </button>
-            )}
+
+            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
+              {/* Expandir/recolher */}
+              {grpIds.length > 0 && (
+                <button onClick={toggleTudo} style={btnBarStyle(false)}>
+                  {todosRecolhidos ? '▼ Expandir tudo' : '▶ Recolher tudo'}
+                </button>
+              )}
+              {/* Editar valores — apenas para não-clientes */}
+              {!isCliente && (
+                <button onClick={() => setModoEdicao(p => !p)} style={btnBarStyle(modoEdicao)}>
+                  {modoEdicao ? '✓ Finalizar edição' : '✏ Editar valores'}
+                </button>
+              )}
+              {/* Editar template */}
+              {!isCliente && (
+                <button onClick={() => setModalTemplate(true)} style={btnBarStyle(false)}>
+                  ⚙ Template
+                </button>
+              )}
+            </div>
           </div>
 
           <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 260px)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
@@ -297,38 +561,29 @@ export default function DRE() {
                     position: 'sticky', left: 0, background: '#f0f4ff', zIndex: 11,
                     fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.05em',
                     borderBottom: '2px solid var(--brand)',
-                  }}>
-                    DESCRIÇÃO
-                  </th>
+                  }}>DESCRIÇÃO</th>
                   {MESES.map((m, i) => (
                     <th key={i} style={{
                       textAlign: 'right', padding: '8px 8px', minWidth: 80,
                       fontWeight: 600, color: 'var(--text-2)', fontSize: 11,
-                      borderBottom: '2px solid var(--brand)',
-                      background: '#f0f4ff',
+                      borderBottom: '2px solid var(--brand)', background: '#f0f4ff',
                     }}>{m}</th>
                   ))}
                   <th style={{
                     textAlign: 'right', padding: '8px 10px', minWidth: 90,
                     borderLeft: '2px solid var(--border)', fontWeight: 700,
                     color: 'var(--brand)', fontSize: 11,
-                    borderBottom: '2px solid var(--brand)',
-                    background: '#f0f4ff',
-                  }}>
-                    TOTAL
-                  </th>
+                    borderBottom: '2px solid var(--brand)', background: '#f0f4ff',
+                  }}>TOTAL</th>
                 </tr>
               </thead>
               <tbody>
                 {dados.linhas.map(linha => {
-                  const nv  = hierarquia.nivel[linha.item_id]
+                  const nv   = hierarquia.nivel[linha.item_id]
                   const ehNN = linha.tipo === 'NN' || linha.tipo === null
 
-                  // Ocultar L2 TT se seu pai L1 está recolhido
                   if (nv === 2 && recolhidosL1.has(hierarquia.paiL1[linha.item_id])) return null
-                  // Ocultar NN se seu TT pai direto está recolhido (L2 ou L1)
                   if (ehNN && recolhidosL2.has(hierarquia.paiL2[linha.item_id])) return null
-                  // Ocultar NN se o L1 avô está recolhido
                   if (ehNN && recolhidosL1.has(hierarquia.paiL1[linha.item_id])) return null
 
                   const estilo = estiloLinha(linha.tipo)
@@ -337,11 +592,11 @@ export default function DRE() {
                   const ehL2   = nv === 2
                   const recL1  = ehL1 && recolhidosL1.has(linha.item_id)
                   const recL2  = ehL2 && recolhidosL2.has(linha.item_id)
+                  const editavel = modoEdicao && ehNN
 
                   return (
                     <tr key={linha.item_id}
-                      style={{ ...estilo, borderBottom: '1px solid var(--border)',
-                        cursor: (ehL1 || ehL2) ? 'pointer' : 'default' }}
+                      style={{ ...estilo, borderBottom: '1px solid var(--border)', cursor: (ehL1 || ehL2) ? 'pointer' : 'default' }}
                       onClick={ehL1 ? () => toggleL1(linha.item_id) : ehL2 ? () => toggleL2(linha.item_id) : undefined}
                     >
                       <td style={{
@@ -363,16 +618,43 @@ export default function DRE() {
                       </td>
 
                       {Array.from({ length: 12 }, (_, i) => {
-                        const mes = i + 1
+                        const mes   = i + 1
                         const valor = vConta[mes] ?? 0
+                        const isEditando = editavel && editando?.item_id === linha.item_id && editando?.mes === mes
+
                         return (
-                          <td key={mes} style={{
-                            textAlign: 'right', padding: '5px 8px',
-                            fontWeight: estilo.fontWeight,
-                            color: corTexto(linha.tipo),
-                            fontSize: 12,
-                          }}>
-                            {valor !== 0 ? fmt(valor) : '—'}
+                          <td key={mes}
+                            style={{
+                              textAlign: 'right', padding: '5px 8px',
+                              fontWeight: estilo.fontWeight,
+                              color: corTexto(linha.tipo),
+                              fontSize: 12,
+                              background: editavel ? 'rgba(59,130,246,.04)' : 'transparent',
+                              cursor: editavel ? 'text' : 'default',
+                            }}
+                            onClick={editavel && !isEditando ? (e) => {
+                              e.stopPropagation()
+                              setEditando({ item_id: linha.item_id, mes })
+                              setEditVal(valor === 0 ? '' : String(valor))
+                            } : undefined}
+                          >
+                            {isEditando ? (
+                              <input
+                                type="number"
+                                value={editVal}
+                                onChange={e => setEditVal(e.target.value)}
+                                onBlur={() => handleCelulaSave(linha.item_id, mes, linha.conta)}
+                                onKeyDown={e => {
+                                  if (e.key === 'Enter') handleCelulaSave(linha.item_id, mes, linha.conta)
+                                  if (e.key === 'Escape') { setEditando(null); setEditVal('') }
+                                }}
+                                onClick={e => e.stopPropagation()}
+                                autoFocus
+                                style={{ width: 72, textAlign: 'right', fontSize: 12, border: '1px solid var(--brand)', borderRadius: 4, padding: '2px 4px', outline: 'none' }}
+                              />
+                            ) : (
+                              valor !== 0 ? fmt(valor) : (editavel ? <span style={{ color: '#d1d5db', fontSize: 10 }}>—</span> : '—')
+                            )}
                           </td>
                         )
                       })}
@@ -398,11 +680,20 @@ export default function DRE() {
             <span>Dados importados — {ano}</span>
             <span style={{ color: 'var(--brand)' }}>■ Subtotais calculados</span>
             <span style={{ color: '#16a34a' }}>■ Resultado final</span>
-            {grpIds.length > 0 && (
-              <span>Clique no grupo para expandir/recolher</span>
-            )}
+            {modoEdicao && <span style={{ color: '#b45309', fontWeight: 600 }}>✏ Modo edição ativo — clique em uma célula para editar</span>}
+            {!modoEdicao && grpIds.length > 0 && <span>Clique no grupo para expandir/recolher</span>}
           </div>
         </>
+      )}
+
+      {/* Modal de edição do template */}
+      {modalTemplate && dados?.plano && (
+        <ModalTemplateDRE
+          planoId={dados.plano.id}
+          planoNome={dados.plano.nome}
+          onClose={() => setModalTemplate(false)}
+          onReload={carregarDre}
+        />
       )}
     </div>
   )

@@ -1,6 +1,7 @@
 import csv, io
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from pydantic import BaseModel
 from typing import Optional, List
 from database import SessionLocal
@@ -204,6 +205,8 @@ def excluir_item(plano_id: int, item_id: int,
     item = db.query(PlanoItem).filter(PlanoItem.id == item_id,
                                       PlanoItem.plano_id == plano_id).first()
     if not item: raise HTTPException(404, "Item não encontrado")
+    db.execute(text("DELETE FROM orcamento_unidade_valores WHERE plano_item_id = :id"), {"id": item_id})
+    db.execute(text("DELETE FROM orcamento_valores WHERE plano_item_id = :id"), {"id": item_id})
     db.delete(item); db.commit()
     return {"ok": True}
 
