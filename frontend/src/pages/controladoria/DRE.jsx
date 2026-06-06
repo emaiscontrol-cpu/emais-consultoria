@@ -160,10 +160,11 @@ export default function DRE() {
         </div>
       )}
 
-      {clienteId && !loading && dados?.plano && dados.linhas?.length === 0 && (
+      {clienteId && !loading && dados?.plano && unidades.length === 0 && (
         <div className="empty-state">
-          Nenhum dado de DRE disponível para {ano}.
-          Execute o script de importação para carregar os dados.
+          Este cliente não possui dados de DRE importados para {ano}.<br/>
+          O DRE exibe dados históricos importados via planilha Excel.<br/>
+          Somente clientes com importação realizada exibem resultados aqui.
         </div>
       )}
 
@@ -173,8 +174,8 @@ export default function DRE() {
         </div>
       )}
 
-      {/* Tabela DRE */}
-      {!loading && dados?.plano && dados.linhas?.length > 0 && (
+      {/* Tabela DRE — só exibe se houver dados importados (unidades > 0) */}
+      {!loading && dados?.plano && dados.linhas?.length > 0 && unidades.length > 0 && (
         <>
           {/* Cabeçalho da demonstração */}
           <div style={{
