@@ -30,13 +30,38 @@ const bgSticky = tipo => {
   return 'var(--surface,#fff)'
 }
 
+// ── Helper: paiDireto map para lista de itens do plano ────────────────────────
+// Usado no modal (item.id) e na DRE principal (linha.item_id).
+// idField: nome do campo de id nos objetos da lista.
+function buildPaiDiretoMap(items, idField = 'id') {
+  const paiDireto = {}
+  const ttPorAgrDot = {}   // agrupamento com ponto → id do TT
+  let ttUltimo = null
+
+  for (const l of items) {
+    const agr = l.agrupamento || ''
+    const tipo = l.tipo
+    if (tipo === 'TT' || tipo === 'RES') {
+      if (agr.includes('.') && !ttPorAgrDot[agr]) ttPorAgrDot[agr] = l[idField]
+      ttUltimo = l[idField]
+    } else if (tipo === 'NN' || tipo === null) {
+      if (agr.includes('.') && ttPorAgrDot[agr] != null) {
+        paiDireto[l[idField]] = ttPorAgrDot[agr]
+      } else {
+        paiDireto[l[idField]] = ttUltimo
+      }
+    }
+  }
+  return paiDireto
+}
+
 // ── Modal de edição do template ───────────────────────────────────────────────
 function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
   const [itens, setItens] = useState([])
   const [loading, setLoading] = useState(true)
   const [editKey, setEditKey] = useState(null)
   const [editVal, setEditVal] = useState('')
-  const [novaLinha, setNovaLinha] = useState({ descricao: '', tipo: 'NN', agrupamento: '', conta: '' })
+  const [novaLinha, setNovaLinha] = useState({ descricao: '', tipo: 'NN', agrupamento: '', conta: '', paiId: '' })
   const [salvandoNova, setSalvandoNova] = useState(false)
 
   useEffect(() => {
@@ -51,13 +76,22 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
       .finally(() => setLoading(false))
   }, [planoId])
 
+  // Mapa paiDireto para exibição na coluna "Título Pai"
+  const paiDiretoMap = useMemo(() => buildPaiDiretoMap(itens, 'id'), [itens])
+
+  // Lista de TTs para o dropdown de pai
+  const ttsList = useMemo(
+    () => itens.filter(i => i.tipo === 'TT' || i.tipo === 'RES'),
+    [itens]
+  )
+
   const iniciarEdicao = (item, field) => {
     setEditKey(`${item.id}-${field}`)
     setEditVal(item[field] ?? '')
   }
 
   const salvarCampo = async (item, field) => {
-    const val = field === 'tipo' || field === 'conta' ? (editVal || null) : editVal
+    const val = (field === 'tipo' || field === 'conta') ? (editVal || null) : editVal
     setEditKey(null)
     try {
       await planosAPI.atualizarItem(planoId, item.id, { [field]: val })
@@ -80,19 +114,35 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
     }
   }
 
+  // Ao selecionar o pai, preenche agrupamento automaticamente
+  const handlePaiChange = (paiId) => {
+    const pai = ttsList.find(t => String(t.id) === paiId)
+    const agr = pai ? (pai.agrupamento || '') : ''
+    setNovaLinha(p => ({ ...p, paiId, agrupamento: agr }))
+  }
+
   const adicionarLinha = async () => {
     if (!novaLinha.descricao.trim()) { toast.error('Descrição obrigatória'); return }
     setSalvandoNova(true)
     try {
-      const ordemMax = Math.max(0, ...itens.map(i => i.ordem ?? 0))
+      // Posiciona após o último item com mesmo agrupamento (ou no final geral)
+      const mesmoAgr = novaLinha.agrupamento
+        ? itens.filter(i => i.agrupamento === novaLinha.agrupamento)
+        : []
+      const ordemBase = mesmoAgr.length > 0
+        ? Math.max(...mesmoAgr.map(i => i.ordem ?? 0))
+        : Math.max(0, ...itens.map(i => i.ordem ?? 0))
+
       const r = await planosAPI.adicionarItem(planoId, {
-        ...novaLinha,
+        descricao: novaLinha.descricao,
+        tipo: novaLinha.tipo,
+        agrupamento: novaLinha.agrupamento || null,
         conta: novaLinha.conta || null,
         modulo: 'D',
-        ordem: ordemMax + 1,
+        ordem: ordemBase + 1,
       })
-      setItens(prev => [...prev, r.data])
-      setNovaLinha({ descricao: '', tipo: 'NN', agrupamento: '', conta: '' })
+      setItens(prev => [...prev, r.data].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)))
+      setNovaLinha({ descricao: '', tipo: 'NN', agrupamento: '', conta: '', paiId: '' })
       onReload()
       toast.success('Linha adicionada')
     } catch {
@@ -109,15 +159,15 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
     color: tipo === 'TT' ? 'var(--brand)' : tipo === 'RES' ? '#16a34a' : tipo === 'GRP' ? 'var(--brand)' : 'var(--text-2)',
   })
 
-  const inputStyle = { fontSize: 12, width: '100%', padding: '3px 5px', border: '1px solid var(--brand)', borderRadius: 4, outline: 'none' }
+  const inputSt = { fontSize: 12, width: '100%', padding: '3px 5px', border: '1px solid var(--brand)', borderRadius: 4, outline: 'none' }
+  const cellSt = { cursor: 'pointer', display: 'block', minHeight: 20, padding: '1px 2px' }
 
   return (
     <div
       style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,.55)', zIndex: 1000, display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: '20px 16px', overflowY: 'auto' }}
       onClick={e => e.target === e.currentTarget && onClose()}
     >
-      <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 940, boxShadow: '0 8px 40px rgba(0,0,0,.22)', marginBottom: 20 }}>
-        {/* Header */}
+      <div style={{ background: '#fff', borderRadius: 10, width: '100%', maxWidth: 1020, boxShadow: '0 8px 40px rgba(0,0,0,.22)', marginBottom: 20 }}>
         <div style={{ padding: '14px 20px', borderBottom: '1px solid var(--border)', display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
           <span style={{ fontWeight: 700, fontSize: 15 }}>Editar Template DRE</span>
           <span style={{ fontSize: 11, background: 'var(--brand-light)', color: 'var(--brand)', padding: '2px 8px', borderRadius: 4 }}>{planoNome}</span>
@@ -127,7 +177,6 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
           <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--text-3)', lineHeight: 1 }}>×</button>
         </div>
 
-        {/* Body */}
         {loading ? (
           <div style={{ padding: 40, textAlign: 'center', color: 'var(--text-3)' }}>Carregando...</div>
         ) : (
@@ -135,90 +184,87 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 5 }}>
-                  {[['Tipo', 80], ['Agrupamento', 120], ['Descrição', null], ['Conta', 140], ['', 48]].map(([h, w], i) => (
-                    <th key={i} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.04em', borderBottom: '2px solid var(--brand)', width: w || undefined }}>
-                      {h}
-                    </th>
+                  {[['Tipo',75],['Agrupamento',140],['Descrição',null],['Conta',130],['Título Pai',170],['',44]].map(([h, w], i) => (
+                    <th key={i} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.04em', borderBottom: '2px solid var(--brand)', width: w || undefined }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {itens.map(item => (
-                  <tr key={item.id} style={{ borderBottom: '1px solid var(--border)' }}>
-                    {/* Tipo */}
-                    <td style={{ padding: '4px 12px' }}>
-                      {editKey === `${item.id}-tipo` ? (
-                        <select value={editVal} onChange={e => setEditVal(e.target.value)}
-                          onBlur={() => salvarCampo(item, 'tipo')} autoFocus style={{ fontSize: 12, width: 72 }}>
-                          <option value="">—</option>
-                          <option value="TT">TT</option>
-                          <option value="NN">NN</option>
-                          <option value="RES">RES</option>
-                          <option value="GRP">GRP</option>
-                        </select>
-                      ) : (
-                        <span style={tipoBadgeStyle(item.tipo)} onClick={() => iniciarEdicao(item, 'tipo')}>
-                          {item.tipo || '—'}
+                {itens.map(item => {
+                  const ehTT = item.tipo === 'TT' || item.tipo === 'RES'
+                  const paiId = paiDiretoMap[item.id]
+                  const paiNome = paiId ? itens.find(t => t.id === paiId)?.descricao : null
+                  return (
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: ehTT ? '#fafbff' : '#fff' }}>
+                      {/* Tipo */}
+                      <td style={{ padding: '4px 12px' }}>
+                        {editKey === `${item.id}-tipo` ? (
+                          <select value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'tipo')} autoFocus style={{ fontSize: 12, width: 72 }}>
+                            <option value="">—</option>
+                            <option value="TT">TT</option>
+                            <option value="NN">NN</option>
+                            <option value="RES">RES</option>
+                            <option value="GRP">GRP</option>
+                          </select>
+                        ) : (
+                          <span style={tipoBadgeStyle(item.tipo)} onClick={() => iniciarEdicao(item, 'tipo')}>{item.tipo || '—'}</span>
+                        )}
+                      </td>
+                      {/* Agrupamento */}
+                      <td style={{ padding: '4px 12px' }}>
+                        {editKey === `${item.id}-agrupamento` ? (
+                          <input value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'agrupamento')}
+                            onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'agrupamento'); if (e.key === 'Escape') setEditKey(null) }}
+                            autoFocus style={{ ...inputSt, fontFamily: 'monospace' }} />
+                        ) : (
+                          <span onClick={() => iniciarEdicao(item, 'agrupamento')} style={{ ...cellSt, color: item.agrupamento ? 'inherit' : '#d1d5db', fontFamily: 'monospace', fontSize: 11 }}>
+                            {item.agrupamento || '—'}
+                          </span>
+                        )}
+                      </td>
+                      {/* Descrição */}
+                      <td style={{ padding: '4px 12px' }}>
+                        {editKey === `${item.id}-descricao` ? (
+                          <input value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'descricao')}
+                            onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'descricao'); if (e.key === 'Escape') setEditKey(null) }}
+                            autoFocus style={inputSt} />
+                        ) : (
+                          <span onClick={() => iniciarEdicao(item, 'descricao')} style={{ ...cellSt, fontWeight: ehTT ? 600 : 400 }}>
+                            {item.descricao}
+                          </span>
+                        )}
+                      </td>
+                      {/* Conta */}
+                      <td style={{ padding: '4px 12px' }}>
+                        {editKey === `${item.id}-conta` ? (
+                          <input value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'conta')}
+                            onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'conta'); if (e.key === 'Escape') setEditKey(null) }}
+                            autoFocus style={{ ...inputSt, fontFamily: 'monospace' }} />
+                        ) : (
+                          <span onClick={() => iniciarEdicao(item, 'conta')} style={{ ...cellSt, color: 'var(--text-3)', fontFamily: 'monospace', fontSize: 11 }}>
+                            {item.conta || '—'}
+                          </span>
+                        )}
+                      </td>
+                      {/* Pai */}
+                      <td style={{ padding: '4px 12px' }}>
+                        <span style={{ fontSize: 11, color: paiNome ? (ehTT ? 'var(--text-3)' : '#374151') : '#d1d5db', fontStyle: ehTT && paiNome ? 'italic' : 'normal' }}>
+                          {paiNome ? (ehTT ? `↳ ${paiNome.slice(0,32)}` : paiNome.slice(0,35)) : '—'}
                         </span>
-                      )}
-                    </td>
-                    {/* Agrupamento */}
-                    <td style={{ padding: '4px 12px' }}>
-                      {editKey === `${item.id}-agrupamento` ? (
-                        <input value={editVal} onChange={e => setEditVal(e.target.value)}
-                          onBlur={() => salvarCampo(item, 'agrupamento')}
-                          onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'agrupamento'); if (e.key === 'Escape') setEditKey(null) }}
-                          autoFocus style={inputStyle} />
-                      ) : (
-                        <span onClick={() => iniciarEdicao(item, 'agrupamento')}
-                          style={{ cursor: 'pointer', display: 'block', minHeight: 20, padding: '1px 2px', color: item.agrupamento ? 'inherit' : '#d1d5db' }}>
-                          {item.agrupamento || '—'}
-                        </span>
-                      )}
-                    </td>
-                    {/* Descrição */}
-                    <td style={{ padding: '4px 12px' }}>
-                      {editKey === `${item.id}-descricao` ? (
-                        <input value={editVal} onChange={e => setEditVal(e.target.value)}
-                          onBlur={() => salvarCampo(item, 'descricao')}
-                          onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'descricao'); if (e.key === 'Escape') setEditKey(null) }}
-                          autoFocus style={inputStyle} />
-                      ) : (
-                        <span onClick={() => iniciarEdicao(item, 'descricao')}
-                          style={{ cursor: 'pointer', display: 'block', minHeight: 20, padding: '1px 2px', fontWeight: (item.tipo === 'TT' || item.tipo === 'RES' || item.tipo === 'GRP') ? 600 : 400 }}>
-                          {item.descricao}
-                        </span>
-                      )}
-                    </td>
-                    {/* Conta */}
-                    <td style={{ padding: '4px 12px' }}>
-                      {editKey === `${item.id}-conta` ? (
-                        <input value={editVal} onChange={e => setEditVal(e.target.value)}
-                          onBlur={() => salvarCampo(item, 'conta')}
-                          onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'conta'); if (e.key === 'Escape') setEditKey(null) }}
-                          autoFocus style={{ ...inputStyle, fontFamily: 'monospace' }} />
-                      ) : (
-                        <span onClick={() => iniciarEdicao(item, 'conta')}
-                          style={{ cursor: 'pointer', display: 'block', minHeight: 20, padding: '1px 2px', color: 'var(--text-3)', fontFamily: 'monospace', fontSize: 11 }}>
-                          {item.conta || '—'}
-                        </span>
-                      )}
-                    </td>
-                    {/* Excluir */}
-                    <td style={{ padding: '4px 8px', textAlign: 'center' }}>
-                      <button onClick={() => excluirItem(item)} title="Excluir linha"
-                        style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 18, lineHeight: 1, padding: '1px 5px' }}>
-                        ×
-                      </button>
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      {/* Excluir */}
+                      <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                        <button onClick={() => excluirItem(item)} title="Excluir"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 18, lineHeight: 1, padding: '1px 5px' }}>×</button>
+                      </td>
+                    </tr>
+                  )
+                })}
 
                 {/* Nova linha */}
                 <tr style={{ background: '#f9fafb', borderTop: '2px dashed var(--border)' }}>
                   <td style={{ padding: '8px 12px' }}>
-                    <select value={novaLinha.tipo} onChange={e => setNovaLinha(p => ({ ...p, tipo: e.target.value }))}
-                      style={{ fontSize: 12, width: 72 }}>
+                    <select value={novaLinha.tipo} onChange={e => setNovaLinha(p => ({ ...p, tipo: e.target.value }))} style={{ fontSize: 12, width: 72 }}>
                       <option value="NN">NN</option>
                       <option value="TT">TT</option>
                       <option value="RES">RES</option>
@@ -228,18 +274,24 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                   <td style={{ padding: '8px 12px' }}>
                     <input value={novaLinha.agrupamento} onChange={e => setNovaLinha(p => ({ ...p, agrupamento: e.target.value }))}
                       placeholder="Agrupamento"
-                      style={{ fontSize: 12, width: '100%', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 4 }} />
+                      style={{ fontSize: 12, width: '100%', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 4, fontFamily: 'monospace' }} />
                   </td>
                   <td style={{ padding: '8px 12px' }}>
                     <input value={novaLinha.descricao} onChange={e => setNovaLinha(p => ({ ...p, descricao: e.target.value }))}
-                      placeholder="Descrição da linha *"
-                      onKeyDown={e => e.key === 'Enter' && adicionarLinha()}
+                      placeholder="Descrição *" onKeyDown={e => e.key === 'Enter' && adicionarLinha()}
                       style={{ fontSize: 12, width: '100%', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 4 }} />
                   </td>
                   <td style={{ padding: '8px 12px' }}>
                     <input value={novaLinha.conta} onChange={e => setNovaLinha(p => ({ ...p, conta: e.target.value }))}
                       placeholder="Conta"
                       style={{ fontSize: 12, width: '100%', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 4, fontFamily: 'monospace' }} />
+                  </td>
+                  <td style={{ padding: '8px 12px' }}>
+                    <select value={novaLinha.paiId} onChange={e => handlePaiChange(e.target.value)}
+                      style={{ fontSize: 12, width: '100%', padding: '4px 6px', border: '1px solid var(--border)', borderRadius: 4 }}>
+                      <option value="">— sem pai —</option>
+                      {ttsList.map(t => <option key={t.id} value={t.id}>{t.descricao.slice(0, 48)}</option>)}
+                    </select>
                   </td>
                   <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                     <button onClick={adicionarLinha} disabled={salvandoNova || !novaLinha.descricao.trim()}
@@ -253,13 +305,11 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
           </div>
         )}
 
-        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-            {itens.length} linha{itens.length !== 1 ? 's' : ''} · Clique em qualquer campo para editar
+            {itens.length} linha{itens.length !== 1 ? 's' : ''} · Para vínculo explícito use <code style={{background:'#f0f4ff',padding:'1px 4px',borderRadius:3}}>GRUPO.SUBGRUPO</code> no agrupamento do TT filho e das suas NNs
           </span>
-          <button onClick={onClose} style={{ padding: '8px 24px', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>
-            Fechar
-          </button>
+          <button onClick={onClose} style={{ padding: '8px 24px', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 6, fontSize: 13, cursor: 'pointer', fontWeight: 600 }}>Fechar</button>
         </div>
       </div>
     </div>
@@ -274,54 +324,116 @@ export default function DRE() {
   const [clientes,   setClientes]   = useState([])
   const [clienteId,  setClienteId]  = useState('')
   const [ano,        setAno]        = useState(ANO_ATUAL - 1)
-
   const [unidades,   setUnidades]   = useState([])
   const [unidade,    setUnidade]    = useState('CONSOLIDADO')
-
   const [dados,      setDados]      = useState(null)
-  const [vals,       setVals]       = useState({})
+  const [valsById,   setValsById]   = useState({})   // {item_id: {mes: valor}} — valores NN brutos
   const [loading,    setLoading]    = useState(false)
 
-  // ── Expandir/recolher (2 níveis) ─────────────────────────────────────────
+  // Expandir/recolher
   const [recolhidosL1, setRecolhidosL1] = useState(new Set())
   const [recolhidosL2, setRecolhidosL2] = useState(new Set())
 
-  // ── Edição de valores ─────────────────────────────────────────────────────
+  // Edição de valores
   const [modoEdicao,  setModoEdicao]  = useState(false)
-  const [editando,    setEditando]    = useState(null)   // {item_id, mes}
+  const [editando,    setEditando]    = useState(null)
   const [editVal,     setEditVal]     = useState('')
 
-  // ── Modal template ────────────────────────────────────────────────────────
+  // Modal template
   const [modalTemplate, setModalTemplate] = useState(false)
 
+  // ── Hierarquia ──────────────────────────────────────────────────────────────
+  // Detecção HÍBRIDA:
+  //   1. TT com agrupamento "GRUPO.SUB" → L2 explícito; pai = TT com agrupamento "GRUPO"
+  //   2. TT sem ponto → detecção por ordem (1º do grupo = L1, demais = L2)
+  //   3. NN com agrupamento "GRUPO.SUB" → pai = TT com mesmo agrupamento
+  //   4. NN sem ponto / sem match explícito → pai = último TT visto (fallback por ordem)
   const hierarquia = useMemo(() => {
-    const nivel   = {}
-    const paiL1   = {}
-    const paiL2   = {}
-    const vistoAgr = {}
-    let l1Atual = null, l2Atual = null
+    const nivel = {}, paiL1 = {}, paiDireto = {}
+    const filhosL2 = {}, filhosL1 = {}
+
+    // Fase 1: indexar TTs por agrupamento (para lookup de pais explícitos)
+    const ttPorAgrSimples = {}  // agrupamento sem ponto → item_id
+    const ttPorAgrDot     = {}  // agrupamento com ponto → item_id
+
+    for (const l of dados?.linhas || []) {
+      if (l.tipo !== 'TT' && l.tipo !== 'RES') continue
+      const agr = l.agrupamento || ''
+      if (agr.includes('.')) {
+        if (ttPorAgrDot[agr] == null) ttPorAgrDot[agr] = l.item_id
+      } else {
+        if (ttPorAgrSimples[agr] == null) ttPorAgrSimples[agr] = l.item_id
+      }
+    }
+
+    // Fase 2: percorrer em ordem e montar relações
+    const l1DeAgr = {}   // agrupamento simples → primeiro TT item_id (para fallback L1/L2)
+    let ttUltimo = null  // último TT visto (para NNs sem parent explícito)
 
     for (const l of dados?.linhas || []) {
       if (l.tipo === 'TT' || l.tipo === 'RES') {
         const agr = l.agrupamento || String(l.item_id)
-        if (!vistoAgr[agr]) {
-          vistoAgr[agr] = l.item_id
+        const dotIdx = agr.indexOf('.')
+
+        if (dotIdx > 0) {
+          // Parent explícito: prefixo antes do ponto
+          const parentAgr = agr.slice(0, dotIdx)
+          const parentId  = ttPorAgrSimples[parentAgr]
+          if (parentId != null) {
+            nivel[l.item_id] = 2
+            paiL1[l.item_id] = parentId
+            ttUltimo = l.item_id
+            continue
+          }
+        }
+
+        // Fallback por ordem: primeiro TT do agrupamento = L1, demais = L2
+        const agrSimples = agr.includes('.') ? agr : agr
+        if (!l1DeAgr[agrSimples]) {
+          l1DeAgr[agrSimples] = l.item_id
           nivel[l.item_id] = 1
-          l1Atual = l.item_id
-          l2Atual = null
         } else {
           nivel[l.item_id] = 2
-          paiL1[l.item_id] = l1Atual
-          l2Atual = l.item_id
+          paiL1[l.item_id] = l1DeAgr[agrSimples]
         }
+        ttUltimo = l.item_id
+
       } else if (l.tipo === 'NN' || l.tipo === null) {
-        if (l2Atual) { paiL2[l.item_id] = l2Atual; paiL1[l.item_id] = l1Atual }
-        else if (l1Atual) { paiL2[l.item_id] = l1Atual; paiL1[l.item_id] = l1Atual }
+        const agr = l.agrupamento || ''
+        let pai = null
+
+        // Parent explícito: agrupamento com ponto coincide com um TT
+        if (agr.includes('.') && ttPorAgrDot[agr] != null) {
+          pai = ttPorAgrDot[agr]
+        } else {
+          // Fallback: último TT visto
+          pai = ttUltimo
+        }
+
+        if (pai == null) continue
+        paiDireto[l.item_id] = pai
+
+        if (nivel[pai] === 2) {
+          const l1id = paiL1[pai]
+          paiL1[l.item_id] = l1id
+          filhosL2[pai] = filhosL2[pai] || []
+          filhosL2[pai].push(l.item_id)
+          if (l1id != null) {
+            filhosL1[l1id] = filhosL1[l1id] || []
+            filhosL1[l1id].push(l.item_id)
+          }
+        } else {
+          paiL1[l.item_id] = pai
+          filhosL1[pai] = filhosL1[pai] || []
+          filhosL1[pai].push(l.item_id)
+        }
       }
     }
-    return { nivel, paiL1, paiL2 }
+
+    return { nivel, paiL1, paiDireto, filhosL2, filhosL1 }
   }, [dados?.linhas])
 
+  // ── IDs por nível ──────────────────────────────────────────────────────────
   const l1Ids = useMemo(
     () => (dados?.linhas || []).filter(l => hierarquia.nivel[l.item_id] === 1).map(l => l.item_id),
     [dados?.linhas, hierarquia]
@@ -335,32 +447,75 @@ export default function DRE() {
 
   const toggleL1 = id => setRecolhidosL1(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
   const toggleL2 = id => setRecolhidosL2(prev => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n })
-
   const toggleTudo = () => {
     if (todosRecolhidos) { setRecolhidosL1(new Set()); setRecolhidosL2(new Set()) }
     else { setRecolhidosL1(new Set(l1Ids)); setRecolhidosL2(new Set(l2Ids)) }
   }
 
-  const grpIds = l1Ids
+  // ── Cálculo automático dos TTs ─────────────────────────────────────────────
+  // Regra: TTs com NNs filhos → calculados a partir dos NNs.
+  //        TTs sem NNs (resultados entre grupos) → mantêm valor do banco.
+  const valsCalc = useMemo(() => {
+    const calc = { ...valsById }
+    for (const l of dados?.linhas || []) {
+      const nv = hierarquia.nivel[l.item_id]
+      if (nv !== 1 && nv !== 2) continue
+      const filhos = nv === 2
+        ? (hierarquia.filhosL2[l.item_id] || [])
+        : (hierarquia.filhosL1[l.item_id] || [])
+      if (filhos.length === 0) continue   // sem filhos → mantém valor do banco
+      const meses = {}
+      for (let mes = 1; mes <= 12; mes++) {
+        meses[mes] = filhos.reduce((s, nnid) => s + (valsById[nnid]?.[mes] ?? 0), 0)
+      }
+      calc[l.item_id] = meses
+    }
+    return calc
+  }, [valsById, hierarquia, dados?.linhas])
 
+  // ── Numeração hierárquica ──────────────────────────────────────────────────
+  // Esquema: L1 → "1", "2"... · L2 → "1.1", "1.2"... · NN → "1.1.1", "1.1.2"...
+  const numeracao = useMemo(() => {
+    const nums = {}, ctrs = {}
+    for (const l of dados?.linhas || []) {
+      const nv   = hierarquia.nivel[l.item_id]
+      const ehNN = l.tipo === 'NN' || l.tipo === null
+      if (nv === 1) {
+        ctrs['root'] = (ctrs['root'] || 0) + 1
+        nums[l.item_id] = `${ctrs['root']}`
+        ctrs[l.item_id] = 0
+      } else if (nv === 2) {
+        const pid = hierarquia.paiL1[l.item_id]
+        if (pid != null && nums[pid] != null) {
+          ctrs[pid] = (ctrs[pid] || 0) + 1
+          nums[l.item_id] = `${nums[pid]}.${ctrs[pid]}`
+          ctrs[l.item_id] = 0
+        }
+      } else if (ehNN) {
+        const pid = hierarquia.paiDireto[l.item_id]
+        if (pid != null && nums[pid] != null) {
+          ctrs[pid] = (ctrs[pid] || 0) + 1
+          nums[l.item_id] = `${nums[pid]}.${ctrs[pid]}`
+        }
+      }
+    }
+    return nums
+  }, [dados?.linhas, hierarquia])
+
+  // ── Effects ────────────────────────────────────────────────────────────────
   useEffect(() => { setRecolhidosL1(new Set()); setRecolhidosL2(new Set()) }, [clienteId, ano, unidade])
   useEffect(() => { if (!modoEdicao) { setEditando(null); setEditVal('') } }, [modoEdicao])
 
-  // ── Carregar clientes ────────────────────────────────────────────────────
   useEffect(() => {
     if (isCliente) {
       setClienteId(String(usuario.cliente_id))
     } else {
       clientesAPI.listar()
-        .then(r => {
-          setClientes(r.data || [])
-          if ((r.data || []).length === 1) setClienteId(String(r.data[0].id))
-        })
+        .then(r => { setClientes(r.data || []); if ((r.data || []).length === 1) setClienteId(String(r.data[0].id)) })
         .catch(() => {})
     }
   }, [])
 
-  // ── Ao trocar cliente: auto-detecta o ano com dados ─────────────────────
   useEffect(() => {
     if (!clienteId) { setUnidades([]); return }
     const detectarAno = async () => {
@@ -368,12 +523,7 @@ export default function DRE() {
         try {
           const r = await orcamentoAPI.unidades(clienteId, a)
           const lista = r.data || []
-          if (lista.length > 0) {
-            setAno(a)
-            setUnidades(lista)
-            setUnidade(lista.includes('CONSOLIDADO') ? 'CONSOLIDADO' : lista[0])
-            return
-          }
+          if (lista.length > 0) { setAno(a); setUnidades(lista); setUnidade(lista.includes('CONSOLIDADO') ? 'CONSOLIDADO' : lista[0]); return }
         } catch { break }
       }
       setUnidades([])
@@ -381,28 +531,22 @@ export default function DRE() {
     detectarAno()
   }, [clienteId])
 
-  // ── Ao trocar ano manualmente ─────────────────────────────────────────────
   useEffect(() => {
     if (!clienteId) return
     orcamentoAPI.unidades(clienteId, ano)
-      .then(r => {
-        const lista = r.data || []
-        setUnidades(lista)
-        setUnidade(lista.includes('CONSOLIDADO') ? 'CONSOLIDADO' : (lista[0] || 'CONSOLIDADO'))
-      })
+      .then(r => { const l = r.data || []; setUnidades(l); setUnidade(l.includes('CONSOLIDADO') ? 'CONSOLIDADO' : (l[0] || 'CONSOLIDADO')) })
       .catch(() => setUnidades([]))
   }, [ano])
 
-  // ── Carregar DRE ─────────────────────────────────────────────────────────
   const carregarDre = () => {
-    if (!clienteId) { setDados(null); setVals({}); return }
+    if (!clienteId) { setDados(null); setValsById({}); return }
     setLoading(true)
     orcamentoAPI.obterDre(clienteId, ano, unidade)
       .then(r => {
         setDados(r.data)
         const m = {}
-        for (const linha of r.data.linhas || []) m[linha.conta] = linha.valores
-        setVals(m)
+        for (const linha of r.data.linhas || []) m[linha.item_id] = linha.valores
+        setValsById(m)
       })
       .catch(() => toast.error('Erro ao carregar DRE'))
       .finally(() => setLoading(false))
@@ -410,27 +554,25 @@ export default function DRE() {
 
   useEffect(carregarDre, [clienteId, ano, unidade])
 
-  // ── Salvar valor editado ─────────────────────────────────────────────────
-  const handleCelulaSave = async (item_id, mes, conta) => {
+  // ── Salvar valor editado ────────────────────────────────────────────────────
+  const handleCelulaSave = async (item_id, mes) => {
     const v = parseFloat(String(editVal).replace(',', '.')) || 0
-    setEditando(null)
-    setEditVal('')
+    setEditando(null); setEditVal('')
     try {
       await orcamentoAPI.salvarDre(clienteId, ano, item_id, mes, v, unidade)
-      setVals(prev => ({ ...prev, [conta]: { ...(prev[conta] || {}), [mes]: v } }))
+      setValsById(prev => ({ ...prev, [item_id]: { ...(prev[item_id] || {}), [mes]: v } }))
     } catch {
       toast.error('Erro ao salvar valor')
     }
   }
 
-  const total12 = conta =>
-    Object.values(vals[conta] || {}).reduce((s, v) => s + (v || 0), 0)
+  const total12 = item_id =>
+    Object.values(valsCalc[item_id] || {}).reduce((s, v) => s + (v || 0), 0)
 
   const anos = Array.from({ length: 5 }, (_, i) => ANO_ATUAL - 2 + i)
   const nomeUnidade = u => u === 'CONSOLIDADO' ? 'Consolidado' : u
 
-  // ── Botões da barra azul ─────────────────────────────────────────────────
-  const btnBarStyle = (ativo) => ({
+  const btnBarStyle = ativo => ({
     background: ativo ? '#fffbeb' : 'rgba(255,255,255,.15)',
     border: ativo ? '1px solid #fcd34d' : '1px solid rgba(255,255,255,.3)',
     color: ativo ? '#b45309' : '#fff',
@@ -454,67 +596,40 @@ export default function DRE() {
             {clientes.find(c => String(c.id) === clienteId)?.razao_social ?? '—'}
           </div>
         ) : (
-          <select value={clienteId} onChange={e => setClienteId(e.target.value)}
-            style={{ fontSize: 13, padding: '8px 14px', minWidth: 280 }}>
+          <select value={clienteId} onChange={e => setClienteId(e.target.value)} style={{ fontSize: 13, padding: '8px 14px', minWidth: 280 }}>
             <option value="">Selecione o cliente...</option>
             {clientes.map(c => <option key={c.id} value={c.id}>{c.razao_social}</option>)}
           </select>
         )}
-
-        <select value={ano} onChange={e => setAno(Number(e.target.value))}
-          style={{ fontSize: 13, padding: '8px 14px', width: 100 }}>
+        <select value={ano} onChange={e => setAno(Number(e.target.value))} style={{ fontSize: 13, padding: '8px 14px', width: 100 }}>
           {anos.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
-
         {unidades.length > 0 && (
-          <select value={unidade} onChange={e => setUnidade(e.target.value)}
-            style={{ fontSize: 13, padding: '8px 14px', minWidth: 220 }}>
-            {unidades.map(u => (
-              <option key={u} value={u}>{u === 'CONSOLIDADO' ? 'Consolidado (todas as unidades)' : u}</option>
-            ))}
+          <select value={unidade} onChange={e => setUnidade(e.target.value)} style={{ fontSize: 13, padding: '8px 14px', minWidth: 220 }}>
+            {unidades.map(u => <option key={u} value={u}>{u === 'CONSOLIDADO' ? 'Consolidado (todas as unidades)' : u}</option>)}
           </select>
         )}
-
-        {dados?.plano && (
-          <span className="badge" style={{ fontSize: 11, background: 'var(--brand-light)', color: 'var(--brand)' }}>
-            {dados.plano.nome}
-          </span>
-        )}
-        {unidades.length > 0 && (
-          <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-            {unidades.length} unidade{unidades.length !== 1 ? 's' : ''}
-          </span>
-        )}
+        {dados?.plano && <span className="badge" style={{ fontSize: 11, background: 'var(--brand-light)', color: 'var(--brand)' }}>{dados.plano.nome}</span>}
+        {unidades.length > 0 && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{unidades.length} unidade{unidades.length !== 1 ? 's' : ''}</span>}
       </div>
 
       {/* Estados vazios */}
       {!clienteId && <div className="empty-state">Selecione um cliente para visualizar o DRE.</div>}
-
       {clienteId && !loading && dados?.plano === null && (
-        <div className="empty-state">
-          Este cliente não possui plano DRE vinculado.
-          Acesse <strong>Planos de Contas</strong> para vincular um template.
-        </div>
+        <div className="empty-state">Este cliente não possui plano DRE vinculado. Acesse <strong>Planos de Contas</strong> para vincular um template.</div>
       )}
-
       {clienteId && !loading && dados?.plano && unidades.length === 0 && (
         <div className="empty-state">
           Este cliente não possui dados de DRE importados para {ano}.<br />
-          O DRE exibe dados históricos importados via planilha Excel.<br />
-          Somente clientes com importação realizada exibem resultados aqui.
+          O DRE exibe dados históricos importados via planilha Excel.
         </div>
       )}
+      {loading && <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-3)', fontSize: 13 }}>Carregando DRE...</div>}
 
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-3)', fontSize: 13 }}>
-          Carregando DRE...
-        </div>
-      )}
-
-      {/* Tabela DRE */}
+      {/* Tabela */}
       {!loading && dados?.plano && dados.linhas?.length > 0 && unidades.length > 0 && (
         <>
-          {/* Cabeçalho da demonstração */}
+          {/* Barra azul */}
           <div style={{
             background: 'linear-gradient(90deg, var(--brand) 0%, #1a4fa8 100%)',
             color: '#fff', padding: '10px 16px', borderRadius: '8px 8px 0 0',
@@ -523,31 +638,22 @@ export default function DRE() {
             <span style={{ fontWeight: 700, fontSize: 14 }}>{dados.plano.nome}</span>
             <span style={{ opacity: .7 }}>·</span>
             <span>{ano}</span>
-            {unidades.length > 0 && (
-              <>
-                <span style={{ opacity: .7 }}>·</span>
-                <span style={{ fontWeight: 600 }}>{nomeUnidade(unidade)}</span>
-              </>
-            )}
+            <span style={{ opacity: .7 }}>·</span>
+            <span style={{ fontWeight: 600 }}>{nomeUnidade(unidade)}</span>
 
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center' }}>
-              {/* Expandir/recolher */}
-              {grpIds.length > 0 && (
+              {l1Ids.length > 0 && (
                 <button onClick={toggleTudo} style={btnBarStyle(false)}>
                   {todosRecolhidos ? '▼ Expandir tudo' : '▶ Recolher tudo'}
                 </button>
               )}
-              {/* Editar valores — apenas para não-clientes */}
               {!isCliente && (
                 <button onClick={() => setModoEdicao(p => !p)} style={btnBarStyle(modoEdicao)}>
                   {modoEdicao ? '✓ Finalizar edição' : '✏ Editar valores'}
                 </button>
               )}
-              {/* Editar template */}
               {!isCliente && (
-                <button onClick={() => setModalTemplate(true)} style={btnBarStyle(false)}>
-                  ⚙ Template
-                </button>
+                <button onClick={() => setModalTemplate(true)} style={btnBarStyle(false)}>⚙ Template</button>
               )}
             </div>
           </div>
@@ -556,43 +662,31 @@ export default function DRE() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 10 }}>
-                  <th style={{
-                    textAlign: 'left', padding: '8px 12px', minWidth: 280,
-                    position: 'sticky', left: 0, background: '#f0f4ff', zIndex: 11,
-                    fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.05em',
-                    borderBottom: '2px solid var(--brand)',
-                  }}>DESCRIÇÃO</th>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', minWidth: 300, position: 'sticky', left: 0, background: '#f0f4ff', zIndex: 11, fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.05em', borderBottom: '2px solid var(--brand)' }}>DESCRIÇÃO</th>
                   {MESES.map((m, i) => (
-                    <th key={i} style={{
-                      textAlign: 'right', padding: '8px 8px', minWidth: 80,
-                      fontWeight: 600, color: 'var(--text-2)', fontSize: 11,
-                      borderBottom: '2px solid var(--brand)', background: '#f0f4ff',
-                    }}>{m}</th>
+                    <th key={i} style={{ textAlign: 'right', padding: '8px 8px', minWidth: 80, fontWeight: 600, color: 'var(--text-2)', fontSize: 11, borderBottom: '2px solid var(--brand)', background: '#f0f4ff' }}>{m}</th>
                   ))}
-                  <th style={{
-                    textAlign: 'right', padding: '8px 10px', minWidth: 90,
-                    borderLeft: '2px solid var(--border)', fontWeight: 700,
-                    color: 'var(--brand)', fontSize: 11,
-                    borderBottom: '2px solid var(--brand)', background: '#f0f4ff',
-                  }}>TOTAL</th>
+                  <th style={{ textAlign: 'right', padding: '8px 10px', minWidth: 90, borderLeft: '2px solid var(--border)', fontWeight: 700, color: 'var(--brand)', fontSize: 11, borderBottom: '2px solid var(--brand)', background: '#f0f4ff' }}>TOTAL</th>
                 </tr>
               </thead>
               <tbody>
                 {dados.linhas.map(linha => {
-                  const nv   = hierarquia.nivel[linha.item_id]
-                  const ehNN = linha.tipo === 'NN' || linha.tipo === null
+                  const nv    = hierarquia.nivel[linha.item_id]
+                  const ehNN  = linha.tipo === 'NN' || linha.tipo === null
+                  const ehL1  = nv === 1
+                  const ehL2  = nv === 2
 
-                  if (nv === 2 && recolhidosL1.has(hierarquia.paiL1[linha.item_id])) return null
-                  if (ehNN && recolhidosL2.has(hierarquia.paiL2[linha.item_id])) return null
+                  // Visibilidade collapse
+                  if (ehL2 && recolhidosL1.has(hierarquia.paiL1[linha.item_id])) return null
+                  if (ehNN && recolhidosL2.has(hierarquia.paiDireto[linha.item_id])) return null
                   if (ehNN && recolhidosL1.has(hierarquia.paiL1[linha.item_id])) return null
 
-                  const estilo = estiloLinha(linha.tipo)
-                  const vConta = vals[linha.conta] || {}
-                  const ehL1   = nv === 1
-                  const ehL2   = nv === 2
-                  const recL1  = ehL1 && recolhidosL1.has(linha.item_id)
-                  const recL2  = ehL2 && recolhidosL2.has(linha.item_id)
+                  const estilo   = estiloLinha(linha.tipo)
+                  const vItem    = valsCalc[linha.item_id] || {}
+                  const recL1    = ehL1 && recolhidosL1.has(linha.item_id)
+                  const recL2    = ehL2 && recolhidosL2.has(linha.item_id)
                   const editavel = modoEdicao && ehNN
+                  const numStr   = numeracao[linha.item_id]
 
                   return (
                     <tr key={linha.item_id}
@@ -610,42 +704,39 @@ export default function DRE() {
                         userSelect: (ehL1 || ehL2) ? 'none' : 'auto',
                       }}>
                         {(ehL1 || ehL2) && (
-                          <span style={{ fontSize: 10, opacity: .6, marginRight: 6 }}>
+                          <span style={{ fontSize: 10, opacity: .6, marginRight: 5 }}>
                             {(recL1 || recL2) ? '▶' : '▼'}
+                          </span>
+                        )}
+                        {numStr && (
+                          <span style={{ fontSize: 10, color: 'var(--text-3)', fontFamily: 'monospace', marginRight: 6, opacity: .7 }}>
+                            {numStr}
                           </span>
                         )}
                         {linha.descricao}
                       </td>
 
                       {Array.from({ length: 12 }, (_, i) => {
-                        const mes   = i + 1
-                        const valor = vConta[mes] ?? 0
+                        const mes = i + 1
+                        const valor = vItem[mes] ?? 0
                         const isEditando = editavel && editando?.item_id === linha.item_id && editando?.mes === mes
 
                         return (
                           <td key={mes}
                             style={{
                               textAlign: 'right', padding: '5px 8px',
-                              fontWeight: estilo.fontWeight,
-                              color: corTexto(linha.tipo),
-                              fontSize: 12,
+                              fontWeight: estilo.fontWeight, color: corTexto(linha.tipo), fontSize: 12,
                               background: editavel ? 'rgba(59,130,246,.04)' : 'transparent',
                               cursor: editavel ? 'text' : 'default',
                             }}
-                            onClick={editavel && !isEditando ? (e) => {
-                              e.stopPropagation()
-                              setEditando({ item_id: linha.item_id, mes })
-                              setEditVal(valor === 0 ? '' : String(valor))
-                            } : undefined}
+                            onClick={editavel && !isEditando ? e => { e.stopPropagation(); setEditando({ item_id: linha.item_id, mes }); setEditVal(valor === 0 ? '' : String(valor)) } : undefined}
                           >
                             {isEditando ? (
-                              <input
-                                type="number"
-                                value={editVal}
+                              <input type="number" value={editVal}
                                 onChange={e => setEditVal(e.target.value)}
-                                onBlur={() => handleCelulaSave(linha.item_id, mes, linha.conta)}
+                                onBlur={() => handleCelulaSave(linha.item_id, mes)}
                                 onKeyDown={e => {
-                                  if (e.key === 'Enter') handleCelulaSave(linha.item_id, mes, linha.conta)
+                                  if (e.key === 'Enter') handleCelulaSave(linha.item_id, mes)
                                   if (e.key === 'Escape') { setEditando(null); setEditVal('') }
                                 }}
                                 onClick={e => e.stopPropagation()}
@@ -661,13 +752,10 @@ export default function DRE() {
 
                       <td style={{
                         textAlign: 'right', padding: '5px 10px',
-                        fontWeight: estilo.fontWeight || 600,
-                        color: corTexto(linha.tipo),
-                        borderLeft: '2px solid var(--border)',
-                        background: bgSticky(linha.tipo),
-                        fontSize: 12,
+                        fontWeight: estilo.fontWeight || 600, color: corTexto(linha.tipo),
+                        borderLeft: '2px solid var(--border)', background: bgSticky(linha.tipo), fontSize: 12,
                       }}>
-                        {(() => { const t = total12(linha.conta); return t !== 0 ? fmt(t) : '—' })()}
+                        {(() => { const t = total12(linha.item_id); return t !== 0 ? fmt(t) : '—' })()}
                       </td>
                     </tr>
                   )
@@ -678,15 +766,14 @@ export default function DRE() {
 
           <div style={{ display: 'flex', gap: 20, marginTop: 12, fontSize: 11, color: 'var(--text-3)', flexWrap: 'wrap' }}>
             <span>Dados importados — {ano}</span>
-            <span style={{ color: 'var(--brand)' }}>■ Subtotais calculados</span>
+            <span style={{ color: 'var(--brand)' }}>■ Subtotais calculados automaticamente</span>
             <span style={{ color: '#16a34a' }}>■ Resultado final</span>
-            {modoEdicao && <span style={{ color: '#b45309', fontWeight: 600 }}>✏ Modo edição ativo — clique em uma célula para editar</span>}
-            {!modoEdicao && grpIds.length > 0 && <span>Clique no grupo para expandir/recolher</span>}
+            {modoEdicao && <span style={{ color: '#b45309', fontWeight: 600 }}>✏ Modo edição ativo — clique em uma célula NN para editar</span>}
+            {!modoEdicao && l1Ids.length > 0 && <span>Clique no título para expandir/recolher</span>}
           </div>
         </>
       )}
 
-      {/* Modal de edição do template */}
       {modalTemplate && dados?.plano && (
         <ModalTemplateDRE
           planoId={dados.plano.id}
