@@ -184,7 +184,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 5 }}>
-                  {[['Tipo',75],['Agrupamento',140],['Descrição',null],['Conta',130],['Título Pai',170],['',44]].map(([h, w], i) => (
+                  {[['Tipo',75],['Agrupamento',140],['Descrição',null],['Conta',100],['Fórmula',160],['Título Pai',160],['',44]].map(([h, w], i) => (
                     <th key={i} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.04em', borderBottom: '2px solid var(--brand)', width: w || undefined }}>{h}</th>
                   ))}
                 </tr>
@@ -244,6 +244,23 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                           <span onClick={() => iniciarEdicao(item, 'conta')} style={{ ...cellSt, color: 'var(--text-3)', fontFamily: 'monospace', fontSize: 11 }}>
                             {item.conta || '—'}
                           </span>
+                        )}
+                      </td>
+                      {/* Fórmula (apenas TT/RES) */}
+                      <td style={{ padding: '4px 12px' }}>
+                        {ehTT ? (
+                          editKey === `${item.id}-formula` ? (
+                            <input value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'formula')}
+                              onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'formula'); if (e.key === 'Escape') setEditKey(null) }}
+                              autoFocus placeholder="ex: FAT - DED" style={{ ...inputSt, fontFamily: 'monospace' }} />
+                          ) : (
+                            <span onClick={() => iniciarEdicao(item, 'formula')} title="Clique para editar a fórmula"
+                              style={{ ...cellSt, fontFamily: 'monospace', fontSize: 10, color: item.formula ? '#1d4ed8' : '#d1d5db' }}>
+                              {item.formula || '+ filhos'}
+                            </span>
+                          )
+                        ) : (
+                          <span style={{ fontSize: 10, color: '#d1d5db' }}>—</span>
                         )}
                       </td>
                       {/* Pai */}
