@@ -60,16 +60,14 @@ export default function DRE() {
     return map
   }, [dados?.linhas])
 
-  // Cada linha NN pertence ao próximo TT abaixo dela (dentro do mesmo GRP)
+  // Cada linha NN pertence ao TT imediatamente anterior (TT é cabeçalho do grupo)
   const ttParent = useMemo(() => {
     const map = {}
-    const linhas = dados?.linhas || []
-    for (let i = 0; i < linhas.length; i++) {
-      if (linhas[i].tipo !== null) continue // só NN
-      for (let j = i + 1; j < linhas.length; j++) {
-        if (linhas[j].tipo === 'GRP') break
-        if (linhas[j].tipo === 'TT') { map[linhas[i].item_id] = linhas[j].item_id; break }
-      }
+    let ttAtual = null
+    for (const linha of dados?.linhas || []) {
+      if (linha.tipo === 'GRP') { ttAtual = null }
+      else if (linha.tipo === 'TT') { ttAtual = linha.item_id }
+      else if (linha.tipo === null && ttAtual !== null) { map[linha.item_id] = ttAtual }
     }
     return map
   }, [dados?.linhas])
