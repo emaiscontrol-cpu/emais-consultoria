@@ -109,16 +109,17 @@ def importar(excel_path: str = EXCEL_PATH):
         """))
         db.commit()
 
-        # Buscar cliente
+        # Buscar cliente (tolerante a acentos e maiúsculas)
         result = db.execute(
-            text("SELECT id FROM clientes WHERE razao_social = :nome"),
-            {"nome": CLIENTE_NOME}
+            text("SELECT id, razao_social FROM clientes WHERE lower(razao_social) LIKE lower(:nome)"),
+            {"nome": f"%{CLIENTE_NOME}%"}
         ).fetchone()
         if not result:
             print(f"[ERRO] Cliente '{CLIENTE_NOME}' não encontrado no banco.")
             print("       Cadastre o cliente primeiro via sistema.")
             return
         cliente_id = result[0]
+        print(f"Cliente encontrado: '{result[1]}' (id={cliente_id})")
         print(f"Cliente: {CLIENTE_NOME} (id={cliente_id})")
 
         # Buscar plano vinculado
