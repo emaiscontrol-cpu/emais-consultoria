@@ -1,12 +1,12 @@
 import { useEffect, useState, useCallback } from 'react'
-import { orcamentoAPI, clientesAPI } from '../../services/api'
+import { orcamentoAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 const ANO_ATUAL = new Date().getFullYear()
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 
-// ── Cálculo DRE Orçamento (modulo=O) ────────────────────────────────────────
+// ── Cálculo de totais (modulo=O) ─────────────────────────────────────────────
 function calcularTotais(linhas, vals) {
   const result = { ...vals }
   const v = (conta, m) => result[conta]?.[m] ?? 0
@@ -29,21 +29,16 @@ function calcularTotais(linhas, vals) {
 }
 
 // ── Célula editável ──────────────────────────────────────────────────────────
-function Celula({ valor, onSave, readonly, negativo }) {
+function Celula({ valor, onSave }) {
   const [editando, setEditando] = useState(false)
-  const [draft, setDraft]       = useState('')
-  const [saving, setSaving]     = useState(false)
+  const [draft,    setDraft]    = useState('')
+  const [saving,   setSaving]   = useState(false)
 
-  const fmt = v => {
-    if (v === 0 || v === null || v === undefined) return '—'
-    return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v)
-  }
+  const fmt = v => v === 0 || v == null
+    ? '—'
+    : new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v)
 
-  const abrir = () => {
-    if (readonly) return
-    setDraft(valor ? String(valor).replace('.', ',') : '')
-    setEditando(true)
-  }
+  const abrir = () => { setDraft(valor ? String(valor).replace('.', ',') : ''); setEditando(true) }
 
   const salvar = async () => {
     const num = parseFloat(draft.replace(',', '.')) || 0
@@ -54,9 +49,7 @@ function Celula({ valor, onSave, readonly, negativo }) {
 
   if (editando) return (
     <td style={{ padding: 0 }}>
-      <input
-        autoFocus
-        value={draft}
+      <input autoFocus value={draft}
         onChange={e => setDraft(e.target.value)}
         onBlur={salvar}
         onKeyDown={e => { if (e.key === 'Enter') salvar(); if (e.key === 'Escape') setEditando(false) }}
@@ -66,11 +59,11 @@ function Celula({ valor, onSave, readonly, negativo }) {
     </td>
   )
 
-  const cor = negativo && valor < 0 ? 'var(--red)' : valor > 0 ? 'inherit' : 'var(--text-3)'
+  const cor = valor < 0 ? 'var(--red)' : valor > 0 ? 'inherit' : 'var(--text-3)'
   return (
     <td onClick={abrir}
       style={{ textAlign: 'right', padding: '4px 8px', fontSize: 12,
-        cursor: readonly ? 'default' : 'pointer', color: cor,
+        cursor: 'pointer', color: cor,
         background: saving ? 'var(--brand-light)' : undefined }}>
       {fmt(valor)}
     </td>
@@ -78,117 +71,23 @@ function Celula({ valor, onSave, readonly, negativo }) {
 }
 
 // ── Estilos por tipo ──────────────────────────────────────────────────────────
-const estiloLinha = (tipo) => {
+const estiloLinha = tipo => {
   if (tipo === 'RES') return { background: 'linear-gradient(90deg,#dcfce7 0%,#f0faf4 60%,transparent 100%)', borderLeft: '3px solid #22c55e', fontWeight: 700, fontSize: 13 }
   if (tipo === 'TT')  return { background: 'linear-gradient(90deg,#e8f0ff 0%,#f4f7ff 60%,transparent 100%)', borderLeft: '3px solid var(--brand)', fontWeight: 700, fontSize: 13 }
   if (tipo === 'GRP') return { background: 'linear-gradient(90deg,#f0f0f8 0%,#f7f7fb 100%)', borderLeft: '3px solid var(--brand)', fontWeight: 800, fontSize: 11 }
   return { background: 'transparent', borderLeft: '3px solid transparent' }
 }
-const corTexto = (tipo) => {
+const corTexto = tipo => {
   if (tipo === 'RES') return '#16a34a'
   if (tipo === 'TT')  return 'var(--brand)'
   if (tipo === 'GRP') return 'var(--brand)'
   return 'inherit'
 }
-const bgSticky = (tipo) => {
+const bgSticky = tipo => {
   if (tipo === 'RES') return '#e8f5ed'
   if (tipo === 'TT')  return '#e8f0ff'
   if (tipo === 'GRP') return '#f0f0f8'
   return 'var(--surface,#fff)'
-}
-
-// ── Tabela reutilizável ───────────────────────────────────────────────────────
-function TabelaDRE({ linhas, vals, onSave, editavel: modoEdicao }) {
-  const fmt = v => v !== 0
-    ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v)
-    : '—'
-
-  const total12 = (conta) =>
-    Object.values(vals[conta] || {}).reduce((s, v) => s + (v || 0), 0)
-
-  return (
-    <div style={{ overflowX: 'auto' }}>
-      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
-        <thead>
-          <tr style={{ background: 'var(--brand)', color: '#fff' }}>
-            <th style={{ textAlign: 'left', padding: '8px 12px', minWidth: 260, position: 'sticky', left: 0, background: 'var(--brand)', zIndex: 1 }}>
-              Conta
-            </th>
-            {MESES.map((m, i) => (
-              <th key={i} style={{ textAlign: 'right', padding: '8px 8px', minWidth: 80 }}>{m}</th>
-            ))}
-            <th style={{ textAlign: 'right', padding: '8px 10px', minWidth: 90, borderLeft: '2px solid rgba(255,255,255,.2)' }}>
-              Total
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {linhas.map((linha) => {
-            const estilo   = estiloLinha(linha.tipo)
-            const ehNN     = linha.tipo == null
-            const vConta   = vals[linha.conta] || {}
-
-            if (linha.tipo === 'GRP') return (
-              <tr key={linha.item_id} style={{ ...estilo, borderBottom: '1px solid rgba(255,255,255,.06)' }}>
-                <td colSpan={14} style={{
-                  padding: '9px 14px', textTransform: 'uppercase',
-                  letterSpacing: '.07em', fontSize: 11, fontWeight: 800,
-                  color: corTexto('GRP'),
-                }}>
-                  {linha.descricao}
-                </td>
-              </tr>
-            )
-
-            return (
-              <tr key={linha.item_id}
-                style={{ ...estilo, borderBottom: '1px solid var(--border)' }}
-                onMouseEnter={e => { if (ehNN) e.currentTarget.style.background = '#f9fafb' }}
-                onMouseLeave={e => { if (ehNN) e.currentTarget.style.background = '' }}>
-
-                <td style={{
-                  padding: '6px 12px',
-                  paddingLeft: ehNN ? 28 : 14,
-                  position: 'sticky', left: 0, zIndex: 1,
-                  background: bgSticky(linha.tipo),
-                  color: corTexto(linha.tipo),
-                  fontWeight: estilo.fontWeight || 400,
-                  fontSize: estilo.fontSize || 12,
-                }}>
-                  {linha.descricao}
-                </td>
-
-                {Array.from({ length: 12 }, (_, i) => {
-                  const mes   = i + 1
-                  const valor = vConta[mes] ?? 0
-                  if (modoEdicao && ehNN) {
-                    return (
-                      <Celula key={mes} valor={valor} negativo
-                        onSave={v => onSave(linha.item_id, linha.conta, mes, v)} />
-                    )
-                  }
-                  return (
-                    <td key={mes} style={{ textAlign: 'right', padding: '5px 8px',
-                      fontWeight: estilo.fontWeight, color: corTexto(linha.tipo) }}>
-                      {valor !== 0 ? fmt(valor) : '—'}
-                    </td>
-                  )
-                })}
-
-                <td style={{ textAlign: 'right', padding: '5px 10px',
-                  fontWeight: estilo.fontWeight || 600,
-                  color: corTexto(linha.tipo),
-                  borderLeft: '2px solid var(--border)',
-                  background: bgSticky(linha.tipo) }}>
-                  {(() => { const t = total12(linha.conta); return t !== 0 ? fmt(t) : '—' })()}
-                </td>
-              </tr>
-            )
-          })}
-        </tbody>
-      </table>
-    </div>
-  )
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
@@ -196,24 +95,13 @@ export default function Orcamento() {
   const { usuario } = useAuth()
   const isCliente = usuario?.perfil === 'cliente'
 
-  const [clientes,   setClientes]   = useState([])
-  const [clienteId,  setClienteId]  = useState('')
-  const [ano,        setAno]        = useState(ANO_ATUAL)
-  const [aba,        setAba]        = useState('orcamento')  // 'orcamento' | 'dre'
+  const [clientes,  setClientes]  = useState([])
+  const [clienteId, setClienteId] = useState('')
+  const [ano,       setAno]       = useState(ANO_ATUAL)
+  const [dados,     setDados]     = useState(null)
+  const [loading,   setLoading]   = useState(false)
+  const [vals,      setVals]      = useState({})
 
-  // ── Estado Orçamento ──────────────────────────────────────────────────────
-  const [dados,    setDados]    = useState(null)
-  const [loading,  setLoading]  = useState(false)
-  const [vals,     setVals]     = useState({})
-
-  // ── Estado DRE ────────────────────────────────────────────────────────────
-  const [unidades,     setUnidades]     = useState([])
-  const [unidade,      setUnidade]      = useState('CONSOLIDADO')
-  const [dadosDre,     setDadosDre]     = useState(null)
-  const [loadingDre,   setLoadingDre]   = useState(false)
-  const [valsDre,      setValsDre]      = useState({})
-
-  // Carrega lista de clientes
   useEffect(() => {
     if (isCliente) {
       setClienteId(String(usuario.cliente_id))
@@ -227,7 +115,6 @@ export default function Orcamento() {
     }
   }, [])
 
-  // Carrega orçamento quando cliente/ano muda
   useEffect(() => {
     if (!clienteId) { setDados(null); setVals({}); return }
     setLoading(true)
@@ -244,36 +131,6 @@ export default function Orcamento() {
       .finally(() => setLoading(false))
   }, [clienteId, ano])
 
-  // Carrega unidades disponíveis quando cliente/ano muda
-  useEffect(() => {
-    if (!clienteId) { setUnidades([]); return }
-    orcamentoAPI.unidades(clienteId, ano)
-      .then(r => {
-        setUnidades(r.data || [])
-        if (r.data?.length && !r.data.includes(unidade)) {
-          setUnidade(r.data.includes('CONSOLIDADO') ? 'CONSOLIDADO' : r.data[0])
-        }
-      })
-      .catch(() => setUnidades([]))
-  }, [clienteId, ano])
-
-  // Carrega DRE quando unidade muda (só quando na aba DRE)
-  useEffect(() => {
-    if (!clienteId || aba !== 'dre') { setDadosDre(null); setValsDre({}); return }
-    setLoadingDre(true)
-    orcamentoAPI.obterDre(clienteId, ano, unidade)
-      .then(r => {
-        setDadosDre(r.data)
-        const m = {}
-        for (const linha of r.data.linhas || []) {
-          m[linha.conta] = linha.valores
-        }
-        setValsDre(m)
-      })
-      .catch(() => toast.error('Erro ao carregar DRE'))
-      .finally(() => setLoadingDre(false))
-  }, [clienteId, ano, unidade, aba])
-
   const valsCalculados = calcularTotais(dados?.linhas || [], vals)
 
   const handleSave = useCallback(async (itemId, conta, mes, valor) => {
@@ -281,11 +138,15 @@ export default function Orcamento() {
     setVals(prev => ({ ...prev, [conta]: { ...(prev[conta] || {}), [mes]: valor } }))
   }, [clienteId, ano])
 
+  const fmt = v => v !== 0
+    ? new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(v)
+    : '—'
+
+  const total12 = conta =>
+    Object.values(valsCalculados[conta] || {}).reduce((s, v) => s + (v || 0), 0)
+
   const anos = Array.from({ length: 5 }, (_, i) => ANO_ATUAL - 1 + i)
 
-  const temDre = unidades.length > 0
-
-  // ── Render ────────────────────────────────────────────────────────────────
   return (
     <div className="page">
       <div className="page-header">
@@ -295,8 +156,8 @@ export default function Orcamento() {
         </div>
       </div>
 
-      {/* Controles superiores */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 16, flexWrap: 'wrap', alignItems: 'center' }}>
+      {/* Controles */}
+      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
         {isCliente ? (
           <div className="metric-card" style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>
             {clientes.find(c => String(c.id) === clienteId)?.razao_social ?? dados?.plano?.nome ?? '—'}
@@ -323,28 +184,10 @@ export default function Orcamento() {
         )}
       </div>
 
-      {/* Tabs */}
-      {clienteId && (
-        <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderBottom: '2px solid var(--border)' }}>
-          {[
-            { key: 'orcamento', label: 'Orçamento' },
-            { key: 'dre', label: `DRE Histórico${temDre ? ` (${ano})` : ''}` },
-          ].map(tab => (
-            <button key={tab.key} onClick={() => setAba(tab.key)}
-              style={{
-                padding: '8px 20px', border: 'none', background: 'transparent',
-                fontSize: 13, fontWeight: 600, cursor: 'pointer',
-                borderBottom: aba === tab.key ? '2px solid var(--brand)' : '2px solid transparent',
-                color: aba === tab.key ? 'var(--brand)' : 'var(--text-2)',
-                marginBottom: -2,
-              }}>
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      {!clienteId && (
+        <div className="empty-state">Selecione um cliente para visualizar o orçamento.</div>
       )}
 
-      {/* Estado sem plano */}
       {!loading && clienteId && dados?.plano === null && (
         <div className="empty-state">
           Este cliente não possui plano de contas vinculado.
@@ -352,84 +195,103 @@ export default function Orcamento() {
         </div>
       )}
 
-      {!clienteId && (
-        <div className="empty-state">Selecione um cliente para visualizar o orçamento.</div>
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-3)', fontSize: 13 }}>
+          Carregando...
+        </div>
       )}
 
-      {/* ── ABA ORÇAMENTO ─────────────────────────────────────────────────── */}
-      {aba === 'orcamento' && (
+      {!loading && dados?.plano && dados.linhas?.length > 0 && (
         <>
-          {loading && (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-3)', fontSize: 13 }}>
-              Carregando...
-            </div>
-          )}
+          <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderRadius: 8 }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
+              <thead>
+                <tr style={{ background: 'var(--brand)', color: '#fff' }}>
+                  <th style={{ textAlign: 'left', padding: '8px 12px', minWidth: 260,
+                    position: 'sticky', left: 0, background: 'var(--brand)', zIndex: 1 }}>
+                    Conta
+                  </th>
+                  {MESES.map((m, i) => (
+                    <th key={i} style={{ textAlign: 'right', padding: '8px 8px', minWidth: 80 }}>{m}</th>
+                  ))}
+                  <th style={{ textAlign: 'right', padding: '8px 10px', minWidth: 90,
+                    borderLeft: '2px solid rgba(255,255,255,.2)' }}>
+                    Total
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {dados.linhas.map(linha => {
+                  const estilo = estiloLinha(linha.tipo)
+                  const ehNN   = linha.tipo == null
+                  const vConta = valsCalculados[linha.conta] || {}
 
-          {!loading && dados?.plano && dados.linhas?.length > 0 && (
-            <TabelaDRE
-              linhas={dados.linhas}
-              vals={valsCalculados}
-              onSave={handleSave}
-              editavel
-            />
-          )}
+                  if (linha.tipo === 'GRP') return (
+                    <tr key={linha.item_id} style={{ ...estilo, borderBottom: '1px solid rgba(0,0,0,.04)' }}>
+                      <td colSpan={14} style={{
+                        padding: '9px 14px', textTransform: 'uppercase',
+                        letterSpacing: '.07em', fontSize: 11, fontWeight: 800,
+                        color: corTexto('GRP'),
+                      }}>
+                        {linha.descricao}
+                      </td>
+                    </tr>
+                  )
 
-          {!loading && dados?.plano && (
-            <div style={{ display: 'flex', gap: 20, marginTop: 16, fontSize: 11, color: 'var(--text-3)', flexWrap: 'wrap' }}>
-              <span>Clique em qualquer célula branca para editar.</span>
-              <span style={{ color: 'var(--brand)' }}>■ Subtotais calculados automaticamente</span>
-              <span style={{ color: '#16a34a' }}>■ EBITDA</span>
-            </div>
-          )}
-        </>
-      )}
+                  return (
+                    <tr key={linha.item_id}
+                      style={{ ...estilo, borderBottom: '1px solid var(--border)' }}
+                      onMouseEnter={e => { if (ehNN) e.currentTarget.style.background = '#f9fafb' }}
+                      onMouseLeave={e => { if (ehNN) e.currentTarget.style.background = '' }}>
 
-      {/* ── ABA DRE HISTÓRICO ─────────────────────────────────────────────── */}
-      {aba === 'dre' && (
-        <>
-          {!temDre && !loadingDre && clienteId && (
-            <div className="empty-state">
-              Nenhum dado de DRE importado para este cliente/ano.
-            </div>
-          )}
+                      <td style={{
+                        padding: '6px 12px',
+                        paddingLeft: ehNN ? 28 : 14,
+                        position: 'sticky', left: 0, zIndex: 1,
+                        background: bgSticky(linha.tipo),
+                        color: corTexto(linha.tipo),
+                        fontWeight: estilo.fontWeight || 400,
+                        fontSize: estilo.fontSize || 12,
+                      }}>
+                        {linha.descricao}
+                      </td>
 
-          {temDre && (
-            <div style={{ display: 'flex', gap: 12, marginBottom: 16, alignItems: 'center', flexWrap: 'wrap' }}>
-              <label style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-2)' }}>Unidade:</label>
-              <select value={unidade} onChange={e => setUnidade(e.target.value)}
-                style={{ fontSize: 13, padding: '7px 14px', minWidth: 200 }}>
-                {unidades.map(u => (
-                  <option key={u} value={u}>{u === 'CONSOLIDADO' ? 'Consolidado (todas unidades)' : u}</option>
-                ))}
-              </select>
-              <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-                {unidades.length} unidade{unidades.length !== 1 ? 's' : ''} disponíve{unidades.length !== 1 ? 'is' : 'l'}
-              </span>
-            </div>
-          )}
+                      {Array.from({ length: 12 }, (_, i) => {
+                        const mes   = i + 1
+                        const valor = vConta[mes] ?? 0
+                        if (ehNN) {
+                          return (
+                            <Celula key={mes} valor={valor}
+                              onSave={v => handleSave(linha.item_id, linha.conta, mes, v)} />
+                          )
+                        }
+                        return (
+                          <td key={mes} style={{ textAlign: 'right', padding: '5px 8px',
+                            fontWeight: estilo.fontWeight, color: corTexto(linha.tipo) }}>
+                            {valor !== 0 ? fmt(valor) : '—'}
+                          </td>
+                        )
+                      })}
 
-          {loadingDre && (
-            <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-3)', fontSize: 13 }}>
-              Carregando DRE...
-            </div>
-          )}
+                      <td style={{ textAlign: 'right', padding: '5px 10px',
+                        fontWeight: estilo.fontWeight || 600,
+                        color: corTexto(linha.tipo),
+                        borderLeft: '2px solid var(--border)',
+                        background: bgSticky(linha.tipo) }}>
+                        {(() => { const t = total12(linha.conta); return t !== 0 ? fmt(t) : '—' })()}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
 
-          {!loadingDre && dadosDre?.linhas?.length > 0 && (
-            <TabelaDRE
-              linhas={dadosDre.linhas}
-              vals={valsDre}
-              onSave={null}
-              editavel={false}
-            />
-          )}
-
-          {!loadingDre && temDre && dadosDre?.linhas?.length > 0 && (
-            <div style={{ display: 'flex', gap: 20, marginTop: 16, fontSize: 11, color: 'var(--text-3)', flexWrap: 'wrap' }}>
-              <span>Dados importados do Excel DRE — {ano}</span>
-              <span style={{ color: 'var(--brand)' }}>■ Subtotais</span>
-              <span style={{ color: '#16a34a' }}>■ Resultado final</span>
-            </div>
-          )}
+          <div style={{ display: 'flex', gap: 20, marginTop: 12, fontSize: 11, color: 'var(--text-3)', flexWrap: 'wrap' }}>
+            <span>Clique em qualquer célula branca para editar.</span>
+            <span style={{ color: 'var(--brand)' }}>■ Subtotais calculados automaticamente</span>
+            <span style={{ color: '#16a34a' }}>■ EBITDA</span>
+          </div>
         </>
       )}
     </div>

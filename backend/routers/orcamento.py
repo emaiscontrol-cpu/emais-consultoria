@@ -186,19 +186,17 @@ def obter_dre(
         return {"plano": {"id": plano.id, "nome": plano.nome}, "linhas": [], "unidade": unidade}
 
     # Carregar valores da unidade selecionada
-    valores_db = db.execute(
-        text("""
-            SELECT plano_item_id, mes, valor
-            FROM orcamento_unidade_valores
-            WHERE cliente_id = :cid AND ano = :ano AND unidade = :uni
-              AND plano_item_id IN :ids
-        """),
-        {"cid": cliente_id, "ano": ano, "uni": unidade, "ids": tuple(i.id for i in itens)}
-    ).fetchall()
+    item_ids = [i.id for i in itens]
+    valores_db = db.query(models.OrcamentoUnidadeValor).filter(
+        models.OrcamentoUnidadeValor.cliente_id    == cliente_id,
+        models.OrcamentoUnidadeValor.ano           == ano,
+        models.OrcamentoUnidadeValor.unidade       == unidade,
+        models.OrcamentoUnidadeValor.plano_item_id.in_(item_ids),
+    ).all()
 
     idx: dict = {}
     for row in valores_db:
-        idx.setdefault(row[0], {})[row[1]] = row[2]
+        idx.setdefault(row.plano_item_id, {})[row.mes] = row.valor
 
     linhas = []
     for item in itens:
