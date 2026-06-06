@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useMemo } from 'react'
 import { clientesAPI, orcamentoAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -37,14 +37,46 @@ export default function DRE() {
 
   const [clientes,   setClientes]   = useState([])
   const [clienteId,  setClienteId]  = useState('')
-  const [ano,        setAno]        = useState(ANO_ATUAL - 1)  // default: ano anterior (dados históricos)
+  const [ano,        setAno]        = useState(ANO_ATUAL - 1)
 
   const [unidades,   setUnidades]   = useState([])
   const [unidade,    setUnidade]    = useState('CONSOLIDADO')
 
-  const [dados,      setDados]      = useState(null)   // { plano, unidade, linhas }
-  const [vals,       setVals]       = useState({})     // { conta: { mes: valor } }
+  const [dados,      setDados]      = useState(null)
+  const [vals,       setVals]       = useState({})
   const [loading,    setLoading]    = useState(false)
+
+  // ── Expandir/recolher grupos ──────────────────────────────────────────────
+  const [recolhidos, setRecolhidos] = useState(new Set())
+
+  const grpParent = useMemo(() => {
+    const map = {}
+    let grpAtual = null
+    for (const linha of dados?.linhas || []) {
+      if (linha.tipo === 'GRP') { grpAtual = linha.item_id }
+      else { map[linha.item_id] = grpAtual }
+    }
+    return map
+  }, [dados?.linhas])
+
+  const grpIds = useMemo(
+    () => (dados?.linhas || []).filter(l => l.tipo === 'GRP').map(l => l.item_id),
+    [dados?.linhas]
+  )
+
+  const todosRecolhidos = grpIds.length > 0 && grpIds.every(id => recolhidos.has(id))
+
+  const toggleGrp = id => setRecolhidos(prev => {
+    const next = new Set(prev)
+    if (next.has(id)) next.delete(id); else next.add(id)
+    return next
+  })
+
+  const toggleTudo = () =>
+    setRecolhidos(todosRecolhidos ? new Set() : new Set(grpIds))
+
+  // Ao trocar de cliente/ano/unidade, reset collapse
+  useEffect(() => { setRecolhidos(new Set()) }, [clienteId, ano, unidade])
 
   // ── Carregar clientes ────────────────────────────────────────────────────
   useEffect(() => {
@@ -124,7 +156,6 @@ export default function DRE() {
           {anos.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
 
-        {/* Seletor de unidade (só aparece se existirem unidades) */}
         {unidades.length > 0 && (
           <select value={unidade} onChange={e => setUnidade(e.target.value)}
             style={{ fontSize: 13, padding: '8px 14px', minWidth: 220 }}>
@@ -174,7 +205,7 @@ export default function DRE() {
         </div>
       )}
 
-      {/* Tabela DRE — só exibe se houver dados importados (unidades > 0) */}
+      {/* Tabela DRE */}
       {!loading && dados?.plano && dados.linhas?.length > 0 && unidades.length > 0 && (
         <>
           {/* Cabeçalho da demonstração */}
@@ -183,9 +214,7 @@ export default function DRE() {
             color: '#fff', padding: '10px 16px', borderRadius: '8px 8px 0 0',
             display: 'flex', alignItems: 'center', gap: 16, fontSize: 13,
           }}>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>
-              {dados.plano.nome}
-            </span>
+            <span style={{ fontWeight: 700, fontSize: 14 }}>{dados.plano.nome}</span>
             <span style={{ opacity: .7 }}>·</span>
             <span>{ano}</span>
             {unidades.length > 0 && (
@@ -194,15 +223,28 @@ export default function DRE() {
                 <span style={{ fontWeight: 600 }}>{nomeUnidade(unidade)}</span>
               </>
             )}
+            {/* Botão global expandir/recolher */}
+            {grpIds.length > 0 && (
+              <button onClick={toggleTudo} style={{
+                marginLeft: 'auto',
+                background: 'rgba(255,255,255,.15)',
+                border: '1px solid rgba(255,255,255,.3)',
+                color: '#fff', borderRadius: 6,
+                padding: '4px 12px', fontSize: 11, fontWeight: 600,
+                cursor: 'pointer', whiteSpace: 'nowrap',
+              }}>
+                {todosRecolhidos ? '▼ Expandir tudo' : '▶ Recolher tudo'}
+              </button>
+            )}
           </div>
 
-          <div style={{ overflowX: 'auto', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 260px)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
-                <tr style={{ background: '#f0f4ff' }}>
+                <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 10 }}>
                   <th style={{
                     textAlign: 'left', padding: '8px 12px', minWidth: 280,
-                    position: 'sticky', left: 0, background: '#f0f4ff', zIndex: 1,
+                    position: 'sticky', left: 0, background: '#f0f4ff', zIndex: 11,
                     fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.05em',
                     borderBottom: '2px solid var(--brand)',
                   }}>
@@ -213,6 +255,7 @@ export default function DRE() {
                       textAlign: 'right', padding: '8px 8px', minWidth: 80,
                       fontWeight: 600, color: 'var(--text-2)', fontSize: 11,
                       borderBottom: '2px solid var(--brand)',
+                      background: '#f0f4ff',
                     }}>{m}</th>
                   ))}
                   <th style={{
@@ -220,6 +263,7 @@ export default function DRE() {
                     borderLeft: '2px solid var(--border)', fontWeight: 700,
                     color: 'var(--brand)', fontSize: 11,
                     borderBottom: '2px solid var(--brand)',
+                    background: '#f0f4ff',
                   }}>
                     TOTAL
                   </th>
@@ -227,20 +271,34 @@ export default function DRE() {
               </thead>
               <tbody>
                 {dados.linhas.map(linha => {
+                  // Ocultar linhas cujo grupo pai está recolhido
+                  if (linha.tipo !== 'GRP' && recolhidos.has(grpParent[linha.item_id])) {
+                    return null
+                  }
+
                   const estilo = estiloLinha(linha.tipo)
                   const vConta = vals[linha.conta] || {}
 
-                  if (linha.tipo === 'GRP') return (
-                    <tr key={linha.item_id} style={{ ...estilo, borderBottom: '1px solid rgba(0,0,0,.04)' }}>
-                      <td colSpan={14} style={{
-                        padding: '8px 14px', textTransform: 'uppercase',
-                        letterSpacing: '.08em', fontSize: 11, fontWeight: 800,
-                        color: corTexto('GRP'),
-                      }}>
-                        {linha.descricao}
-                      </td>
-                    </tr>
-                  )
+                  if (linha.tipo === 'GRP') {
+                    const estaRecolhido = recolhidos.has(linha.item_id)
+                    return (
+                      <tr key={linha.item_id} style={{ ...estilo, borderBottom: '1px solid rgba(0,0,0,.04)' }}>
+                        <td colSpan={14} style={{
+                          padding: '8px 14px', textTransform: 'uppercase',
+                          letterSpacing: '.08em', fontSize: 11, fontWeight: 800,
+                          color: corTexto('GRP'),
+                          cursor: 'pointer', userSelect: 'none',
+                        }}
+                          onClick={() => toggleGrp(linha.item_id)}
+                        >
+                          <span style={{ fontSize: 10, opacity: .7, marginRight: 8 }}>
+                            {estaRecolhido ? '▶' : '▼'}
+                          </span>
+                          {linha.descricao}
+                        </td>
+                      </tr>
+                    )
+                  }
 
                   const ehNN = linha.tipo == null
 
@@ -294,6 +352,9 @@ export default function DRE() {
             <span>Dados importados — {ano}</span>
             <span style={{ color: 'var(--brand)' }}>■ Subtotais calculados</span>
             <span style={{ color: '#16a34a' }}>■ Resultado final</span>
+            {grpIds.length > 0 && (
+              <span>Clique no grupo para expandir/recolher</span>
+            )}
           </div>
         </>
       )}

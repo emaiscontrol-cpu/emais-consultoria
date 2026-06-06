@@ -18,8 +18,21 @@ jobs:
       - name: Reiniciar backend
         run: |
           Stop-Service EmaisBackend -Force -ErrorAction SilentlyContinue
-          $svc = Get-Service EmaisBackend
-          $svc.WaitForStatus('Stopped', '00:00:30')
-          Start-Sleep -Seconds 2
+          # Aguarda a porta 8000 ficar livre (máx 30s)
+          $aguardado = 0
+          while ($aguardado -lt 30) {
+            $ocupada = netstat -ano | Select-String ":8000\s.*LISTENING"
+            if (-not $ocupada) { break }
+            Start-Sleep -Seconds 1
+            $aguardado++
+          }
+          # Se ainda ocupada, mata o processo na porta
+          if ($aguardado -ge 30) {
+            $pidPorta = (netstat -ano | Select-String ":8000\s.*LISTENING" |
+              ForEach-Object { ($_.ToString().Trim() -split '\s+')[-1] })[0]
+            if ($pidPorta) { Stop-Process -Id $pidPorta -Force -ErrorAction SilentlyContinue }
+            Start-Sleep -Seconds 2
+          }
           Start-Service EmaisBackend
+          Write-Host "Backend reiniciado. Porta liberada em $aguardado segundos."
         shell: powershell

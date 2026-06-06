@@ -14,7 +14,15 @@ export function AuthProvider({ children }) {
     if (token) {
       authAPI.me()
         .then(r => { setUsuario(r.data); localStorage.setItem('usuario', JSON.stringify(r.data)) })
-        .catch(() => { localStorage.removeItem('token'); localStorage.removeItem('usuario'); setUsuario(null) })
+        .catch(err => {
+          // Só invalida o token em 401 — erros de rede/servidor não deslogam
+          if (err.response?.status === 401 || err.response?.status === 403) {
+            localStorage.removeItem('token')
+            localStorage.removeItem('usuario')
+            setUsuario(null)
+          }
+          // Rede indisponível ou 5xx: mantém usuário do localStorage
+        })
         .finally(() => setLoading(false))
     } else {
       setLoading(false)

@@ -551,7 +551,11 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
 }
 
 function FaseCard({ fase, usuarios, perfil, onRefresh }) {
-  const [open,          setOpen]          = useState(fase.status === 'em_andamento' || fase.status === 'pendente')
+  const [open, setOpen] = useState(
+    ['admin','consultor','ger_projeto'].includes(perfil)
+      ? true
+      : fase.status === 'em_andamento' || fase.status === 'pendente'
+  )
   const [painel,        setPainel]        = useState(null) // 'editar' | 'comentarios' | 'parametros' | null
   const [showAddTarefa, setShowAddTarefa] = useState(false)
   const [formTarefa,    setFormTarefa]    = useState({ nome:'', responsavel_id:'', requer_validacao:false, data_prazo:'' })
@@ -676,9 +680,9 @@ function FaseCard({ fase, usuarios, perfil, onRefresh }) {
     <div className="card" style={{ marginBottom:10, opacity: bloqueada ? .75 : 1 }}>
       {/* Cabeçalho da fase */}
       <div style={{ display:'flex', alignItems:'center', gap:10 }}>
-        <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, cursor: bloqueada ? 'default' : 'pointer', userSelect:'none' }}
-          onClick={() => !bloqueada && setOpen(v=>!v)}>
-          {bloqueada
+        <div style={{ display:'flex', alignItems:'center', gap:10, flex:1, cursor: 'pointer', userSelect:'none' }}
+          onClick={() => setOpen(v=>!v)}>
+          {bloqueada && !isConsultor
             ? <Lock size={14} color="var(--text-3)" />
             : open ? <ChevronDown size={14}/> : <ChevronRight size={14}/>
           }
@@ -852,7 +856,7 @@ function FaseCard({ fase, usuarios, perfil, onRefresh }) {
       )}
 
       {/* Lista de tarefas */}
-      {open && !bloqueada && (
+      {open && (!bloqueada || isConsultor) && (
         <div style={{ marginTop:12 }}>
           <div style={{ display:'grid', gridTemplateColumns:'32px 1fr 100px 80px 100px 185px', gap:10, padding:'0 4px 6px', borderBottom:'0.5px solid var(--border)' }}>
             <div/><div className="section-title" style={{ margin:0 }}>Tarefa</div>
@@ -960,6 +964,7 @@ export default function ProjetoDetalhe() {
   const [projeto,  setProjeto]  = useState(null)
   const [usuarios, setUsuarios] = useState([])
   const [loading,  setLoading]  = useState(true)
+  const [erro,     setErro]     = useState(false)
   const [showAddFase, setShowAddFase] = useState(false)
   const [formFase, setFormFase] = useState({ nome:'', descricao:'', perc_desbloqueio:80, bloqueado_por_anterior:true, data_inicio:'', data_fim_prev:'' })
   const [savingFase, setSavingFase] = useState(false)
@@ -967,6 +972,8 @@ export default function ProjetoDetalhe() {
   const isConsultor = ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
 
   const carregar = async () => {
+    setLoading(true)
+    setErro(false)
     try {
       const [p, u] = await Promise.all([
         projetosAPI.detalhe(id),
@@ -974,7 +981,10 @@ export default function ProjetoDetalhe() {
       ])
       setProjeto(p.data)
       setUsuarios(u.data)
-    } catch { toast.error('Erro ao carregar projeto') }
+    } catch {
+      setErro(true)
+      toast.error('Erro ao carregar projeto. Verifique a conexão.')
+    }
     finally { setLoading(false) }
   }
 
@@ -1003,7 +1013,22 @@ export default function ProjetoDetalhe() {
     finally { setSavingFase(false) }
   }
 
-  if (loading || !projeto) return <LoadingPage />
+  if (loading) return <LoadingPage />
+
+  if (erro || !projeto) return (
+    <div className="page">
+      <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', padding:'80px 20px', gap:16 }}>
+        <div style={{ fontSize:14, color:'var(--text-2)', fontWeight:600 }}>Não foi possível carregar o projeto.</div>
+        <div style={{ fontSize:12, color:'var(--text-3)' }}>Verifique a conexão e tente novamente.</div>
+        <div style={{ display:'flex', gap:10, marginTop:8 }}>
+          <button className="btn btn-primary btn-sm" onClick={carregar}>Tentar novamente</button>
+          <button className="btn btn-sm" onClick={() => navigate('/projetos')}>
+            <ArrowLeft size={13}/> Voltar aos projetos
+          </button>
+        </div>
+      </div>
+    </div>
+  )
 
   return (
     <div className="page">
