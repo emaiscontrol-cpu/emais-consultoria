@@ -375,7 +375,7 @@ export default function Planos() {
                                   </td>
                                   <td style={{ textAlign:'center', fontSize:11, color:'var(--text-3)', fontVariantNumeric:'tabular-nums' }}>{idx + 1}</td>
                                   <td style={{ fontFamily:'monospace', fontSize:11, cursor:'pointer', color: item.agrupamento ? 'inherit' : 'var(--text-3)' }}
-                                    title="Agrupamento (em desenvolvimento)"
+                                    title="Clique para editar o agrupamento"
                                     onClick={() => setPopover({ item, field:'agrupamento' })}>
                                     {item.agrupamento || <span style={{ fontSize:10 }}>+ AGR</span>}
                                   </td>
@@ -573,12 +573,27 @@ export default function Planos() {
 
             {popover.field === 'agrupamento' && (
               <>
-                <div style={{ fontWeight:700, fontSize:13, marginBottom:8 }}>Agrupamento</div>
-                <div style={{ fontSize:12, color:'var(--text-3)' }}>
-                  Cadastro de agrupamentos em desenvolvimento.
+                <div style={{ fontWeight:700, fontSize:13, marginBottom:8 }}>
+                  Agrupamento{popover.bulk ? ` (${selecionados.size} itens)` : ''}
                 </div>
-                <button className="btn btn-sm" style={{ marginTop:12 }}
-                  onClick={() => setPopover(null)}>Fechar</button>
+                <input
+                  autoFocus
+                  defaultValue={!popover.bulk ? (popover.item?.agrupamento || '') : ''}
+                  placeholder="ex: RECEITA, CUSTOS_VAR..."
+                  style={{ width:'100%', fontSize:12, padding:'6px 8px', border:'1px solid var(--border)', borderRadius:5, fontFamily:'monospace', outline:'none' }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') aplicarPopover(e.target.value.trim() || null)
+                    if (e.key === 'Escape') setPopover(null)
+                  }}
+                  id="agr-input"
+                />
+                <div style={{ display:'flex', gap:8, marginTop:10 }}>
+                  <button className="btn btn-sm" style={{ flex:1, background:'var(--brand)', color:'#fff' }}
+                    onClick={() => aplicarPopover(document.getElementById('agr-input').value.trim() || null)}>
+                    Aplicar
+                  </button>
+                  <button className="btn btn-sm" onClick={() => setPopover(null)}>Cancelar</button>
+                </div>
               </>
             )}
           </div>
