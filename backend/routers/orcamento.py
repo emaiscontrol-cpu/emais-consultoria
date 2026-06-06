@@ -264,6 +264,7 @@ def obter_dre(
             "tipo":        item.tipo,
             "movimento":   item.movimento,
             "ordem":       item.ordem,
+            "formula":     item.formula,
             "valores":     {m: vals.get(m, 0.0) for m in range(1, 13)},
         })
 

@@ -453,23 +453,84 @@ export default function DRE() {
   }
 
   // ── Cálculo automático dos TTs ─────────────────────────────────────────────
-  // Regra: TTs com NNs filhos → calculados a partir dos NNs.
-  //        TTs sem NNs (resultados entre grupos) → mantêm valor do banco.
+  // Regra:
+  //   1. TTs com campo formula → avalia expressão referenciando conta ou agrupamento
+  //   2. TTs sem formula mas com NNs filhos → soma dos filhos (comportamento original)
+  //   3. Demais → mantém valor do banco
+  //
+  // Sintaxe da fórmula: tokens separados por espaço com + e -
+  //   ex: "FAT - DED"  /  "RECEITA - DEDUCOES"  /  "MC2 - TCI + ORO"
   const valsCalc = useMemo(() => {
     const calc = { ...valsById }
-    for (const l of dados?.linhas || []) {
-      const nv = hierarquia.nivel[l.item_id]
-      if (nv !== 1 && nv !== 2) continue
-      const filhos = nv === 2
-        ? (hierarquia.filhosL2[l.item_id] || [])
-        : (hierarquia.filhosL1[l.item_id] || [])
-      if (filhos.length === 0) continue   // sem filhos → mantém valor do banco
-      const meses = {}
-      for (let mes = 1; mes <= 12; mes++) {
-        meses[mes] = filhos.reduce((s, nnid) => s + (valsById[nnid]?.[mes] ?? 0), 0)
+
+    // Mapa de lookup: conta/agrupamento → {mes: valor}
+    // Populado com NNs primeiro (soma absoluta por agrupamento)
+    const byToken = {}
+
+    const linhasOrdenadas = [...(dados?.linhas || [])].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+
+    // Fase 1: NNs — somar por agrupamento e indexar por conta
+    for (const l of linhasOrdenadas) {
+      const ehNN = l.tipo === 'NN' || l.tipo === null
+      if (!ehNN) continue
+      const agr = l.agrupamento
+      if (agr) {
+        if (!byToken[agr]) byToken[agr] = {}
+        for (let mes = 1; mes <= 12; mes++) {
+          byToken[agr][mes] = (byToken[agr][mes] || 0) + (valsById[l.item_id]?.[mes] ?? 0)
+        }
       }
-      calc[l.item_id] = meses
+      if (l.conta) {
+        byToken[l.conta] = {}
+        for (let mes = 1; mes <= 12; mes++) byToken[l.conta][mes] = valsById[l.item_id]?.[mes] ?? 0
+      }
     }
+
+    // Fase 2: TTs/RES em ordem — fórmula explícita ou soma de filhos
+    for (const l of linhasOrdenadas) {
+      const ehTT = l.tipo === 'TT' || l.tipo === 'RES'
+      if (!ehTT) continue
+
+      let resultado = null
+
+      if (l.formula) {
+        // Avalia expressão mês a mês: tokens separados por espaço com + e -
+        const tokens = l.formula.trim().split(/\s+/)
+        resultado = {}
+        for (let mes = 1; mes <= 12; mes++) {
+          let v = 0, sg = 1
+          for (const tok of tokens) {
+            if (tok === '+') { sg = 1; continue }
+            if (tok === '-') { sg = -1; continue }
+            v += sg * ((byToken[tok] || {})[mes] ?? 0)
+            sg = 1
+          }
+          resultado[mes] = v
+        }
+      } else {
+        // Fallback: soma filhos diretos (hierarquia)
+        const nv = hierarquia.nivel[l.item_id]
+        if (nv === 1 || nv === 2) {
+          const filhos = nv === 2
+            ? (hierarquia.filhosL2[l.item_id] || [])
+            : (hierarquia.filhosL1[l.item_id] || [])
+          if (filhos.length > 0) {
+            resultado = {}
+            for (let mes = 1; mes <= 12; mes++) {
+              resultado[mes] = filhos.reduce((s, id) => s + (valsById[id]?.[mes] ?? 0), 0)
+            }
+          }
+        }
+      }
+
+      if (resultado) {
+        calc[l.item_id] = resultado
+        // Disponibiliza o resultado para fórmulas subsequentes
+        if (l.agrupamento) byToken[l.agrupamento] = resultado
+        if (l.conta)       byToken[l.conta]       = resultado
+      }
+    }
+
     return calc
   }, [valsById, hierarquia, dados?.linhas])
 
@@ -555,14 +616,18 @@ export default function DRE() {
   useEffect(carregarDre, [clienteId, ano, unidade])
 
   // ── Salvar valor editado ────────────────────────────────────────────────────
-  const handleCelulaSave = async (item_id, mes) => {
-    const v = parseFloat(String(editVal).replace(',', '.')) || 0
-    setEditando(null); setEditVal('')
+  const handleCelulaSave = async (item_id, mes, valorStr) => {
+    const raw = String(valorStr ?? editVal)
+    const v = parseFloat(raw.replace(',', '.')) || 0
+    setEditando(null)
+    setEditVal('')
+    setValsById(prev => ({ ...prev, [item_id]: { ...(prev[item_id] || {}), [mes]: v } }))
     try {
       await orcamentoAPI.salvarDre(clienteId, ano, item_id, mes, v, unidade)
-      setValsById(prev => ({ ...prev, [item_id]: { ...(prev[item_id] || {}), [mes]: v } }))
-    } catch {
-      toast.error('Erro ao salvar valor')
+    } catch(err) {
+      const detail = err?.response?.data?.detail || err?.message || 'verifique o console (F12)'
+      toast.error(`Erro ao salvar: ${detail}`)
+      carregarDre()
     }
   }
 
@@ -732,11 +797,11 @@ export default function DRE() {
                             onClick={editavel && !isEditando ? e => { e.stopPropagation(); setEditando({ item_id: linha.item_id, mes }); setEditVal(valor === 0 ? '' : String(valor)) } : undefined}
                           >
                             {isEditando ? (
-                              <input type="number" value={editVal}
+                              <input type="text" inputMode="decimal" value={editVal}
                                 onChange={e => setEditVal(e.target.value)}
-                                onBlur={() => handleCelulaSave(linha.item_id, mes)}
+                                onBlur={e => handleCelulaSave(linha.item_id, mes, e.target.value)}
                                 onKeyDown={e => {
-                                  if (e.key === 'Enter') handleCelulaSave(linha.item_id, mes)
+                                  if (e.key === 'Enter') { e.preventDefault(); e.target.blur() }
                                   if (e.key === 'Escape') { setEditando(null); setEditVal('') }
                                 }}
                                 onClick={e => e.stopPropagation()}

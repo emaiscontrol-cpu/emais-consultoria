@@ -399,6 +399,7 @@ class PlanoItem(Base):
     modulo      = Column(String(20), nullable=True)    # F | D | O | F,D | F,D,O etc.
     movimento   = Column(String(50), nullable=True)    # Entrada/Saída ou Receita/Despesa
     ordem       = Column(Integer, default=0)
+    formula     = Column(Text, nullable=True)          # ex: "FAT - DED" ou "RECEITA - DEDUCOES"
     plano       = relationship("Plano", back_populates="itens")
 
 

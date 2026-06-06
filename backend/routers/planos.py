@@ -36,6 +36,7 @@ class PlanoItemCreate(BaseModel):
     modulo: Optional[str] = None
     movimento: Optional[str] = None
     ordem: Optional[int] = 0
+    formula: Optional[str] = None
 
 class PlanoItemUpdate(BaseModel):
     agrupamento: Optional[str] = None
@@ -45,6 +46,7 @@ class PlanoItemUpdate(BaseModel):
     modulo: Optional[str] = None
     movimento: Optional[str] = None
     ordem: Optional[int] = None
+    formula: Optional[str] = None
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -73,7 +75,7 @@ def item_to_dict(i: PlanoItem):
         "id": i.id, "plano_id": i.plano_id,
         "agrupamento": i.agrupamento, "descricao": i.descricao,
         "conta": i.conta, "tipo": i.tipo, "modulo": i.modulo,
-        "movimento": i.movimento, "ordem": i.ordem,
+        "movimento": i.movimento, "ordem": i.ordem, "formula": i.formula,
     }
 
 _KNOWN_HEADERS = {"agrupamento", "classificação", "classificacao", "descricao", "descrição",

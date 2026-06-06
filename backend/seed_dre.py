@@ -152,3 +152,30 @@ def seed_dre(db):
         print(f"[seed_dre] {novos} itens DRE adicionados ao plano '{plano.nome}'.")
     else:
         print("[seed_dre] Nenhum item novo para adicionar (já importados).")
+
+    _atualizar_formulas_dre(db, plano)
+
+
+# Fórmulas dos TTs resultado — baseadas na estrutura do Excel SC 3.11
+# Chave = agrupamento do item TT sem filhos NN diretos
+_FORMULAS_DRE = {
+    "TOTAL_RECEITA":  "RECEITA - DEDUCOES",
+    "MARGEM_VENDA":   "TOTAL_RECEITA - CUSTOS_VAR",
+    "MARGEM_CONTR":   "MARGEM_VENDA - DESP_VAR",
+    "MARGEM_CONTR2":  "MARGEM_CONTR - PESSOAL",
+    "EBITDA":         "MARGEM_CONTR2 - CUSTOS_FIX_IND + OUTRAS_REC",
+    "RESULTADO":      "EBITDA - RESULTADO_FIN",
+}
+
+
+def _atualizar_formulas_dre(db, plano):
+    """Atualiza o campo formula nos TTs resultado do DRE Shopping."""
+    alterados = 0
+    for item in plano.itens:
+        nova = _FORMULAS_DRE.get(item.agrupamento)
+        if nova and item.formula != nova:
+            item.formula = nova
+            alterados += 1
+    if alterados:
+        db.commit()
+        print(f"[seed_dre] {alterados} fórmulas de resultado atualizadas.")
