@@ -92,9 +92,30 @@ export default function DRE() {
     }
   }, [])
 
-  // ── Carregar unidades disponíveis ────────────────────────────────────────
+  // ── Ao trocar cliente: auto-detecta o ano com dados ─────────────────────
   useEffect(() => {
     if (!clienteId) { setUnidades([]); return }
+    const detectarAno = async () => {
+      for (let a = ANO_ATUAL - 1; a >= ANO_ATUAL - 4; a--) {
+        try {
+          const r = await orcamentoAPI.unidades(clienteId, a)
+          const lista = r.data || []
+          if (lista.length > 0) {
+            setAno(a)
+            setUnidades(lista)
+            setUnidade(lista.includes('CONSOLIDADO') ? 'CONSOLIDADO' : lista[0])
+            return
+          }
+        } catch { break }
+      }
+      setUnidades([])
+    }
+    detectarAno()
+  }, [clienteId])
+
+  // ── Ao trocar ano manualmente: recarrega unidades ─────────────────────────
+  useEffect(() => {
+    if (!clienteId) return
     orcamentoAPI.unidades(clienteId, ano)
       .then(r => {
         const lista = r.data || []
@@ -102,7 +123,7 @@ export default function DRE() {
         setUnidade(lista.includes('CONSOLIDADO') ? 'CONSOLIDADO' : (lista[0] || 'CONSOLIDADO'))
       })
       .catch(() => setUnidades([]))
-  }, [clienteId, ano])
+  }, [ano])
 
   // ── Carregar DRE ─────────────────────────────────────────────────────────
   useEffect(() => {
