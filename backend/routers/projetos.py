@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session, joinedload
+from sqlalchemy.orm import Session, joinedload, selectinload
 from typing import List, Optional
 from database import get_db
 from auth import get_usuario_atual, requer_perfil
@@ -41,12 +41,19 @@ def listar(
 def detalhe(id: int, db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
     p = db.query(models.Projeto).options(
         joinedload(models.Projeto.cliente),
-        joinedload(models.Projeto.fases)
-            .joinedload(models.Fase.tarefas)
+        selectinload(models.Projeto.fases)
+            .selectinload(models.Fase.comentarios_fase)
+            .joinedload(models.ComentarioFase.autor),
+        selectinload(models.Projeto.fases)
+            .selectinload(models.Fase.tarefas)
             .joinedload(models.Tarefa.responsavel),
-        joinedload(models.Projeto.fases)
-            .joinedload(models.Fase.tarefas)
-            .joinedload(models.Tarefa.subtarefas),
+        selectinload(models.Projeto.fases)
+            .selectinload(models.Fase.tarefas)
+            .selectinload(models.Tarefa.responsaveis),
+        selectinload(models.Projeto.fases)
+            .selectinload(models.Fase.tarefas)
+            .selectinload(models.Tarefa.subtarefas)
+            .joinedload(models.Subtarefa.responsavel),
     ).filter(models.Projeto.id == id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
