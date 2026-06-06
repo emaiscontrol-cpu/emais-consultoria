@@ -170,6 +170,8 @@ export const orcamentoAPI = {
   obter:            (clienteId, ano)          => api.get(`/orcamento/cliente/${clienteId}/ano/${ano}`),
   salvar:           (clienteId, ano, itemId, mes, valor) =>
     api.put(`/orcamento/cliente/${clienteId}/ano/${ano}/item/${itemId}/mes/${mes}`, { valor }),
+  unidades:         (clienteId, ano)          => api.get(`/orcamento/cliente/${clienteId}/ano/${ano}/unidades`),
+  obterDre:         (clienteId, ano, unidade) => api.get(`/orcamento/cliente/${clienteId}/ano/${ano}/dre`, { params: { unidade } }),
 }
 
 export const anotacoesAPI = {

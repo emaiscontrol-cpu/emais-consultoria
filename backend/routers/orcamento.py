@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
+from sqlalchemy import text
 from pydantic import BaseModel
 from typing import Optional
 from database import get_db
@@ -134,6 +135,90 @@ def salvar_valor(
 
     db.commit()
     return {"ok": True, "valor": reg.valor}
+
+
+@router.get("/cliente/{cliente_id}/ano/{ano}/unidades")
+def listar_unidades(
+    cliente_id: int,
+    ano: int,
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    """Retorna as unidades disponíveis para o DRE do cliente/ano."""
+    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+        raise HTTPException(403, "Acesso negado")
+
+    rows = db.execute(
+        text("""
+            SELECT DISTINCT unidade FROM orcamento_unidade_valores
+            WHERE cliente_id = :cid AND ano = :ano
+            ORDER BY CASE WHEN unidade = 'CONSOLIDADO' THEN '0' ELSE unidade END
+        """),
+        {"cid": cliente_id, "ano": ano}
+    ).fetchall()
+
+    return [r[0] for r in rows]
+
+
+@router.get("/cliente/{cliente_id}/ano/{ano}/dre")
+def obter_dre(
+    cliente_id: int,
+    ano: int,
+    unidade: str = Query("CONSOLIDADO"),
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    """Retorna o DRE histórico por unidade (dados importados do Excel)."""
+    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+        raise HTTPException(403, "Acesso negado")
+
+    plano = _get_plano_cliente(cliente_id, db)
+    if not plano:
+        return {"plano": None, "linhas": [], "unidade": unidade}
+
+    # Itens DRE: modulo contém 'D'
+    itens = [
+        i for i in plano.itens
+        if i.modulo and "D" in [m.strip().upper() for m in i.modulo.split(",")]
+    ]
+
+    if not itens:
+        return {"plano": {"id": plano.id, "nome": plano.nome}, "linhas": [], "unidade": unidade}
+
+    # Carregar valores da unidade selecionada
+    valores_db = db.execute(
+        text("""
+            SELECT plano_item_id, mes, valor
+            FROM orcamento_unidade_valores
+            WHERE cliente_id = :cid AND ano = :ano AND unidade = :uni
+              AND plano_item_id IN :ids
+        """),
+        {"cid": cliente_id, "ano": ano, "uni": unidade, "ids": tuple(i.id for i in itens)}
+    ).fetchall()
+
+    idx: dict = {}
+    for row in valores_db:
+        idx.setdefault(row[0], {})[row[1]] = row[2]
+
+    linhas = []
+    for item in itens:
+        vals = idx.get(item.id, {})
+        linhas.append({
+            "item_id":     item.id,
+            "conta":       item.conta,
+            "descricao":   item.descricao,
+            "agrupamento": item.agrupamento,
+            "tipo":        item.tipo,
+            "movimento":   item.movimento,
+            "ordem":       item.ordem,
+            "valores":     {m: vals.get(m, 0.0) for m in range(1, 13)},
+        })
+
+    return {
+        "plano":   {"id": plano.id, "nome": plano.nome},
+        "unidade": unidade,
+        "linhas":  linhas,
+    }
 
 
 @router.get("/clientes")

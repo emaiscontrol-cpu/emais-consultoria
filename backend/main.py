@@ -35,6 +35,16 @@ with engine.connect() as conn:
             valor REAL DEFAULT 0.0,
             UNIQUE(plano_item_id, cliente_id, ano, mes)
         )""",
+        """CREATE TABLE IF NOT EXISTS orcamento_unidade_valores (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plano_item_id INTEGER NOT NULL REFERENCES planos_itens(id),
+            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+            ano INTEGER NOT NULL,
+            mes INTEGER NOT NULL,
+            unidade TEXT NOT NULL,
+            valor REAL DEFAULT 0.0,
+            UNIQUE(plano_item_id, cliente_id, ano, mes, unidade)
+        )""",
     ]:
         try:
             conn.execute(text(stmt))
@@ -93,7 +103,7 @@ app.include_router(balancete.router,      prefix="/api/balancete",      tags=["B
 app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
 app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["Orçamento"])
 
-app.version = "2.1.0p"
+app.version = "2.2.0a"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -114,6 +124,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

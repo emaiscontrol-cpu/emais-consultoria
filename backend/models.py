@@ -347,6 +347,18 @@ class OrcamentoValor(Base):
     __table_args__ = (UniqueConstraint("plano_item_id", "cliente_id", "ano", "mes"),)
 
 
+class OrcamentoUnidadeValor(Base):
+    __tablename__ = "orcamento_unidade_valores"
+    id            = Column(Integer, primary_key=True, index=True)
+    plano_item_id = Column(Integer, ForeignKey("planos_itens.id"), nullable=False)
+    cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    ano           = Column(Integer, nullable=False)
+    mes           = Column(Integer, nullable=False)   # 1–12
+    unidade       = Column(String, nullable=False)    # código da unidade ex: "001", "CONSOLIDADO"
+    valor         = Column(Float, default=0.0)
+    __table_args__ = (UniqueConstraint("plano_item_id", "cliente_id", "ano", "mes", "unidade"),)
+
+
 class OrcamentoLinha(Base):
     __tablename__ = "orcamento_linhas"
     id              = Column(Integer, primary_key=True, index=True)
