@@ -111,6 +111,31 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
     }
   }
 
+  const moverItem = async (item, direcao) => {
+    const idx = itens.findIndex(i => i.id === item.id)
+    const vizinho = direcao === 'up' ? itens[idx - 1] : itens[idx + 1]
+    if (!vizinho) return
+    const ordemA = item.ordem ?? idx
+    const ordemB = vizinho.ordem ?? (direcao === 'up' ? idx - 1 : idx + 1)
+    try {
+      await Promise.all([
+        planosAPI.atualizarItem(planoId, item.id,    { ordem: ordemB }),
+        planosAPI.atualizarItem(planoId, vizinho.id, { ordem: ordemA }),
+      ])
+      setItens(prev => {
+        const next = prev.map(i => {
+          if (i.id === item.id)    return { ...i, ordem: ordemB }
+          if (i.id === vizinho.id) return { ...i, ordem: ordemA }
+          return i
+        })
+        return next.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
+      })
+      onReload()
+    } catch {
+      toast.error('Erro ao reordenar')
+    }
+  }
+
   // Ao selecionar o pai, preenche agrupamento automaticamente
   const handlePaiChange = (paiId) => {
     const pai = ttsList.find(t => String(t.id) === paiId)
@@ -181,13 +206,13 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 5 }}>
-                  {[['Tipo',75],['Agrupamento',140],['Descrição',null],['Conta',100],['Fórmula',160],['Título Pai',160],['',44]].map(([h, w], i) => (
+                  {[['Tipo',75],['Agrupamento',140],['Descrição',null],['Conta',100],['Fórmula',160],['Título Pai',160],['',80]].map(([h, w], i) => (
                     <th key={i} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.04em', borderBottom: '2px solid var(--brand)', width: w || undefined }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {itens.map(item => {
+                {itens.map((item, idx) => {
                   const ehTT = item.tipo === 'TT' || item.tipo === 'RES'
                   const ehAN = item.tipo === 'AN'
                   const paiId = paiDiretoMap[item.id]
@@ -202,9 +227,13 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                       <td style={{ padding: '3px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{item.conta || '—'}</td>
                       <td style={{ padding: '3px 12px' }}><span style={{ fontSize: 10, color: '#d1d5db' }}>—</span></td>
                       <td style={{ padding: '3px 12px' }}><span style={{ fontSize: 11, color: paiNome ? '#374151' : '#d1d5db' }}>{paiNome?.slice(0,35) || '—'}</span></td>
-                      <td style={{ padding: '3px 8px', textAlign: 'center' }}>
+                      <td style={{ padding: '3px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => moverItem(item, 'up')} title="Subir" disabled={idx === 0}
+                          style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#d1d5db' : 'var(--brand)', fontSize: 14, padding: '1px 3px' }}>↑</button>
+                        <button onClick={() => moverItem(item, 'down')} title="Descer" disabled={idx === itens.length - 1}
+                          style={{ background: 'none', border: 'none', cursor: idx === itens.length - 1 ? 'default' : 'pointer', color: idx === itens.length - 1 ? '#d1d5db' : 'var(--brand)', fontSize: 14, padding: '1px 3px' }}>↓</button>
                         <button onClick={() => excluirItem(item)} title="Excluir"
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 18, lineHeight: 1, padding: '1px 5px' }}>×</button>
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 16, lineHeight: 1, padding: '1px 3px' }}>×</button>
                       </td>
                     </tr>
                   )
@@ -272,10 +301,14 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                           {paiNome ? `↳ ${paiNome.slice(0,32)}` : '—'}
                         </span>
                       </td>
-                      {/* Excluir */}
-                      <td style={{ padding: '4px 8px', textAlign: 'center' }}>
+                      {/* Ações: subir / descer / excluir */}
+                      <td style={{ padding: '4px 6px', textAlign: 'center', whiteSpace: 'nowrap' }}>
+                        <button onClick={() => moverItem(item, 'up')} title="Subir" disabled={idx === 0}
+                          style={{ background: 'none', border: 'none', cursor: idx === 0 ? 'default' : 'pointer', color: idx === 0 ? '#d1d5db' : 'var(--brand)', fontSize: 14, padding: '1px 3px' }}>↑</button>
+                        <button onClick={() => moverItem(item, 'down')} title="Descer" disabled={idx === itens.length - 1}
+                          style={{ background: 'none', border: 'none', cursor: idx === itens.length - 1 ? 'default' : 'pointer', color: idx === itens.length - 1 ? '#d1d5db' : 'var(--brand)', fontSize: 14, padding: '1px 3px' }}>↓</button>
                         <button onClick={() => excluirItem(item)} title="Excluir"
-                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 18, lineHeight: 1, padding: '1px 5px' }}>×</button>
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 16, lineHeight: 1, padding: '1px 3px' }}>×</button>
                       </td>
                     </tr>
                   )
