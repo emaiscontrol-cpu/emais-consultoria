@@ -237,7 +237,7 @@ export default function Planos() {
     <div className="page">
       <div className="page-header">
         <div>
-          <div className="page-title">Planos de Contas</div>
+          <div className="page-title">Modelos &amp; Contas</div>
         </div>
         <button className="btn btn-primary" onClick={abrirCriar}>
           <Plus size={14}/> Novo Plano
@@ -630,8 +630,11 @@ export default function Planos() {
               </div>
               <div className="form-group">
                 <label>Tipo</label>
-                <input value={formItem.tipo} placeholder="TT, CX, CS..."
-                  onChange={e => setFormItem(f => ({ ...f, tipo: e.target.value }))}/>
+                <select value={formItem.tipo} onChange={e => setFormItem(f => ({ ...f, tipo: e.target.value }))}>
+                  <option value="AN">AN — Analítica</option>
+                  <option value="TT">TT — Título</option>
+                  <option value="RES">RES — Resultado</option>
+                </select>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div className="form-group">

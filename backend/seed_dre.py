@@ -4,7 +4,7 @@ Lê ORCAMENTO/DRE - Shopping.xlsx e insere os itens no plano "Varejo SC — Padr
 com modulo="D" (ou "D,O" para contas que coincidem com o Orçamento).
 Regras:
   - N1 e N2 → tipo="TT", conta=código numérico (ex: "3000")
-  - N3       → tipo="NN", conta=código contábil ERP (ex: "3.01.001.0002.00001")
+  - N3       → tipo="AN", conta=código contábil ERP (ex: "3.01.001.0002.00001")
   - REMUNERAÇÃO (3083-3089) sem código ERP → atribuídos 4.01.003.0011.00001..00007
   - modulo D,O para contas que coincidem com o Orçamento, D para as demais
   - movimento detectado por palavras-chave na descrição
@@ -122,7 +122,7 @@ def seed_dre(db):
             tipo        = "TT"
             conta_final = str(cod)     # ex: "3000"
         else:
-            tipo        = "NN"
+            tipo        = "AN"
             conta_final = conta_erp or str(cod)
 
         # Pula se já existe

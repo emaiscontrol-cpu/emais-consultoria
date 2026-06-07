@@ -151,7 +151,7 @@ export default function Sidebar() {
               <Landmark size={16}/> Controladoria
             </NavLink>
             <NavLink to="/controladoria/planos" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <List size={16}/> Planos de Contas
+              <List size={16}/> Modelos & Contas
             </NavLink>
             <NavLink to="/controladoria/balancetes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
               <FileSpreadsheet size={16}/> Balancetes

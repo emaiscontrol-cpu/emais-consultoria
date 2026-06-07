@@ -14,19 +14,16 @@ const fmt = v =>
 const estiloLinha = tipo => {
   if (tipo === 'RES') return { background: 'linear-gradient(90deg,#dcfce7 0%,#f0faf4 60%,transparent 100%)', borderLeft: '3px solid #22c55e', fontWeight: 700, fontSize: 13 }
   if (tipo === 'TT')  return { background: 'linear-gradient(90deg,#e8f0ff 0%,#f4f7ff 60%,transparent 100%)', borderLeft: '3px solid var(--brand)', fontWeight: 700, fontSize: 13 }
-  if (tipo === 'GRP') return { background: 'linear-gradient(90deg,#f0f0f8 0%,#f7f7fb 100%)', borderLeft: '3px solid var(--brand)', fontWeight: 800, fontSize: 11 }
   return { background: 'transparent', borderLeft: '3px solid transparent' }
 }
 const corTexto = tipo => {
   if (tipo === 'RES') return '#16a34a'
   if (tipo === 'TT')  return 'var(--brand)'
-  if (tipo === 'GRP') return 'var(--brand)'
   return 'inherit'
 }
 const bgSticky = tipo => {
   if (tipo === 'RES') return '#e8f5ed'
   if (tipo === 'TT')  return '#e8f0ff'
-  if (tipo === 'GRP') return '#f0f0f8'
   return 'var(--surface,#fff)'
 }
 
@@ -44,7 +41,7 @@ function buildPaiDiretoMap(items, idField = 'id') {
     if (tipo === 'TT' || tipo === 'RES') {
       if (agr.includes('.') && !ttPorAgrDot[agr]) ttPorAgrDot[agr] = l[idField]
       ttUltimo = l[idField]
-    } else if (tipo === 'NN' || tipo === null) {
+    } else if (tipo === 'AN') {
       if (agr.includes('.') && ttPorAgrDot[agr] != null) {
         paiDireto[l[idField]] = ttPorAgrDot[agr]
       } else {
@@ -152,11 +149,11 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
     }
   }
 
-  const tipoBadgeStyle = tipo => ({
-    display: 'inline-block', cursor: 'pointer', padding: '2px 7px',
+  const tipoBadgeStyle = (tipo, clicavel = true) => ({
+    display: 'inline-block', cursor: clicavel ? 'pointer' : 'default', padding: '2px 7px',
     borderRadius: 4, fontSize: 11, fontWeight: 600,
-    background: tipo === 'TT' ? '#e8f0ff' : tipo === 'RES' ? '#dcfce7' : tipo === 'GRP' ? '#f0f0f8' : '#f5f5f5',
-    color: tipo === 'TT' ? 'var(--brand)' : tipo === 'RES' ? '#16a34a' : tipo === 'GRP' ? 'var(--brand)' : 'var(--text-2)',
+    background: tipo === 'TT' ? '#e8f0ff' : tipo === 'RES' ? '#dcfce7' : tipo === 'AN' ? '#f0f0f0' : '#f5f5f5',
+    color: tipo === 'TT' ? 'var(--brand)' : tipo === 'RES' ? '#16a34a' : tipo === 'AN' ? 'var(--text-3)' : 'var(--text-2)',
   })
 
   const inputSt = { fontSize: 12, width: '100%', padding: '3px 5px', border: '1px solid var(--brand)', borderRadius: 4, outline: 'none' }
@@ -192,35 +189,45 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
               <tbody>
                 {itens.map(item => {
                   const ehTT = item.tipo === 'TT' || item.tipo === 'RES'
+                  const ehAN = item.tipo === 'AN'
                   const paiId = paiDiretoMap[item.id]
                   const paiNome = paiId ? itens.find(t => t.id === paiId)?.descricao : null
+
+                  // Linhas AN: exibição somente-leitura (origem = Plano de Contas)
+                  if (ehAN) return (
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: '#fafafa', opacity: .72 }}>
+                      <td style={{ padding: '3px 12px' }}><span style={tipoBadgeStyle('AN', false)}>AN</span></td>
+                      <td style={{ padding: '3px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{item.agrupamento || '—'}</td>
+                      <td style={{ padding: '3px 12px', fontSize: 12, color: 'var(--text-2)' }}>{item.descricao}</td>
+                      <td style={{ padding: '3px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{item.conta || '—'}</td>
+                      <td style={{ padding: '3px 12px' }}><span style={{ fontSize: 10, color: '#d1d5db' }}>—</span></td>
+                      <td style={{ padding: '3px 12px' }}><span style={{ fontSize: 11, color: paiNome ? '#374151' : '#d1d5db' }}>{paiNome?.slice(0,35) || '—'}</span></td>
+                      <td style={{ padding: '3px 8px', textAlign: 'center' }}>
+                        <button onClick={() => excluirItem(item)} title="Excluir"
+                          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#dc2626', fontSize: 18, lineHeight: 1, padding: '1px 5px' }}>×</button>
+                      </td>
+                    </tr>
+                  )
+
+                  // Linhas TT / RES: totalmente editáveis
                   return (
-                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: ehTT ? '#fafbff' : '#fff' }}>
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: '#fafbff' }}>
                       {/* Tipo */}
                       <td style={{ padding: '4px 12px' }}>
                         {editKey === `${item.id}-tipo` ? (
                           <select value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'tipo')} autoFocus style={{ fontSize: 12, width: 72 }}>
-                            <option value="">—</option>
                             <option value="TT">TT</option>
-                            <option value="NN">NN</option>
                             <option value="RES">RES</option>
-                            <option value="GRP">GRP</option>
                           </select>
                         ) : (
                           <span style={tipoBadgeStyle(item.tipo)} onClick={() => iniciarEdicao(item, 'tipo')}>{item.tipo || '—'}</span>
                         )}
                       </td>
-                      {/* Agrupamento */}
+                      {/* Agrupamento — exibição apenas (define-se no Plano) */}
                       <td style={{ padding: '4px 12px' }}>
-                        {editKey === `${item.id}-agrupamento` ? (
-                          <input value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'agrupamento')}
-                            onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'agrupamento'); if (e.key === 'Escape') setEditKey(null) }}
-                            autoFocus style={{ ...inputSt, fontFamily: 'monospace' }} />
-                        ) : (
-                          <span onClick={() => iniciarEdicao(item, 'agrupamento')} style={{ ...cellSt, color: item.agrupamento ? 'inherit' : '#d1d5db', fontFamily: 'monospace', fontSize: 11 }}>
-                            {item.agrupamento || '—'}
-                          </span>
-                        )}
+                        <span style={{ fontFamily: 'monospace', fontSize: 11, color: item.agrupamento ? 'var(--text-2)' : '#d1d5db' }}>
+                          {item.agrupamento || '—'}
+                        </span>
                       </td>
                       {/* Descrição */}
                       <td style={{ padding: '4px 12px' }}>
@@ -229,7 +236,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                             onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'descricao'); if (e.key === 'Escape') setEditKey(null) }}
                             autoFocus style={inputSt} />
                         ) : (
-                          <span onClick={() => iniciarEdicao(item, 'descricao')} style={{ ...cellSt, fontWeight: ehTT ? 600 : 400 }}>
+                          <span onClick={() => iniciarEdicao(item, 'descricao')} style={{ ...cellSt, fontWeight: 600 }}>
                             {item.descricao}
                           </span>
                         )}
@@ -246,27 +253,23 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                           </span>
                         )}
                       </td>
-                      {/* Fórmula (apenas TT/RES) */}
+                      {/* Fórmula */}
                       <td style={{ padding: '4px 12px' }}>
-                        {ehTT ? (
-                          editKey === `${item.id}-formula` ? (
-                            <input value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'formula')}
-                              onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'formula'); if (e.key === 'Escape') setEditKey(null) }}
-                              autoFocus placeholder="ex: FAT - DED" style={{ ...inputSt, fontFamily: 'monospace' }} />
-                          ) : (
-                            <span onClick={() => iniciarEdicao(item, 'formula')} title="Clique para editar a fórmula"
-                              style={{ ...cellSt, fontFamily: 'monospace', fontSize: 10, color: item.formula ? '#1d4ed8' : '#d1d5db' }}>
-                              {item.formula || '+ filhos'}
-                            </span>
-                          )
+                        {editKey === `${item.id}-formula` ? (
+                          <input value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item, 'formula')}
+                            onKeyDown={e => { if (e.key === 'Enter') salvarCampo(item, 'formula'); if (e.key === 'Escape') setEditKey(null) }}
+                            autoFocus placeholder="ex: RECEITA - DEDUCOES" style={{ ...inputSt, fontFamily: 'monospace' }} />
                         ) : (
-                          <span style={{ fontSize: 10, color: '#d1d5db' }}>—</span>
+                          <span onClick={() => iniciarEdicao(item, 'formula')} title="Clique para editar a fórmula"
+                            style={{ ...cellSt, fontFamily: 'monospace', fontSize: 10, color: item.formula ? '#1d4ed8' : '#d1d5db' }}>
+                            {item.formula || '+ filhos'}
+                          </span>
                         )}
                       </td>
                       {/* Pai */}
                       <td style={{ padding: '4px 12px' }}>
-                        <span style={{ fontSize: 11, color: paiNome ? (ehTT ? 'var(--text-3)' : '#374151') : '#d1d5db', fontStyle: ehTT && paiNome ? 'italic' : 'normal' }}>
-                          {paiNome ? (ehTT ? `↳ ${paiNome.slice(0,32)}` : paiNome.slice(0,35)) : '—'}
+                        <span style={{ fontSize: 11, color: paiNome ? 'var(--text-3)' : '#d1d5db', fontStyle: 'italic' }}>
+                          {paiNome ? `↳ ${paiNome.slice(0,32)}` : '—'}
                         </span>
                       </td>
                       {/* Excluir */}
@@ -282,10 +285,8 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                 <tr style={{ background: '#f9fafb', borderTop: '2px dashed var(--border)' }}>
                   <td style={{ padding: '8px 12px' }}>
                     <select value={novaLinha.tipo} onChange={e => setNovaLinha(p => ({ ...p, tipo: e.target.value }))} style={{ fontSize: 12, width: 72 }}>
-                      <option value="NN">NN</option>
                       <option value="TT">TT</option>
                       <option value="RES">RES</option>
-                      <option value="GRP">GRP</option>
                     </select>
                   </td>
                   <td style={{ padding: '8px 12px' }}>
@@ -486,10 +487,9 @@ export default function DRE() {
 
     const linhasOrdenadas = [...(dados?.linhas || [])].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
 
-    // Fase 1: NNs — somar por agrupamento e indexar por conta
+    // Fase 1: ANs — somar por agrupamento e indexar por conta
     for (const l of linhasOrdenadas) {
-      const ehNN = l.tipo === 'NN' || l.tipo === null
-      if (!ehNN) continue
+      if (l.tipo !== 'AN') continue
       const agr = l.agrupamento
       if (agr) {
         if (!byToken[agr]) byToken[agr] = {}
@@ -511,8 +511,8 @@ export default function DRE() {
       let resultado = null
 
       if (l.formula) {
-        // Avalia expressão mês a mês: tokens separados por espaço com + e -
-        const tokens = l.formula.trim().split(/\s+/)
+        // Avalia expressão mês a mês — insere espaços ao redor de + e - para aceitar "A+B" e "A + B"
+        const tokens = l.formula.trim().replace(/([+\-])/g, ' $1 ').split(/\s+/).filter(Boolean)
         resultado = {}
         for (let mes = 1; mes <= 12; mes++) {
           let v = 0, sg = 1
@@ -664,41 +664,37 @@ export default function DRE() {
 
   return (
     <div className="page">
-      <div className="page-header">
-        <div>
-          <div className="page-title">DRE</div>
-          <div className="page-sub">Demonstração do Resultado do Exercício — valores mensais</div>
+      {/* Barra compacta: título + todos os controles em uma linha */}
+      <div style={{ display: 'flex', gap: 10, marginBottom: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.2, marginRight: 4 }}>
+          <span style={{ fontWeight: 800, fontSize: 15, color: 'var(--brand)' }}>DRE</span>
+          <span style={{ fontSize: 10, color: 'var(--text-3)', letterSpacing: '.02em' }}>Demonstração do Resultado</span>
         </div>
-      </div>
-
-      {/* Controles */}
-      <div style={{ display: 'flex', gap: 12, marginBottom: 20, flexWrap: 'wrap', alignItems: 'center' }}>
+        <div style={{ width: 1, height: 30, background: 'var(--border)' }} />
         {isCliente ? (
-          <div className="metric-card" style={{ padding: '8px 16px', fontSize: 13, fontWeight: 600 }}>
-            {clientes.find(c => String(c.id) === clienteId)?.razao_social ?? '—'}
-          </div>
+          <span style={{ fontWeight: 600, fontSize: 13 }}>{clientes.find(c => String(c.id) === clienteId)?.razao_social ?? '—'}</span>
         ) : (
-          <select value={clienteId} onChange={e => setClienteId(e.target.value)} style={{ fontSize: 13, padding: '8px 14px', minWidth: 280 }}>
+          <select value={clienteId} onChange={e => setClienteId(e.target.value)} style={{ fontSize: 12, padding: '5px 10px', minWidth: 220 }}>
             <option value="">Selecione o cliente...</option>
             {clientes.map(c => <option key={c.id} value={c.id}>{c.razao_social}</option>)}
           </select>
         )}
-        <select value={ano} onChange={e => setAno(Number(e.target.value))} style={{ fontSize: 13, padding: '8px 14px', width: 100 }}>
+        <select value={ano} onChange={e => setAno(Number(e.target.value))} style={{ fontSize: 12, padding: '5px 10px', width: 78 }}>
           {anos.map(a => <option key={a} value={a}>{a}</option>)}
         </select>
         {unidades.length > 0 && (
-          <select value={unidade} onChange={e => setUnidade(e.target.value)} style={{ fontSize: 13, padding: '8px 14px', minWidth: 220 }}>
+          <select value={unidade} onChange={e => setUnidade(e.target.value)} style={{ fontSize: 12, padding: '5px 10px', minWidth: 180 }}>
             {unidades.map(u => <option key={u} value={u}>{u === 'CONSOLIDADO' ? 'Consolidado (todas as unidades)' : u}</option>)}
           </select>
         )}
-        {dados?.plano && <span className="badge" style={{ fontSize: 11, background: 'var(--brand-light)', color: 'var(--brand)' }}>{dados.plano.nome}</span>}
-        {unidades.length > 0 && <span style={{ fontSize: 11, color: 'var(--text-3)' }}>{unidades.length} unidade{unidades.length !== 1 ? 's' : ''}</span>}
+        {dados?.plano && <span className="badge" style={{ fontSize: 10, background: 'var(--brand-light)', color: 'var(--brand)', padding: '2px 8px' }}>{dados.plano.nome}</span>}
+        {unidades.length > 0 && <span style={{ fontSize: 10, color: 'var(--text-3)' }}>{unidades.length} unid.</span>}
       </div>
 
       {/* Estados vazios */}
       {!clienteId && <div className="empty-state">Selecione um cliente para visualizar o DRE.</div>}
       {clienteId && !loading && dados?.plano === null && (
-        <div className="empty-state">Este cliente não possui plano DRE vinculado. Acesse <strong>Planos de Contas</strong> para vincular um template.</div>
+        <div className="empty-state">Este cliente não possui plano DRE vinculado. Acesse <strong>Modelos &amp; Contas</strong> para vincular uma estrutura.</div>
       )}
       {clienteId && !loading && dados?.plano && unidades.length === 0 && (
         <div className="empty-state">
@@ -735,12 +731,12 @@ export default function DRE() {
                 </button>
               )}
               {!isCliente && (
-                <button onClick={() => setModalTemplate(true)} style={btnBarStyle(false)}>⚙ Template</button>
+                <button onClick={() => setModalTemplate(true)} style={btnBarStyle(false)}>⚙ Estrutura</button>
               )}
             </div>
           </div>
 
-          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 260px)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
+          <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 170px)', border: '1px solid var(--border)', borderTop: 'none', borderRadius: '0 0 8px 8px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 10 }}>
