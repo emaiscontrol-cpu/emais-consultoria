@@ -416,6 +416,15 @@ class BalanceteLancamento(Base):
     cliente    = relationship("Cliente")
 
 
+class Bandeira(Base):
+    """Agrupamento nomeado de unidades para análise comparativa."""
+    __tablename__ = "bandeiras"
+    id            = Column(Integer, primary_key=True, index=True)
+    cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    nome          = Column(Text, nullable=False)
+    unidades_json = Column(Text, default="[]")
+
+
 class Anotacao(Base):
     """Anotações de consultores por cliente."""
     __tablename__ = "anotacoes"
