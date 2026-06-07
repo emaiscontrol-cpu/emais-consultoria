@@ -117,7 +117,7 @@ app.include_router(bandeiras.router,      prefix="/api/bandeiras",      tags=["B
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.3.0h"
+app.version = "2.3.0i"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -138,6 +138,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
