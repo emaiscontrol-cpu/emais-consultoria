@@ -1,8 +1,10 @@
+import os
 import sqlite3
+import tempfile
 import threading
 from datetime import datetime
 from pathlib import Path
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from auth import get_usuario_atual
 
 router = APIRouter()
@@ -135,3 +137,54 @@ def configurar_auto(body: dict, usuario=Depends(get_usuario_atual)):
     _agendar_proximo()
 
     return {"ok": True, "auto": _auto_backup_state}
+
+
+@router.post("/backup/restaurar")
+async def restaurar_backup(
+    arquivo: UploadFile = File(...),
+    usuario=Depends(get_usuario_atual),
+):
+    if usuario.perfil != "admin":
+        raise HTTPException(403, "Apenas administradores podem restaurar o backup")
+
+    # Faz backup de segurança antes de restaurar
+    try:
+        _executar_backup()
+    except Exception:
+        pass  # segue mesmo se o backup de segurança falhar
+
+    tmp_path = None
+    try:
+        conteudo = await arquivo.read()
+        if len(conteudo) < 100:
+            raise HTTPException(400, "Arquivo inválido ou corrompido")
+
+        with tempfile.NamedTemporaryFile(suffix=".db", delete=False) as tmp:
+            tmp.write(conteudo)
+            tmp_path = tmp.name
+
+        # Valida que é um SQLite válido
+        try:
+            conn_test = sqlite3.connect(tmp_path)
+            conn_test.execute("SELECT name FROM sqlite_master LIMIT 1").fetchall()
+            conn_test.close()
+        except Exception:
+            raise HTTPException(400, "O arquivo não é um banco SQLite válido")
+
+        # Restaura: copia do arquivo enviado para o banco principal
+        DB_PATH.parent.mkdir(parents=True, exist_ok=True)
+        src = sqlite3.connect(tmp_path)
+        dst = sqlite3.connect(str(DB_PATH))
+        src.backup(dst)
+        src.close()
+        dst.close()
+
+        return {"ok": True, "mensagem": "Banco restaurado com sucesso. Reinicie o servidor para aplicar."}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(500, f"Erro ao restaurar: {e}")
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.unlink(tmp_path)
