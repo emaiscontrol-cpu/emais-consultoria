@@ -31,7 +31,7 @@ def listar(
 ):
     q = db.query(models.Projeto)
     # perfis restritos só veem projetos do seu cliente vinculado
-    if usuario.perfil in ("cliente", "ger_projeto", "ti") and usuario.cliente_id:
+    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id:
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
     elif cliente_id:
         q = q.filter(models.Projeto.cliente_id == cliente_id)
@@ -57,7 +57,7 @@ def detalhe(id: int, db: Session = Depends(get_db), usuario = Depends(get_usuari
     ).filter(models.Projeto.id == id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
-    if usuario.perfil == "cliente" and p.cliente_id != usuario.cliente_id:
+    if usuario.perfil == "analista" and p.cliente_id != usuario.cliente_id:
         raise HTTPException(status_code=403, detail="Acesso negado")
     return p
 

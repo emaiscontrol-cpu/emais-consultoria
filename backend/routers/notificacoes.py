@@ -24,7 +24,7 @@ def gerar_alertas(db: Session, usuario: models.Usuario):
     q = db.query(models.Projeto).options(
         joinedload(models.Projeto.fases).joinedload(models.Fase.tarefas)
     )
-    if usuario.perfil == "cliente":
+    if usuario.perfil == "analista":
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
 
     for projeto in q.all():

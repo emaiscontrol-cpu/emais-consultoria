@@ -48,7 +48,7 @@ def obter_orcamento(
     usuario=Depends(get_usuario_atual),
 ):
     # Clientes só acessam seu próprio orçamento
-    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+    if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
         raise HTTPException(403, "Acesso negado")
 
     plano = _get_plano_cliente(cliente_id, db)
@@ -99,7 +99,7 @@ def salvar_valor(
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
-    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+    if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
         raise HTTPException(403, "Acesso negado")
 
     if not 1 <= mes <= 12:
@@ -151,7 +151,7 @@ def salvar_valor_dre(
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
-    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+    if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
         raise HTTPException(403, "Acesso negado")
     if not 1 <= mes <= 12:
         raise HTTPException(400, "Mês inválido (1–12)")
@@ -200,7 +200,7 @@ def listar_unidades(
     usuario=Depends(get_usuario_atual),
 ):
     """Retorna as unidades disponíveis para o DRE do cliente/ano."""
-    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+    if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
         raise HTTPException(403, "Acesso negado")
 
     rows = db.execute(
@@ -224,7 +224,7 @@ def obter_dre(
     usuario=Depends(get_usuario_atual),
 ):
     """Retorna o DRE histórico por unidade (dados importados do Excel)."""
-    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+    if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
         raise HTTPException(403, "Acesso negado")
 
     plano = _get_plano_cliente(cliente_id, db)

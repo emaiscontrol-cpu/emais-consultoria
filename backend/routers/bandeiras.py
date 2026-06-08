@@ -14,7 +14,7 @@ def _b2dict(b):
 
 @router.get("/cliente/{cliente_id}")
 def listar(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
-    if usuario.perfil == "cliente" and usuario.cliente_id != cliente_id:
+    if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
         raise HTTPException(403, "Acesso negado")
     return [_b2dict(b) for b in db.query(Bandeira).filter(Bandeira.cliente_id == cliente_id).all()]
 

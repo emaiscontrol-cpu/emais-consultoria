@@ -67,8 +67,8 @@ def atualizar(id: int, data: schemas.TarefaUpdate, db: Session = Depends(get_db)
 
     # Consultor/Admin valida (muda de aguard_validacao → concluida)
     if "status" in update and update["status"] == models.StatusTarefa.concluida:
-        if usuario.perfil == "cliente":
-            raise HTTPException(status_code=403, detail="Cliente não pode concluir diretamente. Use confirmar.")
+        if usuario.perfil == "analista":
+            raise HTTPException(status_code=403, detail="Analista não pode concluir diretamente. Use confirmar.")
         t.data_conclusao = datetime.now(timezone.utc)
         t.percentual = 100.0
 

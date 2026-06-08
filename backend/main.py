@@ -27,6 +27,7 @@ with engine.connect() as conn:
         "ALTER TABLE subtarefas ADD COLUMN data_fim DATETIME",
         "ALTER TABLE usuarios ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE usuarios ADD COLUMN foto TEXT",
+        "UPDATE usuarios SET perfil='analista' WHERE perfil='cliente'",
         "ALTER TABLE planos_itens ADD COLUMN formula TEXT",
         "UPDATE planos_itens SET tipo='AN' WHERE tipo='NN' OR tipo IS NULL",
         "UPDATE usuarios SET email='luiz@emaiscontrol.com.br',       ativo=1 WHERE nome='Luiz'",
@@ -122,7 +123,7 @@ app.include_router(bandeiras.router,      prefix="/api/bandeiras",      tags=["B
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.3.0u"
+app.version = "2.3.0v"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -143,6 +144,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

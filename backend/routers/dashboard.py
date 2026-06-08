@@ -13,7 +13,7 @@ def resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
     q_proj = db.query(models.Projeto)
     q_tar  = db.query(models.Tarefa)
 
-    if usuario.perfil == "cliente":
+    if usuario.perfil == "analista":
         q_proj = q_proj.filter(models.Projeto.cliente_id == usuario.cliente_id)
         ids = [p.id for p in q_proj.all()]
         fase_ids = [f.id for p_id in ids
@@ -41,7 +41,7 @@ def resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
 @router.get("/cliente/{cliente_id}")
 def dashboard_cliente(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
     # perfis restritos só acessam seu próprio cliente
-    if usuario.perfil in ("cliente", "ger_projeto", "ti") and usuario.cliente_id and usuario.cliente_id != cliente_id:
+    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id and usuario.cliente_id != cliente_id:
         raise HTTPException(403, "Acesso negado")
 
     cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
@@ -106,7 +106,7 @@ def dashboard_cliente(cliente_id: int, db: Session = Depends(get_db), usuario=De
 @router.get("/projetos-resumo")
 def projetos_resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
     q = db.query(models.Projeto)
-    if usuario.perfil == "cliente":
+    if usuario.perfil == "analista":
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
     projetos = q.order_by(models.Projeto.criado_em.desc()).limit(10).all()
     return [
