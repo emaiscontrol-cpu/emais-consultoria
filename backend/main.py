@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -118,12 +118,13 @@ app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["A
 app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["Orçamento"])
 app.include_router(admin.router,          prefix="/api/admin",          tags=["Administração"])
 app.include_router(bandeiras.router,      prefix="/api/bandeiras",      tags=["Bandeiras"])
+app.include_router(modelos.router,        prefix="/api/modelos",        tags=["Modelos de Projeto"])
 
 # Inicia backup automático diário
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.3.0v"
+app.version = "2.3.0x"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -144,6 +145,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

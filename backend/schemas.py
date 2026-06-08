@@ -292,3 +292,57 @@ class Token(BaseModel):
     access_token: str
     token_type: str
     usuario: UsuarioOut
+
+# ── MODELOS DE PROJETO ─────────────────────────────────
+class ModeloTarefaCreate(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+    ordem: int = 0
+    requer_validacao: bool = False
+    duracao_dias: Optional[int] = None
+
+class ModeloTarefaOut(BaseModel):
+    id: int
+    fase_id: int
+    nome: str
+    descricao: Optional[str] = None
+    ordem: int
+    requer_validacao: bool
+    duracao_dias: Optional[int] = None
+    class Config:
+        from_attributes = True
+
+class ModeloFaseCreate(BaseModel):
+    nome: str
+    ordem: int
+    perc_desbloqueio: float = 80.0
+    duracao_dias: Optional[int] = None
+
+class ModeloFaseOut(BaseModel):
+    id: int
+    modelo_id: int
+    nome: str
+    ordem: int
+    perc_desbloqueio: float
+    duracao_dias: Optional[int] = None
+    tarefas: List[ModeloTarefaOut] = []
+    class Config:
+        from_attributes = True
+
+class ModeloCreate(BaseModel):
+    nome: str
+    descricao: Optional[str] = None
+
+class ModeloOut(BaseModel):
+    id: int
+    nome: str
+    descricao: Optional[str] = None
+    total_fases: int = 0
+    total_tarefas: int = 0
+    class Config:
+        from_attributes = True
+
+class ModeloDetalhe(ModeloOut):
+    fases: List[ModeloFaseOut] = []
+    class Config:
+        from_attributes = True
