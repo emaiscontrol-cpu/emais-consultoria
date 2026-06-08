@@ -8,7 +8,8 @@ router = APIRouter()
 
 @router.post("/login", response_model=schemas.Token)
 def login(req: schemas.LoginRequest, db: Session = Depends(get_db)):
-    usuario = db.query(models.Usuario).filter(models.Usuario.email == req.email).first()
+    from sqlalchemy import func
+    usuario = db.query(models.Usuario).filter(func.lower(models.Usuario.email) == req.email.lower()).first()
     if not usuario or not verificar_senha(req.senha, usuario.senha_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou senha inválidos")
     if not usuario.ativo:

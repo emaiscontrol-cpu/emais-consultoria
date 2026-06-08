@@ -551,11 +551,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
 }
 
 function FaseCard({ fase, usuarios, perfil, onRefresh }) {
-  const [open, setOpen] = useState(
-    ['admin','consultor','ger_projeto'].includes(perfil)
-      ? true
-      : fase.status === 'em_andamento' || fase.status === 'pendente'
-  )
+  const [open, setOpen] = useState(false)
   const [painel,        setPainel]        = useState(null) // 'editar' | 'comentarios' | 'parametros' | null
   const [showAddTarefa, setShowAddTarefa] = useState(false)
   const [formTarefa,    setFormTarefa]    = useState({ nome:'', responsavel_id:'', requer_validacao:false, data_prazo:'' })
