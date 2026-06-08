@@ -10,8 +10,8 @@ from auth import get_usuario_atual
 
 router = APIRouter()
 
-DB_PATH     = Path("C:/emals-service/emais_consultoria.db")
-BACKUP_DIR  = Path("C:/emals-service/backup")
+DB_PATH    = Path(os.getenv("DB_PATH",    "C:/emals-service/emais_consultoria.db"))
+BACKUP_DIR = Path(os.getenv("BACKUP_DIR", "C:/emals-service/backup"))
 
 # ── Estado do backup automático ───────────────────────────────────────────────
 _auto_backup_state = {
@@ -72,7 +72,10 @@ def _rodar_auto():
 
 
 def iniciar_backup_automatico():
-    """Chamado no startup do backend."""
+    """Chamado no startup do backend. Cancela timer anterior se existir (uvicorn --reload)."""
+    global _auto_timer
+    if _auto_timer and _auto_timer.is_alive():
+        _auto_timer.cancel()
     _agendar_proximo()
     print(f"[backup] Automático agendado para {_auto_backup_state['horario']} diariamente.")
 

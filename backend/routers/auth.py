@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from collections import defaultdict
+from datetime import datetime, timedelta
+from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
@@ -7,8 +9,26 @@ import models, schemas
 
 router = APIRouter()
 
+# ── Rate limiting simples em memória (SEC-3) ──────────────────────────────────
+_login_attempts: dict = defaultdict(list)
+_MAX_TENTATIVAS = 10
+_JANELA_SEG = 60
+
+def _checar_rate_limit(ip: str):
+    agora = datetime.utcnow()
+    corte = agora - timedelta(seconds=_JANELA_SEG)
+    _login_attempts[ip] = [t for t in _login_attempts[ip] if t > corte]
+    if len(_login_attempts[ip]) >= _MAX_TENTATIVAS:
+        raise HTTPException(429, "Muitas tentativas de login. Aguarde 1 minuto.")
+    _login_attempts[ip].append(agora)
+
+
+# ── Endpoints ─────────────────────────────────────────────────────────────────
+
 @router.post("/login", response_model=schemas.Token)
-def login(req: schemas.LoginRequest, db: Session = Depends(get_db)):
+def login(req: schemas.LoginRequest, request: Request, db: Session = Depends(get_db)):
+    ip = request.client.host if request.client else "unknown"
+    _checar_rate_limit(ip)
     from sqlalchemy import func
     usuario = db.query(models.Usuario).filter(func.lower(models.Usuario.email) == req.email.lower()).first()
     if not usuario or not verificar_senha(req.senha, usuario.senha_hash):
@@ -19,7 +39,7 @@ def login(req: schemas.LoginRequest, db: Session = Depends(get_db)):
     return {"access_token": token, "token_type": "bearer", "usuario": usuario}
 
 @router.get("/me", response_model=schemas.UsuarioOut)
-def me(usuario = Depends(get_usuario_atual)):
+def me(usuario=Depends(get_usuario_atual)):
     return usuario
 
 @router.put("/senha")
@@ -35,6 +55,14 @@ class FotoRequest(BaseModel):
 
 @router.put("/foto", response_model=schemas.UsuarioOut)
 def atualizar_foto(req: FotoRequest, usuario=Depends(get_usuario_atual), db: Session = Depends(get_db)):
+    if len(req.foto) > 500_000:
+        raise HTTPException(status_code=400, detail="Foto muito grande. O limite é 500 KB.")
     usuario.foto = req.foto
     db.commit(); db.refresh(usuario)
     return usuario
+
+@router.post("/refresh", response_model=schemas.Token)
+def refresh_token(usuario=Depends(get_usuario_atual)):
+    """Renova o token JWT antes de expirar, sem precisar de novo login."""
+    token = criar_token({"sub": usuario.email, "perfil": usuario.perfil})
+    return {"access_token": token, "token_type": "bearer", "usuario": usuario}

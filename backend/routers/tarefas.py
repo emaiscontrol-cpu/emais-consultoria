@@ -55,7 +55,7 @@ def atualizar(id: int, data: schemas.TarefaUpdate, db: Session = Depends(get_db)
     if "confirmado_cliente" in update and update["confirmado_cliente"]:
         t.confirmado_cliente = True
         if t.requer_validacao:
-            t.status = models.StatusTarefa.aguard_valid
+            t.status = models.StatusTarefa.aguard_validacao
         else:
             t.status = models.StatusTarefa.concluida
             t.data_conclusao = datetime.now(timezone.utc)

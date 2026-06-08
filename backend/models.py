@@ -14,7 +14,7 @@ class PerfilEnum(str, enum.Enum):
 class StatusTarefa(str, enum.Enum):
     pendente     = "pendente"
     em_andamento = "em_andamento"
-    aguard_valid = "aguard_validacao"
+    aguard_validacao = "aguard_validacao"
     concluida    = "concluida"
     atrasada     = "atrasada"
 

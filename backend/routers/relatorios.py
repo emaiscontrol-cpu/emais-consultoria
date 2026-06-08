@@ -164,7 +164,7 @@ def graficos(projeto_id: int, db: Session = Depends(get_db), usuario=Depends(get
 
     def _status_cat(status_val):
         if status_val == "concluida":   return "concluida"
-        if status_val in ("em_andamento", "aguard_validacao", "aguard_valid"): return "em_andamento"
+        if status_val in ("em_andamento", "aguard_validacao"): return "em_andamento"
         return "parada"
 
     # ── 1. Pizza geral ───────────────────────────────────
@@ -183,7 +183,7 @@ def graficos(projeto_id: int, db: Session = Depends(get_db), usuario=Depends(get
     for fase in projeto.fases:
         ativas = [t for t in fase.tarefas if getattr(t, "ativo", True)]
         c = sum(1 for t in ativas if _val(t.status) == "concluida")
-        a = sum(1 for t in ativas if _val(t.status) in ("em_andamento","aguard_validacao","aguard_valid"))
+        a = sum(1 for t in ativas if _val(t.status) in ("em_andamento", "aguard_validacao"))
         p = max(0, len(ativas) - c - a)
         por_fase.append({
             "nome": fase.nome,

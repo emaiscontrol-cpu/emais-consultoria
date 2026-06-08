@@ -30,9 +30,6 @@ with engine.connect() as conn:
         "UPDATE usuarios SET perfil='analista' WHERE perfil='cliente'",
         "ALTER TABLE planos_itens ADD COLUMN formula TEXT",
         "UPDATE planos_itens SET tipo='AN' WHERE tipo='NN' OR tipo IS NULL",
-        "UPDATE usuarios SET email='luiz@emaiscontrol.com.br',       ativo=1 WHERE nome='Luiz'",
-        "UPDATE usuarios SET email='hernandes@emaiscontrol.com.br',  senha_hash='$2b$12$jYAge.N7PQR5NU.qhZqst.B6UfUdpx6x9SM11k2iHkNOH0dt25rg.', ativo=1 WHERE nome='Hernandes'",
-        "UPDATE usuarios SET email='deusangelo@emaiscontrol.com.br', senha_hash='$2b$12$jYAge.N7PQR5NU.qhZqst.B6UfUdpx6x9SM11k2iHkNOH0dt25rg.', ativo=1 WHERE nome='Deusangelo'",
         # Tabela nova — create_all já cria, mas garante caso banco antigo
         """CREATE TABLE IF NOT EXISTS orcamento_valores (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -131,7 +128,7 @@ app.include_router(modelos.router,        prefix="/api/modelos",        tags=["M
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.3.0z"
+app.version = "2.4.0"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -152,6 +149,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

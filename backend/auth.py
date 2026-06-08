@@ -11,6 +11,9 @@ import models, os
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "emais-consultoria-secret-2026-change-in-production")
+if SECRET_KEY == "emais-consultoria-secret-2026-change-in-production":
+    print("[AVISO DE SEGURANÇA] SECRET_KEY usando valor padrão inseguro. "
+          "Defina SECRET_KEY no arquivo .env antes de usar em produção.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 horas
 
