@@ -240,6 +240,18 @@ class ModeloTarefa(Base):
     requer_validacao = Column(Boolean, default=False)
     duracao_dias     = Column(Integer, nullable=True)
     fase             = relationship("ModeloFase", back_populates="tarefas")
+    subtarefas       = relationship("ModeloSubtarefa", back_populates="tarefa",
+                                    order_by="ModeloSubtarefa.ordem", cascade="all, delete-orphan")
+
+
+class ModeloSubtarefa(Base):
+    __tablename__ = "modelos_subtarefas"
+    id           = Column(Integer, primary_key=True, index=True)
+    tarefa_id    = Column(Integer, ForeignKey("modelos_tarefas.id"), nullable=False)
+    nome         = Column(String(300), nullable=False)
+    ordem        = Column(Integer, default=0)
+    duracao_dias = Column(Integer, nullable=True)
+    tarefa       = relationship("ModeloTarefa", back_populates="subtarefas")
 
 
 # ─── MÓDULO CONTROLADORIA ────────────────────────────────────────────────────

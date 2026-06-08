@@ -59,6 +59,13 @@ with engine.connect() as conn:
             valor REAL DEFAULT 0.0,
             UNIQUE(plano_item_id, cliente_id, ano, mes, unidade)
         )""",
+        """CREATE TABLE IF NOT EXISTS modelos_subtarefas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tarefa_id INTEGER NOT NULL REFERENCES modelos_tarefas(id) ON DELETE CASCADE,
+            nome TEXT NOT NULL,
+            ordem INTEGER DEFAULT 0,
+            duracao_dias INTEGER
+        )""",
     ]:
         try:
             conn.execute(text(stmt))
@@ -124,7 +131,7 @@ app.include_router(modelos.router,        prefix="/api/modelos",        tags=["M
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.3.0x"
+app.version = "2.3.0z"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -145,6 +152,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

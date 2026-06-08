@@ -294,6 +294,20 @@ class Token(BaseModel):
     usuario: UsuarioOut
 
 # ── MODELOS DE PROJETO ─────────────────────────────────
+class ModeloSubtarefaCreate(BaseModel):
+    nome: str
+    ordem: int = 0
+    duracao_dias: Optional[int] = None
+
+class ModeloSubtarefaOut(BaseModel):
+    id: int
+    tarefa_id: int
+    nome: str
+    ordem: int
+    duracao_dias: Optional[int] = None
+    class Config:
+        from_attributes = True
+
 class ModeloTarefaCreate(BaseModel):
     nome: str
     descricao: Optional[str] = None
@@ -309,6 +323,7 @@ class ModeloTarefaOut(BaseModel):
     ordem: int
     requer_validacao: bool
     duracao_dias: Optional[int] = None
+    subtarefas: List[ModeloSubtarefaOut] = []
     class Config:
         from_attributes = True
 
