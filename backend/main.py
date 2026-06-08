@@ -21,6 +21,7 @@ with engine.connect() as conn:
         "ALTER TABLE planos_itens ADD COLUMN modulo TEXT",
         "ALTER TABLE planos_itens ADD COLUMN conta TEXT",
         "ALTER TABLE planos DROP COLUMN tipo",
+        "ALTER TABLE fases ADD COLUMN responsavel_id INTEGER REFERENCES usuarios(id)",
         "ALTER TABLE subtarefas ADD COLUMN responsavel_id INTEGER REFERENCES usuarios(id)",
         "ALTER TABLE subtarefas ADD COLUMN data_inicio DATETIME",
         "ALTER TABLE subtarefas ADD COLUMN data_fim DATETIME",
@@ -120,7 +121,7 @@ app.include_router(bandeiras.router,      prefix="/api/bandeiras",      tags=["B
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.3.0p"
+app.version = "2.3.0q"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -141,6 +142,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

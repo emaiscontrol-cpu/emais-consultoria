@@ -215,6 +215,7 @@ class FaseCreate(BaseModel):
     bloqueado_por_anterior: bool = True
     data_inicio: Optional[datetime] = None
     data_fim_prev: Optional[datetime] = None
+    responsavel_id: Optional[int] = None
 
 class FaseUpdate(BaseModel):
     nome: Optional[str] = None
@@ -224,6 +225,7 @@ class FaseUpdate(BaseModel):
     status: Optional[StatusFase] = None
     data_inicio: Optional[datetime] = None
     data_fim_prev: Optional[datetime] = None
+    responsavel_id: Optional[int] = None
 
 class FaseOut(BaseModel):
     id: int
@@ -238,6 +240,8 @@ class FaseOut(BaseModel):
     data_inicio: Optional[datetime]
     data_fim_prev: Optional[datetime]
     data_fim_real: Optional[datetime]
+    responsavel_id: Optional[int] = None
+    responsavel: Optional[UsuarioOut] = None
     class Config:
         from_attributes = True
 

@@ -113,6 +113,8 @@ class Fase(Base):
     data_inicio           = Column(DateTime(timezone=True), nullable=True)
     data_fim_prev         = Column(DateTime(timezone=True), nullable=True)
     data_fim_real         = Column(DateTime(timezone=True), nullable=True)
+    responsavel_id        = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    responsavel           = relationship("Usuario", foreign_keys=[responsavel_id])
     projeto               = relationship("Projeto", back_populates="fases")
     tarefas               = relationship("Tarefa", back_populates="fase", order_by="Tarefa.ordem")
     comentarios_fase      = relationship("ComentarioFase", back_populates="fase", order_by="ComentarioFase.criado_em")

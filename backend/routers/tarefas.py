@@ -24,7 +24,19 @@ def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)
     return t
 
 @router.post("/", response_model=schemas.TarefaOut)
-def criar(data: schemas.TarefaCreate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
+def criar(data: schemas.TarefaCreate, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
+    if usuario.perfil not in ("admin", "consultor", "ger_projeto"):
+        fase = db.query(models.Fase).get(data.fase_id)
+        if not fase:
+            raise HTTPException(status_code=404, detail="Fase não encontrada")
+        resp = fase.responsavel
+        autorizado = (
+            usuario.cliente_id == fase.projeto.cliente_id and
+            resp is not None and
+            resp.perfil == models.PerfilEnum.ger_projeto
+        )
+        if not autorizado:
+            raise HTTPException(status_code=403, detail="Sem permissão para adicionar tarefas nesta fase")
     tarefa = models.Tarefa(**data.model_dump())
     db.add(tarefa); db.commit(); db.refresh(tarefa)
     return tarefa

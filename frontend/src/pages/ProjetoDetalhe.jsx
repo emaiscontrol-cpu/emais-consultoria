@@ -550,7 +550,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
   )
 }
 
-function FaseCard({ fase, usuarios, perfil, onRefresh }) {
+function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, onRefresh }) {
   const [open, setOpen] = useState(false)
   const [painel,        setPainel]        = useState(null) // 'editar' | 'comentarios' | 'parametros' | null
   const [showAddTarefa, setShowAddTarefa] = useState(false)
@@ -565,6 +565,7 @@ function FaseCard({ fase, usuarios, perfil, onRefresh }) {
     descricao: fase.descricao || '',
     data_inicio: fase.data_inicio ? new Date(fase.data_inicio).toISOString().slice(0,10) : '',
     data_fim_prev: fase.data_fim_prev ? new Date(fase.data_fim_prev).toISOString().slice(0,10) : '',
+    responsavel_id: fase.responsavel_id ? String(fase.responsavel_id) : '',
   })
   const [savingFase, setSavingFase] = useState(false)
 
@@ -580,8 +581,13 @@ function FaseCard({ fase, usuarios, perfil, onRefresh }) {
   const [novoComent,    setNovoComent]   = useState('')
   const [loadingComent, setLoadingComent]= useState(false)
 
-  const isConsultor = ['admin','consultor','ger_projeto'].includes(perfil)
-  const isAdmin     = perfil === 'admin'
+  const isConsultor   = ['admin','consultor','ger_projeto'].includes(perfil)
+  const isAdmin       = perfil === 'admin'
+  const podeAddTarefa = isConsultor || (
+    perfil === 'cliente' &&
+    clienteIdUsuario === clienteIdProjeto &&
+    fase.responsavel?.perfil === 'ger_projeto'
+  )
   const bloqueada   = fase.status === 'bloqueada'
 
   const togglePainel = (p) => {
@@ -599,6 +605,7 @@ function FaseCard({ fase, usuarios, perfil, onRefresh }) {
         descricao: formFase.descricao || null,
         data_inicio: formFase.data_inicio || null,
         data_fim_prev: formFase.data_fim_prev || null,
+        responsavel_id: formFase.responsavel_id ? parseInt(formFase.responsavel_id) : null,
       })
       toast.success('Fase atualizada!')
       setPainel(null)
@@ -737,7 +744,7 @@ function FaseCard({ fase, usuarios, perfil, onRefresh }) {
               <input value={formFase.descricao} onChange={e=>setFormFase(f=>({...f,descricao:e.target.value}))} placeholder="Objetivo desta fase..." />
             </div>
           </div>
-          <div className="form-row" style={{ marginBottom:10 }}>
+          <div className="form-row" style={{ marginBottom:8 }}>
             <div className="form-group" style={{ marginBottom:0 }}>
               <label>Data início</label>
               <input type="date" value={formFase.data_inicio} onChange={e=>setFormFase(f=>({...f,data_inicio:e.target.value}))} />
@@ -746,6 +753,16 @@ function FaseCard({ fase, usuarios, perfil, onRefresh }) {
               <label>Data fim prevista</label>
               <input type="date" value={formFase.data_fim_prev} onChange={e=>setFormFase(f=>({...f,data_fim_prev:e.target.value}))} />
             </div>
+          </div>
+          <div className="form-group" style={{ marginBottom:10 }}>
+            <label>Responsável pela fase</label>
+            <select value={formFase.responsavel_id} onChange={e=>setFormFase(f=>({...f,responsavel_id:e.target.value}))}>
+              <option value="">— Nenhum —</option>
+              {usuarios.filter(u => u.perfil === 'ger_projeto').map(u => (
+                <option key={u.id} value={String(u.id)}>{u.nome}</option>
+              ))}
+            </select>
+            <span style={{ fontSize:10, color:'var(--text-3)' }}>Atribuir um Gerente de Projetos libera criação de tarefas para usuários clientes nesta fase</span>
           </div>
           <div style={{ display:'flex', gap:6, alignItems:'center' }}>
             <button className="btn btn-primary btn-sm" onClick={handleSalvarEdicao} disabled={savingFase || !formFase.nome}>
@@ -870,7 +887,7 @@ function FaseCard({ fase, usuarios, perfil, onRefresh }) {
             <TarefaRow key={t.id} tarefa={t} usuarios={usuarios} onUpdate={onRefresh} perfil={perfil} />
           ))}
 
-          {isConsultor && (
+          {podeAddTarefa && (
             showAddTarefa ? (
               <div style={{ padding:'10px 4px', borderTop:'0.5px solid var(--border)', marginTop:4 }}>
                 <form onSubmit={handleAddTarefa}>
@@ -1139,7 +1156,7 @@ export default function ProjetoDetalhe() {
       )}
 
       {projeto.fases?.map(fase => (
-        <FaseCard key={fase.id} fase={fase} usuarios={usuarios} perfil={usuario?.perfil} onRefresh={carregar} />
+        <FaseCard key={fase.id} fase={fase} usuarios={usuarios} perfil={usuario?.perfil} clienteIdUsuario={usuario?.cliente_id} clienteIdProjeto={projeto.cliente_id} onRefresh={carregar} />
       ))}
 
       {projeto.fases?.length === 0 && (
