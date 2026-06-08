@@ -10,7 +10,7 @@ router = APIRouter()
 
 def recalcular_projeto(projeto: models.Projeto, db: Session):
     """Recalcula progresso geral do projeto com base nas fases."""
-    fases = projeto.fases
+    fases = [f for f in projeto.fases if getattr(f, 'ativo', True)]
     if not fases:
         projeto.progresso = 0.0
         return
@@ -26,16 +26,17 @@ def recalcular_projeto(projeto: models.Projeto, db: Session):
 @router.get("/", response_model=List[schemas.ProjetoOut])
 def listar(
     cliente_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 500,
     db: Session = Depends(get_db),
     usuario = Depends(get_usuario_atual)
 ):
-    q = db.query(models.Projeto)
-    # perfis restritos só veem projetos do seu cliente vinculado
+    q = db.query(models.Projeto).filter(models.Projeto.ativo == True)
     if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id:
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
     elif cliente_id:
         q = q.filter(models.Projeto.cliente_id == cliente_id)
-    return q.all()
+    return q.offset(skip).limit(limit).all()
 
 @router.get("/{id}", response_model=schemas.ProjetoDetalhe)
 def detalhe(id: int, db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
@@ -83,5 +84,6 @@ def deletar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("adm
     p = db.query(models.Projeto).get(id)
     if not p:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
-    db.delete(p); db.commit()
+    p.ativo = False
+    db.commit()
     return {"ok": True}

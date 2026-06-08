@@ -10,7 +10,7 @@ router = APIRouter()
 
 @router.get("/resumo", response_model=schemas.DashboardResumo)
 def resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
-    q_proj = db.query(models.Projeto)
+    q_proj = db.query(models.Projeto).filter(models.Projeto.ativo == True)
     q_tar  = db.query(models.Tarefa)
 
     if usuario.perfil == "analista":
@@ -48,7 +48,10 @@ def dashboard_cliente(cliente_id: int, db: Session = Depends(get_db), usuario=De
     if not cliente:
         raise HTTPException(404, "Cliente não encontrado")
 
-    projetos = db.query(models.Projeto).filter(models.Projeto.cliente_id == cliente_id).all()
+    projetos = db.query(models.Projeto).filter(
+        models.Projeto.cliente_id == cliente_id,
+        models.Projeto.ativo == True,
+    ).all()
     agora = datetime.now(timezone.utc)
 
     projetos_data = []
@@ -105,7 +108,7 @@ def dashboard_cliente(cliente_id: int, db: Session = Depends(get_db), usuario=De
 
 @router.get("/projetos-resumo")
 def projetos_resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
-    q = db.query(models.Projeto)
+    q = db.query(models.Projeto).filter(models.Projeto.ativo == True)
     if usuario.perfil == "analista":
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
     projetos = q.order_by(models.Projeto.criado_em.desc()).limit(10).all()

@@ -95,6 +95,7 @@ class Projeto(Base):
     data_fim_real   = Column(DateTime(timezone=True), nullable=True)
     criado_em       = Column(DateTime(timezone=True), server_default=func.now())
     atualizado_em   = Column(DateTime(timezone=True), onupdate=func.now())
+    ativo           = Column(Boolean, default=True)
     cliente         = relationship("Cliente", back_populates="projetos")
     tipo_consultoria= relationship("TipoConsultoria", back_populates="projetos")
     fases           = relationship("Fase", back_populates="projeto", order_by="Fase.ordem")
@@ -115,6 +116,7 @@ class Fase(Base):
     data_fim_prev         = Column(DateTime(timezone=True), nullable=True)
     data_fim_real         = Column(DateTime(timezone=True), nullable=True)
     responsavel_id        = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    ativo                 = Column(Boolean, default=True)
     responsavel           = relationship("Usuario", foreign_keys=[responsavel_id])
     projeto               = relationship("Projeto", back_populates="fases")
     tarefas               = relationship("Tarefa", back_populates="fase", order_by="Tarefa.ordem")
@@ -445,11 +447,13 @@ class Anotacao(Base):
     __tablename__ = "anotacoes"
     id         = Column(Integer, primary_key=True, index=True)
     cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
-    usuario    = Column(String(120), nullable=False)
+    usuario    = Column(String(120), nullable=False)          # legado: nome em texto
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)  # DB-1: FK
     data       = Column(Date, nullable=False)
     texto      = Column(Text, nullable=False)
     criado_em  = Column(DateTime(timezone=True), server_default=func.now())
     cliente    = relationship("Cliente")
+    autor      = relationship("Usuario", foreign_keys=[usuario_id])
 
 
 class ClientePlano(Base):

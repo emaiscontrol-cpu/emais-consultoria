@@ -52,7 +52,8 @@ def recalcular_fase(fase: models.Fase, db: Session):
 @router.get("/projeto/{projeto_id}", response_model=List[schemas.FaseDetalhe])
 def listar_por_projeto(projeto_id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
     return db.query(models.Fase).filter(
-        models.Fase.projeto_id == projeto_id
+        models.Fase.projeto_id == projeto_id,
+        models.Fase.ativo == True,
     ).order_by(models.Fase.ordem).all()
 
 
@@ -97,7 +98,8 @@ def deletar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("adm
     f = db.query(models.Fase).get(id)
     if not f:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
-    db.delete(f); db.commit()
+    f.ativo = False
+    db.commit()
     return {"ok": True}
 
 

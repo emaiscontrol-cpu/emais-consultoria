@@ -63,6 +63,15 @@ with engine.connect() as conn:
             ordem INTEGER DEFAULT 0,
             duracao_dias INTEGER
         )""",
+        # DB-2: soft delete para projetos e fases
+        "ALTER TABLE projetos ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
+        "ALTER TABLE fases ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
+        # DB-1: FK autor em anotacoes
+        "ALTER TABLE anotacoes ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)",
+        "UPDATE anotacoes SET usuario_id = (SELECT id FROM usuarios WHERE lower(usuarios.nome) = lower(anotacoes.usuario)) WHERE usuario_id IS NULL",
+        # DB-4: índices para acelerar queries frequentes
+        "CREATE INDEX IF NOT EXISTS ix_log_atividades_criado_em ON log_atividades(criado_em)",
+        "CREATE INDEX IF NOT EXISTS ix_tarefas_data_prazo ON tarefas(data_prazo)",
     ]:
         try:
             conn.execute(text(stmt))
@@ -128,7 +137,7 @@ app.include_router(modelos.router,        prefix="/api/modelos",        tags=["M
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.4.0"
+app.version = "2.4.0a"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -149,6 +158,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

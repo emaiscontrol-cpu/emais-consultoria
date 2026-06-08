@@ -11,6 +11,8 @@ router = APIRouter()
 @router.get("/")
 def listar(
     projeto_id: Optional[int] = None,
+    skip: int = 0,
+    limit: int = 100,
     db: Session = Depends(get_db),
     _=Depends(get_usuario_atual),
 ):
@@ -26,5 +28,5 @@ def listar(
             "usuario_nome": lg.usuario.nome if lg.usuario else "",
             "projeto_nome": lg.projeto.nome if lg.projeto else "",
         }
-        for lg in q.limit(100).all()
+        for lg in q.offset(skip).limit(min(limit, 500)).all()
     ]

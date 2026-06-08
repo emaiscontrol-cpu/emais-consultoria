@@ -23,10 +23,13 @@ def listar(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_u
 def criar(cliente_id: int, body: dict, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
     if usuario.perfil not in ("admin", "consultor"):
         raise HTTPException(403, "Sem permissão")
+    unidades = body.get("unidades", [])
+    if not isinstance(unidades, list) or not all(isinstance(u, str) for u in unidades):
+        raise HTTPException(400, "unidades deve ser uma lista de strings")
     b = Bandeira(
         cliente_id=cliente_id,
         nome=body["nome"],
-        unidades_json=json.dumps(body.get("unidades", [])),
+        unidades_json=json.dumps(unidades),
     )
     db.add(b)
     db.commit()
@@ -44,7 +47,10 @@ def atualizar(bid: int, body: dict, db: Session = Depends(get_db), usuario=Depen
     if "nome" in body:
         b.nome = body["nome"]
     if "unidades" in body:
-        b.unidades_json = json.dumps(body["unidades"])
+        unidades = body["unidades"]
+        if not isinstance(unidades, list) or not all(isinstance(u, str) for u in unidades):
+            raise HTTPException(400, "unidades deve ser uma lista de strings")
+        b.unidades_json = json.dumps(unidades)
     db.commit()
     return _b2dict(b)
 
