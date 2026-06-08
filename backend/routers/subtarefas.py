@@ -16,7 +16,20 @@ def listar(tarefa_id: int, db: Session = Depends(get_db), _=Depends(get_usuario_
 
 
 @router.post("/", response_model=schemas.SubtarefaOut)
-def criar(data: schemas.SubtarefaCreate, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
+def criar(data: schemas.SubtarefaCreate, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
+    if usuario.perfil not in ("admin", "consultor", "ger_projeto"):
+        tarefa = db.query(models.Tarefa).get(data.tarefa_id)
+        if not tarefa:
+            raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+        fase = tarefa.fase
+        resp = fase.responsavel
+        autorizado = (
+            usuario.cliente_id == fase.projeto.cliente_id and
+            resp is not None and
+            resp.perfil == models.PerfilEnum.ger_projeto
+        )
+        if not autorizado:
+            raise HTTPException(status_code=403, detail="Sem permissão para adicionar atividades nesta tarefa")
     s = models.Subtarefa(**data.model_dump())
     db.add(s); db.commit(); db.refresh(s)
     return s

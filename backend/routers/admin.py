@@ -5,6 +5,7 @@ import threading
 from datetime import datetime
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi.responses import FileResponse
 from auth import get_usuario_atual
 
 router = APIRouter()
@@ -137,6 +138,21 @@ def configurar_auto(body: dict, usuario=Depends(get_usuario_atual)):
     _agendar_proximo()
 
     return {"ok": True, "auto": _auto_backup_state}
+
+
+@router.get("/db/export")
+def exportar_banco(usuario=Depends(get_usuario_atual)):
+    """Faz backup da DB atual e retorna o arquivo para download."""
+    if usuario.perfil != "admin":
+        raise HTTPException(403, "Apenas administradores podem exportar o banco")
+    if not DB_PATH.exists():
+        raise HTTPException(500, f"Banco não encontrado em {DB_PATH}")
+    dest = _executar_backup()
+    return FileResponse(
+        path=str(dest),
+        media_type="application/octet-stream",
+        filename=dest.name,
+    )
 
 
 @router.post("/backup/restaurar")

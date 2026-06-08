@@ -45,6 +45,7 @@ class Usuario(Base):
     senha_hash    = Column(String(256), nullable=False)
     perfil        = Column(Enum(PerfilEnum), default=PerfilEnum.consultor)
     ativo         = Column(Boolean, default=True)
+    foto          = Column(Text, nullable=True)
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     # se for cliente, vincula a um cliente
     cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=True)

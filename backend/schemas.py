@@ -24,6 +24,7 @@ class UsuarioOut(BaseModel):
     perfil: PerfilEnum
     ativo: bool
     cliente_id: Optional[int]
+    foto: Optional[str] = None
     class Config:
         from_attributes = True
 

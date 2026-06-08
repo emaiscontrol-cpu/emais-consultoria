@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
 from database import get_db
 from auth import hash_senha, verificar_senha, criar_token, get_usuario_atual
 import models, schemas
@@ -28,3 +29,12 @@ def alterar_senha(req: schemas.AlterarSenha, usuario=Depends(get_usuario_atual),
     usuario.senha_hash = hash_senha(req.nova_senha)
     db.commit()
     return {"ok": True}
+
+class FotoRequest(BaseModel):
+    foto: str  # data URL base64
+
+@router.put("/foto", response_model=schemas.UsuarioOut)
+def atualizar_foto(req: FotoRequest, usuario=Depends(get_usuario_atual), db: Session = Depends(get_db)):
+    usuario.foto = req.foto
+    db.commit(); db.refresh(usuario)
+    return usuario
