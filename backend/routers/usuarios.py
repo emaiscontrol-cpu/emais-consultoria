@@ -49,3 +49,26 @@ def excluir(id: int, db: Session = Depends(get_db), atual=Depends(get_usuario_at
     db.delete(u)
     db.commit()
     return {"ok": True}
+
+
+@router.get("/reset-requests")
+def listar_reset_requests(db: Session = Depends(get_db), _=Depends(requer_perfil("admin"))):
+    reqs = db.query(models.SolicitacaoReset).order_by(models.SolicitacaoReset.criado_em).all()
+    return [
+        {
+            "id": r.id,
+            "usuario_id": r.usuario_id,
+            "nome": r.usuario.nome,
+            "email": r.usuario.email,
+            "criado_em": r.criado_em,
+        }
+        for r in reqs
+    ]
+
+
+@router.delete("/reset-requests/{req_id}")
+def dispensar_reset_request(req_id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("admin"))):
+    r = db.query(models.SolicitacaoReset).get(req_id)
+    if r:
+        db.delete(r); db.commit()
+    return {"ok": True}

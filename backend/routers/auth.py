@@ -66,3 +66,24 @@ def refresh_token(usuario=Depends(get_usuario_atual)):
     """Renova o token JWT antes de expirar, sem precisar de novo login."""
     token = criar_token({"sub": usuario.email, "perfil": usuario.perfil})
     return {"access_token": token, "token_type": "bearer", "usuario": usuario}
+
+
+class EsqueciSenhaRequest(BaseModel):
+    email: str
+
+@router.post("/esqueci-senha")
+def esqueci_senha(req: EsqueciSenhaRequest, db: Session = Depends(get_db)):
+    from sqlalchemy import func as sqlfunc
+    usuario = db.query(models.Usuario).filter(
+        sqlfunc.lower(models.Usuario.email) == req.email.lower(),
+        models.Usuario.ativo == True,
+    ).first()
+    if usuario:
+        existente = db.query(models.SolicitacaoReset).filter(
+            models.SolicitacaoReset.usuario_id == usuario.id
+        ).first()
+        if not existente:
+            db.add(models.SolicitacaoReset(usuario_id=usuario.id))
+            db.commit()
+    # Sempre retorna ok — não revela se e-mail existe
+    return {"ok": True}

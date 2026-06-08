@@ -90,6 +90,12 @@ with engine.connect() as conn:
             texto TEXT NOT NULL,
             criado_em DATETIME DEFAULT (datetime('now'))
         )""",
+        # Esqueci minha senha
+        """CREATE TABLE IF NOT EXISTS solicitacoes_reset (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+            criado_em DATETIME DEFAULT (datetime('now'))
+        )""",
     ]:
         try:
             conn.execute(text(stmt))
@@ -157,7 +163,7 @@ app.include_router(chat.router,           prefix="/api/chat",           tags=["C
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.4.0e"
+app.version = "2.4.0f"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -178,6 +184,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

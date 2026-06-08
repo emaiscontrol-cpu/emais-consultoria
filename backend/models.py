@@ -490,3 +490,12 @@ class MensagemChat(Base):
     criado_em  = Column(DateTime(timezone=True), server_default=func.now())
     projeto    = relationship("Projeto")
     autor      = relationship("Usuario")
+
+
+class SolicitacaoReset(Base):
+    """Solicitações de redefinição de senha (esqueci minha senha)."""
+    __tablename__ = "solicitacoes_reset"
+    id         = Column(Integer, primary_key=True, index=True)
+    usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    criado_em  = Column(DateTime(timezone=True), server_default=func.now())
+    usuario    = relationship("Usuario")
