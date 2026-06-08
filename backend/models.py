@@ -465,3 +465,28 @@ class ClientePlano(Base):
     plano_id   = Column(Integer, ForeignKey("planos.id"), nullable=False)
     cliente    = relationship("Cliente")
     plano      = relationship("Plano", back_populates="vinculos")
+
+
+class LogTarefa(Base):
+    """Histórico de alterações por tarefa (UX-7)."""
+    __tablename__ = "log_tarefas"
+    id           = Column(Integer, primary_key=True, index=True)
+    tarefa_id    = Column(Integer, ForeignKey("tarefas.id"), nullable=False)
+    usuario_id   = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    campo        = Column(String(60), nullable=False)
+    valor_antes  = Column(Text, nullable=True)
+    valor_depois = Column(Text, nullable=True)
+    criado_em    = Column(DateTime(timezone=True), server_default=func.now())
+    usuario      = relationship("Usuario")
+
+
+class MensagemChat(Base):
+    """Mensagens de chat por projeto (UX-10)."""
+    __tablename__ = "mensagens_chat"
+    id         = Column(Integer, primary_key=True, index=True)
+    projeto_id = Column(Integer, ForeignKey("projetos.id"), nullable=False)
+    autor_id   = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    texto      = Column(Text, nullable=False)
+    criado_em  = Column(DateTime(timezone=True), server_default=func.now())
+    projeto    = relationship("Projeto")
+    autor      = relationship("Usuario")

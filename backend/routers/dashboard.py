@@ -106,6 +106,49 @@ def dashboard_cliente(cliente_id: int, db: Session = Depends(get_db), usuario=De
     }
 
 
+@router.get("/executivo")
+def executivo(db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
+    """Visão executiva de todos os clientes para admin/consultor (UX-2)."""
+    if usuario.perfil not in ("admin", "consultor"):
+        raise HTTPException(403, "Acesso restrito")
+    agora = datetime.now(timezone.utc)
+    clientes = db.query(models.Cliente).filter(models.Cliente.ativo == True).all()
+    resultado = []
+    for c in clientes:
+        projetos = db.query(models.Projeto).filter(
+            models.Projeto.cliente_id == c.id,
+            models.Projeto.ativo == True,
+        ).all()
+        if not projetos:
+            continue
+        ativos = sum(1 for p in projetos if p.status not in ("concluido", "pausado"))
+        atrasadas = 0
+        for p in projetos:
+            for f in p.fases:
+                if not getattr(f, 'ativo', True):
+                    continue
+                for t in f.tarefas:
+                    if not getattr(t, 'ativo', True):
+                        continue
+                    if t.status.value != "concluida" and t.data_prazo:
+                        prazo = t.data_prazo
+                        if prazo.tzinfo is None:
+                            prazo = prazo.replace(tzinfo=timezone.utc)
+                        if prazo < agora:
+                            atrasadas += 1
+        progresso_medio = round(sum(p.progresso for p in projetos) / len(projetos), 1)
+        resultado.append({
+            "id": c.id,
+            "razao_social": c.razao_social,
+            "projetos_ativos": ativos,
+            "total_projetos": len(projetos),
+            "progresso_medio": progresso_medio,
+            "tarefas_atrasadas": atrasadas,
+        })
+    resultado.sort(key=lambda x: -x["tarefas_atrasadas"])
+    return resultado
+
+
 @router.get("/projetos-resumo")
 def projetos_resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
     q = db.query(models.Projeto).filter(models.Projeto.ativo == True)

@@ -1,3 +1,4 @@
+import re
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -9,6 +10,33 @@ from helpers import log
 import models, schemas
 
 router = APIRouter()
+
+
+def _registrar_historico(db, tarefa, usuario_id: int, update: dict):
+    """Cria LogTarefa para cada campo alterado."""
+    CAMPOS = {
+        "nome": "Nome",
+        "status": "Status",
+        "percentual": "Percentual (%)",
+        "responsavel_id": "Responsável",
+        "data_prazo": "Prazo",
+        "requer_validacao": "Requer validação",
+    }
+    for campo, label in CAMPOS.items():
+        if campo not in update:
+            continue
+        antes = getattr(tarefa, campo, None)
+        depois = update[campo]
+        if str(antes) == str(depois):
+            continue
+        db.add(models.LogTarefa(
+            tarefa_id=tarefa.id,
+            usuario_id=usuario_id,
+            campo=label,
+            valor_antes=str(antes) if antes is not None else None,
+            valor_depois=str(depois) if depois is not None else None,
+        ))
+
 
 @router.get("/fase/{fase_id}", response_model=List[schemas.TarefaOut])
 def listar_por_fase(fase_id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
@@ -76,6 +104,8 @@ def atualizar(id: int, data: schemas.TarefaUpdate, db: Session = Depends(get_db)
         if not t.data_inicio:
             t.data_inicio = datetime.now(timezone.utc)
 
+    _registrar_historico(db, t, usuario.id, update)
+
     for k, v in update.items():
         setattr(t, k, v)
 
@@ -97,6 +127,43 @@ def deletar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("adm
     recalcular_fase(fase, db)
     return {"ok": True}
 
+
+@router.patch("/{tarefa_id}/ordem")
+def reordenar(
+    tarefa_id: int,
+    body: dict,
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    """Troca a ordem de uma tarefa com sua vizinha dentro da fase (UX-6)."""
+    if usuario.perfil not in ("admin", "consultor", "ger_projeto"):
+        raise HTTPException(403, "Sem permissão")
+    tarefa = db.query(models.Tarefa).filter(
+        models.Tarefa.id == tarefa_id, models.Tarefa.ativo == True
+    ).first()
+    if not tarefa:
+        raise HTTPException(404)
+    tarefas = (
+        db.query(models.Tarefa)
+        .filter(models.Tarefa.fase_id == tarefa.fase_id, models.Tarefa.ativo == True)
+        .order_by(models.Tarefa.ordem)
+        .all()
+    )
+    idx = next((i for i, t in enumerate(tarefas) if t.id == tarefa_id), None)
+    if idx is None:
+        raise HTTPException(404)
+    direcao = body.get("direcao")
+    if direcao == "up" and idx > 0:
+        viz = tarefas[idx - 1]
+    elif direcao == "down" and idx < len(tarefas) - 1:
+        viz = tarefas[idx + 1]
+    else:
+        return {"ok": False}
+    tarefa.ordem, viz.ordem = viz.ordem, tarefa.ordem
+    db.commit()
+    return {"ok": True}
+
+
 @router.post("/{id}/comentarios", response_model=schemas.ComentarioOut)
 def comentar(id: int, data: schemas.ComentarioCreate, db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
     t = db.query(models.Tarefa).get(id)
@@ -104,6 +171,19 @@ def comentar(id: int, data: schemas.ComentarioCreate, db: Session = Depends(get_
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     c = models.Comentario(tarefa_id=id, autor_id=usuario.id, texto=data.texto)
     db.add(c); db.commit(); db.refresh(c)
+
+    # Processar menções @usuario (UX-8)
+    mencoes = set(re.findall(r'@(\w+)', data.texto))
+    for nome in mencoes:
+        alvo = db.query(models.Usuario).filter(
+            models.Usuario.nome.ilike(f"{nome}%"),
+            models.Usuario.ativo == True,
+        ).first()
+        if alvo and alvo.id != usuario.id:
+            log(db, usuario.id, "Menção em comentário",
+                f'{usuario.nome} mencionou @{alvo.nome} na tarefa "{t.nome}"',
+                projeto_id=t.fase.projeto_id if t.fase else None)
+
     return c
 
 @router.get("/{id}/comentarios", response_model=List[schemas.ComentarioOut])

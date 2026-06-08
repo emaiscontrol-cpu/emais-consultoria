@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
+from pydantic import BaseModel
 from database import get_db
 from auth import get_usuario_atual, requer_perfil
 import models, schemas
@@ -99,6 +100,43 @@ def deletar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("adm
     if not f:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
     f.ativo = False
+    db.commit()
+    return {"ok": True}
+
+
+class ReordenarBody(BaseModel):
+    direcao: str  # "up" | "down"
+
+
+@router.patch("/{fase_id}/ordem")
+def reordenar(
+    fase_id: int,
+    body: ReordenarBody,
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    """Troca a ordem de uma fase com sua vizinha (UX-6)."""
+    if usuario.perfil not in ("admin", "consultor"):
+        raise HTTPException(403, "Sem permissão")
+    fase = db.query(models.Fase).filter(models.Fase.id == fase_id, models.Fase.ativo == True).first()
+    if not fase:
+        raise HTTPException(404)
+    fases = (
+        db.query(models.Fase)
+        .filter(models.Fase.projeto_id == fase.projeto_id, models.Fase.ativo == True)
+        .order_by(models.Fase.ordem)
+        .all()
+    )
+    idx = next((i for i, f in enumerate(fases) if f.id == fase_id), None)
+    if idx is None:
+        raise HTTPException(404)
+    if body.direcao == "up" and idx > 0:
+        viz = fases[idx - 1]
+    elif body.direcao == "down" and idx < len(fases) - 1:
+        viz = fases[idx + 1]
+    else:
+        return {"ok": False}
+    fase.ordem, viz.ordem = viz.ordem, fase.ordem
     db.commit()
     return {"ok": True}
 

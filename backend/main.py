@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -72,6 +72,24 @@ with engine.connect() as conn:
         # DB-4: índices para acelerar queries frequentes
         "CREATE INDEX IF NOT EXISTS ix_log_atividades_criado_em ON log_atividades(criado_em)",
         "CREATE INDEX IF NOT EXISTS ix_tarefas_data_prazo ON tarefas(data_prazo)",
+        # UX-7: histórico detalhado por tarefa
+        """CREATE TABLE IF NOT EXISTS log_tarefas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            tarefa_id INTEGER NOT NULL REFERENCES tarefas(id),
+            usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+            campo TEXT NOT NULL,
+            valor_antes TEXT,
+            valor_depois TEXT,
+            criado_em DATETIME DEFAULT (datetime('now'))
+        )""",
+        # UX-10: chat por projeto
+        """CREATE TABLE IF NOT EXISTS mensagens_chat (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            projeto_id INTEGER NOT NULL REFERENCES projetos(id),
+            autor_id INTEGER NOT NULL REFERENCES usuarios(id),
+            texto TEXT NOT NULL,
+            criado_em DATETIME DEFAULT (datetime('now'))
+        )""",
     ]:
         try:
             conn.execute(text(stmt))
@@ -132,12 +150,14 @@ app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["O
 app.include_router(admin.router,          prefix="/api/admin",          tags=["Administração"])
 app.include_router(bandeiras.router,      prefix="/api/bandeiras",      tags=["Bandeiras"])
 app.include_router(modelos.router,        prefix="/api/modelos",        tags=["Modelos de Projeto"])
+app.include_router(busca.router,          prefix="/api/busca",          tags=["Busca Global"])
+app.include_router(chat.router,           prefix="/api/chat",           tags=["Chat"])
 
 # Inicia backup automático diário
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.4.0a"
+app.version = "2.4.0c"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -158,6 +178,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

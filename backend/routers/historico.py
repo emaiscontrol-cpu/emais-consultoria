@@ -30,3 +30,30 @@ def listar(
         }
         for lg in q.offset(skip).limit(min(limit, 500)).all()
     ]
+
+
+@router.get("/tarefa/{tarefa_id}")
+def por_tarefa(
+    tarefa_id: int,
+    db: Session = Depends(get_db),
+    _=Depends(get_usuario_atual),
+):
+    """Histórico detalhado de alterações de uma tarefa específica (UX-7)."""
+    logs = (
+        db.query(models.LogTarefa)
+        .filter(models.LogTarefa.tarefa_id == tarefa_id)
+        .order_by(models.LogTarefa.criado_em.desc())
+        .limit(100)
+        .all()
+    )
+    return [
+        {
+            "id": lg.id,
+            "campo": lg.campo,
+            "valor_antes": lg.valor_antes,
+            "valor_depois": lg.valor_depois,
+            "criado_em": lg.criado_em,
+            "usuario_nome": lg.usuario.nome if lg.usuario else "",
+        }
+        for lg in logs
+    ]
