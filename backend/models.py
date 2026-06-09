@@ -499,3 +499,18 @@ class SolicitacaoReset(Base):
     usuario_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
     criado_em  = Column(DateTime(timezone=True), server_default=func.now())
     usuario    = relationship("Usuario")
+
+
+class Arquivo(Base):
+    """Arquivos e documentos por cliente (visível apenas para admin/consultor)."""
+    __tablename__ = "arquivos"
+    id             = Column(Integer, primary_key=True, index=True)
+    cliente_id     = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    nome_original  = Column(String(255), nullable=False)
+    nome_arquivo   = Column(String(255), nullable=False)  # nome no disco (UUID)
+    tamanho        = Column(Integer, nullable=False)
+    tipo_mime      = Column(String(120), nullable=True)
+    enviado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    criado_em      = Column(DateTime(timezone=True), server_default=func.now())
+    cliente        = relationship("Cliente")
+    enviado_por    = relationship("Usuario")

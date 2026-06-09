@@ -1,6 +1,6 @@
 import logo from '../assets/logo.jpeg'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen, Landmark, List, FileSpreadsheet, NotebookPen, PieChart, ChevronDown, ChevronUp, Layers, ListTodo, AlignLeft } from 'lucide-react'
+import { LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell, History, BarChart2, BookOpen, Landmark, List, FileSpreadsheet, NotebookPen, PieChart, ChevronDown, ChevronUp, Layers, ListTodo, AlignLeft, DatabaseBackup, Camera, Copy, Search, Globe, FolderOpen } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
 import { authAPI, notificacoesAPI } from '../services/api'
@@ -11,7 +11,7 @@ const DASH_SUB = [
   { to: '/',                      label: 'Geral',         icon: LayoutDashboard, end: true },
   { to: '/dashboard/fases',       label: 'Por Fase',      icon: Layers },
   { to: '/dashboard/tarefas',     label: 'Por Tarefa',    icon: ListTodo },
-  { to: '/dashboard/subtarefas',  label: 'Por Subtarefa', icon: AlignLeft },
+  { to: '/dashboard/subtarefas',  label: 'Por Atividade', icon: AlignLeft },
 ]
 
 function DashGroup() {
@@ -56,9 +56,33 @@ function DashGroup() {
   )
 }
 
-export default function Sidebar() {
-  const { usuario, logout } = useAuth()
+function CollapseGroup({ label, icon: Icon, children, defaultOpen = false, isActive = false }) {
+  const [open, setOpen] = useState(defaultOpen)
+  return (
+    <div>
+      <button onClick={() => setOpen(v => !v)} style={{
+        display:'flex', alignItems:'center', gap:9, width:'100%',
+        padding:'9px 14px', borderRadius:7, cursor:'pointer', border:'none',
+        background: isActive ? 'rgba(255,255,255,.13)' : 'transparent',
+        color: isActive ? '#fff' : 'rgba(255,255,255,.62)',
+        fontSize:13, fontWeight: isActive ? 600 : 400, transition:'background .15s, color .15s',
+      }}
+        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,.07)' }}
+        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
+      >
+        <Icon size={16} />
+        <span style={{ flex:1, textAlign:'left' }}>{label}</span>
+        {open ? <ChevronUp size={12}/> : <ChevronDown size={12}/>}
+      </button>
+      {open && <div style={{ paddingLeft:10, marginTop:2 }}>{children}</div>}
+    </div>
+  )
+}
+
+export default function Sidebar({ onBusca }) {
+  const { usuario, logout, atualizarUsuario } = useAuth()
   const navigate = useNavigate()
+  const location = useLocation()
   const [showSenha, setShowSenha] = useState(false)
   const [formSenha, setFormSenha] = useState({ senha_atual:'', nova_senha:'', confirmar:'' })
   const [salvando, setSalvando] = useState(false)
@@ -93,10 +117,13 @@ export default function Sidebar() {
   }
 
   const isAdmin         = ['admin'].includes(usuario?.perfil)
-  // perfis que têm acesso restrito ao cliente vinculado quando possuem cliente_id
-  const isRestrito      = ['cliente','ger_projeto','ti'].includes(usuario?.perfil) && !!usuario?.cliente_id
+  const isAdminConsultor = ['admin','consultor'].includes(usuario?.perfil)
+  const isRestrito      = ['analista','ger_projeto','ti'].includes(usuario?.perfil) && !!usuario?.cliente_id
   const isConsultor     = isRestrito || ['admin','consultor','ger_projeto','ti'].includes(usuario?.perfil)
   const isControladoria = isRestrito || ['admin','consultor','ger_projeto','ti'].includes(usuario?.perfil)
+
+  const adminAtivo = ['/relatorios','/historico','/usuarios','/clientes'].some(p => location.pathname.startsWith(p))
+  const procAtivo  = location.pathname.startsWith('/procedimentos') || location.pathname.startsWith('/controladoria/planos') || location.pathname.startsWith('/modelos')
 
   return (
     <>
@@ -115,6 +142,21 @@ export default function Sidebar() {
       <nav className="sidebar-nav">
         <div className="nav-section">Principal</div>
 
+        {/* Busca Global (UX-1) */}
+        <button onClick={onBusca}
+          style={{
+            display:'flex', alignItems:'center', gap:9, width:'100%',
+            padding:'9px 14px', borderRadius:7, cursor:'pointer', border:'none',
+            background:'transparent', color:'rgba(255,255,255,.45)',
+            fontSize:13, transition:'background .15s, color .15s', marginBottom:2,
+          }}
+          onMouseEnter={e => { e.currentTarget.style.background='rgba(255,255,255,.07)'; e.currentTarget.style.color='rgba(255,255,255,.8)' }}
+          onMouseLeave={e => { e.currentTarget.style.background='transparent'; e.currentTarget.style.color='rgba(255,255,255,.45)' }}>
+          <Search size={15}/>
+          <span style={{ flex:1, textAlign:'left' }}>Buscar...</span>
+          <span style={{ fontSize:10, background:'rgba(255,255,255,.12)', borderRadius:4, padding:'1px 6px', letterSpacing:'.02em' }}>Ctrl+K</span>
+        </button>
+
         <DashGroup />
 
         <NavLink to="/projetos" className={({isActive})=>`nav-item${isActive?' active':''}`}>
@@ -125,6 +167,11 @@ export default function Sidebar() {
           <PieChart size={16}/> Dashboard Cliente
         </NavLink>
 
+        {isAdminConsultor && (
+          <NavLink to="/dashboard-executivo" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+            <Globe size={16}/> Dashboard Executivo
+          </NavLink>
+        )}
 
         <NavLink to="/notificacoes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
           <div style={{ position:'relative', display:'inline-flex' }}>
@@ -138,20 +185,11 @@ export default function Sidebar() {
           {' '}Notificações
         </NavLink>
 
-        {['admin','consultor'].includes(usuario?.perfil) && (
-          <NavLink to="/clientes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-            <Building2 size={16}/> Clientes
-          </NavLink>
-        )}
-
         {isControladoria && (
           <>
             <div className="nav-section">Controladoria</div>
             <NavLink to="/controladoria" end className={({isActive})=>`nav-item${isActive?' active':''}`}>
               <Landmark size={16}/> Controladoria
-            </NavLink>
-            <NavLink to="/controladoria/planos" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <List size={16}/> Modelos & Contas
             </NavLink>
             <NavLink to="/controladoria/balancetes" className={({isActive})=>`nav-item${isActive?' active':''}`}>
               <FileSpreadsheet size={16}/> Balancetes
@@ -168,39 +206,96 @@ export default function Sidebar() {
           </>
         )}
 
-        {isConsultor && (
+        {isAdminConsultor && (
+          <NavLink to="/arquivos" className={({isActive})=>`nav-item${isActive?' active':''}`}>
+            <FolderOpen size={16}/> Arquivos
+          </NavLink>
+        )}
+
+        {isAdminConsultor && (
           <>
             <div className="nav-section">Administração</div>
-            <NavLink to="/relatorios" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <BarChart2 size={16}/> Relatórios
-            </NavLink>
-            <NavLink to="/historico" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <History size={16}/> Histórico
-            </NavLink>
-            <NavLink to="/manual" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-              <BookOpen size={16}/> Manual
-            </NavLink>
-            {isAdmin && (
-              <NavLink to="/usuarios" className={({isActive})=>`nav-item${isActive?' active':''}`}>
-                <Users size={16}/> Usuários
+            <CollapseGroup label="Administração" icon={BarChart2} defaultOpen={adminAtivo} isActive={adminAtivo}>
+              <NavLink to="/relatorios" className={({isActive})=>`nav-item${isActive?' active':''}`} style={{ fontSize:12, paddingTop:7, paddingBottom:7, gap:7 }}>
+                <BarChart2 size={13}/> Relatórios
               </NavLink>
-            )}
+              <NavLink to="/historico" className={({isActive})=>`nav-item${isActive?' active':''}`} style={{ fontSize:12, paddingTop:7, paddingBottom:7, gap:7 }}>
+                <History size={13}/> Histórico
+              </NavLink>
+              <NavLink to="/usuarios" className={({isActive})=>`nav-item${isActive?' active':''}`} style={{ fontSize:12, paddingTop:7, paddingBottom:7, gap:7 }}>
+                <Users size={13}/> Usuários
+              </NavLink>
+              <NavLink to="/clientes" className={({isActive})=>`nav-item${isActive?' active':''}`} style={{ fontSize:12, paddingTop:7, paddingBottom:7, gap:7 }}>
+                <Building2 size={13}/> Clientes
+              </NavLink>
+            </CollapseGroup>
+          </>
+        )}
+
+        {isAdmin && (
+          <>
+            <div className="nav-section">Procedimentos</div>
+            <CollapseGroup label="Procedimentos" icon={DatabaseBackup} defaultOpen={procAtivo} isActive={procAtivo}>
+              <NavLink to="/modelos" className={({isActive})=>`nav-item${isActive?' active':''}`} style={{ fontSize:12, paddingTop:7, paddingBottom:7, gap:7 }}>
+                <Copy size={13}/> Templates de Projeto
+              </NavLink>
+              <NavLink to="/controladoria/planos" className={({isActive})=>`nav-item${isActive?' active':''}`} style={{ fontSize:12, paddingTop:7, paddingBottom:7, gap:7 }}>
+                <List size={13}/> Modelos & Contas
+              </NavLink>
+              <NavLink to="/procedimentos" className={({isActive})=>`nav-item${isActive?' active':''}`} style={{ fontSize:12, paddingTop:7, paddingBottom:7, gap:7 }}>
+                <DatabaseBackup size={13}/> Backup
+              </NavLink>
+            </CollapseGroup>
           </>
         )}
       </nav>
 
       <div className="sidebar-footer">
+        <input type="file" accept="image/*" id="foto-upload" style={{ display:'none' }}
+          onChange={async e => {
+            const file = e.target.files?.[0]
+            if (!file) return
+            const reader = new FileReader()
+            reader.onload = async ev => {
+              try {
+                const { data } = await authAPI.atualizarFoto(ev.target.result)
+                atualizarUsuario({ foto: data.foto })
+                toast.success('Foto atualizada!')
+              } catch {
+                toast.error('Erro ao salvar foto')
+              }
+            }
+            reader.readAsDataURL(file)
+            e.target.value = ''
+          }}
+        />
         <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
-          <Avatar nome={usuario?.nome} color="blue" />
+          <div style={{ position:'relative', cursor:'pointer', flexShrink:0 }}
+            title="Clique para alterar sua foto"
+            onClick={() => document.getElementById('foto-upload').click()}>
+            {usuario?.foto
+              ? <img src={usuario.foto} alt={usuario.nome}
+                  style={{ width:36, height:36, borderRadius:'50%', objectFit:'cover', display:'block' }} />
+              : <Avatar nome={usuario?.nome} color="blue" />
+            }
+            <div style={{ position:'absolute', bottom:-2, right:-2, background:'rgba(0,0,0,0.6)',
+              borderRadius:'50%', width:16, height:16, display:'flex', alignItems:'center', justifyContent:'center' }}>
+              <Camera size={9} color="#fff"/>
+            </div>
+          </div>
           <div style={{ flex:1, minWidth:0 }}>
             <div style={{ fontSize:12, fontWeight:600, overflow:'hidden', textOverflow:'ellipsis', whiteSpace:'nowrap', color:'rgba(255,255,255,.88)' }}>
               {usuario?.nome}
             </div>
             <div style={{ fontSize:11, color:'rgba(255,255,255,.40)' }}>
-              {{ admin:'Administrador', consultor:'Consultor', ger_projeto:'Ger. Projeto', cliente:'Cliente', ti:'T.I' }[usuario?.perfil]}
+              {{ admin:'Administrador', consultor:'Consultor', ger_projeto:'Ger. Projeto', analista:'Analista', ti:'T.I' }[usuario?.perfil]}
             </div>
           </div>
         </div>
+        <NavLink to="/manual" className={({isActive})=>`btn btn-ghost btn-sm${isActive?' active':''}`}
+          style={{ width:'100%', justifyContent:'flex-start', marginBottom:4, textDecoration:'none' }}>
+          <BookOpen size={13}/> Manual
+        </NavLink>
         <button className="btn btn-ghost btn-sm" style={{ width:'100%', justifyContent:'flex-start', marginBottom:4 }} onClick={() => setShowSenha(true)}>
           <KeyRound size={13}/> Alterar senha
         </button>

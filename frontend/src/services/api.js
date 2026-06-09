@@ -22,15 +22,19 @@ api.interceptors.response.use(
 )
 
 export const authAPI = {
-  login:        (email, senha)             => api.post('/auth/login', { email, senha }),
-  me:           ()                         => api.get('/auth/me'),
-  alterarSenha: (senha_atual, nova_senha)  => api.put('/auth/senha', { senha_atual, nova_senha }),
+  login:          (email, senha)            => api.post('/auth/login', { email, senha }),
+  me:             ()                        => api.get('/auth/me'),
+  alterarSenha:   (senha_atual, nova_senha) => api.put('/auth/senha', { senha_atual, nova_senha }),
+  atualizarFoto:  (foto)                    => api.put('/auth/foto', { foto }),
+  esqueciSenha:   (email)                   => api.post('/auth/esqueci-senha', { email }),
+  refresh:      ()                         => api.post('/auth/refresh'),
 }
 
 export const dashboardAPI = {
   resumo:         () => api.get('/dashboard/resumo'),
   projetosResumo: () => api.get('/dashboard/projetos-resumo'),
   cliente:        id => api.get(`/dashboard/cliente/${id}`),
+  executivo:      () => api.get('/dashboard/executivo'),
 }
 
 export const clientesAPI = {
@@ -49,33 +53,37 @@ export const projetosAPI = {
 }
 
 export const fasesAPI = {
-  porProjeto:   projetoId    => api.get(`/fases/projeto/${projetoId}`),
-  detalhe:      id           => api.get(`/fases/${id}`),
-  criar:        data         => api.post('/fases/', data),
-  atualizar:    (id,d)       => api.put(`/fases/${id}`, d),
-  deletar:      id           => api.delete(`/fases/${id}`),
-  comentarios:  id           => api.get(`/fases/${id}/comentarios`),
-  comentar:     (id, texto)  => api.post(`/fases/${id}/comentarios`, { texto }),
+  porProjeto:   projetoId           => api.get(`/fases/projeto/${projetoId}`),
+  detalhe:      id                  => api.get(`/fases/${id}`),
+  criar:        data                => api.post('/fases/', data),
+  atualizar:    (id,d)              => api.put(`/fases/${id}`, d),
+  deletar:      id                  => api.delete(`/fases/${id}`),
+  comentarios:  id                  => api.get(`/fases/${id}/comentarios`),
+  comentar:     (id, texto)         => api.post(`/fases/${id}/comentarios`, { texto }),
+  reordenar:    (id, direcao)       => api.patch(`/fases/${id}/ordem`, { direcao }),
 }
 
 export const tarefasAPI = {
-  porFase:              faseId      => api.get(`/tarefas/fase/${faseId}`),
-  detalhe:              id          => api.get(`/tarefas/${id}`),
-  criar:                data        => api.post('/tarefas/', data),
-  atualizar:            (id,d)      => api.put(`/tarefas/${id}`, d),
-  deletar:              id          => api.delete(`/tarefas/${id}`),
-  comentar:             (id,texto)  => api.post(`/tarefas/${id}/comentarios`, { tarefa_id: id, texto }),
-  comentarios:          id          => api.get(`/tarefas/${id}/comentarios`),
-  listarResponsaveis:   id          => api.get(`/tarefas/${id}/responsaveis`),
-  adicionarResponsavel: (id, data)  => api.post(`/tarefas/${id}/responsaveis`, data),
-  removerResponsavel:   (id, respId)=> api.delete(`/tarefas/${id}/responsaveis/${respId}`),
+  porFase:              faseId           => api.get(`/tarefas/fase/${faseId}`),
+  detalhe:              id               => api.get(`/tarefas/${id}`),
+  criar:                data             => api.post('/tarefas/', data),
+  atualizar:            (id,d)           => api.put(`/tarefas/${id}`, d),
+  deletar:              id               => api.delete(`/tarefas/${id}`),
+  comentar:             (id,texto)       => api.post(`/tarefas/${id}/comentarios`, { tarefa_id: id, texto }),
+  comentarios:          id               => api.get(`/tarefas/${id}/comentarios`),
+  listarResponsaveis:   id               => api.get(`/tarefas/${id}/responsaveis`),
+  adicionarResponsavel: (id, data)       => api.post(`/tarefas/${id}/responsaveis`, data),
+  removerResponsavel:   (id, respId)     => api.delete(`/tarefas/${id}/responsaveis/${respId}`),
+  reordenar:            (id, direcao)    => api.patch(`/tarefas/${id}/ordem`, { direcao }),
 }
 
 export const usuariosAPI = {
-  listar:   ()       => api.get('/usuarios/'),
-  criar:    data     => api.post('/usuarios/', data),
-  atualizar:(id,d)   => api.put(`/usuarios/${id}`, d),
-  excluir:  id       => api.delete(`/usuarios/${id}`),
+  listar:              ()       => api.get('/usuarios/'),
+  criar:               data     => api.post('/usuarios/', data),
+  atualizar:           (id, d)  => api.put(`/usuarios/${id}`, d),
+  excluir:             id       => api.delete(`/usuarios/${id}`),
+  listarResetRequests: ()       => api.get('/usuarios/reset-requests'),
+  dispensarReset:      id       => api.delete(`/usuarios/reset-requests/${id}`),
 }
 
 export const notificacoesAPI = {
@@ -89,7 +97,17 @@ export const relatoriosAPI = {
 }
 
 export const historicoAPI = {
-  listar: (projetoId) => api.get('/historico/', { params: projetoId ? { projeto_id: projetoId } : {} }),
+  listar:    (projetoId) => api.get('/historico/', { params: projetoId ? { projeto_id: projetoId } : {} }),
+  porTarefa: (tarefaId)  => api.get(`/historico/tarefa/${tarefaId}`),
+}
+
+export const buscaAPI = {
+  buscar: (q) => api.get('/busca/', { params: { q } }),
+}
+
+export const chatAPI = {
+  listar:  (projetoId)         => api.get(`/chat/projeto/${projetoId}`),
+  enviar:  (projetoId, texto)  => api.post(`/chat/projeto/${projetoId}`, { texto }),
 }
 
 export const subtarefasAPI = {
@@ -181,6 +199,52 @@ export const anotacoesAPI = {
   criar:     (clienteId, data) => api.post(`/anotacoes/cliente/${clienteId}`, data),
   atualizar: (id, data)        => api.put(`/anotacoes/${id}`, data),
   deletar:   id                => api.delete(`/anotacoes/${id}`),
+}
+
+export const arquivosAPI = {
+  listar:  (clienteId) => api.get(`/arquivos/cliente/${clienteId}`),
+  upload:  (clienteId, arquivo) => {
+    const fd = new FormData()
+    fd.append('arquivo', arquivo)
+    return api.post(`/arquivos/cliente/${clienteId}`, fd)
+  },
+  download: (id) => api.get(`/arquivos/${id}/download`, { responseType: 'blob' }),
+  deletar:  (id) => api.delete(`/arquivos/${id}`),
+}
+
+export const adminAPI = {
+  fazerBackup:     ()        => api.post('/admin/backup'),
+  listarBackups:   ()        => api.get('/admin/backup'),
+  configurarAuto:  (config)  => api.put('/admin/backup/auto', config),
+  restaurarBackup: (arquivo) => {
+    const fd = new FormData(); fd.append('arquivo', arquivo)
+    return api.post('/admin/backup/restaurar', fd)
+  },
+}
+
+export const bandeiraAPI = {
+  listar:   clienteId       => api.get(`/bandeiras/cliente/${clienteId}`),
+  criar:    (clienteId, d)  => api.post(`/bandeiras/cliente/${clienteId}`, d),
+  atualizar:(id, d)         => api.put(`/bandeiras/${id}`, d),
+  deletar:  id              => api.delete(`/bandeiras/${id}`),
+}
+
+export const modelosAPI = {
+  listar:              ()                        => api.get('/modelos/'),
+  criar:               data                      => api.post('/modelos/', data),
+  detalhe:             id                        => api.get(`/modelos/${id}`),
+  atualizar:           (id, data)                => api.put(`/modelos/${id}`, data),
+  deletar:             id                        => api.delete(`/modelos/${id}`),
+  criarFase:           (mid, data)               => api.post(`/modelos/${mid}/fases`, data),
+  atualizarFase:       (mid, fid, data)          => api.put(`/modelos/${mid}/fases/${fid}`, data),
+  deletarFase:         (mid, fid)                => api.delete(`/modelos/${mid}/fases/${fid}`),
+  criarTarefa:         (mid, fid, data)          => api.post(`/modelos/${mid}/fases/${fid}/tarefas`, data),
+  atualizarTarefa:     (mid, fid, tid, data)     => api.put(`/modelos/${mid}/fases/${fid}/tarefas/${tid}`, data),
+  deletarTarefa:       (mid, fid, tid)           => api.delete(`/modelos/${mid}/fases/${fid}/tarefas/${tid}`),
+  criarSubtarefa:      (mid, fid, tid, data)     => api.post(`/modelos/${mid}/fases/${fid}/tarefas/${tid}/subtarefas`, data),
+  atualizarSubtarefa:  (mid, fid, tid, sid, d)   => api.put(`/modelos/${mid}/fases/${fid}/tarefas/${tid}/subtarefas/${sid}`, d),
+  deletarSubtarefa:    (mid, fid, tid, sid)      => api.delete(`/modelos/${mid}/fases/${fid}/tarefas/${tid}/subtarefas/${sid}`),
+  aplicar:             (modeloId, projetoId)     => api.post(`/modelos/aplicar/${modeloId}/projeto/${projetoId}`),
 }
 
 export default api

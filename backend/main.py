@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -96,6 +96,17 @@ with engine.connect() as conn:
             usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
             criado_em DATETIME DEFAULT (datetime('now'))
         )""",
+        # Módulo de Arquivos por cliente
+        """CREATE TABLE IF NOT EXISTS arquivos (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+            nome_original TEXT NOT NULL,
+            nome_arquivo TEXT NOT NULL,
+            tamanho INTEGER NOT NULL,
+            tipo_mime TEXT,
+            enviado_por_id INTEGER REFERENCES usuarios(id),
+            criado_em DATETIME DEFAULT (datetime('now'))
+        )""",
     ]:
         try:
             conn.execute(text(stmt))
@@ -158,12 +169,17 @@ app.include_router(bandeiras.router,      prefix="/api/bandeiras",      tags=["B
 app.include_router(modelos.router,        prefix="/api/modelos",        tags=["Modelos de Projeto"])
 app.include_router(busca.router,          prefix="/api/busca",          tags=["Busca Global"])
 app.include_router(chat.router,           prefix="/api/chat",           tags=["Chat"])
+app.include_router(arquivos.router,       prefix="/api/arquivos",       tags=["Arquivos"])
+
+# Cria diretório de uploads se não existir
+from pathlib import Path as _Path
+_Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 
 # Inicia backup automático diário
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.4.0h"
+app.version = "2.4.0i"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
