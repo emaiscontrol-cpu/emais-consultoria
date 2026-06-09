@@ -3,7 +3,7 @@ import { clientesAPI, arquivosAPI } from '../services/api'
 import { LoadingPage } from '../components/shared'
 import {
   File, FileText, FileSpreadsheet, FileImage, Upload,
-  Download, Trash2, FolderOpen,
+  Download, Trash2, FolderOpen, Eye,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -18,6 +18,12 @@ function iconeArquivo(mime, nome) {
   if (mime?.includes('word') || ['doc', 'docx'].includes(ext))
     return <FileText size={18} color="#1D4ED8" />
   return <File size={18} color="#6B7280" />
+}
+
+function podeAbrirInline(mime, nome) {
+  const ext = nome?.split('.').pop()?.toLowerCase() || ''
+  return (mime?.includes('pdf') || ext === 'pdf') ||
+         (mime?.includes('image') || ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg'].includes(ext))
 }
 
 function formatBytes(bytes) {
@@ -80,19 +86,25 @@ export default function Arquivos() {
     carregarArquivos(clienteAtivo.id)
   }
 
-  const handleDownload = async (arq) => {
+  const handleAbrirOuBaixar = async (arq) => {
     try {
       const r = await arquivosAPI.download(arq.id)
-      const url = URL.createObjectURL(new Blob([r.data], { type: arq.tipo_mime }))
-      const a = document.createElement('a')
-      a.href = url
-      a.download = arq.nome_original
-      document.body.appendChild(a)
-      a.click()
-      document.body.removeChild(a)
-      URL.revokeObjectURL(url)
+      const blob = new Blob([r.data], { type: arq.tipo_mime || 'application/octet-stream' })
+      const url = URL.createObjectURL(blob)
+      if (podeAbrirInline(arq.tipo_mime, arq.nome_original)) {
+        window.open(url, '_blank')
+        setTimeout(() => URL.revokeObjectURL(url), 15000)
+      } else {
+        const a = document.createElement('a')
+        a.href = url
+        a.download = arq.nome_original
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+      }
     } catch {
-      toast.error('Erro ao baixar arquivo')
+      toast.error('Erro ao abrir arquivo')
     }
   }
 
@@ -218,10 +230,12 @@ export default function Arquivos() {
                       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                         <button
                           className="btn btn-sm btn-ghost"
-                          title="Baixar"
-                          onClick={() => handleDownload(arq)}
+                          title={podeAbrirInline(arq.tipo_mime, arq.nome_original) ? 'Abrir' : 'Baixar'}
+                          onClick={() => handleAbrirOuBaixar(arq)}
                         >
-                          <Download size={13} />
+                          {podeAbrirInline(arq.tipo_mime, arq.nome_original)
+                            ? <Eye size={13} />
+                            : <Download size={13} />}
                         </button>
                         <button
                           className="btn btn-sm btn-ghost"
