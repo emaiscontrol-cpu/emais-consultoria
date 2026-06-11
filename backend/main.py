@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -171,6 +171,7 @@ app.include_router(busca.router,          prefix="/api/busca",          tags=["B
 app.include_router(chat.router,           prefix="/api/chat",           tags=["Chat"])
 app.include_router(arquivos.router,       prefix="/api/arquivos",       tags=["Arquivos"])
 app.include_router(ia.router,             prefix="/api/ia",             tags=["IA"])
+app.include_router(gemini.router,         prefix="/api/gemini",         tags=["Gemini"])
 
 # Cria diretório de uploads se não existir
 from pathlib import Path as _Path
@@ -180,7 +181,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.4.0o"
+app.version = "2.4.0p"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -201,6 +202,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
