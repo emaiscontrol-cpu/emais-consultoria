@@ -62,10 +62,11 @@ Write-Host "Publicando versão $novaVersao..." -ForegroundColor Cyan
 (Get-Content $mainPy -Raw) -replace 'app\.version\s*=\s*"[\d\.a-z-]+"', "app.version = `"$novaVersao`"" |
     Set-Content $mainPy -Encoding UTF8
 
-# Atualizar electron-client/package.json
+# Atualizar electron-client/package.json (sem BOM — electron-builder falha com BOM)
 $pkg = Get-Content $pkgJson -Raw | ConvertFrom-Json
 $pkg.version = $novaVersao
-$pkg | ConvertTo-Json -Depth 10 | Set-Content $pkgJson -Encoding UTF8
+$json = $pkg | ConvertTo-Json -Depth 10
+[System.IO.File]::WriteAllText($pkgJson, $json, [System.Text.UTF8Encoding]::new($false))
 
 # Build do frontend
 Write-Host "Compilando frontend..." -ForegroundColor Cyan
