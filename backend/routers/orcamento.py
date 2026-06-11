@@ -253,6 +253,12 @@ def obter_dre(
     for row in valores_db:
         idx.setdefault(row.plano_item_id, {})[row.mes] = row.valor
 
+    # Fórmulas JSON configuradas no Template
+    import json as _json
+    formula_map: dict = {}
+    for f in db.query(models.TemplateFormula).filter(models.TemplateFormula.plano_item_id.in_(item_ids)).all():
+        formula_map[f.plano_item_id] = _json.loads(f.componentes or "[]")
+
     linhas = []
     for item in itens:
         vals = idx.get(item.id, {})
@@ -265,6 +271,7 @@ def obter_dre(
             "movimento":   item.movimento,
             "ordem":       item.ordem,
             "formula":     item.formula,
+            "componentes": formula_map.get(item.id),  # None = sem fórmula configurada
             "valores":     {m: vals.get(m, 0.0) for m in range(1, 13)},
         })
 
