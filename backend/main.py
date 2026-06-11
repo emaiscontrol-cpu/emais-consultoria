@@ -181,7 +181,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.4.0q"
+app.version = "2.4.0s"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -202,6 +202,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
