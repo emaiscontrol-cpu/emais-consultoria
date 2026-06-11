@@ -4,7 +4,7 @@ import {
   LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell,
   History, BarChart2, BookOpen, List, FileSpreadsheet, NotebookPen,
   ChevronDown, ChevronUp, Layers, ListTodo, AlignLeft, DatabaseBackup,
-  Camera, Copy, Search, Globe, FolderOpen, TrendingUp, Target,
+  Camera, Copy, Search, Globe, FolderOpen, TrendingUp, Target, Download,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
@@ -82,7 +82,7 @@ function DashSection() {
 // ── Análises Gerenciais ───────────────────────────────────────────────────────
 function AnalisesSection() {
   const location = useLocation()
-  const isActive = location.pathname.startsWith('/controladoria') && !location.pathname.startsWith('/controladoria/planos') && !location.pathname.startsWith('/controladoria/importacao')
+  const isActive = location.pathname.startsWith('/controladoria') && !location.pathname.startsWith('/controladoria/planos')
   const [open, setOpen] = useState(isActive)
   useEffect(() => { if (isActive) setOpen(true) }, [isActive])
 
@@ -110,11 +110,6 @@ function AnalisesSection() {
             className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
             style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
             <Target size={13} /> Controle Orçamentário
-          </NavLink>
-          <NavLink to="/controladoria/importacao-realizado"
-            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-            style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-            <span style={{ fontSize: 13 }}>📥</span> Importar Realizado
           </NavLink>
         </div>
       )}
@@ -157,7 +152,8 @@ function ProcSection() {
   const location = useLocation()
   const isActive = location.pathname.startsWith('/procedimentos') ||
     location.pathname.startsWith('/controladoria/planos') ||
-    location.pathname.startsWith('/modelos')
+    location.pathname.startsWith('/modelos') ||
+    location.pathname.startsWith('/importacoes')
   const [open, setOpen] = useState(isActive)
   useEffect(() => { if (isActive) setOpen(true) }, [isActive])
 
@@ -174,6 +170,9 @@ function ProcSection() {
           </NavLink>
           <NavLink to="/procedimentos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
             <DatabaseBackup size={13} /> Backup
+          </NavLink>
+          <NavLink to="/importacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <Download size={13} /> Importações
           </NavLink>
         </div>
       )}
