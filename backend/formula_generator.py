@@ -1,14 +1,18 @@
 """
 Gera TemplateFormula automaticamente a partir da estrutura do Plano de Contas.
 
-Lógica de hierarquia:
-  N1 = TT/RES com 1 dígito significativo (ex: 100000 → "1")
-  N2 = TT/RES com 2+ dígitos significativos (ex: 110000 → "11")
-  N3 = qualquer outro tipo (AN, CX, CB, etc.)
+Lógica de hierarquia (por prioridade):
+  1. Agrupamento com dot-notation "GRUPO.SUBGRUPO" → N2
+  2. item.nivel definido no banco (diferente de NULL)
+  3. Conta contábil: 1 dígito significativo → N1, 2+ → N2
+  4. Sem conta e sem dot → N1 (posição no topo da hierarquia)
+  AN/qualquer outro tipo → N3
 
 Relacionamento pai-filho:
-  N3 → pertence ao último N2 que aparece antes dele (por ordem)
-  N2 → pertence ao N1 cujo prefixo de dígitos significativos é início do N2
+  N3 → pertence ao último N2 visto (por ordem); fallback ao último N1
+  N2 → pai = N1 cujo agrupamento == prefixo antes do ponto,
+        OU cujo prefixo de conta é início do código N2,
+        OU o último N1 visto
 """
 
 import json
@@ -16,20 +20,56 @@ from sqlalchemy.orm import Session
 from models import PlanoItem, TemplateFormula
 
 
-def _nivel(conta: str, tipo: str) -> int:
-    if (tipo or "").upper() not in ("TT", "RES"):
+def _nivel_item(it) -> int:
+    """
+    Determina nível hierárquico de um PlanoItem.
+    Prioridade: dot-notation → nivel DB → conta → padrão N1.
+    """
+    tipo = (it.tipo or "").upper()
+    if tipo not in ("TT", "RES"):
         return 3
-    s = (conta or "").rstrip("0")
+    agr = it.agrupamento or ""
+    # Dot-notation → N2 sem ambiguidade
+    if "." in agr:
+        return 2
+    # Nível explícito no banco (exceto 1, que pode ser resultado de migração por conta vazia)
+    if it.nivel is not None and it.nivel == 2:
+        return 2
+    if it.nivel is not None and it.nivel == 1:
+        # Só confia em nivel=1 se conta tem dígito significativo OU agrupamento não é vazio
+        s = (it.conta or "").rstrip("0")
+        if s or (agr and "." not in agr):
+            return 1
+    # Fallback: conta contábil
+    s = (it.conta or "").rstrip("0")
     return 1 if len(s) <= 1 else 2
 
 
-def _n1_pai(n2_conta: str, n1s: list[tuple]) -> int | None:
-    """Encontra o N1 cujo prefixo de dígitos sig. é início do código N2."""
-    s2 = (n2_conta or "").rstrip("0")
-    for item_id, conta in n1s:
-        s1 = (conta or "").rstrip("0")
-        if s1 and s2.startswith(s1):
-            return item_id
+def _n1_pai_id(it, n1s: list[tuple]) -> int | None:
+    """
+    Encontra N1 pai de um item N2.
+    Tenta: (1) prefixo no agrupamento, (2) prefixo no conta, (3) último N1.
+    n1s: [(id, agrupamento, conta), ...]
+    """
+    agr = it.agrupamento or ""
+    conta = it.conta or ""
+
+    # 1. Dot-notation: "RECEITA.VDA_VISTA" → pai tem agrupamento "RECEITA"
+    if "." in agr:
+        prefix = agr.split(".")[0]
+        for item_id, n1_agr, _ in n1s:
+            if (n1_agr or "") == prefix:
+                return item_id
+
+    # 2. Prefixo de conta contábil
+    s2 = conta.rstrip("0")
+    if s2:
+        for item_id, _, n1_conta in n1s:
+            s1 = (n1_conta or "").rstrip("0")
+            if s1 and s2.startswith(s1):
+                return item_id
+
+    # 3. Fallback: primeiro N1 da lista
     return n1s[0][0] if n1s else None
 
 
@@ -51,21 +91,21 @@ def gerar_formulas_do_plano(
     if not items:
         return {"geradas": 0, "revisao_n1": []}
 
-    # Calcular nível de cada item
+    # Calcular nível de cada item usando a lógica corrigida
     for it in items:
-        it._nv = _nivel(it.conta or "", it.tipo or "")
+        it._nv = _nivel_item(it)
 
-    n1s = [(it.id, it.conta) for it in items if it._nv == 1]
+    n1s = [(it.id, it.agrupamento, it.conta) for it in items if it._nv == 1]
 
     # N2 → N1 parent
     n2_pai: dict[int, int | None] = {}
     for it in items:
         if it._nv == 2:
-            n2_pai[it.id] = _n1_pai(it.conta or "", n1s)
+            n2_pai[it.id] = _n1_pai_id(it, n1s)
 
-    # N3 → N2 parent (último N2 antes de cada N3 na sequência de ordem)
-    n2_filhos: dict[int, list] = {}  # n2_id → [agrupamento de N3 filhos]
-    n1_filhos: dict[int, list] = {}  # n1_id → [agrupamento de N2 filhos]
+    # Percorre em ordem para montar listas de filhos
+    n2_filhos: dict[int, list] = {}  # n2_id → chaves de N3 filhos
+    n1_filhos: dict[int, list] = {}  # n1_id → agrupamentos de N2 filhos
 
     last_n2: int | None = None
     last_n1: int | None = None
@@ -75,12 +115,11 @@ def gerar_formulas_do_plano(
             last_n2 = None
         elif it._nv == 2:
             last_n2 = it.id
-            # Registrar este N2 como filho do seu N1
             pai_n1 = n2_pai.get(it.id) or last_n1
             if pai_n1 and (it.agrupamento or "").strip():
                 n1_filhos.setdefault(pai_n1, []).append(it.agrupamento)
         else:
-            # N3 → filho do N2 atual
+            # N3 → filho do N2 atual (ou N1 se não há N2)
             pai = last_n2 or last_n1
             key = (it.agrupamento or "").strip() or (it.conta or "").strip()
             if pai and key:
