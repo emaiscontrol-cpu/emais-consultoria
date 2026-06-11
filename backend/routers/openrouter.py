@@ -49,7 +49,7 @@ async def analisar(req: OpenRouterRequest, usuario=Depends(get_usuario_atual)):
     headers = {
         "Authorization": f"Bearer {api_key}",
         "HTTP-Referer": "http://localhost",
-        "X-Title": "Sistema de Análise",
+        "X-Title": "Sistema de Analise",
         "Content-Type": "application/json",
     }
 
