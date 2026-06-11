@@ -95,12 +95,9 @@ def recalcular_dre(
 
     resultado: dict[int, dict[int, float]] = {}
 
-    # Processar N2 e N1 em ordem
-    for it in sorted(items, key=lambda x: x.ordem or 0):
-        nv = _nivel(it.conta or "", it.tipo or "")
-        if nv == 3:
-            continue
+    items_ordenados = sorted(items, key=lambda x: x.ordem or 0)
 
+    def _processar_item(it):
         formula = formulas.get(it.id)
         vals: dict[int, float] = {}
 
@@ -114,7 +111,6 @@ def recalcular_dre(
                     total += sinal * byToken.get(agr, {}).get(m, 0.0)
                 vals[m] = total
         elif it.formula:
-            # Fallback: fórmula textual ("RECEITA - DEDUCOES + IMPOSTOS")
             tokens = it.formula.strip().replace("(", "").replace(")", "").split()
             for m in meses:
                 total, sinal = 0.0, 1
@@ -139,6 +135,13 @@ def recalcular_dre(
                 _add_token(it.agrupamento, vals)
             if it.conta:
                 _add_token(it.conta, vals)
+
+    # Dois passes: N2 primeiro (filhos), depois N1 (agrupamentos).
+    # N1 pode referenciar agrupamentos de N2 em byToken — ordem importa.
+    for nivel_alvo in (2, 1):
+        for it in items_ordenados:
+            if _nivel(it.conta or "", it.tipo or "") == nivel_alvo:
+                _processar_item(it)
 
     return resultado
 
