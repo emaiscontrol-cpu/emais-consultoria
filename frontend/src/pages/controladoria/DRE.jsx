@@ -392,10 +392,17 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
 
   useEffect(() => { carregarDados() }, [planoId])
 
-  const gerarFormulas = async (sobrescrever = false) => {
+  const gerarFormulas = async () => {
+    const temFormulas = Object.keys(formulas).length > 0
+    if (temFormulas) {
+      const ok = window.confirm(
+        'Isso vai substituir todas as fórmulas existentes neste template.\n\nContinuar?'
+      )
+      if (!ok) return
+    }
     setGerandoForm(true)
     try {
-      const r = await dreMotorAPI.gerarFormulas(planoId, sobrescrever)
+      const r = await dreMotorAPI.gerarFormulas(planoId, true)
       toast.success(`${r.data.geradas} fórmulas geradas`)
       carregarDados()
     } catch { toast.error('Erro ao gerar fórmulas') }
@@ -549,7 +556,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
           <span style={{ fontSize: 11, color: '#b45309', background: '#fffbeb', border: '1px solid #fcd34d', padding: '2px 8px', borderRadius: 4 }}>
             ⚠ Alterações afetam todos os clientes com este plano
           </span>
-          <button onClick={() => gerarFormulas(false)} disabled={gerandoForm}
+          <button onClick={gerarFormulas} disabled={gerandoForm}
             style={{ marginLeft: 'auto', fontSize: 12, padding: '5px 12px', background: gerandoForm ? '#e5e7eb' : '#f0f4ff', color: 'var(--brand)', border: '1px solid var(--brand)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
             {gerandoForm ? '...' : '⚙ Gerar Fórmulas'}
           </button>
@@ -567,7 +574,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 5 }}>
-                  {[['Tipo',75],['Agrupamento',140],['Descrição',null],['Conta',100],['Fórmula',160],['Título Pai',160],['',80]].map(([h,w],i) => (
+                  {[['Nível',75],['Agrupamento',140],['Descrição',null],['Conta',100],['Fórmula',160],['Título Pai',160],['',80]].map(([h,w],i) => (
                     <th key={i} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.04em', borderBottom: '2px solid var(--brand)', width: w||undefined }}>{h}</th>
                   ))}
                 </tr>
@@ -654,10 +661,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                   if (ehAN) return (
                     <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: rowBg, borderLeft: rowBorder, opacity: .8 }}>
                       <td style={{ padding: '3px 12px' }}>
-                        <div style={{ display:'flex',flexDirection:'column',gap:2,alignItems:'flex-start' }}>
-                          <span style={tipoBadgeStyle('AN', false)}>AN</span>
-                          <span style={{ fontSize:9,fontWeight:700,padding:'1px 5px',borderRadius:3,background:N_BADGE.bg,color:N_BADGE.color }}>{N_BADGE.label}</span>
-                        </div>
+                        <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:4,background:N_BADGE.bg,color:N_BADGE.color }}>{N_BADGE.label}</span>
                       </td>
                       <td style={{ padding: '3px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{item.agrupamento || '—'}</td>
                       <td style={{ padding: '3px 12px', paddingLeft: 40 }}
@@ -686,17 +690,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                   return (
                     <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: rowBg, borderLeft: rowBorder }}>
                       <td style={{ padding: '4px 12px' }}>
-                        <div style={{ display:'flex',flexDirection:'column',gap:2,alignItems:'flex-start' }}>
-                          {editKey === `${item.id}-tipo` ? (
-                            <select value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item,'tipo')} autoFocus style={{ fontSize:12, width:72 }}>
-                              <option value="TT">TT</option>
-                              <option value="RES">RES</option>
-                            </select>
-                          ) : (
-                            <span style={tipoBadgeStyle(item.tipo)} onClick={() => iniciarEdicao(item,'tipo')}>{item.tipo||'—'}</span>
-                          )}
-                          <span style={{ fontSize:9,fontWeight:700,padding:'1px 5px',borderRadius:3,background:N_BADGE.bg,color:N_BADGE.color }}>{N_BADGE.label}</span>
-                        </div>
+                        <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:4,background:N_BADGE.bg,color:N_BADGE.color }}>{N_BADGE.label}</span>
                       </td>
                       <td style={{ padding: '4px 12px' }}>
                         <span style={{ fontFamily:'monospace',fontSize:11,color:item.agrupamento?'var(--text-2)':'#d1d5db' }}>{item.agrupamento||'—'}</span>

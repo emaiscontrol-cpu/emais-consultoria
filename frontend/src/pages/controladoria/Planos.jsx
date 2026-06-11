@@ -7,6 +7,13 @@ const MOD_LABEL = { F: 'Fluxo', D: 'DRE', O: 'Orçamento' }
 const MOD_COLOR = { F: 'var(--teal)', D: 'var(--brand)', O: 'var(--purple)' }
 const MOV_OPCOES = ['Entrada', 'Saída', 'Receita', 'Despesa']
 
+const computeNivelAuto = (conta, tipo) => {
+  const t = (tipo || '').toUpperCase()
+  if (!['TT', 'RES'].includes(t)) return 3
+  const s = (conta || '').replace(/0+$/, '')
+  return s.length <= 1 ? 1 : 2
+}
+
 function ModBadge({ modulo }) {
   if (!modulo) return null
   return (
@@ -36,13 +43,15 @@ export default function Planos() {
 
   const [showItem, setShowItem]   = useState(false)
   const [editItem, setEditItem]   = useState(null)
-  const [formItem, setFormItem]   = useState({ agrupamento:'', descricao:'', conta:'', tipo:'', modulo:'', movimento:'' })
+  const [formItem, setFormItem]   = useState({ agrupamento:'', descricao:'', conta:'', tipo:'', modulo:'', movimento:'', nivel:'' })
   const [salvandoItem, setSalvandoItem] = useState(false)
 
   const [clientesPlano, setClientesPlano] = useState([])
   const [togglendoCliente, setTogglendoCliente] = useState(null)
   const [popover, setPopover] = useState(null) // { field, bulk, item? }
   const [selecionados, setSelecionados] = useState(new Set())
+  const [filtroNivel, setFiltroNivel] = useState(null)
+  const [mostrarAgrupamento, setMostrarAgrupamento] = useState(false)
 
   const fileRef = useRef()
 
@@ -105,6 +114,7 @@ export default function Planos() {
   const abrirPlano = async (plano) => {
     if (planoAtivo?.id === plano.id) { setPlanoAtivo(null); return }
     setAbaAtiva('itens')
+    setFiltroNivel(null)
     try {
       const r = await planosAPI.obter(plano.id)
       setPlanoAtivo(r.data)
@@ -167,14 +177,18 @@ export default function Planos() {
   // ── Itens ───────────────────────────────────────────────────────────────────
   const abrirNovoItem = () => {
     setEditItem(null)
-    setFormItem({ agrupamento:'', descricao:'', conta:'', tipo:'', modulo:'', movimento:'' })
+    setFormItem({ agrupamento:'', descricao:'', conta:'', tipo:'', modulo:'', movimento:'', nivel:'' })
+    setMostrarAgrupamento(false)
     setShowItem(true)
   }
   const abrirEditarItem = item => {
     setEditItem(item)
-    setFormItem({ agrupamento: item.agrupamento, descricao: item.descricao,
+    setFormItem({ agrupamento: item.agrupamento || '', descricao: item.descricao,
                   conta: item.conta || '', tipo: item.tipo || '',
-                  modulo: item.modulo || '', movimento: item.movimento || '' })
+                  modulo: item.modulo || '', movimento: item.movimento || '',
+                  nivel: item.nivel ? String(item.nivel) : '' })
+    const nv = item.nivel || computeNivelAuto(item.conta || '', item.tipo || '')
+    setMostrarAgrupamento(nv === 3 && !!(item.agrupamento || '').trim())
     setShowItem(true)
   }
   const salvarItem = async e => {
@@ -184,7 +198,8 @@ export default function Planos() {
         conta: formItem.conta || null,
         tipo: formItem.tipo || null,
         modulo: formItem.modulo.toUpperCase() || null,
-        movimento: formItem.movimento || null }
+        movimento: formItem.movimento || null,
+        nivel: formItem.nivel ? parseInt(formItem.nivel) : null }
       if (editItem) {
         await planosAPI.atualizarItem(planoAtivo.id, editItem.id, payload)
       } else {
@@ -331,11 +346,41 @@ export default function Planos() {
                       </div>
                     )}
 
+                    {/* Filtros por nível */}
+                    {planoAtivo.itens?.length > 0 && (
+                      <div style={{ display:'flex', alignItems:'center', gap:5, marginBottom:10 }}>
+                        <span style={{ fontSize:11, color:'var(--text-3)', fontWeight:600, marginRight:4 }}>Nível:</span>
+                        {[null, 1, 2, 3].map(n => {
+                          const ativo = filtroNivel === n
+                          const N_LABEL = { 1:'N1 — Principal', 2:'N2 — Sub-totalizador', 3:'N3 — Analítica' }
+                          return (
+                            <button key={n ?? 'todos'} onClick={() => setFiltroNivel(n)}
+                              style={{ padding:'3px 10px', borderRadius:99, fontSize:11,
+                                fontWeight: ativo ? 700 : 400, cursor:'pointer',
+                                border: ativo ? '1.5px solid var(--brand)' : '1px solid var(--border)',
+                                background: ativo ? 'var(--brand)' : '#fff',
+                                color: ativo ? '#fff' : 'var(--text)' }}>
+                              {n === null ? 'Todos' : N_LABEL[n]}
+                            </button>
+                          )
+                        })}
+                        {filtroNivel !== null && (
+                          <span style={{ fontSize:11, color:'var(--text-3)', marginLeft:4 }}>
+                            {planoAtivo.itens.filter(i => i.nivel === filtroNivel).length} conta(s)
+                          </span>
+                        )}
+                      </div>
+                    )}
+
                     {planoAtivo.itens?.length === 0
                       ? <div style={{ color:'var(--text-3)', fontSize:13, padding:'12px 0' }}>
                           Nenhuma conta. Importe um arquivo ou adicione manualmente.
                         </div>
-                      : (
+                      : (() => {
+                          const itensFiltrados = filtroNivel === null
+                            ? planoAtivo.itens
+                            : planoAtivo.itens.filter(i => i.nivel === filtroNivel)
+                          return (
                       <div className="table-wrap">
                         <table>
                           <thead>
@@ -346,28 +391,40 @@ export default function Planos() {
                                   onChange={toggleTodos}/>
                               </th>
                               <th style={{ width:36, textAlign:'center' }}>#</th>
-                              <th style={{ width:100 }}>Agrupamento</th>
+                              <th style={{ width:100 }} title="Agrupa contas para consolidação nos módulos Fluxo, DRE e Orçamento">Agrupamento <span style={{ fontSize:10, color:'var(--text-3)', cursor:'help' }}>?</span></th>
                               <th style={{ width:80 }}>Conta</th>
                               <th>Descrição</th>
-                              <th style={{ width:50 }}>Tipo</th>
+                              <th style={{ width:70 }}>Tipo</th>
                               <th style={{ width:110 }}>Módulo ✎</th>
                               <th style={{ width:90 }}>Movimento ✎</th>
                               <th style={{ width:100 }}></th>
                             </tr>
                           </thead>
                           <tbody>
-                            {planoAtivo.itens.map((item, idx) => {
-                              const isGrupo = item.tipo?.toUpperCase() === 'TT'
+                            {itensFiltrados.map((item, idx) => {
+                              const n1 = item.nivel === 1
+                              const n2 = item.nivel === 2
+                              const n3 = item.nivel === 3 || !item.nivel
+
+                              const rowBg = selecionados.has(item.id)
+                                ? (n1 ? '#c7d9ff' : '#eef3ff')
+                                : n1
+                                  ? 'linear-gradient(90deg, #dbeafe 0%, #eff6ff 60%, transparent 100%)'
+                                  : ''
+                              const rowBorder = n1
+                                ? '3px solid #1d4ed8'
+                                : n2
+                                  ? '2px solid #bfdbfe'
+                                  : '3px solid transparent'
+
+                              const N_BADGE = n1
+                                ? { label:'N1', bg:'#1e40af', color:'#fff' }
+                                : n2
+                                  ? { label:'N2', bg:'#3b82f6', color:'#fff' }
+                                  : { label:'N3', bg:'#e5e7eb', color:'#6b7280' }
+
                               return (
-                                <tr key={item.id} style={{
-                                  background: selecionados.has(item.id)
-                                    ? (isGrupo ? '#dce8ff' : '#eef3ff')
-                                    : isGrupo
-                                      ? 'linear-gradient(90deg, #e8f0ff 0%, #f4f7ff 60%, transparent 100%)'
-                                      : '',
-                                  borderLeft: isGrupo
-                                    ? '3px solid var(--brand)' : '3px solid transparent'
-                                }}>
+                                <tr key={item.id} style={{ background: rowBg, borderLeft: rowBorder }}>
                                   <td style={{ textAlign:'center' }}>
                                     <input type="checkbox" style={{ cursor:'pointer', width:14, height:14, accentColor:'var(--brand)' }}
                                       checked={selecionados.has(item.id)}
@@ -377,20 +434,30 @@ export default function Planos() {
                                   <td style={{ fontFamily:'monospace', fontSize:11, cursor:'pointer', color: item.agrupamento ? 'inherit' : 'var(--text-3)' }}
                                     title="Clique para editar o agrupamento"
                                     onClick={() => setPopover({ item, field:'agrupamento' })}>
-                                    {item.agrupamento || <span style={{ fontSize:10 }}>+ AGR</span>}
+                                    {n3
+                                      ? (item.agrupamento ? <em style={{ fontStyle:'italic', fontSize:10, opacity:.75 }}>{item.agrupamento}</em> : '')
+                                      : (item.agrupamento || <span style={{ fontSize:10 }}>+ AGR</span>)
+                                    }
                                   </td>
                                   <td style={{ fontFamily:'monospace', fontSize:11 }}>{item.conta || '—'}</td>
-                                  <td>
+                                  <td style={{ paddingLeft: n3 ? 40 : n2 ? 20 : 8 }}>
                                     <span style={{
-                                      fontSize:13,
-                                      fontWeight: isGrupo ? 700 : 400,
-                                      color: isGrupo ? 'var(--brand)' : 'inherit',
-                                      letterSpacing: isGrupo ? '0.02em' : 'normal',
+                                      fontSize: n1 ? 13 : 12,
+                                      fontWeight: (n1 || n2) ? 700 : 400,
+                                      color: n1 ? '#1d4ed8' : n2 ? '#2563eb' : 'inherit',
+                                      textTransform: (n1 || n2) ? 'uppercase' : 'none',
+                                      letterSpacing: n1 ? '0.04em' : 'normal',
                                     }}>
+                                      {(n2 || n3) && <span style={{ marginRight:4, opacity:.4, userSelect:'none' }}>└</span>}
                                       {item.descricao}
                                     </span>
                                   </td>
-                                  <td style={{ fontSize:11, fontFamily:'monospace' }}>{item.tipo || '—'}</td>
+                                  <td>
+                                    <span style={{ fontSize:10, fontWeight:700, padding:'2px 7px', borderRadius:4,
+                                      background: N_BADGE.bg, color: N_BADGE.color }}>
+                                      {N_BADGE.label}
+                                    </span>
+                                  </td>
                                   <td style={{ cursor:'pointer' }} title="Clique para definir módulo"
                                     onClick={() => setPopover({ item, field:'modulo' })}>
                                     {item.modulo
@@ -423,7 +490,9 @@ export default function Planos() {
                           </tbody>
                         </table>
                       </div>
-                    )}
+                          )
+                        })()
+                    }
                   </>
                 )}
 
@@ -611,30 +680,79 @@ export default function Planos() {
               <button className="btn btn-sm" onClick={() => setShowItem(false)}><X size={14}/></button>
             </div>
             <form onSubmit={salvarItem}>
-              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
-                <div className="form-group">
-                  <label>Agrupamento *</label>
-                  <input value={formItem.agrupamento} required placeholder="Ex: 1.1.01"
-                    onChange={e => setFormItem(f => ({ ...f, agrupamento: e.target.value }))}/>
-                </div>
-                <div className="form-group">
-                  <label>Conta</label>
-                  <input value={formItem.conta} placeholder="Ex: 1001"
-                    onChange={e => setFormItem(f => ({ ...f, conta: e.target.value }))}/>
-                </div>
-              </div>
+              {(() => {
+                const nivelEfetivo = formItem.nivel ? parseInt(formItem.nivel) : computeNivelAuto(formItem.conta, formItem.tipo)
+                const isN3 = nivelEfetivo === 3
+                return (
+                  <>
+                    <div style={{ display:'grid', gridTemplateColumns: isN3 ? '1fr' : '1fr 1fr', gap:12 }}>
+                      {!isN3 && (
+                        <div className="form-group">
+                          <label>
+                            Agrupamento {nivelEfetivo === 1
+                              ? <span style={{ color:'var(--red)' }}>*</span>
+                              : <span style={{ fontSize:10, color:'var(--text-3)', fontWeight:400 }}> — recomendado</span>}
+                          </label>
+                          <input value={formItem.agrupamento} required={nivelEfetivo === 1}
+                            placeholder="Ex: RECEITA_BRUTA"
+                            onChange={e => setFormItem(f => ({ ...f, agrupamento: e.target.value }))}/>
+                        </div>
+                      )}
+                      <div className="form-group">
+                        <label>Conta</label>
+                        <input value={formItem.conta} placeholder="Ex: 3000 (N1) ou 3.01 (N2)"
+                          onChange={e => setFormItem(f => ({ ...f, conta: e.target.value }))}/>
+                      </div>
+                    </div>
+                    {isN3 && (
+                      mostrarAgrupamento ? (
+                        <div className="form-group">
+                          <label style={{ display:'flex', alignItems:'center', justifyContent:'space-between' }}>
+                            <span>Agrupamento específico</span>
+                            <button type="button" style={{ fontSize:10, color:'var(--text-3)', background:'none', border:'none', cursor:'pointer' }}
+                              onClick={() => { setMostrarAgrupamento(false); setFormItem(f => ({ ...f, agrupamento: '' })) }}>
+                              remover ✕
+                            </button>
+                          </label>
+                          <input value={formItem.agrupamento} placeholder="Ex: RECEITA_BRUTA"
+                            onChange={e => setFormItem(f => ({ ...f, agrupamento: e.target.value }))}/>
+                        </div>
+                      ) : (
+                        <div style={{ marginBottom:12 }}>
+                          <button type="button" style={{ fontSize:12, color:'var(--brand)', background:'none',
+                            border:'1px dashed var(--border)', borderRadius:5, padding:'4px 14px', cursor:'pointer' }}
+                            onClick={() => setMostrarAgrupamento(true)}>
+                            + Definir agrupamento específico
+                          </button>
+                        </div>
+                      )
+                    )}
+                  </>
+                )
+              })()}
               <div className="form-group">
                 <label>Descrição *</label>
                 <input value={formItem.descricao} required placeholder="Nome da conta"
                   onChange={e => setFormItem(f => ({ ...f, descricao: e.target.value }))}/>
               </div>
-              <div className="form-group">
-                <label>Tipo</label>
-                <select value={formItem.tipo} onChange={e => setFormItem(f => ({ ...f, tipo: e.target.value }))}>
-                  <option value="AN">AN — Analítica</option>
-                  <option value="TT">TT — Título</option>
-                  <option value="RES">RES — Resultado</option>
-                </select>
+              <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
+                <div className="form-group">
+                  <label>Tipo</label>
+                  <select value={formItem.tipo} onChange={e => setFormItem(f => ({ ...f, tipo: e.target.value }))}>
+                    <option value="AN">AN — Analítica</option>
+                    <option value="TT">TT — Título</option>
+                    <option value="RES">RES — Resultado</option>
+                  </select>
+                </div>
+                <div className="form-group">
+                  <label>Nível <span style={{ fontSize:10, color:'var(--text-3)', fontWeight:400 }}>(auto se vazio)</span></label>
+                  <select value={formItem.nivel} onChange={e => setFormItem(f => ({ ...f, nivel: e.target.value }))}>
+                    <option value="">— Automático —</option>
+                    <option value="1">N1 — Totalizador Principal</option>
+                    <option value="2">N2 — Sub-totalizador</option>
+                    <option value="3">N3 — Analítica</option>
+                  </select>
+                </div>
               </div>
               <div style={{ display:'grid', gridTemplateColumns:'1fr 1fr', gap:12 }}>
                 <div className="form-group">
