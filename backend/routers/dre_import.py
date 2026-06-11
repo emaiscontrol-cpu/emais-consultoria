@@ -130,6 +130,40 @@ def listar_formulas(
     return result
 
 
+@router.put("/formulas/item/{plano_item_id}")
+def upsert_formula(
+    plano_item_id: int,
+    data: FormulaUpdate,
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    """Cria ou atualiza a fórmula de um item do plano (upsert)."""
+    f = db.query(TemplateFormula).filter(TemplateFormula.plano_item_id == plano_item_id).first()
+    if not f:
+        f = TemplateFormula(
+            plano_item_id=plano_item_id,
+            tipo_formula=data.tipo_formula or "FILHOS",
+            componentes=json.dumps(data.componentes or [], ensure_ascii=False),
+            auto_gerada=False,
+        )
+        db.add(f)
+    else:
+        if data.tipo_formula is not None:
+            f.tipo_formula = data.tipo_formula
+        if data.componentes is not None:
+            f.componentes = json.dumps(data.componentes, ensure_ascii=False)
+        if data.auto_gerada is not None:
+            f.auto_gerada = data.auto_gerada
+    db.commit()
+    return {
+        "id": f.id,
+        "plano_item_id": f.plano_item_id,
+        "tipo_formula": f.tipo_formula,
+        "componentes": json.loads(f.componentes or "[]"),
+        "auto_gerada": f.auto_gerada,
+    }
+
+
 @router.put("/formulas/{formula_id}")
 def atualizar_formula(
     formula_id: int,
