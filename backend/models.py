@@ -420,6 +420,7 @@ class PlanoItem(Base):
     movimento   = Column(String(50), nullable=True)    # Entrada/Saída ou Receita/Despesa
     ordem       = Column(Integer, default=0)
     formula     = Column(Text, nullable=True)          # ex: "FAT - DED" ou "RECEITA - DEDUCOES"
+    nivel       = Column(Integer, nullable=True)       # 1=Totalizador Principal, 2=Sub-totalizador, 3=Analítica
     plano       = relationship("Plano", back_populates="itens")
 
 

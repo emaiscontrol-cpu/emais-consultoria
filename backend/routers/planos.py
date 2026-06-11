@@ -37,6 +37,7 @@ class PlanoItemCreate(BaseModel):
     movimento: Optional[str] = None
     ordem: Optional[int] = 0
     formula: Optional[str] = None
+    nivel: Optional[int] = None
 
 class PlanoItemUpdate(BaseModel):
     agrupamento: Optional[str] = None
@@ -47,6 +48,7 @@ class PlanoItemUpdate(BaseModel):
     movimento: Optional[str] = None
     ordem: Optional[int] = None
     formula: Optional[str] = None
+    nivel: Optional[int] = None
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -76,7 +78,21 @@ def item_to_dict(i: PlanoItem):
         "agrupamento": i.agrupamento, "descricao": i.descricao,
         "conta": i.conta, "tipo": i.tipo, "modulo": i.modulo,
         "movimento": i.movimento, "ordem": i.ordem, "formula": i.formula,
+        "nivel": i.nivel,
     }
+
+def _compute_niveis(plano_id: int, db: Session):
+    """Recalcula nivel para todos os itens do plano em ordem."""
+    items = db.query(PlanoItem).filter(PlanoItem.plano_id == plano_id).order_by(PlanoItem.ordem).all()
+    viu_tt = False
+    for it in items:
+        t = (it.tipo or '').upper()
+        if t in ('TT', 'RES'):
+            it.nivel = 2 if viu_tt else 1
+            viu_tt = True
+        else:
+            it.nivel = 3
+    db.commit()
 
 _KNOWN_HEADERS = {"agrupamento", "classificação", "classificacao", "descricao", "descrição",
                   "descricao da conta", "conta", "tipo", "modulo", "módulo", "movimento"}
@@ -185,7 +201,9 @@ def adicionar_item(plano_id: int, data: PlanoItemCreate,
     if not db.query(Plano).filter(Plano.id == plano_id).first():
         raise HTTPException(404, "Plano não encontrado")
     item = PlanoItem(plano_id=plano_id, **data.model_dump())
-    db.add(item); db.commit(); db.refresh(item)
+    db.add(item); db.commit()
+    _compute_niveis(plano_id, db)
+    db.refresh(item)
     return item_to_dict(item)
 
 
@@ -195,9 +213,14 @@ def atualizar_item(plano_id: int, item_id: int, data: PlanoItemUpdate,
     item = db.query(PlanoItem).filter(PlanoItem.id == item_id,
                                       PlanoItem.plano_id == plano_id).first()
     if not item: raise HTTPException(404, "Item não encontrado")
-    for k, v in data.model_dump(exclude_none=True).items():
+    updates = data.model_dump(exclude_none=True)
+    for k, v in updates.items():
         setattr(item, k, v)
-    db.commit(); db.refresh(item)
+    db.commit()
+    # Recalcula niveis se tipo ou ordem mudaram (exceto se nivel foi setado manualmente)
+    if 'nivel' not in updates and ('tipo' in updates or 'ordem' in updates):
+        _compute_niveis(plano_id, db)
+    db.refresh(item)
     return item_to_dict(item)
 
 
@@ -228,7 +251,9 @@ async def importar_itens(plano_id: int, arquivo: UploadFile = File(...),
         db.query(PlanoItem).filter(PlanoItem.plano_id == plano_id).delete()
     for ordem, linha in enumerate(linhas):
         db.add(PlanoItem(plano_id=plano_id, ordem=ordem, **linha))
-    db.commit(); db.refresh(p)
+    db.commit()
+    _compute_niveis(plano_id, db)
+    db.refresh(p)
     return {"importados": len(linhas), "total_itens": len(p.itens)}
 
 # ── Vínculos cliente ↔ plano ──────────────────────────────────────────────────

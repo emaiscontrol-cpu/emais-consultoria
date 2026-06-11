@@ -111,12 +111,41 @@ with engine.connect() as conn:
             enviado_por_id INTEGER REFERENCES usuarios(id),
             criado_em DATETIME DEFAULT (datetime('now'))
         )""",
+        # Nível hierárquico no plano de contas
+        "ALTER TABLE planos_itens ADD COLUMN nivel INTEGER DEFAULT NULL",
     ]:
         try:
             conn.execute(text(stmt))
             conn.commit()
         except Exception:
             pass  # column already exists
+
+# Populate nivel para itens existentes sem nivel definido
+try:
+    from database import SessionLocal as _SL
+    from models import PlanoItem as _PI
+    _db_n = _SL()
+    try:
+        plano_ids = [r[0] for r in _db_n.execute(
+            text("SELECT DISTINCT plano_id FROM planos_itens WHERE nivel IS NULL")
+        ).fetchall()]
+        for pid in plano_ids:
+            items = _db_n.query(_PI).filter(_PI.plano_id == pid).order_by(_PI.ordem).all()
+            viu_tt = False
+            for it in items:
+                t = (it.tipo or '').upper()
+                if t in ('TT', 'RES'):
+                    it.nivel = 2 if viu_tt else 1
+                    viu_tt = True
+                else:
+                    it.nivel = 3
+        _db_n.commit()
+    except Exception as _e:
+        print(f"[warning] populate nivel: {_e}")
+    finally:
+        _db_n.close()
+except Exception as _e:
+    print(f"[warning] nivel import: {_e}")
 
 # Seed dados padrÃ£o (executa apenas uma vez)
 from database import SessionLocal
@@ -186,7 +215,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0a"
+app.version = "2.5.0b"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -207,6 +236,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
