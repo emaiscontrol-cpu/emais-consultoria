@@ -81,17 +81,17 @@ def item_to_dict(i: PlanoItem):
         "nivel": i.nivel,
     }
 
+def detectar_nivel(conta: str, tipo: str) -> int:
+    """AN → 3 | TT/RES sem ponto → 1 | TT/RES com ponto → 2."""
+    if (tipo or '').upper() == 'AN':
+        return 3
+    return 1 if '.' not in (conta or '') else 2
+
 def _compute_niveis(plano_id: int, db: Session):
-    """Recalcula nivel para todos os itens do plano em ordem."""
+    """Recalcula nivel com base no formato do campo conta."""
     items = db.query(PlanoItem).filter(PlanoItem.plano_id == plano_id).order_by(PlanoItem.ordem).all()
-    viu_tt = False
     for it in items:
-        t = (it.tipo or '').upper()
-        if t in ('TT', 'RES'):
-            it.nivel = 2 if viu_tt else 1
-            viu_tt = True
-        else:
-            it.nivel = 3
+        it.nivel = detectar_nivel(it.conta or '', it.tipo or '')
     db.commit()
 
 _KNOWN_HEADERS = {"agrupamento", "classificação", "classificacao", "descricao", "descrição",
@@ -200,6 +200,9 @@ def adicionar_item(plano_id: int, data: PlanoItemCreate,
                    db: Session = Depends(get_db), _=Depends(get_current_user)):
     if not db.query(Plano).filter(Plano.id == plano_id).first():
         raise HTTPException(404, "Plano não encontrado")
+    nivel_item = data.nivel or detectar_nivel(data.conta or '', data.tipo or '')
+    if nivel_item == 1 and not (data.agrupamento or '').strip():
+        raise HTTPException(422, "Totalizador Principal (N1) requer Agrupamento preenchido")
     item = PlanoItem(plano_id=plano_id, **data.model_dump())
     db.add(item); db.commit()
     _compute_niveis(plano_id, db)
@@ -216,9 +219,11 @@ def atualizar_item(plano_id: int, item_id: int, data: PlanoItemUpdate,
     updates = data.model_dump(exclude_none=True)
     for k, v in updates.items():
         setattr(item, k, v)
+    nivel_final = detectar_nivel(item.conta or '', item.tipo or '')
+    if nivel_final == 1 and not (item.agrupamento or '').strip():
+        raise HTTPException(422, "Totalizador Principal (N1) requer Agrupamento preenchido")
     db.commit()
-    # Recalcula niveis se tipo ou ordem mudaram (exceto se nivel foi setado manualmente)
-    if 'nivel' not in updates and ('tipo' in updates or 'ordem' in updates):
+    if 'nivel' not in updates and ('tipo' in updates or 'ordem' in updates or 'conta' in updates):
         _compute_niveis(plano_id, db)
     db.refresh(item)
     return item_to_dict(item)

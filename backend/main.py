@@ -120,28 +120,28 @@ with engine.connect() as conn:
         except Exception:
             pass  # column already exists
 
-# Populate nivel para itens existentes sem nivel definido
+# Reclassificar niveis (logica por formato de conta: AN=3, sem ponto=1, com ponto=2)
 try:
     from database import SessionLocal as _SL
     from models import PlanoItem as _PI
     _db_n = _SL()
     try:
-        plano_ids = [r[0] for r in _db_n.execute(
-            text("SELECT DISTINCT plano_id FROM planos_itens WHERE nivel IS NULL")
-        ).fetchall()]
-        for pid in plano_ids:
-            items = _db_n.query(_PI).filter(_PI.plano_id == pid).order_by(_PI.ordem).all()
-            viu_tt = False
-            for it in items:
-                t = (it.tipo or '').upper()
-                if t in ('TT', 'RES'):
-                    it.nivel = 2 if viu_tt else 1
-                    viu_tt = True
-                else:
-                    it.nivel = 3
+        items_all = _db_n.query(_PI).order_by(_PI.plano_id, _PI.ordem).all()
+        for it in items_all:
+            t = (it.tipo or '').upper()
+            it.nivel = 3 if t == 'AN' else (1 if '.' not in (it.conta or '') else 2)
+        # Limpar agrupamento N3 identico ao N2 pai (redundante)
+        ultimo_agr_n2: dict = {}
+        for it in items_all:
+            if it.nivel == 2:
+                ultimo_agr_n2[it.plano_id] = it.agrupamento or ''
+            elif it.nivel == 3:
+                agr_pai = ultimo_agr_n2.get(it.plano_id, '')
+                if agr_pai and it.agrupamento == agr_pai:
+                    it.agrupamento = ''
         _db_n.commit()
     except Exception as _e:
-        print(f"[warning] populate nivel: {_e}")
+        print(f"[warning] reclassificar niveis: {_e}")
     finally:
         _db_n.close()
 except Exception as _e:
@@ -215,7 +215,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0b"
+app.version = "2.5.0c"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -236,6 +236,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
