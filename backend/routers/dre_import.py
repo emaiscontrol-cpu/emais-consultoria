@@ -17,6 +17,7 @@ from models import (
 from auth import get_usuario_atual
 from formula_generator import gerar_formulas_do_plano
 from recalculo_engine import recalcular_dre, persistir_recalculo
+from agrupamento_suggester import sugerir_agrupamentos
 from importacao_service import importar_realizado
 from xlsx_parser import preview_xlsx
 
@@ -153,6 +154,17 @@ def atualizar_formula(
         "componentes": json.loads(f.componentes or "[]"),
         "auto_gerada": f.auto_gerada,
     }
+
+
+# ── Sugestão de Agrupamentos por IA ──────────────────────────────────────────
+
+@router.post("/sugerir-agrupamentos/{plano_id}")
+def sugerir_agrup(
+    plano_id: int,
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    return sugerir_agrupamentos(plano_id, db)
 
 
 # ── Recálculo ─────────────────────────────────────────────────────────────────
