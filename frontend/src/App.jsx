@@ -21,6 +21,7 @@ import DreDashboard2 from './pages/controladoria/DreDashboard2'
 import Orcamento from './pages/controladoria/Orcamento'
 import Planos from './pages/controladoria/Planos'
 import ImportacaoRealizado from './pages/controladoria/ImportacaoRealizado'
+import Importacoes from './pages/controladoria/Importacoes'
 import Balancetes from './pages/controladoria/Balancetes'
 import Anotacoes from './pages/Anotacoes'
 import Arquivos from './pages/Arquivos'
@@ -123,7 +124,8 @@ function ProtectedLayout() {
           <Route path="/controladoria/orcamento"       element={<Orcamento />} />
           <Route path="/controladoria/planos"      element={<Planos />} />
           <Route path="/controladoria/balancetes"  element={<Balancetes />} />
-          <Route path="/controladoria/importacao-realizado" element={<ImportacaoRealizado />} />
+          <Route path="/controladoria/importacao-realizado" element={<Navigate to="/importacoes?aba=realizado" replace />} />
+          <Route path="/importacoes" element={<Importacoes />} />
           <Route path="/anotacoes"               element={<Anotacoes />} />
           <Route path="/arquivos"                element={<Arquivos />} />
           <Route path="/dashboard-cliente"        element={<DashboardCliente />} />
