@@ -20,6 +20,7 @@ import DRE from './pages/controladoria/DRE'
 import DreDashboard2 from './pages/controladoria/DreDashboard2'
 import Orcamento from './pages/controladoria/Orcamento'
 import Planos from './pages/controladoria/Planos'
+import ImportacaoRealizado from './pages/controladoria/ImportacaoRealizado'
 import Balancetes from './pages/controladoria/Balancetes'
 import Anotacoes from './pages/Anotacoes'
 import Arquivos from './pages/Arquivos'
@@ -30,6 +31,7 @@ import DashboardFases from './pages/DashboardFases'
 import DashboardTarefas from './pages/DashboardTarefas'
 import DashboardSubtarefas from './pages/DashboardSubtarefas'
 import BuscaGlobal from './components/BuscaGlobal'
+import FloatingAI from './components/FloatingAI'
 import './index.css'
 
 function AvisoNovaVersao() {
@@ -120,7 +122,8 @@ function ProtectedLayout() {
           <Route path="/controladoria/dre-dashboard2" element={<DreDashboard2 />} />
           <Route path="/controladoria/orcamento"       element={<Orcamento />} />
           <Route path="/controladoria/planos"      element={<Planos />} />
-          <Route path="/controladoria/balancetes" element={<Balancetes />} />
+          <Route path="/controladoria/balancetes"  element={<Balancetes />} />
+          <Route path="/controladoria/importacao-realizado" element={<ImportacaoRealizado />} />
           <Route path="/anotacoes"               element={<Anotacoes />} />
           <Route path="/arquivos"                element={<Arquivos />} />
           <Route path="/dashboard-cliente"        element={<DashboardCliente />} />
@@ -134,6 +137,7 @@ function ProtectedLayout() {
         </Routes>
       </div>
       {showBusca && <BuscaGlobal onClose={() => setShowBusca(false)} />}
+      <FloatingAI />
     </div>
   )
 }

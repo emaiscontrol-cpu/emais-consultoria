@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -113,6 +113,66 @@ with engine.connect() as conn:
         )""",
         # Nível hierárquico no plano de contas
         "ALTER TABLE planos_itens ADD COLUMN nivel INTEGER DEFAULT NULL",
+        # Motor de Fórmulas — tabelas novas (create_all cria; isso garante bancos antigos)
+        """CREATE TABLE IF NOT EXISTS template_formulas (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            plano_item_id INTEGER NOT NULL UNIQUE REFERENCES planos_itens(id),
+            tipo_formula TEXT NOT NULL,
+            componentes TEXT DEFAULT '[]',
+            auto_gerada BOOLEAN DEFAULT 1,
+            criado_em DATETIME DEFAULT (datetime('now')),
+            atualizado_em DATETIME
+        )""",
+        """CREATE TABLE IF NOT EXISTS import_layouts (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente_id INTEGER REFERENCES clientes(id),
+            nome TEXT NOT NULL,
+            linha_inicio INTEGER DEFAULT 2,
+            coluna_conta INTEGER DEFAULT 0,
+            coluna_descricao INTEGER,
+            tipo_estrutura TEXT DEFAULT 'COLUNAS_MESES',
+            mapa_colunas_meses TEXT DEFAULT '[]',
+            coluna_mes INTEGER,
+            coluna_valor INTEGER,
+            formato_mes TEXT DEFAULT 'MM/YYYY',
+            prefixos_ignorar TEXT DEFAULT '[]',
+            linhas_ignorar TEXT DEFAULT '[]',
+            ativo BOOLEAN DEFAULT 1,
+            criado_em DATETIME DEFAULT (datetime('now'))
+        )""",
+        """CREATE TABLE IF NOT EXISTS conta_de_para (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+            layout_id INTEGER REFERENCES import_layouts(id),
+            codigo_erp TEXT NOT NULL,
+            plano_item_id INTEGER NOT NULL REFERENCES planos_itens(id),
+            ativo BOOLEAN DEFAULT 1,
+            criado_em DATETIME DEFAULT (datetime('now')),
+            UNIQUE(cliente_id, layout_id, codigo_erp)
+        )""",
+        """CREATE TABLE IF NOT EXISTS importacao_logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
+            layout_id INTEGER REFERENCES import_layouts(id),
+            ano INTEGER NOT NULL,
+            mes INTEGER DEFAULT 0,
+            unidade TEXT NOT NULL,
+            total_linhas INTEGER DEFAULT 0,
+            direto INTEGER DEFAULT 0,
+            via_depara INTEGER DEFAULT 0,
+            pendencias INTEGER DEFAULT 0,
+            criado_em DATETIME DEFAULT (datetime('now')),
+            criado_por_id INTEGER REFERENCES usuarios(id)
+        )""",
+        """CREATE TABLE IF NOT EXISTS importacao_pendencias (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            log_id INTEGER NOT NULL REFERENCES importacao_logs(id),
+            codigo_erp TEXT NOT NULL,
+            descricao TEXT DEFAULT '',
+            valor REAL DEFAULT 0.0,
+            mes INTEGER DEFAULT 0,
+            resolvido BOOLEAN DEFAULT 0
+        )""",
     ]:
         try:
             conn.execute(text(stmt))
@@ -210,6 +270,7 @@ app.include_router(arquivos.router,       prefix="/api/arquivos",       tags=["A
 app.include_router(ia.router,             prefix="/api/ia",             tags=["IA"])
 app.include_router(gemini.router,         prefix="/api/gemini",         tags=["Gemini"])
 app.include_router(openrouter.router,     prefix="/api/openrouter",     tags=["OpenRouter"])
+app.include_router(dre_import.router,     prefix="/api/dre",            tags=["Motor DRE"])
 
 # Cria diretório de uploads se não existir
 from pathlib import Path as _Path

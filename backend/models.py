@@ -518,3 +518,94 @@ class Arquivo(Base):
     criado_em      = Column(DateTime(timezone=True), server_default=func.now())
     cliente        = relationship("Cliente")
     enviado_por    = relationship("Usuario")
+
+
+# ─── MOTOR DE FÓRMULAS ────────────────────────────────────────────────────────
+
+class TemplateFormula(Base):
+    """Fórmula estruturada de um item do plano (N1/N2). N3 = VALOR (sem fórmula)."""
+    __tablename__ = "template_formulas"
+    id            = Column(Integer, primary_key=True, index=True)
+    plano_item_id = Column(Integer, ForeignKey("planos_itens.id"), nullable=False, unique=True)
+    tipo_formula  = Column(String(20), nullable=False)  # FILHOS | AGRUPAMENTOS | VALOR
+    # JSON: [{"agrupamento": "VDA_VISTA", "sinal": 1}, ...]
+    componentes   = Column(Text, default="[]")
+    auto_gerada   = Column(Boolean, default=True)
+    criado_em     = Column(DateTime(timezone=True), server_default=func.now())
+    atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
+    item          = relationship("PlanoItem")
+
+
+# ─── IMPORTAÇÃO COM DE-PARA ───────────────────────────────────────────────────
+
+class ImportLayout(Base):
+    """Configuração de como ler um XLSX de realizado do ERP."""
+    __tablename__ = "import_layouts"
+    id                 = Column(Integer, primary_key=True, index=True)
+    cliente_id         = Column(Integer, ForeignKey("clientes.id"), nullable=True)  # None = global
+    nome               = Column(String(200), nullable=False)
+    linha_inicio       = Column(Integer, default=2)   # 1-based
+    coluna_conta       = Column(Integer, default=0)   # 0-based
+    coluna_descricao   = Column(Integer, nullable=True)
+    tipo_estrutura     = Column(String(30), default="COLUNAS_MESES")
+    # JSON: [{"mes":1,"coluna":3}, {"mes":2,"coluna":4}, ...]
+    mapa_colunas_meses = Column(Text, default="[]")
+    coluna_mes         = Column(Integer, nullable=True)
+    coluna_valor       = Column(Integer, nullable=True)
+    formato_mes        = Column(String(20), default="MM/YYYY")
+    prefixos_ignorar   = Column(Text, default="[]")  # JSON lista de strings
+    linhas_ignorar     = Column(Text, default="[]")  # JSON lista de ints
+    ativo              = Column(Boolean, default=True)
+    criado_em          = Column(DateTime(timezone=True), server_default=func.now())
+    cliente            = relationship("Cliente", foreign_keys=[cliente_id])
+    de_paras           = relationship("ContaDePara", back_populates="layout",
+                                      cascade="all, delete-orphan")
+
+
+class ContaDePara(Base):
+    """Mapeamento código ERP → conta do sistema (N3 analítica)."""
+    __tablename__ = "conta_de_para"
+    id            = Column(Integer, primary_key=True, index=True)
+    cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    layout_id     = Column(Integer, ForeignKey("import_layouts.id"), nullable=True)
+    codigo_erp    = Column(String(60), nullable=False)
+    plano_item_id = Column(Integer, ForeignKey("planos_itens.id"), nullable=False)
+    ativo         = Column(Boolean, default=True)
+    criado_em     = Column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (UniqueConstraint("cliente_id", "layout_id", "codigo_erp"),)
+    cliente       = relationship("Cliente")
+    layout        = relationship("ImportLayout", back_populates="de_paras")
+    item          = relationship("PlanoItem")
+
+
+class ImportacaoLog(Base):
+    """Histórico de cada importação de realizado."""
+    __tablename__ = "importacao_logs"
+    id            = Column(Integer, primary_key=True, index=True)
+    cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    layout_id     = Column(Integer, ForeignKey("import_layouts.id"), nullable=True)
+    ano           = Column(Integer, nullable=False)
+    mes           = Column(Integer, default=0)   # 0 = múltiplos meses
+    unidade       = Column(String(60), nullable=False)
+    total_linhas  = Column(Integer, default=0)
+    direto        = Column(Integer, default=0)
+    via_depara    = Column(Integer, default=0)
+    pendencias    = Column(Integer, default=0)
+    criado_em     = Column(DateTime(timezone=True), server_default=func.now())
+    criado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    cliente       = relationship("Cliente")
+    itens_pendentes = relationship("ImportacaoPendencia", back_populates="log",
+                                   cascade="all, delete-orphan")
+
+
+class ImportacaoPendencia(Base):
+    """Conta do ERP que veio sem mapeamento em uma importação."""
+    __tablename__ = "importacao_pendencias"
+    id          = Column(Integer, primary_key=True, index=True)
+    log_id      = Column(Integer, ForeignKey("importacao_logs.id"), nullable=False)
+    codigo_erp  = Column(String(60), nullable=False)
+    descricao   = Column(String(300), default="")
+    valor       = Column(Float, default=0.0)
+    mes         = Column(Integer, default=0)
+    resolvido   = Column(Boolean, default=False)
+    log         = relationship("ImportacaoLog", back_populates="itens_pendentes")

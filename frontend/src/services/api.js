@@ -247,4 +247,61 @@ export const modelosAPI = {
   aplicar:             (modeloId, projetoId)     => api.post(`/modelos/aplicar/${modeloId}/projeto/${projetoId}`),
 }
 
+export const iaAPI = {
+  analisar: (titulo, contexto, pergunta = '') =>
+    api.post('/ia/analisar', { titulo, contexto, pergunta }),
+}
+
+export const geminiAPI = {
+  analisar: (titulo, contexto, pergunta = '') =>
+    api.post('/gemini/analisar', { titulo, contexto, pergunta }),
+}
+
+export const openrouterAPI = {
+  analisar: (titulo, contexto, pergunta = '', modelo = 'openai/gpt-4o') =>
+    api.post('/openrouter/analisar', { titulo, contexto, pergunta, modelo }),
+}
+
+export const dreMotorAPI = {
+  // Fórmulas
+  gerarFormulas:   (planoId, sobrescrever = false) =>
+    api.post(`/dre/formulas/gerar/${planoId}?sobrescrever=${sobrescrever}`),
+  listarFormulas:  planoId  => api.get(`/dre/formulas/${planoId}`),
+  atualizarFormula:(id, d)  => api.put(`/dre/formulas/${id}`, d),
+  // Recálculo
+  recalcular: (clienteId, ano, unidade, mes = null, persistir = true) => {
+    const p = new URLSearchParams({ cliente_id: clienteId, ano, unidade, persistir })
+    if (mes) p.set('mes', mes)
+    return api.post(`/dre/recalcular?${p}`)
+  },
+  // Layouts
+  listarLayouts:  clienteId => api.get(`/dre/layouts?cliente_id=${clienteId}`),
+  criarLayout:    data      => api.post('/dre/layouts', data),
+  atualizarLayout:(id, d)   => api.put(`/dre/layouts/${id}`, d),
+  excluirLayout:  id        => api.delete(`/dre/layouts/${id}`),
+  previewArquivo: arquivo   => {
+    const fd = new FormData(); fd.append('arquivo', arquivo)
+    return api.post('/dre/layouts/preview', fd)
+  },
+  // DE-PARA
+  listarDePara:   (clienteId, layoutId = null) => {
+    const p = new URLSearchParams({ cliente_id: clienteId })
+    if (layoutId) p.set('layout_id', layoutId)
+    return api.get(`/dre/de-para?${p}`)
+  },
+  criarDePara:    data      => api.post('/dre/de-para', data),
+  criarDeParaBulk:data      => api.post('/dre/de-para/bulk', data),
+  atualizarDePara:(id, d)   => api.put(`/dre/de-para/${id}`, d),
+  excluirDePara:  id        => api.delete(`/dre/de-para/${id}`),
+  // Importação
+  importar: (arquivo, params) => {
+    const fd = new FormData(); fd.append('arquivo', arquivo)
+    const p = new URLSearchParams(params)
+    return api.post(`/dre/importar?${p}`, fd)
+  },
+  listarLogs:      clienteId => api.get(`/dre/importar/logs?cliente_id=${clienteId}`),
+  pendenciasDoLog: logId     => api.get(`/dre/importar/logs/${logId}/pendencias`),
+  resolverPendencia: data    => api.post('/dre/importar/pendencias/resolver', data),
+}
+
 export default api

@@ -2,9 +2,9 @@ import logo from '../assets/logo.jpeg'
 import { NavLink, useNavigate, useLocation } from 'react-router-dom'
 import {
   LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell,
-  History, BarChart2, BookOpen, Landmark, List, FileSpreadsheet, NotebookPen,
-  PieChart, ChevronDown, ChevronUp, Layers, ListTodo, AlignLeft, DatabaseBackup,
-  Camera, Copy, Search, Globe, FolderOpen, TrendingUp,
+  History, BarChart2, BookOpen, List, FileSpreadsheet, NotebookPen,
+  ChevronDown, ChevronUp, Layers, ListTodo, AlignLeft, DatabaseBackup,
+  Camera, Copy, Search, Globe, FolderOpen, TrendingUp, Target,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
@@ -12,6 +12,31 @@ import { authAPI, notificacoesAPI } from '../services/api'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 
+// ── Botão de título de seção (colapsável, com emoji) ─────────────────────────
+function SectionBtn({ emoji, label, open, isActive, onClick }) {
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      width: '100%', padding: '6px 14px', border: 'none', cursor: 'pointer',
+      background: 'transparent', marginTop: 4,
+    }}>
+      <span style={{
+        fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
+        color: isActive ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.45)',
+        display: 'flex', alignItems: 'center', gap: 5,
+        transition: 'color .15s',
+      }}>
+        <span style={{ fontSize: 13 }}>{emoji}</span> {label}
+      </span>
+      {open
+        ? <ChevronUp   size={11} color={isActive ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.35)'} />
+        : <ChevronDown size={11} color={isActive ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.35)'} />
+      }
+    </button>
+  )
+}
+
+// ── Dashboard Executivo ───────────────────────────────────────────────────────
 const DASH_SUB = [
   { to: '/',                     label: 'Geral',         icon: LayoutDashboard, end: true },
   { to: '/dashboard/fases',      label: 'Por Fase',      icon: Layers },
@@ -19,44 +44,19 @@ const DASH_SUB = [
   { to: '/dashboard/subtarefas', label: 'Por Atividade', icon: AlignLeft },
 ]
 
-function DashGroup() {
+function DashSection() {
   const location = useLocation()
   const { usuario } = useAuth()
   const isAdminConsultor = ['admin', 'consultor'].includes(usuario?.perfil)
-
-  const isDashActive =
-    location.pathname === '/' ||
+  const isActive = location.pathname === '/' ||
     location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/dashboard-executivo')
-
-  const [open, setOpen] = useState(isDashActive)
-  useEffect(() => { if (isDashActive) setOpen(true) }, [isDashActive])
-
-  const btn = {
-    display: 'flex', alignItems: 'center', gap: 9, width: '100%',
-    padding: '9px 14px', borderRadius: 7, cursor: 'pointer', border: 'none',
-    background: isDashActive ? 'rgba(255,255,255,.13)' : 'transparent',
-    color: isDashActive ? '#fff' : 'rgba(255,255,255,.62)',
-    fontSize: 13, fontWeight: isDashActive ? 600 : 400,
-    transition: 'background .15s, color .15s',
-    letterSpacing: isDashActive ? '.01em' : 'normal',
-  }
+  const [open, setOpen] = useState(isActive)
+  useEffect(() => { if (isActive) setOpen(true) }, [isActive])
 
   return (
     <div>
-      <button
-        onClick={() => setOpen(v => !v)}
-        style={btn}
-        onMouseEnter={e => { if (!isDashActive) e.currentTarget.style.background = 'rgba(255,255,255,.07)' }}
-        onMouseLeave={e => { if (!isDashActive) e.currentTarget.style.background = 'transparent' }}
-      >
-        <LayoutDashboard size={16} />
-        <span style={{ flex: 1, textAlign: 'left', letterSpacing: '.04em', fontSize: 12, fontWeight: 700 }}>
-          DASHBOARD EXECUTIVO
-        </span>
-        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-      </button>
-
+      <SectionBtn emoji="📊" label="Dashboard Executivo" open={open} isActive={isActive} onClick={() => setOpen(v => !v)} />
       {open && (
         <div style={{ paddingLeft: 10, marginTop: 2 }}>
           {DASH_SUB.map(({ to, label, icon: Icon, end }) => (
@@ -66,7 +66,6 @@ function DashGroup() {
               <Icon size={13} /> {label}
             </NavLink>
           ))}
-
           {isAdminConsultor && (
             <NavLink to="/dashboard-executivo"
               className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
@@ -80,44 +79,120 @@ function DashGroup() {
   )
 }
 
-function CollapseGroup({ label, icon: Icon, children, defaultOpen = false, isActive = false }) {
-  const [open, setOpen] = useState(defaultOpen)
+// ── Análises Gerenciais ───────────────────────────────────────────────────────
+function AnalisesSection() {
+  const location = useLocation()
+  const isActive = location.pathname.startsWith('/controladoria') && !location.pathname.startsWith('/controladoria/planos') && !location.pathname.startsWith('/controladoria/importacao')
+  const [open, setOpen] = useState(isActive)
+  useEffect(() => { if (isActive) setOpen(true) }, [isActive])
+
   return (
     <div>
-      <button onClick={() => setOpen(v => !v)} style={{
-        display: 'flex', alignItems: 'center', gap: 9, width: '100%',
-        padding: '9px 14px', borderRadius: 7, cursor: 'pointer', border: 'none',
-        background: isActive ? 'rgba(255,255,255,.13)' : 'transparent',
-        color: isActive ? '#fff' : 'rgba(255,255,255,.62)',
-        fontSize: 13, fontWeight: isActive ? 600 : 400, transition: 'background .15s, color .15s',
-      }}
-        onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,.07)' }}
-        onMouseLeave={e => { if (!isActive) e.currentTarget.style.background = 'transparent' }}
-      >
-        <Icon size={16} />
-        <span style={{ flex: 1, textAlign: 'left' }}>{label}</span>
-        {open ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
-      </button>
-      {open && <div style={{ paddingLeft: 10, marginTop: 2 }}>{children}</div>}
+      <SectionBtn emoji="📈" label="Análises Gerenciais" open={open} isActive={isActive} onClick={() => setOpen(v => !v)} />
+      {open && (
+        <div style={{ paddingLeft: 10, marginTop: 2 }}>
+          <NavLink to="/controladoria/fluxo-de-caixa"
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <span style={{ fontSize: 14 }}>💲</span> Fluxo de Caixa Executivo
+          </NavLink>
+          <NavLink to="/controladoria/dre"
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <BarChart2 size={13} /> DRE Gerencial
+          </NavLink>
+          <NavLink to="/controladoria/balancetes"
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <FileSpreadsheet size={13} /> Balancete
+          </NavLink>
+          <NavLink to="/controladoria/orcamento"
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <Target size={13} /> Controle Orçamentário
+          </NavLink>
+          <NavLink to="/controladoria/importacao-realizado"
+            className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+            style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <span style={{ fontSize: 13 }}>📥</span> Importar Realizado
+          </NavLink>
+        </div>
+      )}
     </div>
   )
 }
 
+// ── Administração ─────────────────────────────────────────────────────────────
+function AdminSection() {
+  const location = useLocation()
+  const isActive = ['/relatorios', '/historico', '/usuarios', '/clientes'].some(p => location.pathname.startsWith(p))
+  const [open, setOpen] = useState(isActive)
+  useEffect(() => { if (isActive) setOpen(true) }, [isActive])
+
+  return (
+    <div>
+      <SectionBtn emoji="🏢" label="Administração" open={open} isActive={isActive} onClick={() => setOpen(v => !v)} />
+      {open && (
+        <div style={{ paddingLeft: 10, marginTop: 2 }}>
+          <NavLink to="/relatorios" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <BarChart2 size={13} /> Relatórios
+          </NavLink>
+          <NavLink to="/historico" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <History size={13} /> Histórico
+          </NavLink>
+          <NavLink to="/usuarios" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <Users size={13} /> Usuários
+          </NavLink>
+          <NavLink to="/clientes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <Building2 size={13} /> Clientes
+          </NavLink>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Procedimentos ─────────────────────────────────────────────────────────────
+function ProcSection() {
+  const location = useLocation()
+  const isActive = location.pathname.startsWith('/procedimentos') ||
+    location.pathname.startsWith('/controladoria/planos') ||
+    location.pathname.startsWith('/modelos')
+  const [open, setOpen] = useState(isActive)
+  useEffect(() => { if (isActive) setOpen(true) }, [isActive])
+
+  return (
+    <div>
+      <SectionBtn emoji="⚙️" label="Procedimentos" open={open} isActive={isActive} onClick={() => setOpen(v => !v)} />
+      {open && (
+        <div style={{ paddingLeft: 10, marginTop: 2 }}>
+          <NavLink to="/modelos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <Copy size={13} /> Templates de Projeto
+          </NavLink>
+          <NavLink to="/controladoria/planos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <List size={13} /> Modelos & Contas
+          </NavLink>
+          <NavLink to="/procedimentos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <DatabaseBackup size={13} /> Backup
+          </NavLink>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── Sidebar principal ─────────────────────────────────────────────────────────
 export default function Sidebar({ onBusca }) {
   const { usuario, logout, atualizarUsuario } = useAuth()
   const navigate = useNavigate()
-  const location = useLocation()
   const [showSenha, setShowSenha] = useState(false)
   const [formSenha, setFormSenha] = useState({ senha_atual: '', nova_senha: '', confirmar: '' })
   const [salvando, setSalvando] = useState(false)
-
   const [qtdAlertas, setQtdAlertas] = useState(0)
   const [versao, setVersao] = useState('')
 
   useEffect(() => {
-    notificacoesAPI.listar()
-      .then(r => setQtdAlertas(r.data.length))
-      .catch(() => {})
+    notificacoesAPI.listar().then(r => setQtdAlertas(r.data.length)).catch(() => {})
     fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
       .then(r => r.json()).then(d => setVersao(d.version)).catch(() => {})
   }, [])
@@ -126,9 +201,7 @@ export default function Sidebar({ onBusca }) {
 
   const handleAlterarSenha = async e => {
     e.preventDefault()
-    if (formSenha.nova_senha !== formSenha.confirmar) {
-      toast.error('As senhas não conferem'); return
-    }
+    if (formSenha.nova_senha !== formSenha.confirmar) { toast.error('As senhas não conferem'); return }
     setSalvando(true)
     try {
       await authAPI.alterarSenha(formSenha.senha_atual, formSenha.nova_senha)
@@ -146,10 +219,6 @@ export default function Sidebar({ onBusca }) {
   const isConsultor      = isRestrito || ['admin', 'consultor', 'ger_projeto', 'ti'].includes(usuario?.perfil)
   const isControladoria  = isRestrito || ['admin', 'consultor', 'ger_projeto', 'ti'].includes(usuario?.perfil)
 
-  const adminAtivo   = ['/relatorios', '/historico', '/usuarios', '/clientes'].some(p => location.pathname.startsWith(p))
-  const procAtivo    = location.pathname.startsWith('/procedimentos') || location.pathname.startsWith('/controladoria/planos') || location.pathname.startsWith('/modelos')
-  const analisesAtivo = location.pathname.startsWith('/controladoria') && !location.pathname.startsWith('/controladoria/planos')
-
   return (
     <>
       <aside className="sidebar">
@@ -165,16 +234,14 @@ export default function Sidebar({ onBusca }) {
         </div>
 
         <nav className="sidebar-nav">
-          <div className="nav-section">Principal</div>
+          <div className="nav-section">🏠 Principal</div>
 
-          {/* Busca Global */}
-          <button onClick={onBusca}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 9, width: '100%',
-              padding: '9px 14px', borderRadius: 7, cursor: 'pointer', border: 'none',
-              background: 'transparent', color: 'rgba(255,255,255,.45)',
-              fontSize: 13, transition: 'background .15s, color .15s', marginBottom: 2,
-            }}
+          <button onClick={onBusca} style={{
+            display: 'flex', alignItems: 'center', gap: 9, width: '100%',
+            padding: '9px 14px', borderRadius: 7, cursor: 'pointer', border: 'none',
+            background: 'transparent', color: 'rgba(255,255,255,.45)',
+            fontSize: 13, transition: 'background .15s, color .15s', marginBottom: 2,
+          }}
             onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.07)'; e.currentTarget.style.color = 'rgba(255,255,255,.8)' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.45)' }}>
             <Search size={15} />
@@ -182,8 +249,7 @@ export default function Sidebar({ onBusca }) {
             <span style={{ fontSize: 10, background: 'rgba(255,255,255,.12)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.02em' }}>Ctrl+K</span>
           </button>
 
-          {/* DASHBOARD EXECUTIVO (grupo colapsável) */}
-          <DashGroup />
+          <DashSection />
 
           <NavLink to="/projetos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
             <FolderKanban size={16} /> Projetos
@@ -204,32 +270,12 @@ export default function Sidebar({ onBusca }) {
             {' '}Notificações
           </NavLink>
 
-          {/* ANÁLISES GERENCIAIS */}
-          {isControladoria && (
-            <>
-              <div className="nav-section">Análises Gerenciais</div>
-              <CollapseGroup
-                label="Análises Gerenciais"
-                icon={TrendingUp}
-                defaultOpen={analisesAtivo}
-                isActive={analisesAtivo}
-              >
-                <NavLink to="/controladoria" end
-                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                  style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <Landmark size={13} /> Análises Gerenciais
-                </NavLink>
-              </CollapseGroup>
-            </>
-          )}
+          {isControladoria && <AnalisesSection />}
 
           {isConsultor && (
-            <>
-              <div className="nav-section">Clientes</div>
-              <NavLink to="/anotacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-                <NotebookPen size={16} /> Anotações
-              </NavLink>
-            </>
+            <NavLink to="/anotacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+              <NotebookPen size={16} /> Anotações
+            </NavLink>
           )}
 
           {isAdminConsultor && (
@@ -238,42 +284,9 @@ export default function Sidebar({ onBusca }) {
             </NavLink>
           )}
 
-          {isAdminConsultor && (
-            <>
-              <div className="nav-section">Administração</div>
-              <CollapseGroup label="Administração" icon={BarChart2} defaultOpen={adminAtivo} isActive={adminAtivo}>
-                <NavLink to="/relatorios" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <BarChart2 size={13} /> Relatórios
-                </NavLink>
-                <NavLink to="/historico" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <History size={13} /> Histórico
-                </NavLink>
-                <NavLink to="/usuarios" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <Users size={13} /> Usuários
-                </NavLink>
-                <NavLink to="/clientes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <Building2 size={13} /> Clientes
-                </NavLink>
-              </CollapseGroup>
-            </>
-          )}
+          {isAdminConsultor && <AdminSection />}
 
-          {isAdmin && (
-            <>
-              <div className="nav-section">Procedimentos</div>
-              <CollapseGroup label="Procedimentos" icon={DatabaseBackup} defaultOpen={procAtivo} isActive={procAtivo}>
-                <NavLink to="/modelos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <Copy size={13} /> Templates de Projeto
-                </NavLink>
-                <NavLink to="/controladoria/planos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <List size={13} /> Modelos & Contas
-                </NavLink>
-                <NavLink to="/procedimentos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <DatabaseBackup size={13} /> Backup
-                </NavLink>
-              </CollapseGroup>
-            </>
-          )}
+          {isAdmin && <ProcSection />}
         </nav>
 
         <div className="sidebar-footer">
@@ -287,9 +300,7 @@ export default function Sidebar({ onBusca }) {
                   const { data } = await authAPI.atualizarFoto(ev.target.result)
                   atualizarUsuario({ foto: data.foto })
                   toast.success('Foto atualizada!')
-                } catch {
-                  toast.error('Erro ao salvar foto')
-                }
+                } catch { toast.error('Erro ao salvar foto') }
               }
               reader.readAsDataURL(file)
               e.target.value = ''
@@ -301,7 +312,7 @@ export default function Sidebar({ onBusca }) {
               onClick={() => document.getElementById('foto-upload').click()}>
               {usuario?.foto
                 ? <img src={usuario.foto} alt={usuario.nome}
-                  style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
+                    style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
                 : <Avatar nome={usuario?.nome} color="blue" />
               }
               <div style={{
