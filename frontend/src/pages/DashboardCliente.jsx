@@ -1,12 +1,10 @@
 import { useState, useEffect } from 'react'
+import { useParams } from 'react-router-dom'
 import { clientesAPI, dashboardAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { LoadingPage } from '../components/shared'
 import { ChevronDown, AlertTriangle, CheckCircle2, Clock, Layers } from 'lucide-react'
-import {
-  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-} from 'recharts'
+import Plot from 'react-plotly.js'
 
 const STATUS_COR = {
   concluido:    '#4CAF50',
@@ -25,18 +23,34 @@ const STATUS_LABEL = {
   bloqueada: 'Bloqueada', concluida: 'Concluída',
 }
 
+const DARK_BG   = '#0f0f15'
+const DARK_CARD = '#16161f'
+const DARK_GRID = '#2a2a3a'
+
+const plotLayout = (extra = {}) => ({
+  paper_bgcolor: DARK_CARD,
+  plot_bgcolor:  DARK_BG,
+  font:          { color: '#c9d1d9', family: 'Segoe UI, Arial, sans-serif', size: 12 },
+  margin:        { t: 16, b: 36, l: 16, r: 16 },
+  showlegend:    true,
+  legend:        { font: { color: '#8b949e', size: 11 }, bgcolor: 'transparent', orientation: 'h', y: -0.18 },
+  ...extra,
+})
+
+const plotConfig = { displayModeBar: false, responsive: true }
+
 function CardResumo({ icon: Icon, label, valor, cor }) {
   return (
     <div style={{
-      background: '#fff', border: '1px solid #e5e7eb', borderRadius: 10,
+      background: DARK_CARD, border: `1px solid ${cor}30`, borderRadius: 10,
       padding: '16px 20px', display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 160,
     }}>
-      <div style={{ background: `${cor}18`, borderRadius: 8, padding: 10 }}>
+      <div style={{ background: `${cor}22`, borderRadius: 8, padding: 10 }}>
         <Icon size={20} color={cor} />
       </div>
       <div>
-        <div style={{ fontSize: 22, fontWeight: 800, color: '#1f2937' }}>{valor}</div>
-        <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>{label}</div>
+        <div style={{ fontSize: 22, fontWeight: 800, color: '#e6edf3' }}>{valor}</div>
+        <div style={{ fontSize: 12, color: '#8b949e', marginTop: 2 }}>{label}</div>
       </div>
     </div>
   )
@@ -44,7 +58,7 @@ function CardResumo({ icon: Icon, label, valor, cor }) {
 
 function BarraProgresso({ valor, cor }) {
   return (
-    <div style={{ background: '#f3f4f6', borderRadius: 99, height: 8, width: '100%' }}>
+    <div style={{ background: '#21262d', borderRadius: 99, height: 8, width: '100%' }}>
       <div style={{
         width: `${Math.min(valor, 100)}%`, height: '100%',
         borderRadius: 99, background: cor || 'var(--brand)',
@@ -56,14 +70,15 @@ function BarraProgresso({ valor, cor }) {
 
 export default function DashboardCliente() {
   const { usuario } = useAuth()
+  const { id: idParam } = useParams()
 
   const clienteVinculado = usuario?.cliente_id || null
-  const isRestrito = clienteVinculado && ['cliente', 'ger_projeto', 'ti'].includes(usuario?.perfil)
+  const isRestrito = clienteVinculado && ['analista', 'ger_projeto', 'ti'].includes(usuario?.perfil)
 
-  const [clientes, setClientes]   = useState([])
-  const [clienteId, setClienteId] = useState(isRestrito ? String(clienteVinculado) : '')
-  const [dados, setDados]         = useState(null)
-  const [loading, setLoading]     = useState(false)
+  const [clientes,  setClientes]  = useState([])
+  const [clienteId, setClienteId] = useState(isRestrito ? String(clienteVinculado) : (idParam || ''))
+  const [dados,     setDados]     = useState(null)
+  const [loading,   setLoading]   = useState(false)
 
   useEffect(() => {
     if (!isRestrito) clientesAPI.listar().then(r => setClientes(r.data.filter(c => c.ativo)))
@@ -77,39 +92,71 @@ export default function DashboardCliente() {
       .finally(() => setLoading(false))
   }, [clienteId])
 
-  const pieData = dados ? [
-    { name: 'Concluídas',   value: dados.resumo.concluidas,  cor: '#4CAF50' },
-    { name: 'Em andamento', value: dados.resumo.andamento,   cor: '#1E88E5' },
-    { name: 'Pendentes',    value: dados.resumo.pendentes,   cor: '#9ca3af' },
-    { name: 'Atrasadas',    value: dados.resumo.atrasadas,   cor: '#E53935' },
-  ].filter(d => d.value > 0) : []
+  // ── dados Plotly ──────────────────────────────────────────────────────────
+  const pieTrace = dados ? [{
+    type: 'pie',
+    labels: ['Concluídas', 'Em andamento', 'Pendentes', 'Atrasadas'].filter((_, i) => [
+      dados.resumo.concluidas, dados.resumo.andamento,
+      dados.resumo.pendentes,  dados.resumo.atrasadas,
+    ][i] > 0),
+    values: [
+      dados.resumo.concluidas, dados.resumo.andamento,
+      dados.resumo.pendentes,  dados.resumo.atrasadas,
+    ].filter(v => v > 0),
+    marker: {
+      colors: ['#4CAF50', '#1E88E5', '#9ca3af', '#E53935'].filter((_, i) => [
+        dados.resumo.concluidas, dados.resumo.andamento,
+        dados.resumo.pendentes,  dados.resumo.atrasadas,
+      ][i] > 0),
+      line: { color: DARK_BG, width: 2 },
+    },
+    textinfo: 'percent',
+    textfont: { color: '#e6edf3', size: 12 },
+    hole: 0.38,
+    hovertemplate: '<b>%{label}</b><br>%{value} tarefas (%{percent})<extra></extra>',
+  }] : []
 
-  const barData = dados?.projetos.map(p => ({
-    name: p.nome.length > 18 ? p.nome.slice(0, 18) + '…' : p.nome,
-    progresso: p.progresso,
-  })) || []
+  const barTrace = dados ? [{
+    type: 'bar',
+    orientation: 'h',
+    x: dados.projetos.map(p => p.progresso),
+    y: dados.projetos.map(p => p.nome.length > 22 ? p.nome.slice(0, 22) + '…' : p.nome),
+    marker: {
+      color: dados.projetos.map(p => STATUS_COR[p.status] || '#6366f1'),
+      opacity: 0.85,
+    },
+    text: dados.projetos.map(p => `${p.progresso}%`),
+    textposition: 'outside',
+    textfont: { color: '#c9d1d9', size: 11 },
+    hovertemplate: '<b>%{y}</b>: %{x}%<extra></extra>',
+    cliponaxis: false,
+  }] : []
 
   return (
-    <div className="page">
+    <div className="page" style={{ background: DARK_BG }}>
       <div className="page-header">
         <div>
-          <div className="page-title">Dashboard por Cliente</div>
-          <div className="page-sub">Evolução de projetos, fases e tarefas</div>
+          <div className="page-title" style={{ color: '#e6edf3' }}>Dashboard por Cliente</div>
+          <div className="page-sub" style={{ color: '#8b949e' }}>Evolução de projetos, fases e tarefas</div>
         </div>
       </div>
 
       {/* Seletor de cliente */}
       {!isRestrito && (
-        <div className="card" style={{ marginBottom: 20, padding: '16px 20px' }}>
+        <div style={{ background: DARK_CARD, border: '1px solid #30363d', borderRadius: 10, marginBottom: 20, padding: '16px 20px' }}>
           <div className="form-group" style={{ margin: 0 }}>
-            <label>Cliente</label>
+            <label style={{ color: '#8b949e' }}>Cliente</label>
             <div style={{ position: 'relative', maxWidth: 360 }}>
               <select value={clienteId} onChange={e => setClienteId(e.target.value)}
-                style={{ width: '100%', paddingRight: 32, appearance: 'none' }}>
+                style={{
+                  width: '100%', paddingRight: 32, appearance: 'none',
+                  background: '#0d1117', color: '#e6edf3', border: '1px solid #30363d',
+                  borderRadius: 7, padding: '8px 32px 8px 12px', fontSize: 13,
+                }}>
                 <option value=''>Selecione um cliente...</option>
                 {clientes.map(c => <option key={c.id} value={c.id}>{c.razao_social}</option>)}
               </select>
-              <ChevronDown size={15} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#9ca3af', pointerEvents: 'none' }} />
+              <ChevronDown size={15} style={{ position: 'absolute', right: 10, top: '50%', transform: 'translateY(-50%)', color: '#6b7280', pointerEvents: 'none' }} />
             </div>
           </div>
         </div>
@@ -127,89 +174,102 @@ export default function DashboardCliente() {
             <CardResumo icon={AlertTriangle} label="Atrasadas"          valor={dados.resumo.atrasadas}      cor="#E53935" />
           </div>
 
-          {/* Gráficos */}
+          {/* Gráficos Plotly */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 20 }}>
-            {/* Pizza - tarefas por status */}
-            <div className="card">
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 16 }}>
+            {/* Pizza — tarefas por status */}
+            <div style={{
+              background: DARK_CARD, border: '1px solid #30363d', borderRadius: 12,
+              padding: '20px 16px',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#c9d1d9', marginBottom: 12 }}>
                 Tarefas por Status
               </div>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}>
-                    {pieData.map((entry, i) => <Cell key={i} fill={entry.cor} />)}
-                  </Pie>
-                  <Tooltip />
-                  <Legend />
-                </PieChart>
-              </ResponsiveContainer>
+              <Plot
+                data={pieTrace}
+                layout={plotLayout({ height: 260 })}
+                config={plotConfig}
+                style={{ width: '100%' }}
+              />
             </div>
 
-            {/* Barras - progresso por projeto */}
-            <div className="card">
-              <div style={{ fontSize: 13, fontWeight: 700, color: '#374151', marginBottom: 16 }}>
+            {/* Barras — progresso por projeto */}
+            <div style={{
+              background: DARK_CARD, border: '1px solid #30363d', borderRadius: 12,
+              padding: '20px 16px',
+            }}>
+              <div style={{ fontSize: 13, fontWeight: 700, color: '#c9d1d9', marginBottom: 12 }}>
                 Progresso por Projeto (%)
               </div>
-              <ResponsiveContainer width="100%" height={220}>
-                <BarChart data={barData} layout="vertical" margin={{ left: 8, right: 24 }}>
-                  <CartesianGrid strokeDasharray="3 3" horizontal={false} />
-                  <XAxis type="number" domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <YAxis type="category" dataKey="name" tick={{ fontSize: 11 }} width={100} />
-                  <Tooltip formatter={v => `${v}%`} />
-                  <Bar dataKey="progresso" fill="#6366f1" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <Plot
+                data={barTrace}
+                layout={plotLayout({
+                  height: 260,
+                  xaxis: {
+                    range: [0, 115], gridcolor: DARK_GRID,
+                    tickfont: { color: '#6b7280', size: 10 }, zeroline: false,
+                  },
+                  yaxis: {
+                    tickfont: { color: '#8b949e', size: 10 }, automargin: true,
+                  },
+                  margin: { t: 10, b: 30, l: 8, r: 40 },
+                  showlegend: false,
+                  bargap: 0.35,
+                })}
+                config={plotConfig}
+                style={{ width: '100%' }}
+              />
             </div>
           </div>
 
           {/* Projetos e fases */}
           {dados.projetos.map(p => (
-            <div key={p.id} className="card" style={{ marginBottom: 16 }}>
-              {/* Cabeçalho do projeto */}
+            <div key={p.id} style={{
+              background: DARK_CARD, border: '1px solid #21262d', borderRadius: 12,
+              padding: '18px 20px', marginBottom: 16,
+            }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
                 <div>
-                  <span style={{ fontWeight: 700, fontSize: 15, color: '#1f2937' }}>{p.nome}</span>
+                  <span style={{ fontWeight: 700, fontSize: 15, color: '#e6edf3' }}>{p.nome}</span>
                   <span style={{
                     marginLeft: 10, fontSize: 11, fontWeight: 600, padding: '2px 8px',
-                    borderRadius: 99, background: `${STATUS_COR[p.status]}20`, color: STATUS_COR[p.status],
+                    borderRadius: 99, background: `${STATUS_COR[p.status]}22`, color: STATUS_COR[p.status],
                   }}>
                     {STATUS_LABEL[p.status] || p.status}
                   </span>
                 </div>
-                <div style={{ fontSize: 20, fontWeight: 800, color: '#6366f1' }}>{p.progresso}%</div>
+                <div style={{ fontSize: 20, fontWeight: 800, color: STATUS_COR[p.status] || '#6366f1' }}>{p.progresso}%</div>
               </div>
               <BarraProgresso valor={p.progresso} cor={STATUS_COR[p.status]} />
 
-              {/* Mini stats */}
               <div style={{ display: 'flex', gap: 16, margin: '10px 0 16px', fontSize: 12, color: '#6b7280' }}>
-                <span>✅ {p.concluidas} concluídas</span>
-                <span>🔄 {p.andamento} em andamento</span>
-                <span>⏳ {p.pendentes} pendentes</span>
-                {p.atrasadas > 0 && <span style={{ color: '#E53935' }}>⚠️ {p.atrasadas} atrasadas</span>}
+                <span style={{ color: '#4CAF50' }}>&#10003; {p.concluidas} concluídas</span>
+                <span style={{ color: '#1E88E5' }}>&#8635; {p.andamento} em andamento</span>
+                <span>&#8230; {p.pendentes} pendentes</span>
+                {p.atrasadas > 0 && <span style={{ color: '#E53935' }}>&#9888; {p.atrasadas} atrasadas</span>}
               </div>
 
               {/* Fases */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {p.fases.map(f => (
                   <div key={f.id} style={{
-                    background: '#f9fafb', borderRadius: 8, padding: '10px 14px',
-                    border: '1px solid #e5e7eb',
+                    background: '#0d1117', borderRadius: 8, padding: '10px 14px',
+                    border: '1px solid #21262d',
                   }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: '#9ca3af', fontWeight: 600 }}>F{f.ordem}</span>
-                        <span style={{ fontSize: 13, fontWeight: 600, color: '#374151' }}>{f.nome}</span>
+                        <span style={{ fontSize: 11, color: '#484f58', fontWeight: 600 }}>F{f.ordem}</span>
+                        <span style={{ fontSize: 13, fontWeight: 600, color: '#c9d1d9' }}>{f.nome}</span>
                         <span style={{
                           fontSize: 10, fontWeight: 700, padding: '1px 6px', borderRadius: 99,
-                          background: `${STATUS_COR[f.status]}20`, color: STATUS_COR[f.status],
+                          background: `${STATUS_COR[f.status]}22`, color: STATUS_COR[f.status],
                         }}>
                           {STATUS_LABEL[f.status] || f.status}
                         </span>
                       </div>
-                      <span style={{ fontSize: 13, fontWeight: 700, color: '#374151' }}>{f.progresso}%</span>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#e6edf3' }}>{f.progresso}%</span>
                     </div>
                     <BarraProgresso valor={f.progresso} cor={STATUS_COR[f.status]} />
-                    <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 11, color: '#9ca3af' }}>
+                    <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 11, color: '#484f58' }}>
                       <span>{f.total} tarefa(s)</span>
                       <span style={{ color: '#4CAF50' }}>{f.concluidas} concluídas</span>
                       {f.atrasadas > 0 && <span style={{ color: '#E53935' }}>{f.atrasadas} atrasadas</span>}
@@ -221,8 +281,8 @@ export default function DashboardCliente() {
           ))}
 
           {dados.projetos.length === 0 && (
-            <div className="card">
-              <div className="empty-state">Nenhum projeto encontrado para este cliente.</div>
+            <div style={{ background: DARK_CARD, border: '1px solid #21262d', borderRadius: 12, padding: 40, textAlign: 'center', color: '#6b7280' }}>
+              Nenhum projeto encontrado para este cliente.
             </div>
           )}
         </>
