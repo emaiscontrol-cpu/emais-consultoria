@@ -82,10 +82,11 @@ def item_to_dict(i: PlanoItem):
     }
 
 def detectar_nivel(conta: str, tipo: str) -> int:
-    """AN → 3 | TT/RES sem ponto → 1 | TT/RES com ponto → 2."""
-    if (tipo or '').upper() == 'AN':
+    """TT/RES 1-dígito-sig → N1 | TT/RES 2+-dígitos-sig → N2 | demais tipos → N3."""
+    if (tipo or '').upper() not in ('TT', 'RES'):
         return 3
-    return 1 if '.' not in (conta or '') else 2
+    s = (conta or '').rstrip('0')
+    return 1 if len(s) <= 1 else 2
 
 def _compute_niveis(plano_id: int, db: Session):
     """Recalcula nivel com base no formato do campo conta."""

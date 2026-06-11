@@ -129,7 +129,11 @@ try:
         items_all = _db_n.query(_PI).order_by(_PI.plano_id, _PI.ordem).all()
         for it in items_all:
             t = (it.tipo or '').upper()
-            it.nivel = 3 if t == 'AN' else (1 if '.' not in (it.conta or '') else 2)
+            if t not in ('TT', 'RES'):
+                it.nivel = 3
+            else:
+                s = (it.conta or '').rstrip('0')
+                it.nivel = 1 if len(s) <= 1 else 2
         # Limpar agrupamento N3 identico ao N2 pai (redundante)
         ultimo_agr_n2: dict = {}
         for it in items_all:
@@ -215,7 +219,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0c"
+app.version = "2.5.0d"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -236,6 +240,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
