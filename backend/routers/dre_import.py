@@ -41,6 +41,7 @@ class FormulaUpdate(BaseModel):
 
 class LayoutCreate(BaseModel):
     cliente_id: Optional[int] = None
+    categoria: str = "REALIZADO"
     nome: str
     linha_inicio: int = 2
     coluna_conta: int = 0
@@ -181,6 +182,7 @@ def _layout_dict(l: ImportLayout) -> dict:
     return {
         "id": l.id,
         "cliente_id": l.cliente_id,
+        "categoria": getattr(l, 'categoria', 'REALIZADO'),
         "nome": l.nome,
         "linha_inicio": l.linha_inicio,
         "coluna_conta": l.coluna_conta,
@@ -200,6 +202,7 @@ def _layout_dict(l: ImportLayout) -> dict:
 @router.get("/layouts")
 def listar_layouts(
     cliente_id: Optional[int] = Query(None),
+    categoria: Optional[str] = Query(None),  # REALIZADO | PLANO
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
@@ -208,6 +211,8 @@ def listar_layouts(
         q = q.filter(
             (ImportLayout.cliente_id == cliente_id) | (ImportLayout.cliente_id == None)
         )
+    if categoria:
+        q = q.filter(ImportLayout.categoria == categoria)
     return [_layout_dict(l) for l in q.order_by(ImportLayout.nome).all()]
 
 
@@ -219,6 +224,7 @@ def criar_layout(
 ):
     l = ImportLayout(
         cliente_id=data.cliente_id,
+        categoria=data.categoria,
         nome=data.nome,
         linha_inicio=data.linha_inicio,
         coluna_conta=data.coluna_conta,

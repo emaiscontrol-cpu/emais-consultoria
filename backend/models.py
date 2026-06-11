@@ -539,10 +539,11 @@ class TemplateFormula(Base):
 # ─── IMPORTAÇÃO COM DE-PARA ───────────────────────────────────────────────────
 
 class ImportLayout(Base):
-    """Configuração de como ler um XLSX de realizado do ERP."""
+    """Configuração de como ler um XLSX do ERP (realizado ou plano de contas)."""
     __tablename__ = "import_layouts"
     id                 = Column(Integer, primary_key=True, index=True)
     cliente_id         = Column(Integer, ForeignKey("clientes.id"), nullable=True)  # None = global
+    categoria          = Column(String(20), default="REALIZADO")  # REALIZADO | PLANO
     nome               = Column(String(200), nullable=False)
     linha_inicio       = Column(Integer, default=2)   # 1-based
     coluna_conta       = Column(Integer, default=0)   # 0-based

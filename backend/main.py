@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import, plano_import
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -173,6 +173,8 @@ with engine.connect() as conn:
             mes INTEGER DEFAULT 0,
             resolvido BOOLEAN DEFAULT 0
         )""",
+        # Categoria de layout (REALIZADO | PLANO)
+        "ALTER TABLE import_layouts ADD COLUMN categoria TEXT DEFAULT 'REALIZADO'",
     ]:
         try:
             conn.execute(text(stmt))
@@ -271,6 +273,7 @@ app.include_router(ia.router,             prefix="/api/ia",             tags=["I
 app.include_router(gemini.router,         prefix="/api/gemini",         tags=["Gemini"])
 app.include_router(openrouter.router,     prefix="/api/openrouter",     tags=["OpenRouter"])
 app.include_router(dre_import.router,     prefix="/api/dre",            tags=["Motor DRE"])
+app.include_router(plano_import.router,   prefix="/api/plano",          tags=["Importação Plano"])
 
 # Cria diretório de uploads se não existir
 from pathlib import Path as _Path
