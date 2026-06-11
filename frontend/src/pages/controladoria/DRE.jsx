@@ -363,8 +363,12 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
   const [gerandoForm, setGerandoForm] = useState(false)
   const [editKey, setEditKey] = useState(null)
   const [editVal, setEditVal] = useState('')
-  const [novaLinha, setNovaLinha] = useState({ descricao: '', tipo: 'NN', agrupamento: '', conta: '', paiId: '' })
+  const [novaLinha, setNovaLinha] = useState({ descricao: '', tipo: 'TT', agrupamento: '', conta: '', paiId: '' })
   const [salvandoNova, setSalvandoNova] = useState(false)
+  const [sugestoes, setSugestoes] = useState([])
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false)
+  const [carregandoSug, setCarregandoSug] = useState(false)
+  const [aceitosSug, setAceitosSug] = useState(new Set()) // set de linha_ids rejeitados
 
   const carregarDados = () => {
     setLoading(true)
@@ -408,6 +412,46 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
       await dreMotorAPI.atualizarFormula(f.formula_id, { componentes: novos, auto_gerada: false })
       setFormulas(prev => ({ ...prev, [itemId]: { ...prev[itemId], componentes: novos, auto_gerada: false } }))
     } catch { toast.error('Erro ao alterar sinal') }
+  }
+
+  const sugerirAgrupamentos = async () => {
+    setCarregandoSug(true)
+    try {
+      const r = await dreMotorAPI.sugerirAgrupamentos(planoId)
+      const sug = r.data.sugestoes || []
+      setSugestoes(sug)
+      setMostrarSugestoes(true)
+      if (!sug.length) toast('Nenhuma sugestão encontrada — todos os TTs já têm agrupamento', { icon: 'ℹ️' })
+    } catch { toast.error('Erro ao buscar sugestões') }
+    finally { setCarregandoSug(false) }
+  }
+
+  const aceitarSugestao = async (sug) => {
+    try {
+      await planosAPI.atualizarItem(planoId, sug.linha_id, { agrupamento: sug.agrupamento_sugerido })
+      setItens(prev => prev.map(i => i.id === sug.linha_id ? { ...i, agrupamento: sug.agrupamento_sugerido } : i))
+      setSugestoes(prev => prev.filter(s => s.linha_id !== sug.linha_id))
+      toast.success(`Agrupamento ${sug.agrupamento_sugerido} aplicado`)
+      onReload()
+    } catch { toast.error('Erro ao aceitar sugestão') }
+  }
+
+  const aceitarAlternativa = async (sug, agr) => {
+    try {
+      await planosAPI.atualizarItem(planoId, sug.linha_id, { agrupamento: agr })
+      setItens(prev => prev.map(i => i.id === sug.linha_id ? { ...i, agrupamento: agr } : i))
+      setSugestoes(prev => prev.filter(s => s.linha_id !== sug.linha_id))
+      toast.success(`Agrupamento ${agr} aplicado`)
+      onReload()
+    } catch { toast.error('Erro ao aceitar alternativa') }
+  }
+
+  const aceitarTodas = async () => {
+    for (const sug of sugestoes) {
+      if (!aceitosSug.has(sug.linha_id)) await aceitarSugestao(sug)
+    }
+    setSugestoes([])
+    setMostrarSugestoes(false)
   }
 
   const paiDiretoMap = useMemo(() => buildPaiDiretoMap(itens, 'id'), [itens])
@@ -509,6 +553,10 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
             style={{ marginLeft: 'auto', fontSize: 12, padding: '5px 12px', background: gerandoForm ? '#e5e7eb' : '#f0f4ff', color: 'var(--brand)', border: '1px solid var(--brand)', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
             {gerandoForm ? '...' : '⚙ Gerar Fórmulas'}
           </button>
+          <button onClick={sugerirAgrupamentos} disabled={carregandoSug}
+            style={{ fontSize: 12, padding: '5px 12px', background: carregandoSug ? '#e5e7eb' : '#f0fdf4', color: '#16a34a', border: '1px solid #bbf7d0', borderRadius: 6, cursor: 'pointer', fontWeight: 600 }}>
+            {carregandoSug ? '...' : '🤖 Sugerir Agrupamentos'}
+          </button>
           <button onClick={onClose} style={{ background: 'none', border: 'none', fontSize: 22, cursor: 'pointer', color: 'var(--text-3)', lineHeight: 1 }}>×</button>
         </div>
 
@@ -531,12 +579,34 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                   const paiId   = paiDiretoMap[item.id]
                   const paiNome = paiId ? itens.find(t => t.id === paiId)?.descricao : null
 
+                  const fItem = formulas[item.id]
+
+                  // Nível: usa nivel do DB → tipo_formula como hint → fallback por conta
                   const nivelItem = item.nivel || (
+                    ehAN ? 3 :
+                    fItem?.tipo_formula === 'AGRUPAMENTOS' ? 1 :
+                    fItem?.tipo_formula === 'FILHOS' ? 2 :
                     ['TT','RES'].includes(item.tipo)
                       ? ((item.conta||'').replace(/0+$/,'').length <= 1 ? 1 : 2)
                       : 3
                   )
-                  const fItem = formulas[item.id]
+
+                  // Visual idêntico ao Plano de Contas
+                  const N_BADGE = nivelItem === 1
+                    ? { label: 'N1', bg: '#1e40af', color: '#fff' }
+                    : nivelItem === 2
+                      ? { label: 'N2', bg: '#3b82f6', color: '#fff' }
+                      : { label: 'N3', bg: '#e5e7eb', color: '#6b7280' }
+
+                  const rowBg = nivelItem === 1
+                    ? 'linear-gradient(90deg, #dbeafe 0%, #eff6ff 60%, transparent 100%)'
+                    : ehAN ? '#fafafa' : ''
+
+                  const rowBorder = nivelItem === 1
+                    ? '3px solid #1d4ed8'
+                    : nivelItem === 2
+                      ? '2px solid #bfdbfe'
+                      : '3px solid transparent'
 
                   const celFormulaAN = (
                     <td style={{ padding: '3px 12px' }}>
@@ -582,10 +652,21 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                   )
 
                   if (ehAN) return (
-                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: '#fafafa', opacity: .72 }}>
-                      <td style={{ padding: '3px 12px' }}><span style={tipoBadgeStyle('AN', false)}>AN</span></td>
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: rowBg, borderLeft: rowBorder, opacity: .8 }}>
+                      <td style={{ padding: '3px 12px' }}>
+                        <div style={{ display:'flex',flexDirection:'column',gap:2,alignItems:'flex-start' }}>
+                          <span style={tipoBadgeStyle('AN', false)}>AN</span>
+                          <span style={{ fontSize:9,fontWeight:700,padding:'1px 5px',borderRadius:3,background:N_BADGE.bg,color:N_BADGE.color }}>{N_BADGE.label}</span>
+                        </div>
+                      </td>
                       <td style={{ padding: '3px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{item.agrupamento || '—'}</td>
-                      <td style={{ padding: '3px 12px', fontSize: 12, color: 'var(--text-2)' }}>{item.descricao}</td>
+                      <td style={{ padding: '3px 12px', paddingLeft: 40 }}
+                        title="Descrição da conta contábil — não editável">
+                        <span style={{ fontSize: 12, color: 'var(--text-2)', cursor: 'default' }}>
+                          <span style={{ marginRight:4, opacity:.35, userSelect:'none' }}>└</span>
+                          {item.descricao}
+                        </span>
+                      </td>
                       <td style={{ padding: '3px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{item.conta || '—'}</td>
                       {celFormulaAN}
                       <td style={{ padding: '3px 12px' }}><span style={{ fontSize: 11, color: paiNome ? '#374151' : '#d1d5db' }}>{paiNome?.slice(0,35) || '—'}</span></td>
@@ -597,28 +678,44 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                     </tr>
                   )
 
+                  // Célula de fórmula determinada pelo tipo_formula real do banco
+                  const formulaColuna = fItem?.tipo_formula === 'AGRUPAMENTOS' ? celFormulaN1
+                    : fItem?.tipo_formula === 'FILHOS' ? celFormulaN2
+                    : nivelItem === 1 ? celFormulaN1 : celFormulaN2
+
                   return (
-                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: '#fafbff' }}>
+                    <tr key={item.id} style={{ borderBottom: '1px solid var(--border)', background: rowBg, borderLeft: rowBorder }}>
                       <td style={{ padding: '4px 12px' }}>
-                        {editKey === `${item.id}-tipo` ? (
-                          <select value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item,'tipo')} autoFocus style={{ fontSize:12, width:72 }}>
-                            <option value="TT">TT</option>
-                            <option value="RES">RES</option>
-                          </select>
-                        ) : (
-                          <span style={tipoBadgeStyle(item.tipo)} onClick={() => iniciarEdicao(item,'tipo')}>{item.tipo||'—'}</span>
-                        )}
+                        <div style={{ display:'flex',flexDirection:'column',gap:2,alignItems:'flex-start' }}>
+                          {editKey === `${item.id}-tipo` ? (
+                            <select value={editVal} onChange={e => setEditVal(e.target.value)} onBlur={() => salvarCampo(item,'tipo')} autoFocus style={{ fontSize:12, width:72 }}>
+                              <option value="TT">TT</option>
+                              <option value="RES">RES</option>
+                            </select>
+                          ) : (
+                            <span style={tipoBadgeStyle(item.tipo)} onClick={() => iniciarEdicao(item,'tipo')}>{item.tipo||'—'}</span>
+                          )}
+                          <span style={{ fontSize:9,fontWeight:700,padding:'1px 5px',borderRadius:3,background:N_BADGE.bg,color:N_BADGE.color }}>{N_BADGE.label}</span>
+                        </div>
                       </td>
                       <td style={{ padding: '4px 12px' }}>
                         <span style={{ fontFamily:'monospace',fontSize:11,color:item.agrupamento?'var(--text-2)':'#d1d5db' }}>{item.agrupamento||'—'}</span>
                       </td>
-                      <td style={{ padding: '4px 12px' }}>
+                      <td style={{ padding: '4px 12px', paddingLeft: nivelItem === 2 ? 20 : 8 }}>
                         {editKey === `${item.id}-descricao` ? (
                           <input value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={()=>salvarCampo(item,'descricao')}
                             onKeyDown={e=>{if(e.key==='Enter')salvarCampo(item,'descricao');if(e.key==='Escape')setEditKey(null)}}
                             autoFocus style={inputSt} />
                         ) : (
-                          <span onClick={()=>iniciarEdicao(item,'descricao')} style={{...cellSt,fontWeight:600}}>{item.descricao}</span>
+                          <span onClick={()=>iniciarEdicao(item,'descricao')} style={{...cellSt, fontWeight:700,
+                            fontSize: nivelItem===1 ? 13 : 12,
+                            textTransform: 'uppercase',
+                            letterSpacing: nivelItem===1 ? '0.04em' : 'normal',
+                            color: nivelItem===1 ? '#1d4ed8' : '#2563eb',
+                          }}>
+                            {nivelItem === 2 && <span style={{ marginRight:4, opacity:.4, userSelect:'none' }}>└</span>}
+                            {item.descricao}
+                          </span>
                         )}
                       </td>
                       <td style={{ padding: '4px 12px' }}>
@@ -630,7 +727,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                           <span onClick={()=>iniciarEdicao(item,'conta')} style={{...cellSt,color:'var(--text-3)',fontFamily:'monospace',fontSize:11}}>{item.conta||'—'}</span>
                         )}
                       </td>
-                      {nivelItem === 1 ? celFormulaN1 : celFormulaN2}
+                      {formulaColuna}
                       <td style={{ padding: '4px 12px' }}>
                         <span style={{ fontSize:11,color:paiNome?'var(--text-3)':'#d1d5db',fontStyle:'italic' }}>
                           {paiNome?`↳ ${paiNome.slice(0,32)}`:'—'}
@@ -686,11 +783,92 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
 
         <div style={{ padding: '12px 20px', borderTop: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           <span style={{ fontSize: 11, color: 'var(--text-3)' }}>
-            {itens.length} linha{itens.length!==1?'s':''} · Para vínculo explícito use <code style={{background:'#f0f4ff',padding:'1px 4px',borderRadius:3}}>GRUPO.SUBGRUPO</code> no agrupamento do TT filho e das suas NNs
+            {itens.length} linha{itens.length!==1?'s':''} · N1/N2/N3 detectados automaticamente pelo banco
           </span>
           <button onClick={onClose} style={{padding:'8px 24px',background:'var(--brand)',color:'#fff',border:'none',borderRadius:6,fontSize:13,cursor:'pointer',fontWeight:600}}>Fechar</button>
         </div>
       </div>
+
+      {/* Painel lateral de sugestões de agrupamento */}
+      {mostrarSugestoes && (
+        <div style={{ position:'fixed', top:0, right:0, bottom:0, width:380, background:'#fff',
+          boxShadow:'-4px 0 24px rgba(0,0,0,.18)', zIndex:1100, display:'flex', flexDirection:'column' }}>
+          <div style={{ padding:'14px 16px', borderBottom:'1px solid var(--border)', display:'flex', alignItems:'center', gap:10 }}>
+            <span style={{ fontWeight:700, fontSize:14 }}>🤖 Sugestões de Agrupamento</span>
+            <span style={{ fontSize:11, background:'#f0fdf4', color:'#16a34a', padding:'2px 8px', borderRadius:4 }}>
+              {sugestoes.length} restante{sugestoes.length!==1?'s':''}
+            </span>
+            <button onClick={()=>setMostrarSugestoes(false)} style={{ marginLeft:'auto', background:'none', border:'none', fontSize:20, cursor:'pointer', color:'var(--text-3)' }}>×</button>
+          </div>
+
+          <div style={{ flex:1, overflowY:'auto', padding:12 }}>
+            {sugestoes.length === 0 && (
+              <div style={{ padding:20, textAlign:'center', color:'var(--text-3)', fontSize:13 }}>
+                ✅ Todas as sugestões foram aplicadas
+              </div>
+            )}
+            {sugestoes.map((sug, i) => {
+              const cor = sug.confianca >= 90 ? { bg:'#f0fdf4', border:'#bbf7d0', badge:'#16a34a' }
+                : sug.confianca >= 70 ? { bg:'#fffbeb', border:'#fcd34d', badge:'#b45309' }
+                : { bg:'#fff0f0', border:'#fca5a5', badge:'#dc2626' }
+              return (
+                <div key={sug.linha_id} style={{ border:`1px solid ${cor.border}`, borderRadius:8, padding:12,
+                  background:cor.bg, marginBottom:10 }}>
+                  <div style={{ fontSize:12, color:'var(--text-3)', marginBottom:2 }}>Linha:</div>
+                  <div style={{ fontWeight:700, fontSize:13, marginBottom:8 }}>{sug.descricao_linha}</div>
+                  <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+                    <span style={{ fontFamily:'monospace', fontSize:12, fontWeight:700, background:'#e8f0ff', color:'var(--brand)', padding:'3px 8px', borderRadius:4 }}>
+                      {sug.agrupamento_sugerido}
+                    </span>
+                    <span style={{ fontSize:11, fontWeight:700, background:cor.badge, color:'#fff', padding:'2px 7px', borderRadius:99 }}>
+                      {sug.confianca}%
+                    </span>
+                  </div>
+                  {sug.descricao_sugerida !== sug.descricao_linha && (
+                    <div style={{ fontSize:11, color:'var(--text-3)', marginBottom:8, fontStyle:'italic' }}>
+                      Baseado em: "{sug.descricao_sugerida}"
+                    </div>
+                  )}
+                  {sug.alternativas?.length > 0 && (
+                    <div style={{ display:'flex', flexWrap:'wrap', gap:4, marginBottom:8 }}>
+                      <span style={{ fontSize:10, color:'var(--text-3)' }}>Alt:</span>
+                      {sug.alternativas.map(alt => (
+                        <button key={alt} onClick={() => aceitarAlternativa(sug, alt)}
+                          style={{ fontSize:10, padding:'2px 7px', background:'#f0f4ff', color:'var(--brand)', border:'1px solid var(--brand)', borderRadius:4, cursor:'pointer' }}>
+                          {alt}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                  <div style={{ display:'flex', gap:6 }}>
+                    <button onClick={()=>aceitarSugestao(sug)}
+                      style={{ flex:1, padding:'6px', background:'#16a34a', color:'#fff', border:'none', borderRadius:6, fontWeight:700, cursor:'pointer', fontSize:12 }}>
+                      ✓ Aceitar
+                    </button>
+                    <button onClick={()=>setSugestoes(prev=>prev.filter(s=>s.linha_id!==sug.linha_id))}
+                      style={{ flex:1, padding:'6px', background:'none', color:'#dc2626', border:'1px solid #fca5a5', borderRadius:6, fontWeight:600, cursor:'pointer', fontSize:12 }}>
+                      ✗ Rejeitar
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+
+          {sugestoes.length > 1 && (
+            <div style={{ padding:12, borderTop:'1px solid var(--border)', display:'flex', gap:8 }}>
+              <button onClick={aceitarTodas}
+                style={{ flex:1, padding:'9px', background:'var(--brand)', color:'#fff', border:'none', borderRadius:7, fontWeight:700, cursor:'pointer', fontSize:13 }}>
+                ✓ Aceitar Todas ({sugestoes.length})
+              </button>
+              <button onClick={()=>setMostrarSugestoes(false)}
+                style={{ padding:'9px 14px', background:'none', border:'1px solid var(--border)', borderRadius:7, cursor:'pointer', fontSize:13 }}>
+                Fechar
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   )
 }

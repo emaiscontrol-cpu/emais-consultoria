@@ -299,6 +299,7 @@ export const dreMotorAPI = {
     const p = new URLSearchParams(params)
     return api.post(`/dre/importar?${p}`, fd)
   },
+  sugerirAgrupamentos: planoId => api.post(`/dre/sugerir-agrupamentos/${planoId}`),
   listarLogs:      clienteId => api.get(`/dre/importar/logs?cliente_id=${clienteId}`),
   pendenciasDoLog: logId     => api.get(`/dre/importar/logs/${logId}/pendencias`),
   resolverPendencia: data    => api.post('/dre/importar/pendencias/resolver', data),
