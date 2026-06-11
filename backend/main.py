@@ -26,6 +26,7 @@ with engine.connect() as conn:
         "ALTER TABLE subtarefas ADD COLUMN data_inicio DATETIME",
         "ALTER TABLE subtarefas ADD COLUMN data_fim DATETIME",
         "ALTER TABLE usuarios ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
+        "ALTER TABLE usuarios ADD COLUMN ia_habilitado BOOLEAN NOT NULL DEFAULT 0",
         "ALTER TABLE usuarios ADD COLUMN foto TEXT",
         "UPDATE usuarios SET perfil='analista' WHERE perfil='cliente'",
         "ALTER TABLE planos_itens ADD COLUMN formula TEXT",
@@ -182,7 +183,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.4.0u"
+app.version = "2.4.0w"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -203,6 +204,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

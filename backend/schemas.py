@@ -23,6 +23,7 @@ class UsuarioOut(BaseModel):
     email: str
     perfil: PerfilEnum
     ativo: bool
+    ia_habilitado: bool = False
     cliente_id: Optional[int]
     foto: Optional[str] = None
     class Config:
@@ -33,6 +34,7 @@ class UsuarioUpdate(BaseModel):
     email: Optional[str] = None
     perfil: Optional[PerfilEnum] = None
     ativo: Optional[bool] = None
+    ia_habilitado: Optional[bool] = None
     senha: Optional[str] = None
     cliente_id: Optional[int] = None
     remover_cliente: Optional[bool] = None  # True = desvincula o cliente
