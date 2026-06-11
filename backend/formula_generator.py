@@ -82,8 +82,9 @@ def gerar_formulas_do_plano(
         else:
             # N3 → filho do N2 atual
             pai = last_n2 or last_n1
-            if pai and (it.agrupamento or "").strip():
-                n2_filhos.setdefault(pai, []).append(it.agrupamento)
+            key = (it.agrupamento or "").strip() or (it.conta or "").strip()
+            if pai and key:
+                n2_filhos.setdefault(pai, []).append(key)
 
     geradas = 0
     revisao_n1 = []
