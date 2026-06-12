@@ -1,10 +1,15 @@
 """
-Motor de cálculo da DRE — cálculo server-side.
+Motor de cálculo da DRE.
 
-Pass 1: TT sem componentes → soma filhos AN posicionais → popula byToken[agrupamento]
-Pass 2: TT com componentes → lê byToken → resultado final
+Regras (confirmadas pelo usuário):
+- AN pertence ao último TT antes dele na ordem (hierarquia posicional)
+- Valores importados do ERP gravam em AMBOS AN e TT (TT = soma das folhas AN)
+- Fórmulas (componentes) são somas livres de variáveis = agrupamentos de TTs
 
-Frontend usa os valores diretamente (valsById), sem computeValsCalc.
+Estratégia:
+  Pass 1: TT sem fórmula → usa valor armazenado se não-zero,
+          senão soma ANs posicionais → popula byToken[agrupamento]
+  Pass 2: TT com fórmula → soma byToken via componentes → popula byToken
 """
 
 import json
@@ -24,11 +29,13 @@ def _nivel_item(item: PlanoItem) -> int:
 def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[dict]:
 
     # 1. Plano do cliente
-    vinculo = db.query(ClientePlano).filter(ClientePlano.cliente_id == cliente_id).first()
+    vinculo = db.query(ClientePlano).filter(
+        ClientePlano.cliente_id == cliente_id
+    ).first()
     if not vinculo:
         return []
 
-    # 2. Itens DRE ordenados por ordem
+    # 2. Itens DRE ordenados
     dre_itens = [
         i for i in db.query(PlanoItem)
         .filter(PlanoItem.plano_id == vinculo.plano_id)
@@ -41,7 +48,7 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
 
     item_ids = [i.id for i in dre_itens]
 
-    # 3. Componentes de fórmula (template_formulas) — apenas entradas não-vazias
+    # 3. Componentes (template_formulas) — só entradas não-vazias
     formula_map: dict[int, list] = {}
     try:
         for f in db.query(TemplateFormula).filter(
@@ -53,7 +60,7 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
     except Exception:
         pass
 
-    # 4. Valores brutos do banco
+    # 4. Valores brutos do banco (AN e TT importados)
     idx: dict[int, dict[int, float]] = {}
     for v in db.query(OrcamentoUnidadeValor).filter(
         OrcamentoUnidadeValor.cliente_id == cliente_id,
@@ -63,9 +70,9 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
     ).all():
         idx.setdefault(v.plano_item_id, {})[v.mes] = v.valor
 
-    # 5. Hierarquia posicional: último TT/RES visto é pai dos ANs seguintes
+    # 5. Hierarquia posicional: último TT visto = pai dos ANs seguintes
     filhos_an: dict[int, list[int]] = {}
-    current_tt = None
+    current_tt: int | None = None
     for item in dre_itens:
         t = (item.tipo or "").upper()
         if t in ("TT", "RES"):
@@ -74,32 +81,46 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
         elif t == "AN" and current_tt is not None:
             filhos_an[current_tt].append(item.id)
 
-    # 6. Pass 1: TT sem componentes → soma filhos AN → registra em byToken
+    def _sum_meses(item_id_list: list[int]) -> dict[int, float]:
+        result = {m: 0.0 for m in range(1, 13)}
+        for cid in item_id_list:
+            for m, v in idx.get(cid, {}).items():
+                result[m] = result.get(m, 0.0) + v
+        return result
+
+    # 6. Pass 1: TT sem fórmula → valor armazenado OU soma de ANs filhos → byToken
     byToken: dict[str, dict[int, float]] = {}
     for item in dre_itens:
         if (item.tipo or "").upper() not in ("TT", "RES"):
             continue
         if formula_map.get(item.id):
-            continue  # tem componentes → tratar no pass 2
-        filhos = filhos_an.get(item.id, [])
-        if not filhos:
-            continue
-        vals: dict[int, float] = {m: 0.0 for m in range(1, 13)}
-        for child_id in filhos:
-            child_vals = idx.get(child_id, {})
-            for m in range(1, 13):
-                vals[m] += child_vals.get(m, 0.0)
-        idx[item.id] = vals
-        if item.agrupamento:
-            byToken[item.agrupamento] = dict(vals)
+            continue  # tem fórmula → pass 2
+        if not item.agrupamento:
+            continue  # sem agrupamento não contribui para byToken
 
-    # 7. Pass 2: TT com componentes → lê byToken populado no pass 1
+        stored = idx.get(item.id, {})
+        stored_total = sum(stored.values())
+
+        if stored_total != 0:
+            # Valor já importado do ERP — usa diretamente
+            vals = {m: stored.get(m, 0.0) for m in range(1, 13)}
+        else:
+            # Não importado — calcula da soma dos ANs posicionais
+            filhos = filhos_an.get(item.id, [])
+            vals = _sum_meses(filhos)
+            if any(v != 0 for v in vals.values()):
+                idx[item.id] = vals
+
+        byToken[item.agrupamento] = vals
+
+    # 7. Pass 2: TT com fórmula → lê byToken → resultado
     for item in dre_itens:
         if (item.tipo or "").upper() not in ("TT", "RES"):
             continue
         componentes = formula_map.get(item.id)
         if not componentes:
             continue
+
         vals = {m: 0.0 for m in range(1, 13)}
         for comp in componentes:
             agr = comp.get("agrupamento", "")
@@ -107,9 +128,10 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
             agr_vals = byToken.get(agr, {})
             for m in range(1, 13):
                 vals[m] += sinal * agr_vals.get(m, 0.0)
+
         idx[item.id] = vals
         if item.agrupamento:
-            byToken[item.agrupamento] = dict(vals)
+            byToken[item.agrupamento] = vals
 
     # 8. Montar resposta
     return [

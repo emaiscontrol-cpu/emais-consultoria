@@ -283,7 +283,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.1"
+app.version = "2.5.1a"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
