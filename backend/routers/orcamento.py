@@ -6,6 +6,7 @@ from typing import Optional
 from database import get_db
 from auth import get_usuario_atual
 import models
+from dre_engine import calcular_dre
 
 router = APIRouter()
 
@@ -223,7 +224,7 @@ def obter_dre(
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
-    """Retorna o DRE histórico por unidade (dados importados do Excel)."""
+    """Retorna o DRE com valores calculados server-side (SOMASE + fórmulas)."""
     if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
         raise HTTPException(403, "Acesso negado")
 
@@ -231,59 +232,7 @@ def obter_dre(
     if not plano:
         return {"plano": None, "linhas": [], "unidade": unidade}
 
-    # Itens DRE: modulo contém 'D'
-    itens = [
-        i for i in plano.itens
-        if i.modulo and "D" in [m.strip().upper() for m in i.modulo.split(",")]
-    ]
-
-    if not itens:
-        return {"plano": {"id": plano.id, "nome": plano.nome}, "linhas": [], "unidade": unidade}
-
-    # Carregar valores da unidade selecionada
-    item_ids = [i.id for i in itens]
-    valores_db = db.query(models.OrcamentoUnidadeValor).filter(
-        models.OrcamentoUnidadeValor.cliente_id    == cliente_id,
-        models.OrcamentoUnidadeValor.ano           == ano,
-        models.OrcamentoUnidadeValor.unidade       == unidade,
-        models.OrcamentoUnidadeValor.plano_item_id.in_(item_ids),
-    ).all()
-
-    idx: dict = {}
-    for row in valores_db:
-        idx.setdefault(row.plano_item_id, {})[row.mes] = row.valor
-
-    # Fórmulas JSON configuradas no Template
-    import json as _json
-    formula_map: dict = {}
-    for f in db.query(models.TemplateFormula).filter(models.TemplateFormula.plano_item_id.in_(item_ids)).all():
-        formula_map[f.plano_item_id] = _json.loads(f.componentes or "[]")
-
-    def _nivel_item(item) -> int:
-        """Retorna 1, 2 ou 3. Usa campo nivel do DB se disponível, senão calcula por conta."""
-        if item.nivel is not None:
-            return int(item.nivel)
-        if (item.tipo or "").upper() not in ("TT", "RES"):
-            return 3
-        s = (item.conta or "").rstrip("0")
-        return 1 if len(s) <= 1 else 2
-
-    linhas = []
-    for item in itens:
-        vals = idx.get(item.id, {})
-        linhas.append({
-            "item_id":     item.id,
-            "conta":       item.conta,
-            "descricao":   item.descricao,
-            "agrupamento": item.agrupamento,
-            "tipo":        item.tipo,
-            "nivel":       _nivel_item(item),
-            "movimento":   item.movimento,
-            "ordem":       item.ordem,
-            "formula":     item.formula,
-            "componentes": formula_map.get(item.id),
-            "valores":     {m: vals.get(m, 0.0) for m in range(1, 13)},
-        })
+    linhas = calcular_dre(cliente_id, ano, unidade, db)
 
     return {
         "plano":   {"id": plano.id, "nome": plano.nome},
