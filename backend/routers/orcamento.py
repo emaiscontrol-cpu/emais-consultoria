@@ -259,6 +259,15 @@ def obter_dre(
     for f in db.query(models.TemplateFormula).filter(models.TemplateFormula.plano_item_id.in_(item_ids)).all():
         formula_map[f.plano_item_id] = _json.loads(f.componentes or "[]")
 
+    def _nivel_item(item) -> int:
+        """Retorna 1, 2 ou 3. Usa campo nivel do DB se disponível, senão calcula por conta."""
+        if item.nivel is not None:
+            return int(item.nivel)
+        if (item.tipo or "").upper() not in ("TT", "RES"):
+            return 3
+        s = (item.conta or "").rstrip("0")
+        return 1 if len(s) <= 1 else 2
+
     linhas = []
     for item in itens:
         vals = idx.get(item.id, {})
@@ -268,7 +277,7 @@ def obter_dre(
             "descricao":   item.descricao,
             "agrupamento": item.agrupamento,
             "tipo":        item.tipo,
-            "nivel":       item.nivel,
+            "nivel":       _nivel_item(item),
             "movimento":   item.movimento,
             "ordem":       item.ordem,
             "formula":     item.formula,
