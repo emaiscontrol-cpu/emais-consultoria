@@ -17,6 +17,24 @@ from sqlalchemy.orm import Session
 from models import PlanoItem, TemplateFormula, OrcamentoUnidadeValor, ClientePlano
 
 
+def _parse_formula(formula_text: str, byToken: dict) -> dict[int, float]:
+    """Parseia 'VDA_VISTA + VDA_PRAZO - DEDUCOES' usando byToken."""
+    tokens = formula_text.replace('-', ' - ').replace('+', ' + ').split()
+    vals = {m: 0.0 for m in range(1, 13)}
+    sinal = 1
+    for tok in tokens:
+        if tok == '+':
+            sinal = 1
+        elif tok == '-':
+            sinal = -1
+        else:
+            agr_vals = byToken.get(tok.strip(), {})
+            for m in range(1, 13):
+                vals[m] += sinal * agr_vals.get(m, 0.0)
+            sinal = 1
+    return vals
+
+
 def _nivel_item(item: PlanoItem) -> int:
     if item.nivel is not None:
         return int(item.nivel)
@@ -93,7 +111,7 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
     for item in dre_itens:
         if (item.tipo or "").upper() not in ("TT", "RES"):
             continue
-        if formula_map.get(item.id):
+        if formula_map.get(item.id) or (item.formula or "").strip():
             continue  # tem fórmula → pass 2
         if not item.agrupamento:
             continue  # sem agrupamento não contribui para byToken
@@ -117,17 +135,25 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
     for item in dre_itens:
         if (item.tipo or "").upper() not in ("TT", "RES"):
             continue
+
+        formula_text = (item.formula or "").strip()
         componentes = formula_map.get(item.id)
-        if not componentes:
+
+        if not formula_text and not componentes:
             continue
 
-        vals = {m: 0.0 for m in range(1, 13)}
-        for comp in componentes:
-            agr = comp.get("agrupamento", "")
-            sinal = comp.get("sinal", 1)
-            agr_vals = byToken.get(agr, {})
-            for m in range(1, 13):
-                vals[m] += sinal * agr_vals.get(m, 0.0)
+        if formula_text:
+            # Usa o campo formula (texto): "VDA_VISTA + VDA_PRAZO"
+            vals = _parse_formula(formula_text, byToken)
+        else:
+            # Usa componentes JSON (agrupamentos individuais)
+            vals = {m: 0.0 for m in range(1, 13)}
+            for comp in componentes:
+                agr = comp.get("agrupamento", "")
+                sinal = comp.get("sinal", 1)
+                agr_vals = byToken.get(agr, {})
+                for m in range(1, 13):
+                    vals[m] += sinal * agr_vals.get(m, 0.0)
 
         idx[item.id] = vals
         if item.agrupamento:
