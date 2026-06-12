@@ -18,20 +18,16 @@ from models import PlanoItem, TemplateFormula, OrcamentoUnidadeValor, ClientePla
 
 
 def _parse_formula(formula_text: str, byToken: dict) -> dict[int, float]:
-    """Parseia 'VDA_VISTA + VDA_PRAZO - DEDUCOES' usando byToken."""
-    tokens = formula_text.replace('-', ' - ').replace('+', ' + ').split()
-    vals = {m: 0.0 for m in range(1, 13)}
-    sinal = 1
-    for tok in tokens:
-        if tok == '+':
-            sinal = 1
-        elif tok == '-':
-            sinal = -1
-        else:
-            agr_vals = byToken.get(tok.strip(), {})
-            for m in range(1, 13):
-                vals[m] += sinal * agr_vals.get(m, 0.0)
-            sinal = 1
+    """Avalia expressão matemática com variáveis (agrupamentos) e constantes.
+    Suporta: +, -, *, /, (), números, ex: 'VDA_VISTA + VDA_PRAZO * 0.9 - 100'
+    """
+    vals = {}
+    for m in range(1, 13):
+        namespace = {var: mv.get(m, 0.0) for var, mv in byToken.items()}
+        try:
+            vals[m] = float(eval(formula_text, {"__builtins__": {}}, namespace))
+        except Exception:
+            vals[m] = 0.0
     return vals
 
 
@@ -151,9 +147,13 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
             for comp in componentes:
                 agr = comp.get("agrupamento", "")
                 sinal = comp.get("sinal", 1)
-                agr_vals = byToken.get(agr, {})
+                # Agrupamento pode ser uma expressão completa (dado legado)
+                if any(op in agr for op in ('+', '-', '*', '/', ' ')):
+                    comp_vals = _parse_formula(agr, byToken)
+                else:
+                    comp_vals = byToken.get(agr, {})
                 for m in range(1, 13):
-                    vals[m] += sinal * agr_vals.get(m, 0.0)
+                    vals[m] += sinal * comp_vals.get(m, 0.0)
 
         idx[item.id] = vals
         if item.agrupamento:
