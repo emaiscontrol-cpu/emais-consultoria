@@ -61,6 +61,28 @@ function findItem(linhas, patterns) {
   return null
 }
 
+function computeValsCalc(valsById, hierarquia, linhas) {
+  const calc={...valsById}, byToken={}
+  const sorted=[...(linhas||[])].sort((a,b)=>(a.ordem??0)-(b.ordem??0))
+  const _expor=(l,r)=>{
+    calc[l.item_id]=r
+    if(l.agrupamento){if(!byToken[l.agrupamento])byToken[l.agrupamento]={}
+      for(let m=1;m<=12;m++)byToken[l.agrupamento][m]=(byToken[l.agrupamento][m]||0)+(r[m]??0)}
+    if(l.conta)byToken[l.conta]=r
+  }
+  const _calc=(l)=>{
+    if(l.componentes&&l.componentes.length>0){const r={};for(let m=1;m<=12;m++)r[m]=l.componentes.reduce((s,c)=>s+(c.sinal??1)*((byToken[c.agrupamento]||{})[m]??0),0);return r}
+    if(l.formula){const toks=l.formula.trim().replace(/([+\-])/g,' $1 ').split(/\s+/).filter(Boolean);const r={};for(let m=1;m<=12;m++){let v=0,sg=1;for(const t of toks){if(t==='+'){sg=1;continue}if(t==='-'){sg=-1;continue}v+=sg*((byToken[t]||{})[m]??0);sg=1}r[m]=v};return r}
+    const nv=hierarquia.nivel[l.item_id]
+    if(nv===1||nv===2){const f=nv===2?(hierarquia.filhosL2[l.item_id]||[]):(hierarquia.filhosL1[l.item_id]||[]);if(f.length>0){const r={};for(let m=1;m<=12;m++)r[m]=f.reduce((s,id)=>s+(calc[id]?.[m]??0),0);return r}}
+    return null
+  }
+  for(const l of sorted){if(l.tipo!=='AN')continue;const v=valsById[l.item_id]||{};if(l.agrupamento){if(!byToken[l.agrupamento])byToken[l.agrupamento]={};for(let m=1;m<=12;m++)byToken[l.agrupamento][m]=(byToken[l.agrupamento][m]||0)+(v[m]??0)};if(l.conta){if(!byToken[l.conta])byToken[l.conta]={};for(let m=1;m<=12;m++)byToken[l.conta][m]=v[m]??0}}
+  for(const l of sorted){if(l.tipo!=='TT'&&l.tipo!=='RES')continue;if(l.componentes?.length||l.formula)continue;const r=_calc(l)||valsById[l.item_id]||null;if(r)_expor(l,r)}
+  for(const l of sorted){if(l.tipo!=='TT'&&l.tipo!=='RES')continue;if(!l.componentes?.length&&!l.formula)continue;const r=_calc(l)||valsById[l.item_id]||null;if(r)_expor(l,r)}
+  return calc
+}
+
 function buildHierarquia(linhas) {
   const nivel={}, paiL1={}, filhosL2={}, filhosL1={}
   const ttSimples={}, ttDot={}
@@ -320,11 +342,12 @@ export default function DreDashboard2() {
     setLoadingAll(true)
     setDadosPorUni({})
     const loadUnit = async u => {
-      if (u === unidade) return { u, vc: valsById }
+      if (u === unidade) return { u, vc: computeValsCalc(valsById, buildHierarquia(dados.linhas), dados.linhas) }
       try {
         const r = await orcamentoAPI.obterDre(clienteId, ano, u)
         const vb = {}; for(const ln of r.data.linhas||[]) vb[ln.item_id]=ln.valores
-        return { u, vc: vb }
+        const hier = buildHierarquia(r.data.linhas||[])
+        return { u, vc: computeValsCalc(vb, hier, r.data.linhas) }
       } catch { return { u, vc: {} } }
     }
     // carrega em lotes de 5 para não sobrecarregar o backend
@@ -345,9 +368,9 @@ export default function DreDashboard2() {
 
   /* ── computed ──────────────────────────────────────────────────────────── */
   const hierarquia  = useMemo(()=>buildHierarquia(dados?.linhas||[]),[dados?.linhas])
-  const valsCalc    = valsById
+  const valsCalc    = useMemo(()=>computeValsCalc(valsById,hierarquia,dados?.linhas),[valsById,hierarquia,dados?.linhas])
   const hierComp    = useMemo(()=>buildHierarquia(dadosComp?.linhas||[]),[dadosComp?.linhas])
-  const valsCalcComp= valsByIdComp
+  const valsCalcComp= useMemo(()=>computeValsCalc(valsByIdComp,hierComp,dadosComp?.linhas),[valsByIdComp,hierComp,dadosComp?.linhas])
 
   const items = useMemo(()=>{
     const L = dados?.linhas||[]
