@@ -175,6 +175,10 @@ with engine.connect() as conn:
         )""",
         # Categoria de layout (REALIZADO | PLANO)
         "ALTER TABLE import_layouts ADD COLUMN categoria TEXT DEFAULT 'REALIZADO'",
+        # Variável DRE — nome único por linha TT/RES para uso em fórmulas
+        "ALTER TABLE planos_itens ADD COLUMN variavel_dre TEXT",
+        # Migração: copia agrupamento → variavel_dre para TT/RES que ainda não têm
+        "UPDATE planos_itens SET variavel_dre = agrupamento WHERE variavel_dre IS NULL AND (agrupamento IS NOT NULL AND agrupamento != '') AND tipo IN ('TT', 'RES')",
     ]:
         try:
             conn.execute(text(stmt))
@@ -283,7 +287,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.1d"
+app.version = "2.5.1f"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -304,6 +308,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

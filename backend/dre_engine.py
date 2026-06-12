@@ -109,8 +109,9 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
             continue
         if formula_map.get(item.id) or (item.formula or "").strip():
             continue  # tem fórmula → pass 2
-        if not item.agrupamento:
-            continue  # sem agrupamento não contribui para byToken
+        variavel = (item.variavel_dre or item.agrupamento or "").strip()
+        if not variavel:
+            continue  # sem variável não contribui para byToken
 
         stored = idx.get(item.id, {})
         stored_total = sum(stored.values())
@@ -125,7 +126,7 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
             if any(v != 0 for v in vals.values()):
                 idx[item.id] = vals
 
-        byToken[item.agrupamento] = vals
+        byToken[variavel] = vals
 
     # 7. Pass 2: TT com fórmula → lê byToken → resultado
     for item in dre_itens:
@@ -156,8 +157,9 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
                     vals[m] += sinal * comp_vals.get(m, 0.0)
 
         idx[item.id] = vals
-        if item.agrupamento:
-            byToken[item.agrupamento] = vals
+        variavel2 = (item.variavel_dre or item.agrupamento or "").strip()
+        if variavel2:
+            byToken[variavel2] = vals
 
     # 8. Montar resposta
     return [
@@ -170,8 +172,9 @@ def calcular_dre(cliente_id: int, ano: int, unidade: str, db: Session) -> list[d
             "nivel":       _nivel_item(item),
             "movimento":   item.movimento,
             "ordem":       item.ordem,
-            "formula":     item.formula,
-            "componentes": formula_map.get(item.id),
+            "formula":      item.formula,
+            "variavel_dre": item.variavel_dre,
+            "componentes":  formula_map.get(item.id),
             "valores":     {m: idx.get(item.id, {}).get(m, 0.0) for m in range(1, 13)},
         }
         for item in dre_itens

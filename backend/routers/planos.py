@@ -38,6 +38,7 @@ class PlanoItemCreate(BaseModel):
     ordem: Optional[int] = 0
     formula: Optional[str] = None
     nivel: Optional[int] = None
+    variavel_dre: Optional[str] = None
 
 class PlanoItemUpdate(BaseModel):
     agrupamento: Optional[str] = None
@@ -49,6 +50,7 @@ class PlanoItemUpdate(BaseModel):
     ordem: Optional[int] = None
     formula: Optional[str] = None
     nivel: Optional[int] = None
+    variavel_dre: Optional[str] = None
 
 # ── Helpers ────────────────────────────────────────────────────────────────────
 
@@ -78,7 +80,7 @@ def item_to_dict(i: PlanoItem):
         "agrupamento": i.agrupamento, "descricao": i.descricao,
         "conta": i.conta, "tipo": i.tipo, "modulo": i.modulo,
         "movimento": i.movimento, "ordem": i.ordem, "formula": i.formula,
-        "nivel": i.nivel,
+        "nivel": i.nivel, "variavel_dre": i.variavel_dre,
     }
 
 def detectar_nivel(conta: str, tipo: str) -> int:
