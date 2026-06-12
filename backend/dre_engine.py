@@ -1,13 +1,10 @@
 """
-Motor de cálculo da DRE — SOMASE + fórmulas.
+Motor de carregamento da DRE.
 
-Lógica (como Excel):
-  1. AN items  → valores individuais do banco (orcamento_unidade_valores)
-  2. SOMASE    → agrupa AN por agrupamento, constrói byToken[agr][mes] = total
-  3. TT N2     → usa byToken[agrupamento] (filhos AN já somados)
-  4. TT N1     → aplica componentes da fórmula sobre byToken, ou texto formula,
-                 ou byToken[agrupamento] direto se sem fórmula
-  5. Resultado → valores calculados por mes (1-12) por item_id
+Retorna todos os itens DRE com valores brutos do banco (orcamento_unidade_valores),
+nivel calculado e componentes (template_formulas).
+
+O cálculo de TT/RES é feito pelo frontend via computeValsCalc.
 """
 
 import json
@@ -31,9 +28,8 @@ def calcular_dre(
     db: Session,
 ) -> list[dict]:
     """
-    Retorna lista de linhas DRE com valores calculados server-side.
-    AN  items: valores individuais do banco.
-    TT/RES items: calculados via SOMASE + fórmulas de componentes.
+    Retorna lista de linhas DRE com valores brutos do banco.
+    O cálculo de TT/RES é delegado ao frontend (computeValsCalc).
     """
 
     # 1. Plano do cliente
@@ -56,7 +52,7 @@ def calcular_dre(
 
     item_ids = [i.id for i in dre_itens]
 
-    # 3. Fórmulas de componentes (template_formulas) — tolerante à ausência da tabela
+    # 3. Componentes de fórmula (template_formulas) — tolerante à ausência da tabela
     formula_map: dict[int, list] = {}
     try:
         for f in db.query(TemplateFormula).filter(
@@ -66,7 +62,7 @@ def calcular_dre(
     except Exception:
         pass
 
-    # 4. Valores individuais do banco (todos os meses)
+    # 4. Valores do banco — todos os itens (AN e TT)
     idx: dict[int, dict[int, float]] = {}
     for v in db.query(OrcamentoUnidadeValor).filter(
         OrcamentoUnidadeValor.cliente_id == cliente_id,
@@ -76,72 +72,7 @@ def calcular_dre(
     ).all():
         idx.setdefault(v.plano_item_id, {})[v.mes] = v.valor
 
-    # 5. SOMASE: agrupamento → {mes: soma} — apenas AN
-    byToken: dict[str, dict[int, float]] = {}
-    for item in dre_itens:
-        if item.tipo != "AN" or not item.agrupamento:
-            continue
-        agr = item.agrupamento
-        if agr not in byToken:
-            byToken[agr] = {}
-        for m, v in idx.get(item.id, {}).items():
-            byToken[agr][m] = byToken[agr].get(m, 0.0) + v
-
-    # 6. Calcular TT/RES — N2 antes de N1
-    calc: dict[int, dict[int, float]] = {}
-
-    def _processar(item: PlanoItem) -> None:
-        agr = item.agrupamento
-        componentes = formula_map.get(item.id, [])
-
-        if componentes:
-            # Componentes JSON: somar N2/N3 pelo agrupamento com sinal +/-
-            vals: dict[int, float] = {}
-            for m in range(1, 13):
-                vals[m] = sum(
-                    c.get("sinal", 1) * byToken.get(c.get("agrupamento", ""), {}).get(m, 0.0)
-                    for c in componentes
-                )
-            # Expor resultado em byToken para itens N1 posteriores que referenciem este agrupamento
-            if agr:
-                byToken[agr] = vals
-
-        elif item.formula:
-            # Fórmula texto: ex. "RECEITA - DEDUCOES"
-            tokens = item.formula.strip().replace("(", "").replace(")", "").split()
-            vals = {}
-            for m in range(1, 13):
-                total, sinal = 0.0, 1
-                for tok in tokens:
-                    if tok == "+":
-                        sinal = 1
-                    elif tok == "-":
-                        sinal = -1
-                    else:
-                        total += sinal * byToken.get(tok, {}).get(m, 0.0)
-                        sinal = 1
-                vals[m] = total
-            if agr:
-                byToken[agr] = vals
-
-        elif agr and agr in byToken:
-            # Sem fórmula: usa SOMASE direto (byToken já contém valor dos AN filhos)
-            vals = dict(byToken[agr])
-            # Não re-expõe — byToken[agr] já está correto
-
-        else:
-            vals = {m: 0.0 for m in range(1, 13)}
-
-        calc[item.id] = vals
-
-    for nivel_alvo in (2, 1):
-        for item in dre_itens:
-            if item.tipo not in ("TT", "RES"):
-                continue
-            if _nivel_item(item) == nivel_alvo:
-                _processar(item)
-
-    # 7. Montar resposta
+    # 5. Montar resposta
     return [
         {
             "item_id":     item.id,
@@ -154,7 +85,7 @@ def calcular_dre(
             "ordem":       item.ordem,
             "formula":     item.formula,
             "componentes": formula_map.get(item.id),
-            "valores":     {m: (idx.get(item.id, {}) if item.tipo == "AN" else calc.get(item.id, {})).get(m, 0.0) for m in range(1, 13)},
+            "valores":     {m: idx.get(item.id, {}).get(m, 0.0) for m in range(1, 13)},
         }
         for item in dre_itens
     ]
