@@ -1,5 +1,6 @@
 # Secrets
 backend/.env
+backend/seed_usuarios.py
 
 # Claude Code settings
 .claude/
@@ -15,6 +16,8 @@ backend/*.db-wal
 
 # Node
 frontend/node_modules/
+electron-client/node_modules/
+electron-client/dist/
 # frontend/dist/ — incluído no repo para deploy sem Node.js no servidor
 
 # OS
