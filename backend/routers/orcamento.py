@@ -268,10 +268,11 @@ def obter_dre(
             "descricao":   item.descricao,
             "agrupamento": item.agrupamento,
             "tipo":        item.tipo,
+            "nivel":       item.nivel,
             "movimento":   item.movimento,
             "ordem":       item.ordem,
             "formula":     item.formula,
-            "componentes": formula_map.get(item.id),  # None = sem fórmula configurada
+            "componentes": formula_map.get(item.id),
             "valores":     {m: vals.get(m, 0.0) for m in range(1, 13)},
         })
 
