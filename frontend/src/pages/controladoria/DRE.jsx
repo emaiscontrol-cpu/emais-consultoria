@@ -51,88 +51,9 @@ function buildPaiDiretoMap(items, idField = 'id') {
   return paiDireto
 }
 
-// ── Cálculo de TT a partir dos valores AN ─────────────────────────────────────
-// Ordem: Passo1 AN→byToken, Passo2 N2→calc+byToken, Passo3 N1→calc
-function computeValsCalc(valsById, hierarquia, linhas) {
-  const calc = { ...valsById }
-  const byToken = {}
-  const linhasOrdenadas = [...(linhas || [])].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
-
-  const _expor = (l, resultado) => {
-    calc[l.item_id] = resultado
-    if (l.agrupamento) {
-      if (!byToken[l.agrupamento]) byToken[l.agrupamento] = {}
-      for (let m = 1; m <= 12; m++)
-        byToken[l.agrupamento][m] = (byToken[l.agrupamento][m] || 0) + (resultado[m] ?? 0)
-    }
-    if (l.conta) byToken[l.conta] = resultado
-  }
-
-  const _calcular = (l) => {
-    if (l.componentes && l.componentes.length > 0) {
-      const r = {}
-      for (let m = 1; m <= 12; m++)
-        r[m] = l.componentes.reduce((s, c) => s + (c.sinal ?? 1) * ((byToken[c.agrupamento] || {})[m] ?? 0), 0)
-      return r
-    }
-    if (l.formula) {
-      const tokens = l.formula.trim().replace(/([+\-])/g, ' $1 ').split(/\s+/).filter(Boolean)
-      const r = {}
-      for (let m = 1; m <= 12; m++) {
-        let v = 0, sg = 1
-        for (const tok of tokens) {
-          if (tok === '+') { sg = 1; continue }
-          if (tok === '-') { sg = -1; continue }
-          v += sg * ((byToken[tok] || {})[m] ?? 0); sg = 1
-        }
-        r[m] = v
-      }
-      return r
-    }
-    const nv = hierarquia.nivel[l.item_id]
-    if (nv === 1 || nv === 2) {
-      const filhos = nv === 2 ? (hierarquia.filhosL2[l.item_id] || []) : (hierarquia.filhosL1[l.item_id] || [])
-      if (filhos.length > 0) {
-        const r = {}
-        for (let m = 1; m <= 12; m++) r[m] = filhos.reduce((s, id) => s + (calc[id]?.[m] ?? 0), 0)
-        return r
-      }
-    }
-    return null
-  }
-
-  // Passo 1: AN → byToken
-  for (const l of linhasOrdenadas) {
-    if (l.tipo !== 'AN') continue
-    const val = valsById[l.item_id] || {}
-    if (l.agrupamento) {
-      if (!byToken[l.agrupamento]) byToken[l.agrupamento] = {}
-      for (let m = 1; m <= 12; m++)
-        byToken[l.agrupamento][m] = (byToken[l.agrupamento][m] || 0) + (val[m] ?? 0)
-    }
-    if (l.conta) {
-      if (!byToken[l.conta]) byToken[l.conta] = {}
-      for (let m = 1; m <= 12; m++) byToken[l.conta][m] = val[m] ?? 0
-    }
-  }
-
-  // Passo 2: sem fórmula/componentes → soma filhos hierárquicos → popula byToken
-  for (const l of linhasOrdenadas) {
-    if (l.tipo !== 'TT' && l.tipo !== 'RES') continue
-    if (l.componentes?.length || l.formula) continue
-    const r = _calcular(l) || valsById[l.item_id] || null
-    if (r) _expor(l, r)
-  }
-
-  // Passo 3: com fórmula/componentes → usa byToken populado no passo 2
-  for (const l of linhasOrdenadas) {
-    if (l.tipo !== 'TT' && l.tipo !== 'RES') continue
-    if (!l.componentes?.length && !l.formula) continue
-    const r = _calcular(l) || valsById[l.item_id] || null
-    if (r) _expor(l, r)
-  }
-
-  return calc
+// Backend já calcula TT/RES — frontend apenas repassa
+function computeValsCalc(valsById) {
+  return { ...valsById }
 }
 
 // ── Sparkline ─────────────────────────────────────────────────────────────────
@@ -1010,8 +931,8 @@ export default function DRE() {
 
   // ── valsCalc Modelo 1 ───────────────────────────────────────────────────────
   const valsCalc = useMemo(
-    () => computeValsCalc(valsById, hierarquia, dados?.linhas),
-    [valsById, hierarquia, dados?.linhas]
+    () => computeValsCalc(valsById),
+    [valsById]
   )
 
   // ── Numeração hierárquica ───────────────────────────────────────────────────
@@ -1062,10 +983,10 @@ export default function DRE() {
   const valsCalcMulti = useMemo(() => {
     const result = {}
     for (const [key, vb] of Object.entries(dadosMulti)) {
-      result[key] = computeValsCalc(vb, hierarquia, dados?.linhas)
+      result[key] = computeValsCalc(vb)
     }
     return result
-  }, [dadosMulti, hierarquia, dados?.linhas])
+  }, [dadosMulti])
 
   const totalAnual = (vc, item_id) => Object.values(vc[item_id]||{}).reduce((s,v)=>s+(v||0), 0)
 
