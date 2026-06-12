@@ -87,11 +87,6 @@ def calcular_dre(
         for m, v in idx.get(item.id, {}).items():
             byToken[agr][m] = byToken[agr].get(m, 0.0) + v
 
-    print(
-        f"[ENGINE SOMASE] {{{', '.join(f'{k}: {sum(v.values()):.0f}' for k, v in byToken.items())}}}",
-        flush=True,
-    )
-
     # 6. Calcular TT/RES — N2 antes de N1
     calc: dict[int, dict[int, float]] = {}
 
@@ -106,13 +101,6 @@ def calcular_dre(
                 vals[m] = sum(
                     c.get("sinal", 1) * byToken.get(c.get("agrupamento", ""), {}).get(m, 0.0)
                     for c in componentes
-                )
-            for c in componentes:
-                print(
-                    f"[ENGINE N1] {agr} += "
-                    f"{c.get('agrupamento')}({sum(byToken.get(c.get('agrupamento',''),{}).values()):.0f})"
-                    f" * {c.get('sinal', 1)}",
-                    flush=True,
                 )
             # Expor resultado em byToken para itens N1 posteriores que referenciem este agrupamento
             if agr:
@@ -152,11 +140,6 @@ def calcular_dre(
                 continue
             if _nivel_item(item) == nivel_alvo:
                 _processar(item)
-
-    print(
-        f"[ENGINE N1 RESULT] {{{', '.join(f'{k}: {sum(v.values()):.0f}' for k, v in byToken.items() if sum(v.values()) != 0)}}}",
-        flush=True,
-    )
 
     # 7. Montar resposta
     return [
