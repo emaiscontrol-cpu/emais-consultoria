@@ -16,7 +16,6 @@ from models import (
 )
 from auth import get_usuario_atual
 from formula_generator import gerar_formulas_do_plano
-from recalculo_engine import recalcular_dre, persistir_recalculo
 from agrupamento_suggester import sugerir_agrupamentos
 from importacao_service import importar_realizado
 from xlsx_parser import preview_xlsx
@@ -200,26 +199,6 @@ def sugerir_agrup(
 ):
     return sugerir_agrupamentos(plano_id, db)
 
-
-# ── Recálculo ─────────────────────────────────────────────────────────────────
-
-@router.post("/recalcular")
-def recalcular(
-    cliente_id: int = Query(...),
-    ano: int = Query(...),
-    unidade: str = Query("CONSOLIDADO"),
-    mes: Optional[int] = Query(None),
-    persistir: bool = Query(True),
-    db: Session = Depends(get_db),
-    usuario=Depends(get_usuario_atual),
-):
-    resultado = recalcular_dre(cliente_id, ano, unidade, db, mes=mes)
-    if persistir:
-        persistir_recalculo(cliente_id, ano, unidade, resultado, db)
-    return {
-        "recalculados": len(resultado),
-        "valores": {str(k): v for k, v in resultado.items()},
-    }
 
 
 # ── Import Layouts ─────────────────────────────────────────────────────────────
@@ -605,9 +584,5 @@ def resolver_pendencia(
 
     pend.resolvido = True
     db.commit()
-
-    # Recalcular após resolução
-    resultado = recalcular_dre(log.cliente_id, log.ano, log.unidade, db, mes=pend.mes or None)
-    persistir_recalculo(log.cliente_id, log.ano, log.unidade, resultado, db)
 
     return {"ok": True}

@@ -5,7 +5,6 @@ Orquestra a importação de realizado:
   3. Match via DE-PARA
   4. Pendências: sem mapeamento
   5. Upsert em OrcamentoUnidadeValor
-  6. Recálculo N2/N1 (recalculo_engine)
   7. Log + pendências persistidos
 """
 
@@ -16,7 +15,6 @@ from models import (
     PlanoItem, ClientePlano, ImportacaoLog, ImportacaoPendencia,
 )
 from xlsx_parser import parse_xlsx
-from recalculo_engine import recalcular_dre, persistir_recalculo
 
 
 def _nivel(conta: str, tipo: str) -> int:
@@ -134,10 +132,6 @@ def importar_realizado(
         else:
             db.add(OrcamentoUnidadeValor(**v))
     db.flush()
-
-    # Recalcular N2 e N1
-    resultado = recalcular_dre(cliente_id, ano, unidade, db, mes=mes_filtro)
-    persistir_recalculo(cliente_id, ano, unidade, resultado, db)
 
     # Log
     log = ImportacaoLog(
