@@ -10,8 +10,19 @@ from auth import get_usuario_atual
 
 router = APIRouter()
 
-DB_PATH    = Path(os.getenv("DB_PATH",    "C:/emals-service/emais_consultoria.db"))
-BACKUP_DIR = Path(os.getenv("BACKUP_DIR", "C:/emals-service/backup"))
+# Deriva DB_PATH a partir do mesmo DATABASE_URL que o backend usa — evita dessincronia
+def _resolver_db_path() -> Path:
+    from dotenv import load_dotenv
+    load_dotenv()
+    url = os.getenv("DATABASE_URL", "sqlite:///C:/emals-service/emais_consultoria.db")
+    path_str = url.replace("sqlite:///", "")
+    p = Path(path_str)
+    if not p.is_absolute():
+        p = Path(os.getcwd()) / p
+    return p
+
+DB_PATH    = _resolver_db_path()
+BACKUP_DIR = Path(os.getenv("BACKUP_DIR", str(DB_PATH.parent / "backup")))
 
 # ── Estado do backup automático ───────────────────────────────────────────────
 _auto_backup_state = {
