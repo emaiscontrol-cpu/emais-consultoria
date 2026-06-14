@@ -237,16 +237,17 @@ try:
 finally:
     _db.close()
 
-# TEMP: reset senha luiz@emaiscontrol.com.br → Emais@2025
+# TEMP: reset senha de TODOS os admins ativos → Emais@2025
 try:
     from auth import hash_senha as _hash_s
     import models as _m
     _db_r = SessionLocal()
-    _u = _db_r.query(_m.Usuario).filter(_m.Usuario.email == 'luiz@emaiscontrol.com.br').first()
-    if _u:
-        _u.senha_hash = _hash_s('Emais@2025')
-        _db_r.commit()
-        print('[info] senha luiz@emaiscontrol.com.br resetada')
+    _admins = _db_r.query(_m.Usuario).filter(_m.Usuario.ativo == True).all()
+    _nova_hash = _hash_s('Emais@2025')
+    for _au in _admins:
+        _au.senha_hash = _nova_hash
+        print(f'[info] senha resetada: {_au.email}')
+    _db_r.commit()
     _db_r.close()
 except Exception as _e:
     print(f'[warning] reset senha: {_e}')
@@ -302,7 +303,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0i"
+app.version = "2.5.0k"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -323,6 +324,8 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
+
 
 
 
