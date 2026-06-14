@@ -303,10 +303,14 @@ def get_version():
         _np = _db.query(_m.Projeto).count()
     finally:
         _db.close()
+    from routers.admin import DB_PATH as _admin_db_path, BACKUP_DIR as _backup_dir
     return {
         "version": app.version,
         "db_url": _db_url,
         "db_cwd": _os.getcwd(),
+        "admin_db_path": str(_admin_db_path),
+        "admin_db_exists": _admin_db_path.exists(),
+        "backup_dir": str(_backup_dir),
         "clientes": _nc,
         "usuarios": _nu,
         "projetos": _np,
