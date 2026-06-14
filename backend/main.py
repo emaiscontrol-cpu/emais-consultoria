@@ -11,10 +11,11 @@ try:
 except Exception as _ce:
     print(f"[warning] create_all: {_ce}")
 
-# Add missing columns to existing tables (safe to run on every startup)
+# Add missing columns to existing tables (SQLite only — Supabase starts fresh via create_all)
 from sqlalchemy import text
+from database import _is_sqlite
 with engine.connect() as conn:
-    for stmt in [
+    for stmt in ([] if not _is_sqlite else [
         "ALTER TABLE tarefas ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE fases ADD COLUMN bloqueado_por_anterior BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE contas_fc ADD COLUMN agrupador_id INTEGER REFERENCES agrupadores_fc(id)",
@@ -179,7 +180,7 @@ with engine.connect() as conn:
         "ALTER TABLE planos_itens ADD COLUMN variavel_dre TEXT",
         # Migração: copia agrupamento → variavel_dre para TT/RES que ainda não têm
         "UPDATE planos_itens SET variavel_dre = agrupamento WHERE variavel_dre IS NULL AND (agrupamento IS NOT NULL AND agrupamento != '') AND tipo IN ('TT', 'RES')",
-    ]:
+    ]):
         try:
             conn.execute(text(stmt))
             conn.commit()
@@ -287,7 +288,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.1f"
+app.version = "2.5.0g"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -308,6 +309,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
