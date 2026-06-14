@@ -237,6 +237,20 @@ try:
 finally:
     _db.close()
 
+# TEMP: reset senha luiz@emaiscontrol.com.br → Emais@2025
+try:
+    from auth import hash_senha as _hash_s
+    import models as _m
+    _db_r = SessionLocal()
+    _u = _db_r.query(_m.Usuario).filter(_m.Usuario.email == 'luiz@emaiscontrol.com.br').first()
+    if _u:
+        _u.senha_hash = _hash_s('Emais@2025')
+        _db_r.commit()
+        print('[info] senha luiz@emaiscontrol.com.br resetada')
+    _db_r.close()
+except Exception as _e:
+    print(f'[warning] reset senha: {_e}')
+
 app = FastAPI(
     title="E Mais Consultoria â€” Sistema de GestÃ£o",
     version="1.0.0",
@@ -288,7 +302,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0h"
+app.version = "2.5.0i"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -309,6 +323,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
