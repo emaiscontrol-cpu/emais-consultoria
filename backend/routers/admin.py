@@ -207,3 +207,26 @@ async def restaurar_backup(
     finally:
         if tmp_path and os.path.exists(tmp_path):
             os.unlink(tmp_path)
+
+
+@router.post("/backup/restaurar-local")
+def restaurar_backup_local(body: dict, usuario=Depends(get_usuario_atual)):
+    """Restaura a partir de um arquivo de backup já existente no servidor (pelo nome)."""
+    if usuario.perfil != "admin":
+        raise HTTPException(403, "Apenas administradores podem restaurar o backup")
+    nome = (body.get("nome") or "").strip()
+    if not nome or "/" in nome or "\\" in nome or ".." in nome:
+        raise HTTPException(400, "Nome de arquivo inválido")
+    backup_path = BACKUP_DIR / nome
+    if not backup_path.exists():
+        raise HTTPException(404, f"Backup '{nome}' não encontrado em {BACKUP_DIR}")
+    try:
+        _executar_backup()  # segurança antes de sobrescrever
+    except Exception:
+        pass
+    src = sqlite3.connect(str(backup_path))
+    dst = sqlite3.connect(str(DB_PATH))
+    src.backup(dst)
+    src.close()
+    dst.close()
+    return {"ok": True, "mensagem": f"Banco restaurado a partir de '{nome}'. Reinicie o servidor para aplicar."}
