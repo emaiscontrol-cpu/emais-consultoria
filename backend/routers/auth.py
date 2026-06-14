@@ -11,7 +11,7 @@ router = APIRouter()
 
 # ── Rate limiting simples em memória (SEC-3) ──────────────────────────────────
 _login_attempts: dict = defaultdict(list)
-_MAX_TENTATIVAS = 10
+_MAX_TENTATIVAS = 20
 _JANELA_SEG = 60
 
 def _checar_rate_limit(ip: str):
@@ -22,12 +22,18 @@ def _checar_rate_limit(ip: str):
         raise HTTPException(429, "Muitas tentativas de login. Aguarde 1 minuto.")
     _login_attempts[ip].append(agora)
 
+def _get_ip(request: Request) -> str:
+    # Usa IP real quando passa por proxy/ngrok
+    forwarded = request.headers.get("X-Forwarded-For")
+    if forwarded:
+        return forwarded.split(",")[0].strip()
+    return request.client.host if request.client else "unknown"
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.post("/login", response_model=schemas.Token)
 def login(req: schemas.LoginRequest, request: Request, db: Session = Depends(get_db)):
-    ip = request.client.host if request.client else "unknown"
+    ip = _get_ip(request)
     _checar_rate_limit(ip)
     from sqlalchemy import func
     usuario = db.query(models.Usuario).filter(func.lower(models.Usuario.email) == req.email.lower()).first()
