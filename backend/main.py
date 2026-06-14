@@ -288,11 +288,29 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0n"
+app.version = "2.5.0o"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
-    return {"version": app.version}
+    import os as _os
+    from database import SQLALCHEMY_DATABASE_URL as _db_url
+    from database import SessionLocal as _SL
+    import models as _m
+    _db = _SL()
+    try:
+        _nc = _db.query(_m.Cliente).count()
+        _nu = _db.query(_m.Usuario).count()
+        _np = _db.query(_m.Projeto).count()
+    finally:
+        _db.close()
+    return {
+        "version": app.version,
+        "db_url": _db_url,
+        "db_cwd": _os.getcwd(),
+        "clientes": _nc,
+        "usuarios": _nu,
+        "projetos": _np,
+    }
 
 # Servir o frontend React (arquivos estÃ¡ticos do build)
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
