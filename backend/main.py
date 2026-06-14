@@ -237,27 +237,6 @@ try:
 finally:
     _db.close()
 
-# TEMP: garantir usuário admin + resetar senha de todos os ativos → Emais@2025
-try:
-    from auth import hash_senha as _hash_s
-    import models as _m
-    _db_r = SessionLocal()
-    _nova_hash = _hash_s('Emais@2025')
-    # Cria luiz@emaiscontrol.com.br se não existir
-    _luiz = _db_r.query(_m.Usuario).filter(_m.Usuario.email == 'luiz@emaiscontrol.com.br').first()
-    if not _luiz:
-        _luiz = _m.Usuario(nome='Luiz', email='luiz@emaiscontrol.com.br', senha_hash=_nova_hash, perfil='admin', ativo=True)
-        _db_r.add(_luiz)
-        print('[info] usuário luiz@emaiscontrol.com.br criado no servidor')
-    # Reseta senha de todos os ativos
-    for _au in _db_r.query(_m.Usuario).filter(_m.Usuario.ativo == True).all():
-        _au.senha_hash = _nova_hash
-        print(f'[info] senha resetada: {_au.email}')
-    _db_r.commit()
-    _db_r.close()
-except Exception as _e:
-    print(f'[warning] reset senha: {_e}')
-
 app = FastAPI(
     title="E Mais Consultoria â€” Sistema de GestÃ£o",
     version="1.0.0",
@@ -309,7 +288,7 @@ _Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0l"
+app.version = "2.5.0n"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -330,6 +309,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
