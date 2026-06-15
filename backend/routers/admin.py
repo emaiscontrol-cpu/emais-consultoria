@@ -11,18 +11,21 @@ from auth import get_usuario_atual
 router = APIRouter()
 
 # Deriva DB_PATH a partir do mesmo DATABASE_URL que o backend usa — evita dessincronia
-def _resolver_db_path() -> Path:
+def _resolver_db_path():
     from dotenv import load_dotenv
     load_dotenv()
     url = os.getenv("DATABASE_URL", "sqlite:///C:/emals-service/emais_consultoria.db")
+    if not url.startswith("sqlite"):
+        return None  # PostgreSQL: backup gerenciado externamente (Supabase)
     path_str = url.replace("sqlite:///", "")
     p = Path(path_str)
     if not p.is_absolute():
         p = Path(os.getcwd()) / p
     return p
 
-DB_PATH    = _resolver_db_path()
-BACKUP_DIR = Path(os.getenv("BACKUP_DIR", str(DB_PATH.parent / "backup")))
+DB_PATH     = _resolver_db_path()
+_IS_POSTGRES = DB_PATH is None
+BACKUP_DIR  = Path(os.getenv("BACKUP_DIR", str((DB_PATH.parent / "backup") if DB_PATH else Path(os.getcwd()) / "backup")))
 
 # ── Estado do backup automático ───────────────────────────────────────────────
 _auto_backup_state = {
@@ -38,6 +41,8 @@ _auto_timer: threading.Timer | None = None
 # ── Lógica de backup ─────────────────────────────────────────────────────────
 
 def _executar_backup() -> Path:
+    if _IS_POSTGRES:
+        raise RuntimeError("Backup local indisponível com PostgreSQL — use o painel do Supabase.")
     BACKUP_DIR.mkdir(parents=True, exist_ok=True)
     ts   = datetime.now().strftime("%Y%m%d_%H%M%S")
     dest = BACKUP_DIR / f"emais_consultoria_{ts}.db"
@@ -85,6 +90,9 @@ def _rodar_auto():
 def iniciar_backup_automatico():
     """Chamado no startup do backend. Cancela timer anterior se existir (uvicorn --reload)."""
     global _auto_timer
+    if _IS_POSTGRES:
+        print("[backup] PostgreSQL detectado — backup automático gerenciado pelo Supabase.")
+        return
     if _auto_timer and _auto_timer.is_alive():
         _auto_timer.cancel()
     _agendar_proximo()
@@ -97,6 +105,8 @@ def iniciar_backup_automatico():
 def fazer_backup(usuario=Depends(get_usuario_atual)):
     if usuario.perfil != "admin":
         raise HTTPException(403, "Apenas administradores podem executar o backup")
+    if _IS_POSTGRES:
+        raise HTTPException(503, "Backup local indisponível com PostgreSQL. Os dados são gerenciados pelo Supabase com backup automático.")
     if not DB_PATH.exists():
         raise HTTPException(500, f"Banco não encontrado em {DB_PATH}")
     try:
@@ -115,6 +125,8 @@ def fazer_backup(usuario=Depends(get_usuario_atual)):
 def listar_backups(usuario=Depends(get_usuario_atual)):
     if usuario.perfil != "admin":
         raise HTTPException(403, "Acesso negado")
+    if _IS_POSTGRES:
+        return {"backups": [], "auto": _auto_backup_state, "postgres": True, "mensagem": "Backup gerenciado pelo Supabase. Acesse app.supabase.com para exportar ou restaurar."}
     if not BACKUP_DIR.exists():
         return {"backups": [], "auto": _auto_backup_state}
 
@@ -159,6 +171,8 @@ def exportar_banco(usuario=Depends(get_usuario_atual)):
     """Faz backup da DB atual e retorna o arquivo para download."""
     if usuario.perfil != "admin":
         raise HTTPException(403, "Apenas administradores podem exportar o banco")
+    if _IS_POSTGRES:
+        raise HTTPException(503, "Export local indisponível com PostgreSQL. Use o painel do Supabase para exportar.")
     if not DB_PATH.exists():
         raise HTTPException(500, f"Banco não encontrado em {DB_PATH}")
     dest = _executar_backup()
@@ -176,6 +190,8 @@ async def restaurar_backup(
 ):
     if usuario.perfil != "admin":
         raise HTTPException(403, "Apenas administradores podem restaurar o backup")
+    if _IS_POSTGRES:
+        raise HTTPException(503, "Restore local indisponível com PostgreSQL. Use o painel do Supabase.")
 
     # Faz backup de segurança antes de restaurar
     try:
@@ -225,6 +241,8 @@ def restaurar_backup_local(body: dict, usuario=Depends(get_usuario_atual)):
     """Restaura a partir de um arquivo de backup já existente no servidor (pelo nome)."""
     if usuario.perfil != "admin":
         raise HTTPException(403, "Apenas administradores podem restaurar o backup")
+    if _IS_POSTGRES:
+        raise HTTPException(503, "Restore local indisponível com PostgreSQL. Use o painel do Supabase.")
     nome = (body.get("nome") or "").strip()
     if not nome or "/" in nome or "\\" in nome or ".." in nome:
         raise HTTPException(400, "Nome de arquivo inválido")

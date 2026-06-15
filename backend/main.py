@@ -282,13 +282,14 @@ app.include_router(plano_import.router,   prefix="/api/plano",          tags=["I
 
 # Cria diretório de uploads se não existir
 from pathlib import Path as _Path
-_Path(r"C:\emals-service\uploads").mkdir(parents=True, exist_ok=True)
+import os as _os
+_Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(parents=True, exist_ok=True)
 
 # Inicia backup automático diário
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0o"
+app.version = "2.5.0q"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -331,6 +332,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 

@@ -9,7 +9,8 @@ from pathlib import Path
 
 router = APIRouter()
 
-UPLOADS_DIR = Path(r"C:\emals-service\uploads")
+import os as _os
+UPLOADS_DIR = Path(_os.getenv("UPLOADS_DIR", str(Path(__file__).parent.parent / "uploads")))
 
 def get_db():
     db = SessionLocal()
