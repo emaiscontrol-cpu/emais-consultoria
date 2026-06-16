@@ -7,12 +7,14 @@ backend/seed_usuarios.py
 
 # Python
 backend/venv/
-backend/__pycache__/
-backend/**/__pycache__/
-backend/**/*.pyc
+__pycache__/
+*.pyc
 backend/*.db
 backend/*.db-shm
 backend/*.db-wal
+
+# Backups gerados localmente (não confundir com banco de produção)
+backend/backup/
 
 # Node
 frontend/node_modules/
