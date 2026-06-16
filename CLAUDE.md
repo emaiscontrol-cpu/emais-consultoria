@@ -125,6 +125,50 @@ O arquivo `ROADMAP.md` na raiz do projeto contém o backlog oficial.
 
 ---
 
+## Testes Automatizados e CI/CD (configurado em 2026-06-16)
+
+### Infraestrutura de testes
+- **Local:** `tests/` na raiz do projeto (fora de `backend/`, cobre integração backend ↔ frontend)
+- **`tests/conftest.py`** — monta um FastAPI mínimo só com os routers cobertos (auth, usuarios, clientes, projetos, fases, tarefas, dashboard, anotacoes, subtarefas). NÃO importa `backend/main.py` diretamente (evita disparar seeds, migrações e o timer de backup automático). Usa SQLite em arquivo temporário, recriado do zero (`drop_all`+`create_all`) antes de cada teste — **nunca toca no Supabase de produção**. Variáveis `DATABASE_URL` e `SECRET_KEY` são sobrescritas antes de qualquer import do backend.
+- **`tests/test_api.py`** — testes de integração dos endpoints críticos: login/auth, CRUD de clientes/projetos/fases/tarefas/usuários, isolamento multi-tenant (analista só vê o próprio cliente), regras de permissão por perfil, dashboard.
+- **`tests/test_frontend_build.py`** — garante que `frontend/dist/` existe, tem `index.html` + assets `.js`, e que o HTML não referencia arquivos inexistentes. A checagem de "dist desatualizado" (mtime) só roda fora do CI.
+- **Rodar localmente:** `pip install -r backend/requirements.txt` (já inclui `pytest`/`pytest-cov`) e depois `pytest tests/ -v` na raiz.
+- **Cobertura atual:** routers de controladoria, fluxo de caixa, orçamento, balancete, IA, importação DRE e admin/backup ainda **não** têm testes — extensão futura, não bloqueante.
+
+### GitHub Actions (`.github/workflows/ci.yml`)
+- Dispara em `pull_request` e `push` para `main`
+- Job `test`: builda o frontend (`npm ci && npm run build` — garante `dist/` fresco antes do `test_frontend_build.py`), instala deps do backend, roda `pytest tests/`
+- Job `ci-status`: depende de `test`; é o check que a branch protection deve exigir
+- **Node.js:** versão lida de `frontend/.nvmrc` (`node-version-file`), alinhada com `frontend/package.json` → `engines.node`. Sempre que atualizar o Node local, atualizar os dois arquivos juntos — é a causa mais provável de falha de build no CI (binding nativo do rolldown/Vite é compilado por versão de Node)
+- Existe também `.github/workflows/deploy.yml` (self-hosted, dispara só em push para `main`) — não roda testes, só faz o deploy em produção
+
+### Branch protection — ⚠️ AINDA NÃO CONFIGURADA
+- O check `ci-status` existe e funciona, mas **ninguém configurou a regra no GitHub** para exigi-lo antes do merge
+- Pendente: Settings → Branches → regra para `main` → "Require status checks to pass before merging" → selecionar `ci-status`
+- Até isso ser feito, é possível mergear PRs com CI vermelho — não assumir que está bloqueando
+
+### Regras do `.gitignore`
+- `backend/.env`, `backend/seed_usuarios.py` — segredos, nunca commitar
+- `__pycache__/`, `*.pyc` — bytecode Python, regra genérica (cobre qualquer pasta, não só `backend/`)
+- `backend/*.db*`, `backend/backup/` — banco local e backups gerados, nunca commitar
+- `frontend/node_modules/`, `electron-client/node_modules/`, `electron-client/dist/` — gerados por `npm install`/build
+- `frontend/dist/` **fica fora do gitignore de propósito** — é commitado para servir em produção sem precisar de Node no servidor
+- Antes de adicionar uma pasta nova ao projeto, checar se ela deveria estar aqui (build output, cache, dado sensível) — esquecer isso já causou CI falhar por import de arquivo nunca commitado
+
+### Fluxo de trabalho padrão a partir de agora
+
+Para **toda nova implementação** (feature, fix, refactor):
+
+1. **Nunca commitar direto na `main`.** Criar uma branch a partir dela: `git checkout main && git pull && git checkout -b <tipo>/<nome-curto>` (ex.: `feature/relatorio-pdf`, `fix/upload-arquivos`)
+2. Implementar e testar localmente — se a mudança tocar endpoints do backend, rodar `pytest tests/ -v` antes de comitar
+3. Comitar com mensagens no padrão `tipo: descrição` (`feat:`, `fix:`, `chore:`, `docs:`) — sempre granular, nunca misturar mudanças não relacionadas no mesmo commit
+4. `git push -u origin <branch>` — o link do PR aparece automaticamente no terminal
+5. Abrir o PR no GitHub e aguardar o `ci-status` do GitHub Actions ficar verde antes de mergear
+6. Após o merge na `main`: build do frontend + commit do `dist/` atualizado (se ainda não estiver no PR) → `release.ps1` para deploy → atualizar `app.version` em `backend/main.py` → atualizar `ROADMAP.md` movendo o item para "✅ Concluído" com a versão
+7. Lembrar o usuário do **Ctrl+Shift+R** no Electron e dos ~30s de reload do uvicorn (regra já existente acima)
+
+---
+
 ## Pontos de Atenção (Não Quebrar)
 
 1. **Migração no startup:** o bloco `with engine.connect()` em `main.py` roda a cada inicialização — deve ser tolerante a erros (coluna já existe = silencioso)
