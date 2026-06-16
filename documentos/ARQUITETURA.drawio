@@ -1,0 +1,273 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mxfile host="app.diagrams.net" version="24.7.5">
+  <diagram id="emais-arch-v2511f" name="Arquitetura E Mais v2.5.1f">
+    <mxGraphModel dx="1422" dy="762" grid="1" gridSize="10" guides="1"
+                  tooltips="1" connect="1" arrows="1" fold="1" page="0"
+                  pageScale="1" pageWidth="1900" pageHeight="1700"
+                  math="0" shadow="1" background="#F0F2F5">
+      <root>
+        <mxCell id="0"/>
+        <mxCell id="1" parent="0"/>
+
+        <!-- TÍTULOS -->
+        <mxCell id="101" value="E Mais Consultoria — Arquitetura do Sistema  v2.5.1f" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=1;fontSize=22;fontFamily=Segoe UI;fontColor=#333333;" vertex="1" parent="1"><mxGeometry x="10" y="-50" width="1740" height="40" as="geometry"/></mxCell>
+        <mxCell id="102" value="FastAPI · React 19 · SQLite · Electron · ngrok · GitHub Actions · Motor DRE · Plano de Contas  |  Windows Server (Producao)" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;fontStyle=0;fontSize=11;fontFamily=Segoe UI;fontColor=#888888;" vertex="1" parent="1"><mxGeometry x="10" y="-15" width="1740" height="22" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SWIMLANES PRINCIPAIS                                           -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="103" value="Desenvolvedor  (Windows 11)" style="swimlane;startSize=38;fillColor=#dae8fc;strokeColor=#007ACC;rounded=1;arcSize=4;fontStyle=3;fontSize=13;fontFamily=Segoe UI;fontColor=#007ACC;swimlaneLine=1;collapsible=0;align=center;" vertex="1" parent="1"><mxGeometry x="10" y="10" width="375" height="1580" as="geometry"/></mxCell>
+        <mxCell id="104" value="GitHub  /  CI-CD" style="swimlane;startSize=38;fillColor=#d5e8d4;strokeColor=#2ea44f;rounded=1;arcSize=4;fontStyle=3;fontSize=13;fontFamily=Segoe UI;fontColor=#2ea44f;swimlaneLine=1;collapsible=0;align=center;" vertex="1" parent="1"><mxGeometry x="395" y="10" width="285" height="1580" as="geometry"/></mxCell>
+        <mxCell id="105" value="Servidor de Producao" style="swimlane;startSize=38;fillColor=#fff3e0;strokeColor=#E87722;rounded=1;arcSize=4;fontStyle=3;fontSize=13;fontFamily=Segoe UI;fontColor=#E87722;swimlaneLine=1;collapsible=0;align=center;" vertex="1" parent="1"><mxGeometry x="690" y="10" width="760" height="1580" as="geometry"/></mxCell>
+        <mxCell id="106" value="Usuarios Finais" style="swimlane;startSize=38;fillColor=#f3e5f5;strokeColor=#9F7AEA;rounded=1;arcSize=4;fontStyle=3;fontSize=13;fontFamily=Segoe UI;fontColor=#9F7AEA;swimlaneLine=1;collapsible=0;align=center;" vertex="1" parent="1"><mxGeometry x="1460" y="10" width="290" height="1580" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SWIMLANE: DESENVOLVEDOR                                        -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="107" value="" style="shape=mxgraph.logos.vscode;fillColor=#007ACC;strokeColor=none;pointerEvents=1;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="103"><mxGeometry x="14" y="50" width="38" height="38" as="geometry"/></mxCell>
+        <mxCell id="108" value="VSCode  +  Claude Code (AI)
+emals_consultoria/" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#dae8fc;strokeColor=#007ACC;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="103"><mxGeometry x="58" y="48" width="296" height="44" as="geometry"/></mxCell>
+        <mxCell id="109" value="" style="shape=mxgraph.logos.react;fillColor=#20232a;strokeColor=none;pointerEvents=1;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="103"><mxGeometry x="14" y="116" width="38" height="38" as="geometry"/></mxCell>
+        <mxCell id="110" value="React 19  /  Vite 8
+:5173  (npm run dev)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e3f8ff;strokeColor=#00b4d8;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="103"><mxGeometry x="58" y="114" width="153" height="44" as="geometry"/></mxCell>
+        <mxCell id="111" value="" style="shape=mxgraph.logos.python;fillColor=#3776AB;strokeColor=none;pointerEvents=1;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="103"><mxGeometry x="222" y="116" width="38" height="38" as="geometry"/></mxCell>
+        <mxCell id="112" value="uvicorn  --reload
+:8001  (dev)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#d5e8d4;strokeColor=#2ea44f;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="103"><mxGeometry x="266" y="114" width="88" height="44" as="geometry"/></mxCell>
+        <mxCell id="113" value="proxy /api/*" style="edgeStyle=topToBottomEdgeStyle;rounded=1;html=1;dashed=1;strokeColor=#aaaaaa;strokeWidth=1.5;fontFamily=Segoe UI;fontSize=8;fontColor=#aaaaaa;endArrow=open;endFill=0;" edge="1" source="110" target="112" parent="103"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="114" value="Navegador Local
+localhost:5173 / localhost:8001" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="103"><mxGeometry x="14" y="182" width="340" height="40" as="geometry"/></mxCell>
+        <mxCell id="115" value="release.ps1
+bump versao  |  npm run build  |  git push" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffe6cc;strokeColor=#d79b00;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="103"><mxGeometry x="14" y="244" width="340" height="44" as="geometry"/></mxCell>
+        <mxCell id="116" value="⚠  Porta :8000 bloqueada localmente (WinError 10013)
+Dev usa :8001 com proxy Vite  —  Prod usa :8000" style="text;html=1;strokeColor=#b85450;fillColor=#fff0f0;rounded=1;fontFamily=Segoe UI;fontSize=9;align=left;spacingLeft=8;spacingRight=8;" vertex="1" parent="103"><mxGeometry x="14" y="304" width="340" height="40" as="geometry"/></mxCell>
+        <mxCell id="160" value="⚠  ngrok pooling: 2 maquinas ativas
+Teste com dados reais → usar Electron (banco servidor)
+Teste local → parar servico EmaisBackend local" style="text;html=1;strokeColor=#6e4fcc;fillColor=#f5f0ff;rounded=1;fontFamily=Segoe UI;fontSize=9;align=left;spacingLeft=8;spacingRight=8;" vertex="1" parent="103"><mxGeometry x="14" y="356" width="340" height="50" as="geometry"/></mxCell>
+        <mxCell id="161" value="Novo Dev (colaborador)
+git clone + C:\emals-service\ + .env
+branch proprio → PR → merge main → deploy auto" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#fff9c4;strokeColor=#f9a825;fontFamily=Segoe UI;fontStyle=1;fontSize=10;" vertex="1" parent="103"><mxGeometry x="14" y="422" width="340" height="54" as="geometry"/></mxCell>
+        <mxCell id="162" value="Estrutura de pastas:
+emals_consultoria/
+  backend/         ← FastAPI, routers/, models.py, dre_engine.py
+  frontend/src/    ← React pages, components, services/api.js
+  frontend/dist/   ← build commitado (deploy sem Node no servidor)
+  electron-client/ ← app desktop Electron
+  release.ps1      ← script de deploy
+  CLAUDE.md        ← arquitetura e convencoes (leia primeiro)
+  ROADMAP.md       ← backlog oficial" style="text;html=1;strokeColor=#007ACC;fillColor=#e3f2fd;rounded=1;fontFamily=Segoe UI;fontSize=9;align=left;spacingLeft=8;spacingRight=8;" vertex="1" parent="103"><mxGeometry x="14" y="492" width="340" height="130" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SWIMLANE: GITHUB / CI-CD                                       -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="117" value="" style="shape=mxgraph.logos.github;fillColor=#24292e;strokeColor=none;pointerEvents=1;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="104"><mxGeometry x="14" y="52" width="40" height="40" as="geometry"/></mxCell>
+        <mxCell id="118" value="emaiscontrol-cpu
+/emais-consultoria  |  branch: main" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#d5e8d4;strokeColor=#2ea44f;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="104"><mxGeometry x="60" y="50" width="208" height="44" as="geometry"/></mxCell>
+        <mxCell id="119" value="GitHub Actions
+deploy.yml  |  on: push [main]
+runs-on: self-hosted" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#d5e8d4;strokeColor=#2ea44f;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="104"><mxGeometry x="14" y="118" width="254" height="50" as="geometry"/></mxCell>
+        <mxCell id="120" value="Self-hosted Runner
+C:\actions-runner\
+git pull + Restart-Service" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#d5e8d4;strokeColor=#2ea44f;fontFamily=Segoe UI;fontStyle=1;fontSize=10;" vertex="1" parent="104"><mxGeometry x="14" y="194" width="254" height="50" as="geometry"/></mxCell>
+        <mxCell id="121" value="trigger" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeColor=#2ea44f;strokeWidth=1.5;endArrow=block;endFill=1;fontFamily=Segoe UI;fontStyle=1;fontSize=10;fontColor=#2ea44f;" edge="1" source="119" target="120" parent="104"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SWIMLANE: SERVIDOR DE PRODUCAO                                 -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+
+        <!-- Serviço Windows -->
+        <mxCell id="122" value="WinSW  Service  —  EmaisBackend
+C:\emals-app\  |  3 reinicializacoes automaticas" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffe6cc;strokeColor=#E87722;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="105"><mxGeometry x="20" y="48" width="720" height="44" as="geometry"/></mxCell>
+
+        <!-- FastAPI -->
+        <mxCell id="123" value="" style="shape=mxgraph.logos.python;fillColor=#3776AB;strokeColor=none;pointerEvents=1;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="105"><mxGeometry x="20" y="120" width="38" height="38" as="geometry"/></mxCell>
+        <mxCell id="124" value="FastAPI  +  uvicorn  :8000
+host 0.0.0.0  |  CORS: *  |  StaticFiles (frontend/dist)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#e8f5e9;strokeColor=#009688;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="105"><mxGeometry x="64" y="118" width="340" height="44" as="geometry"/></mxCell>
+
+        <!-- ngrok -->
+        <mxCell id="125" value="ngrok  :443  HTTPS
+earlobe-feeble-aground.ngrok-free.app
+pooling_enabled: true  (2 maquinas)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#ece6ff;strokeColor=#6e4fcc;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="105"><mxGeometry x="430" y="108" width="290" height="64" as="geometry"/></mxCell>
+
+        <!-- SQLite -->
+        <mxCell id="126" value="SQLite
+emais_consultoria.db
+C:\emals-service\" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="105"><mxGeometry x="20" y="198" width="195" height="90" as="geometry"/></mxCell>
+
+        <!-- Uploads -->
+        <mxCell id="127" value="uploads/
+[uuid].pdf | .xlsx
+C:\emals-service\" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Segoe UI;fontStyle=1;fontSize=10;" vertex="1" parent="105"><mxGeometry x="228" y="198" width="160" height="90" as="geometry"/></mxCell>
+
+        <!-- Backups -->
+        <mxCell id="128" value="backups/
+threading.Timer
+retencao 7 dias
+C:\emals-service\" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffe6cc;strokeColor=#d79b00;fontFamily=Segoe UI;fontStyle=1;fontSize=10;" vertex="1" parent="105"><mxGeometry x="402" y="198" width="158" height="90" as="geometry"/></mxCell>
+
+        <!-- Auth -->
+        <mxCell id="129" value="Auth  |  JWT Bearer  TTL 8h  |  SEM refresh token
+python-jose  |  passlib / bcrypt  |  401 → /login" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#ffebee;strokeColor=#b85450;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="105"><mxGeometry x="20" y="304" width="700" height="40" as="geometry"/></mxCell>
+
+        <!-- Perfis -->
+        <mxCell id="130" value="admin" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#E8772222;strokeColor=#E87722;fontFamily=Segoe UI;fontStyle=1;fontSize=9;fontColor=#E87722;" vertex="1" parent="105"><mxGeometry x="20" y="360" width="126" height="28" as="geometry"/></mxCell>
+        <mxCell id="131" value="consultor" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#1565C022;strokeColor=#1565C0;fontFamily=Segoe UI;fontStyle=1;fontSize=9;fontColor=#1565C0;" vertex="1" parent="105"><mxGeometry x="154" y="360" width="126" height="28" as="geometry"/></mxCell>
+        <mxCell id="132" value="ger_projeto" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#2E7D3222;strokeColor=#2E7D32;fontFamily=Segoe UI;fontStyle=1;fontSize=9;fontColor=#2E7D32;" vertex="1" parent="105"><mxGeometry x="288" y="360" width="126" height="28" as="geometry"/></mxCell>
+        <mxCell id="133" value="analista  (cliente)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#F57F1722;strokeColor=#F57F17;fontFamily=Segoe UI;fontStyle=1;fontSize=9;fontColor=#F57F17;" vertex="1" parent="105"><mxGeometry x="422" y="360" width="140" height="28" as="geometry"/></mxCell>
+        <mxCell id="134" value="ti  (cliente)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=50;fillColor=#6A1B9A22;strokeColor=#6A1B9A;fontFamily=Segoe UI;fontStyle=1;fontSize=9;fontColor=#6A1B9A;" vertex="1" parent="105"><mxGeometry x="570" y="360" width="148" height="28" as="geometry"/></mxCell>
+        <mxCell id="135" value="Regra multi-tenant: analista / ger_projeto / ti com cliente_id preenchido veem APENAS dados daquele cliente" style="text;html=1;strokeColor=none;fillColor=none;fontFamily=Segoe UI;fontSize=9;fontColor=#777;align=left;" vertex="1" parent="105"><mxGeometry x="20" y="394" width="700" height="18" as="geometry"/></mxCell>
+
+        <!-- ── ROUTERS BACKEND ─────────────────────────────────────────── -->
+        <mxCell id="200" value="Routers FastAPI  (backend/routers/)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=11;fontFamily=Segoe UI;fontColor=#009688;align=left;" vertex="1" parent="105"><mxGeometry x="20" y="424" width="700" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="201" value="Gestao de Projetos
+auth · usuarios · clientes
+projetos · fases · tarefas
+subtarefas · dashboard
+notificacoes · historico
+chat · arquivos · anotacoes
+busca · relatorios · admin
+bandeiras · modelos" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e8f5e9;strokeColor=#009688;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="20" y="450" width="200" height="170" as="geometry"/></mxCell>
+
+        <mxCell id="202" value="Controladoria
+controladoria · orcamento
+balancete · fluxo_caixa
+planos · dre_import
+plano_import
+ia · gemini · openrouter" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fff3e0;strokeColor=#E87722;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="232" y="450" width="200" height="170" as="geometry"/></mxCell>
+
+        <!-- ── MOTOR DRE ──────────────────────────────────────────────── -->
+        <mxCell id="210" value="Motor DRE  —  dre_engine.py" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#ede7f6;strokeColor=#7B1FA2;fontFamily=Segoe UI;fontStyle=1;fontSize=12;" vertex="1" parent="105"><mxGeometry x="444" y="450" width="296" height="28" as="geometry"/></mxCell>
+
+        <mxCell id="211" value="Pass 1  —  TT sem fórmula:
+  stored_total ≠ 0 → usa valor importado ERP
+  stored_total = 0 → soma ANs posicionais
+  → byToken[variavel_dre] = {mes: valor}" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#f3e5f5;strokeColor=#9c27b0;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="444" y="486" width="296" height="68" as="geometry"/></mxCell>
+
+        <mxCell id="212" value="Pass 2  —  TT com fórmula:
+  item.formula (texto) ← prioridade
+  eval(formula, {__builtins__:{}}, namespace)
+  Suporte: + - * / () numeros constantes
+  → byToken[variavel_dre] = resultado" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#f3e5f5;strokeColor=#9c27b0;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="444" y="562" width="296" height="74" as="geometry"/></mxCell>
+
+        <mxCell id="213" value="⚠  Regras DRE:
+variavel_dre → UNICO por linha TT/RES (nome da variavel em formulas)
+agrupamento → Aglutinacao (pode repetir; uso contabil/futuro)
+Hierarquia posicional: AN pertence ao ultimo TT acima na ordem
+formula text: 'RECEITA - DED_TOTAL' | eval com namespace byToken" style="text;html=1;strokeColor=#7B1FA2;fillColor=#f9f0ff;rounded=1;fontFamily=Segoe UI;fontSize=9;align=left;spacingLeft=8;spacingRight=8;" vertex="1" parent="105"><mxGeometry x="444" y="644" width="296" height="72" as="geometry"/></mxCell>
+
+        <!-- ── PLANO DE CONTAS ─────────────────────────────────────────── -->
+        <mxCell id="220" value="Plano de Contas  (planos_itens)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=11;fontFamily=Segoe UI;fontColor=#E87722;align=left;" vertex="1" parent="105"><mxGeometry x="20" y="636" width="400" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="221" value="planos_itens
+id | plano_id | agrupamento (Aglutinacao)
+variavel_dre (UNICO - variavel formula DRE)
+descricao | conta | tipo (TT/RES/AN)
+modulo (D=DRE, F=Fluxo, O=Orcamento)
+formula (texto: 'VDA_VISTA + VDA_PRAZO')
+nivel (1=N1, 2=N2, 3=AN) | ordem" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="20" y="660" width="290" height="110" as="geometry"/></mxCell>
+
+        <mxCell id="222" value="template_formulas
+plano_item_id (UNIQUE)
+tipo_formula | auto_gerada
+componentes JSON:
+[{agrupamento, sinal}]  ← legado" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="324" y="660" width="220" height="110" as="geometry"/></mxCell>
+
+        <mxCell id="223" value="orcamento_unidade_valores
+plano_item_id | cliente_id
+ano | mes | unidade | valor
+(AN e TT recebem valores no import)" style="shape=cylinder3;whiteSpace=wrap;html=1;boundedLbl=1;backgroundOutline=1;size=14;fillColor=#fff2cc;strokeColor=#d6b656;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="558" y="660" width="182" height="110" as="geometry"/></mxCell>
+
+        <!-- ── IMPORTACAO ──────────────────────────────────────────────── -->
+        <mxCell id="230" value="Importacao ERP  (layouts + de-para)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=11;fontFamily=Segoe UI;fontColor=#E87722;align=left;" vertex="1" parent="105"><mxGeometry x="20" y="786" width="400" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="231" value="import_layouts
+nome | linha_inicio | coluna_conta
+tipo_estrutura (COLUNAS_MESES/LINHAS)
+mapa_colunas_meses JSON
+categoria (REALIZADO | PLANO)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e8f4fd;strokeColor=#1976D2;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="20" y="810" width="220" height="90" as="geometry"/></mxCell>
+
+        <mxCell id="232" value="conta_de_para
+cliente_id | layout_id
+codigo_erp → plano_item_id
+(mapeamento conta ERP → plano)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e8f4fd;strokeColor=#1976D2;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="254" y="810" width="220" height="90" as="geometry"/></mxCell>
+
+        <mxCell id="233" value="importacao_logs + pendencias
+log por importacao: total, via_depara
+pendencias: codigo_erp sem mapeamento
+→ resolucao manual no painel" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e8f4fd;strokeColor=#1976D2;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="488" y="810" width="240" height="90" as="geometry"/></mxCell>
+
+        <!-- ── MODULOS FRONTEND ───────────────────────────────────────── -->
+        <mxCell id="240" value="Modulos Frontend  (frontend/src/pages/)" style="text;html=1;strokeColor=none;fillColor=none;fontStyle=1;fontSize=11;fontFamily=Segoe UI;fontColor=#00b4d8;align=left;" vertex="1" parent="105"><mxGeometry x="20" y="918" width="700" height="20" as="geometry"/></mxCell>
+
+        <mxCell id="241" value="Principal
+Dashboard · Projetos
+ProjetoDetalhe · DashboardFases
+DashboardTarefas · DashboardSubtarefas
+DashboardCliente · Anotacoes
+Usuarios · Manual · Login" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#e3f8ff;strokeColor=#00b4d8;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="20" y="942" width="210" height="120" as="geometry"/></mxCell>
+
+        <mxCell id="242" value="Controladoria
+DRE (template + visualizacao)
+DreDashboard2 (dashboard executivo)
+DashboardExecutivo
+Orcamento
+Procedimentos · Modelos" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#fff3e0;strokeColor=#E87722;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="244" y="942" width="210" height="120" as="geometry"/></mxCell>
+
+        <mxCell id="243" value="Componentes Compartilhados
+shared.jsx: Modal, Avatar, Badge
+  Progress, LoadingPage
+Sidebar.jsx: navegacao por perfil
+BuscaGlobal.jsx
+AuthContext.jsx: JWT storage
+api.js: todos os endpoints (nunca fetch direto)" style="rounded=1;whiteSpace=wrap;html=1;arcSize=8;fillColor=#f0fdf4;strokeColor=#16a34a;fontFamily=Segoe UI;fontStyle=0;fontSize=10;align=left;spacingLeft=8;" vertex="1" parent="105"><mxGeometry x="468" y="942" width="270" height="120" as="geometry"/></mxCell>
+
+        <!-- Stack tecnico -->
+        <mxCell id="135b" value="Stack: React 19 | Vite 8 | Axios | Lucide-React | react-hot-toast | plotly.js    Python 3.11 | FastAPI | SQLAlchemy 2 | Pydantic v2 | openpyxl | python-jose" style="text;html=1;strokeColor=none;fillColor=none;fontFamily=Segoe UI;fontSize=9;fontColor=#777;align=left;" vertex="1" parent="105"><mxGeometry x="20" y="1074" width="720" height="18" as="geometry"/></mxCell>
+
+        <!-- Arestas internas servidor -->
+        <mxCell id="136" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeColor=#009688;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="122" target="124" parent="105"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="137" value="tunel" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeColor=#6e4fcc;strokeWidth=2;endArrow=block;endFill=1;fontFamily=Segoe UI;fontStyle=1;fontSize=10;fontColor=#6e4fcc;" edge="1" source="124" target="125" parent="105"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="138" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;strokeColor=#d6b656;strokeWidth=2;startArrow=block;startFill=1;endArrow=block;endFill=1;" edge="1" source="124" target="126" parent="105"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="139" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeColor=#6c8ebf;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="124" target="127" parent="105"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="140" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeColor=#d79b00;strokeWidth=1.5;endArrow=block;endFill=1;dashed=1;dashPattern=8 4;" edge="1" source="124" target="128" parent="105"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- SWIMLANE: USUARIOS FINAIS                                       -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="141" value="Internet
+(ngrok URL)" style="ellipse;shape=cloud;whiteSpace=wrap;html=1;fillColor=#ece6ff;strokeColor=#9673a6;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="106"><mxGeometry x="8" y="48" width="272" height="70" as="geometry"/></mxCell>
+        <mxCell id="142" value="" style="shape=mxgraph.logos.electron;fillColor=#2b2e3b;strokeColor=none;pointerEvents=1;html=1;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="106"><mxGeometry x="8" y="148" width="38" height="38" as="geometry"/></mxCell>
+        <mxCell id="143" value="Electron App
+C:\EmaisConsultoria\  ~75MB
+nodeIntegration: false | F12 → DevTools" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#dae8fc;strokeColor=#6c8ebf;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="106"><mxGeometry x="52" y="145" width="228" height="54" as="geometry"/></mxCell>
+        <mxCell id="144" value="Navegador Web
+https://...ngrok-free.app" style="rounded=1;whiteSpace=wrap;html=1;arcSize=12;fillColor=#f8cecc;strokeColor=#b85450;fontFamily=Segoe UI;fontStyle=1;fontSize=11;" vertex="1" parent="106"><mxGeometry x="8" y="222" width="272" height="40" as="geometry"/></mxCell>
+        <mxCell id="145" value="Auto-update: /api/version a cada 5min
+Banner + Atualizar agora → reload" style="text;html=1;strokeColor=#007ACC;fillColor=#e3f2fd;rounded=1;fontFamily=Segoe UI;fontSize=9;align=left;spacingLeft=8;" vertex="1" parent="106"><mxGeometry x="8" y="274" width="272" height="36" as="geometry"/></mxCell>
+        <mxCell id="146" value="Admin
+Consultor" style="shape=mxgraph.basic.person2;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="106"><mxGeometry x="8" y="326" width="65" height="70" as="geometry"/></mxCell>
+        <mxCell id="147" value="Ger.
+Projeto" style="shape=mxgraph.basic.person2;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="106"><mxGeometry x="100" y="326" width="65" height="70" as="geometry"/></mxCell>
+        <mxCell id="148" value="Analista
+TI" style="shape=mxgraph.basic.person2;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;verticalLabelPosition=bottom;verticalAlign=top;align=center;fontFamily=Segoe UI;fontSize=9;fontStyle=0;" vertex="1" parent="106"><mxGeometry x="196" y="326" width="65" height="70" as="geometry"/></mxCell>
+        <mxCell id="149" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeColor=#6c8ebf;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="143" target="141" parent="106"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="150" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=1;orthogonalLoop=1;html=1;strokeColor=#b85450;strokeWidth=1.5;endArrow=block;endFill=1;" edge="1" source="144" target="141" parent="106"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- ARESTAS ENTRE SWIMLANES                                        -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="151" value="①  git push" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#d79b00;strokeWidth=3;endArrow=block;endFill=1;fontFamily=Segoe UI;fontStyle=1;fontSize=12;fontColor=#d79b00;" edge="1" source="115" target="118" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="152" value="②  git pull  +  Restart-Service" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#2ea44f;strokeWidth=3;endArrow=block;endFill=1;fontFamily=Segoe UI;fontStyle=1;fontSize=12;fontColor=#2ea44f;" edge="1" source="120" target="122" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="153" value="③  HTTPS  (ngrok tunnel)" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;strokeColor=#6e4fcc;strokeWidth=3;endArrow=block;endFill=1;fontFamily=Segoe UI;fontStyle=1;fontSize=12;fontColor=#6e4fcc;" edge="1" source="125" target="141" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+        <mxCell id="154" value="④  JSON response" style="edgeStyle=orthogonalEdgeStyle;rounded=1;html=1;exitX=0;exitY=0.7;exitDx=0;exitDy=0;entryX=1;entryY=0.7;entryDx=0;entryDy=0;strokeColor=#6e4fcc;strokeWidth=2;dashed=1;dashPattern=8 4;endArrow=open;endFill=0;fontFamily=Segoe UI;fontStyle=2;fontSize=10;fontColor=#6e4fcc;" edge="1" source="141" target="125" parent="1"><mxGeometry relative="1" as="geometry"/></mxCell>
+
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <!-- RODAPÉ — FLUXOS E CONVENCOES                                   -->
+        <!-- ═══════════════════════════════════════════════════════════════ -->
+        <mxCell id="155" value="DEPLOY:  ①  release.ps1 (bump versao + npm build + git push) → GitHub → ②  Actions dispara runner → git pull + Restart-Service → uvicorn recarrega ~30s
+USO:  Electron / Navegador → ③  ngrok HTTPS → FastAPI :8000 → SQLite → ④  JSON → React SPA
+CONVENCOES:  agrupamento = Aglutinacao (pode repetir)  |  variavel_dre = variavel unica em formulas DRE  |  formula text = eval() com namespace byToken  |  hierarquia DRE = posicional por ordem" style="text;html=1;strokeColor=#E87722;fillColor=#fff8f0;rounded=1;fontFamily=Segoe UI;fontSize=10;align=left;spacingLeft=12;spacingRight=12;" vertex="1" parent="1"><mxGeometry x="10" y="1608" width="1740" height="56" as="geometry"/></mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
