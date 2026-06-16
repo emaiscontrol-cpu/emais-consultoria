@@ -1,0 +1,1203 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1780 960" width="1780" height="960">
+<defs>
+<marker id="m007ACC" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#007ACC"/></marker>
+<marker id="m2ea44f" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2ea44f"/></marker>
+<marker id="mE87722" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#E87722"/></marker>
+<marker id="m9F7AEA" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#9F7AEA"/></marker>
+<marker id="mF5C400" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#F5C400"/></marker>
+<marker id="m8B5CF6" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#8B5CF6"/></marker>
+<marker id="m61DAFB" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#61DAFB"/></marker>
+<marker id="m34D399" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#34D399"/></marker>
+<marker id="m2DD4BF" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#2DD4BF"/></marker>
+<marker id="mF97316" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#F97316"/></marker>
+<marker id="m888" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#888"/></marker>
+<marker id="mE8EAF0" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#E8EAF0"/></marker>
+<marker id="mF85149" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#F85149"/></marker>
+<filter id="sh"><feDropShadow dx="0" dy="3" stdDeviation="5" flood-color="#000" flood-opacity="0.6"/></filter>
+</defs>
+<rect width="1780" height="960" fill="#0d0d14"/>
+<circle cx="0" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="0" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="40" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="80" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="120" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="160" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="200" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="240" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="280" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="320" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="360" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="400" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="440" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="480" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="520" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="560" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="600" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="640" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="680" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="720" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="760" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="800" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="840" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="880" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="920" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="960" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1000" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1040" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1080" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1120" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1160" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1200" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1240" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1280" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1320" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1360" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1400" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1440" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1480" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1520" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1560" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1600" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1640" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1680" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1720" cy="920" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="0" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="40" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="80" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="120" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="160" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="200" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="240" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="280" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="320" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="360" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="400" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="440" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="480" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="520" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="560" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="600" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="640" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="680" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="720" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="760" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="800" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="840" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="880" r="0.8" fill="#ffffff10"/>
+<circle cx="1760" cy="920" r="0.8" fill="#ffffff10"/>
+<rect x="0" y="0" width="1780" height="50" fill="#13131A"/>
+<text x="890" y="30" text-anchor="middle" font-size="18" font-weight="900" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif" letter-spacing="2">E MAIS CONSULTORIA  -  ARQUITETURA DO SISTEMA</text>
+<text x="890" y="44" text-anchor="middle" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif" letter-spacing="1">v2.4.0i  |  FastAPI + React + SQLite + Electron + ngrok</text>
+<line x1="0" y1="50" x2="1780" y2="50" stroke="#ffffff18" stroke-width="1"/>
+<rect x="20" y="60" width="380" height="870" rx="14" fill="#007ACC08" stroke="#007ACC55" stroke-width="1.5" stroke-dasharray="8,4"/><text x="210" y="50" text-anchor="middle" font-size="10" font-weight="800" fill="#007ACC88" font-family="Segoe UI,Arial,sans-serif" letter-spacing="3">DESENVOLVEDOR</text>
+<rect x="420" y="60" width="290" height="870" rx="14" fill="#2ea44f08" stroke="#2ea44f55" stroke-width="1.5" stroke-dasharray="8,4"/><text x="565" y="50" text-anchor="middle" font-size="10" font-weight="800" fill="#2ea44f88" font-family="Segoe UI,Arial,sans-serif" letter-spacing="3">GITHUB</text>
+<rect x="730" y="60" width="700" height="870" rx="14" fill="#E8772208" stroke="#E8772255" stroke-width="1.5" stroke-dasharray="8,4"/><text x="1080" y="50" text-anchor="middle" font-size="10" font-weight="800" fill="#E8772288" font-family="Segoe UI,Arial,sans-serif" letter-spacing="3">SERVIDOR DE PRODUCAO</text>
+<rect x="1450" y="60" width="310" height="870" rx="14" fill="#9F7AEA08" stroke="#9F7AEA55" stroke-width="1.5" stroke-dasharray="8,4"/><text x="1605" y="50" text-anchor="middle" font-size="10" font-weight="800" fill="#9F7AEA88" font-family="Segoe UI,Arial,sans-serif" letter-spacing="3">USUARIOS FINAIS</text>
+<rect x="40" y="100" width="340" height="65" rx="8" fill="#13131A" stroke="#007ACC" stroke-width="1.5" filter="url(#sh)"/><rect x="40" y="100" width="5" height="65" rx="3" fill="#007ACC"/><rect x="56" y="121" width="22" height="16" rx="3" fill="none" stroke="#007ACC" stroke-width="1.5"/><polyline points="60,126 64,129 60,132" fill="none" stroke="#007ACC" stroke-width="1.5"/><line x1="67" y1="132" x2="74" y2="132" stroke="#007ACC" stroke-width="1.5"/><text x="86" y="128" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">VSCode  +  Git</text><text x="86" y="145" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">emals_consultoria/</text>
+<rect x="40" y="195" width="165" height="65" rx="8" fill="#13131A" stroke="#61DAFB" stroke-width="1.5" filter="url(#sh)"/><rect x="40" y="195" width="5" height="65" rx="3" fill="#61DAFB"/><rect x="56" y="216" width="22" height="17" rx="2" fill="none" stroke="#61DAFB" stroke-width="1.5"/><line x1="56" y1="221" x2="78" y2="221" stroke="#61DAFB" stroke-width="1"/><circle cx="60" cy="219" r="1.5" fill="#61DAFB"/><circle cx="64" cy="219" r="1.5" fill="#61DAFB"/><text x="86" y="223" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">React  /  Vite</text><text x="86" y="240" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">frontend/src/</text><rect x="154" y="200" width="47" height="17" rx="3" fill="#61DAFB18" stroke="#61DAFB" stroke-width="1"/><text x="178" y="212" text-anchor="middle" font-size="8.5" font-weight="700" fill="#61DAFB" font-family="Segoe UI,Arial,sans-serif">:5173</text>
+<rect x="220" y="195" width="180" height="65" rx="8" fill="#13131A" stroke="#34D399" stroke-width="1.5" filter="url(#sh)"/><rect x="220" y="195" width="5" height="65" rx="3" fill="#34D399"/><rect x="236" y="216" width="22" height="8" rx="2" fill="none" stroke="#34D399" stroke-width="1.5"/><rect x="236" y="226" width="22" height="8" rx="2" fill="none" stroke="#34D399" stroke-width="1.5"/><circle cx="254" cy="220" r="2" fill="#34D399"/><circle cx="254" cy="230" r="2" fill="#34D399"/><text x="266" y="223" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">uvicorn</text><text x="266" y="240" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">backend/ --reload</text><rect x="349" y="200" width="47" height="17" rx="3" fill="#34D39918" stroke="#34D399" stroke-width="1"/><text x="373" y="212" text-anchor="middle" font-size="8.5" font-weight="700" fill="#34D399" font-family="Segoe UI,Arial,sans-serif">:8001</text>
+<line x1="205" y1="227" x2="220" y2="227" stroke="#888" stroke-width="2.5" marker-end="url(#m888)"/>
+<rect x="188.0" y="213" width="46.0" height="17" rx="4" fill="#0d0d14" stroke="#88844"/><text x="211" y="226" text-anchor="middle" font-size="9.5" font-weight="600" fill="#888" font-family="Segoe UI,Arial,sans-serif">proxy</text>
+<rect x="40" y="290" width="340" height="60" rx="8" fill="#13131A" stroke="#555" stroke-width="1.5" filter="url(#sh)"/><rect x="40" y="290" width="5" height="60" rx="3" fill="#555"/><rect x="56" y="309" width="22" height="17" rx="2" fill="none" stroke="#555" stroke-width="1.5"/><line x1="56" y1="314" x2="78" y2="314" stroke="#555" stroke-width="1"/><circle cx="60" cy="312" r="1.5" fill="#555"/><circle cx="64" cy="312" r="1.5" fill="#555"/><text x="86" y="316" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">Browser Local</text><text x="86" y="333" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">localhost:5173</text>
+<rect x="40" y="385" width="340" height="65" rx="8" fill="#13131A" stroke="#F97316" stroke-width="1.5" filter="url(#sh)"/><rect x="40" y="385" width="5" height="65" rx="3" fill="#F97316"/><rect x="56" y="406" width="22" height="16" rx="3" fill="none" stroke="#F97316" stroke-width="1.5"/><text x="60" y="418" font-size="10" font-weight="700" fill="#F97316" font-family="monospace">&gt;_</text><text x="86" y="413" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">release.ps1</text><text x="86" y="430" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">bump | build | push</text>
+<line x1="220" y1="165" x2="220" y2="385" stroke="#444" stroke-width="2.5" stroke-dasharray="7,4" marker-end="url(#m444)"/>
+<rect x="440" y="120" width="250" height="70" rx="8" fill="#13131A" stroke="#2ea44f" stroke-width="1.5" filter="url(#sh)"/><rect x="440" y="120" width="5" height="70" rx="3" fill="#2ea44f"/><circle cx="460" cy="148" r="3" fill="none" stroke="#2ea44f" stroke-width="1.5"/><circle cx="460" cy="162" r="3" fill="none" stroke="#2ea44f" stroke-width="1.5"/><circle cx="474" cy="148" r="3" fill="none" stroke="#2ea44f" stroke-width="1.5"/><path d="M460,151 L460,159" fill="none" stroke="#2ea44f" stroke-width="1.5"/><path d="M463,148 Q474,148 474,154" fill="none" stroke="#2ea44f" stroke-width="1.5"/><text x="486" y="151" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">emaiscontrol-cpu</text><text x="486" y="168" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">/emais-consultoria | branch: main</text>
+<rect x="440" y="225" width="250" height="65" rx="8" fill="#13131A" stroke="#2ea44f" stroke-width="1.5" filter="url(#sh)"/><rect x="440" y="225" width="5" height="65" rx="3" fill="#2ea44f"/><rect x="456" y="246" width="22" height="18" rx="3" fill="none" stroke="#2ea44f" stroke-width="1.5"/><polygon points="463,251 473,255 463,259" fill="#2ea44f"/><text x="486" y="253" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">GitHub Actions</text><text x="486" y="270" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">deploy.yml | on: push</text>
+<rect x="440" y="320" width="250" height="65" rx="8" fill="#13131A" stroke="#2DD4BF" stroke-width="1.5" filter="url(#sh)"/><rect x="440" y="320" width="5" height="65" rx="3" fill="#2DD4BF"/><circle cx="467" cy="351" r="4" fill="none" stroke="#2DD4BF" stroke-width="1.5"/><circle cx="467" cy="351" r="1.5" fill="#2DD4BF"/><line x1="467" y1="341" x2="467" y2="345" stroke="#2DD4BF" stroke-width="2"/><line x1="467" y1="357" x2="467" y2="361" stroke="#2DD4BF" stroke-width="2"/><line x1="456" y1="351" x2="462" y2="351" stroke="#2DD4BF" stroke-width="2"/><line x1="472" y1="351" x2="478" y2="351" stroke="#2DD4BF" stroke-width="2"/><text x="486" y="348" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">Self-hosted Runner</text><text x="486" y="365" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">C:\actions-runner\</text>
+<line x1="565" y1="190" x2="565" y2="225" stroke="#2ea44f" stroke-width="2.5" marker-end="url(#m2ea44f)"/>
+<line x1="565" y1="290" x2="565" y2="320" stroke="#2ea44f" stroke-width="2.5" marker-end="url(#m2ea44f)"/>
+<rect x="750" y="100" width="660" height="60" rx="8" fill="#13131A" stroke="#F97316" stroke-width="1.5" filter="url(#sh)"/><rect x="750" y="100" width="5" height="60" rx="3" fill="#F97316"/><circle cx="777" cy="129" r="4" fill="none" stroke="#F97316" stroke-width="1.5"/><circle cx="777" cy="129" r="1.5" fill="#F97316"/><line x1="777" y1="119" x2="777" y2="123" stroke="#F97316" stroke-width="2"/><line x1="777" y1="135" x2="777" y2="139" stroke="#F97316" stroke-width="2"/><line x1="766" y1="129" x2="772" y2="129" stroke="#F97316" stroke-width="2"/><line x1="782" y1="129" x2="788" y2="129" stroke="#F97316" stroke-width="2"/><text x="796" y="126" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">EmaisBackend  (WinSW Service)</text><text x="796" y="143" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">C:\emals-app\  |  Restart-Service automatico</text>
+<rect x="750" y="195" width="320" height="70" rx="8" fill="#13131A" stroke="#34D399" stroke-width="1.5" filter="url(#sh)"/><rect x="750" y="195" width="5" height="70" rx="3" fill="#34D399"/><rect x="766" y="219" width="22" height="8" rx="2" fill="none" stroke="#34D399" stroke-width="1.5"/><rect x="766" y="229" width="22" height="8" rx="2" fill="none" stroke="#34D399" stroke-width="1.5"/><circle cx="784" cy="223" r="2" fill="#34D399"/><circle cx="784" cy="233" r="2" fill="#34D399"/><text x="796" y="226" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">FastAPI  +  uvicorn</text><text x="796" y="243" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">C:\emals-app\backend\</text><rect x="1019" y="200" width="47" height="17" rx="3" fill="#34D39918" stroke="#34D399" stroke-width="1"/><text x="1043" y="212" text-anchor="middle" font-size="8.5" font-weight="700" fill="#34D399" font-family="Segoe UI,Arial,sans-serif">:8000</text>
+<rect x="1090" y="195" width="320" height="70" rx="8" fill="#13131A" stroke="#8B5CF6" stroke-width="1.5" filter="url(#sh)"/><rect x="1090" y="195" width="5" height="70" rx="3" fill="#8B5CF6"/><circle cx="1117" cy="230" r="9" fill="none" stroke="#8B5CF6" stroke-width="1.5"/><ellipse cx="1117" cy="230" rx="5" ry="9" fill="none" stroke="#8B5CF6" stroke-width="1"/><line x1="1108" y1="230" x2="1126" y2="230" stroke="#8B5CF6" stroke-width="1"/><text x="1136" y="226" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">ngrok</text><text x="1136" y="243" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">earlobe-feeble-aground.ngrok-free.app</text><rect x="1366" y="200" width="40" height="17" rx="3" fill="#8B5CF618" stroke="#8B5CF6" stroke-width="1"/><text x="1386" y="212" text-anchor="middle" font-size="8.5" font-weight="700" fill="#8B5CF6" font-family="Segoe UI,Arial,sans-serif">:443</text>
+<line x1="1070" y1="230" x2="1090" y2="230" stroke="#8B5CF6" stroke-width="2.5" marker-end="url(#m8B5CF6)"/>
+<rect x="1054.0" y="213" width="52.8" height="17" rx="4" fill="#0d0d14" stroke="#8B5CF644"/><text x="1080" y="226" text-anchor="middle" font-size="9.5" font-weight="600" fill="#8B5CF6" font-family="Segoe UI,Arial,sans-serif">tunnel</text>
+<rect x="750" y="313" width="190" height="64" fill="#13131A" stroke="#F5C400" stroke-width="1.5"/><line x1="751" y1="313" x2="939" y2="313" stroke="#13131A" stroke-width="3"/><line x1="751" y1="377" x2="939" y2="377" stroke="#13131A" stroke-width="3"/><ellipse cx="845" cy="313" rx="94" ry="13" fill="#1e1e2e" stroke="#F5C400" stroke-width="1.5"/><ellipse cx="845" cy="377" rx="94" ry="13" fill="#13131A" stroke="#F5C400" stroke-width="1.5"/><text x="845" y="350" text-anchor="middle" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">SQLite</text><text x="845" y="366" text-anchor="middle" font-size="8.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">emais_consultoria.db</text>
+<path d="M960,314 L1039.8,314 L1048.8,300 L1150,300 L1150,380 L960,380 Z" fill="#13131A" stroke="#2DD4BF" stroke-width="1.5" stroke-linejoin="round"/><text x="1055" y="352" text-anchor="middle" font-size="11" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">uploads/</text><text x="1055" y="367" text-anchor="middle" font-size="8.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">[uuid].pdf | [uuid].xlsx</text>
+<path d="M1170,314 L1262.4,314 L1271.4,300 L1390,300 L1390,380 L1170,380 Z" fill="#13131A" stroke="#F97316" stroke-width="1.5" stroke-linejoin="round"/><text x="1280" y="352" text-anchor="middle" font-size="11" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">backups/</text><text x="1280" y="367" text-anchor="middle" font-size="8.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">thread timer | 7 dias</text>
+<line x1="830" y1="265" x2="830" y2="300" stroke="#F5C400" stroke-width="2.5" marker-end="url(#mF5C400)"/>
+<path d="M930,265 L930,285 L1055,285 L1055,300" fill="none" stroke="#2DD4BF" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#m2DD4BF)"/>
+<path d="M980,265 L980,278 L1280,278 L1280,300" fill="none" stroke="#F97316" stroke-width="2.5" stroke-dasharray="7,4" stroke-linejoin="round" marker-end="url(#mF97316)"/>
+<text x="770" y="425" font-size="9" fill="#444" font-family="Segoe UI,Arial,sans-serif" font-style="italic">C:\emals-service\</text>
+<rect x="750" y="445" width="660" height="55" rx="8" fill="#13131A" stroke="#F85149" stroke-width="1.5" filter="url(#sh)"/><rect x="750" y="445" width="5" height="55" rx="3" fill="#F85149"/><rect x="768" y="467" width="18" height="14" rx="2" fill="none" stroke="#F85149" stroke-width="1.5"/><polyline points="777,461 786,466 786,467" fill="none" stroke="#F85149" stroke-width="1.5"/><polyline points="777,461 768,466 768,467" fill="none" stroke="#F85149" stroke-width="1.5"/><line x1="777" y1="461" x2="777" y2="467" stroke="#F85149" stroke-width="1.5"/><text x="796" y="468" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">Auth  |  JWT Bearer</text><text x="796" y="485" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">python-jose  |  TTL: 8h  |  bcrypt</text>
+<rect x="750" y="530" width="128" height="32" rx="5" fill="#E8772215" stroke="#E87722" stroke-width="1.2"/>
+<text x="814" y="550" text-anchor="middle" font-size="9.5" font-weight="700" fill="#E87722" font-family="Segoe UI,Arial,sans-serif">admin</text>
+<rect x="883" y="530" width="128" height="32" rx="5" fill="#3B82F615" stroke="#3B82F6" stroke-width="1.2"/>
+<text x="947" y="550" text-anchor="middle" font-size="9.5" font-weight="700" fill="#3B82F6" font-family="Segoe UI,Arial,sans-serif">consultor</text>
+<rect x="1016" y="530" width="128" height="32" rx="5" fill="#10B98115" stroke="#10B981" stroke-width="1.2"/>
+<text x="1080" y="550" text-anchor="middle" font-size="9.5" font-weight="700" fill="#10B981" font-family="Segoe UI,Arial,sans-serif">ger_projeto</text>
+<rect x="1149" y="530" width="128" height="32" rx="5" fill="#F59E0B15" stroke="#F59E0B" stroke-width="1.2"/>
+<text x="1213" y="550" text-anchor="middle" font-size="9.5" font-weight="700" fill="#F59E0B" font-family="Segoe UI,Arial,sans-serif">analista</text>
+<rect x="1282" y="530" width="128" height="32" rx="5" fill="#8B5CF615" stroke="#8B5CF6" stroke-width="1.2"/>
+<text x="1346" y="550" text-anchor="middle" font-size="9.5" font-weight="700" fill="#8B5CF6" font-family="Segoe UI,Arial,sans-serif">ti</text>
+<text x="770" y="524" font-size="9" fill="#4B5563" font-family="Segoe UI,Arial,sans-serif" font-weight="700" letter-spacing="1">PERFIS DE ACESSO</text>
+<path d="M1508.48,177 Q1478,177 1478,150.2 Q1480,126.75 1533.88,128.76 Q1528.8,110 1605.0,110 Q1673.58,110 1676.12,128.76 Q1732,123.4 1732,148.86 Q1732,177 1701.52,177 Z" fill="#1a0d3a" stroke="#8B5CF6" stroke-width="1.5"/><text x="1605" y="146" text-anchor="middle" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">Internet  /  ngrok</text><text x="1605" y="161" text-anchor="middle" font-size="9" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">HTTPS :443</text>
+<rect x="1470" y="215" width="270" height="70" rx="8" fill="#13131A" stroke="#007ACC" stroke-width="1.5" filter="url(#sh)"/><rect x="1470" y="215" width="5" height="70" rx="3" fill="#007ACC"/><rect x="1486" y="239" width="22" height="15" rx="2" fill="none" stroke="#007ACC" stroke-width="1.5"/><line x1="1493" y1="256" x2="1501" y2="256" stroke="#007ACC" stroke-width="1.5"/><line x1="1497" y1="254" x2="1497" y2="256" stroke="#007ACC" stroke-width="1.5"/><text x="1516" y="246" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">Electron App</text><text x="1516" y="263" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">C:\EmaisConsultoria\  ~75MB</text>
+<rect x="1470" y="310" width="270" height="65" rx="8" fill="#13131A" stroke="#94A3B8" stroke-width="1.5" filter="url(#sh)"/><rect x="1470" y="310" width="5" height="65" rx="3" fill="#94A3B8"/><rect x="1486" y="331" width="22" height="17" rx="2" fill="none" stroke="#94A3B8" stroke-width="1.5"/><line x1="1486" y1="336" x2="1508" y2="336" stroke="#94A3B8" stroke-width="1"/><circle cx="1490" cy="334" r="1.5" fill="#94A3B8"/><circle cx="1494" cy="334" r="1.5" fill="#94A3B8"/><text x="1516" y="338" font-size="12" font-weight="700" fill="#E8EAF0" font-family="Segoe UI,Arial,sans-serif">Navegador Web</text><text x="1516" y="355" font-size="9.5" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif">Qualquer navegador</text>
+<circle cx="1500" cy="427" r="12" fill="#1e1e2e" stroke="#9F7AEA" stroke-width="1.5"/>
+<circle cx="1500" cy="425" r="5" fill="#9F7AEA60"/>
+<path d="M1487,439 Q1500,433 1513,439" fill="#9F7AEA60" stroke="none"/>
+<circle cx="1590" cy="427" r="12" fill="#1e1e2e" stroke="#9F7AEA" stroke-width="1.5"/>
+<circle cx="1590" cy="425" r="5" fill="#9F7AEA60"/>
+<path d="M1577,439 Q1590,433 1603,439" fill="#9F7AEA60" stroke="none"/>
+<circle cx="1680" cy="427" r="12" fill="#1e1e2e" stroke="#9F7AEA" stroke-width="1.5"/>
+<circle cx="1680" cy="425" r="5" fill="#9F7AEA60"/>
+<path d="M1667,439 Q1680,433 1693,439" fill="#9F7AEA60" stroke="none"/>
+<text x="1500" y="453" font-size="9" fill="#9F7AEA88" font-family="Segoe UI,Arial,sans-serif">admin</text>
+<text x="1590" y="453" font-size="9" fill="#9F7AEA88" font-family="Segoe UI,Arial,sans-serif">consultor</text>
+<text x="1680" y="453" font-size="9" fill="#9F7AEA88" font-family="Segoe UI,Arial,sans-serif">analista</text>
+<line x1="1605" y1="285" x2="1605" y2="185" stroke="#9F7AEA" stroke-width="2.5" marker-end="url(#m9F7AEA)"/>
+<line x1="1650" y1="310" x2="1660" y2="185" stroke="#94A3B8" stroke-width="2.5" marker-end="url(#m94A3B8)"/>
+<path d="M220,418 L220,500 L565,500 L565,190" fill="none" stroke="#F97316" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#mF97316)"/>
+<circle cx="220" cy="460" r="12" fill="#F97316" stroke="#0d0d14" stroke-width="2.5"/><text x="220" y="465" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">1</text>
+<rect x="297.0" y="491" width="66.4" height="17" rx="4" fill="#0d0d14" stroke="#F9731644"/><text x="330" y="504" text-anchor="middle" font-size="9.5" font-weight="600" fill="#F97316" font-family="Segoe UI,Arial,sans-serif">git push</text>
+<line x1="690" y1="352" x2="980" y2="130" stroke="#2ea44f" stroke-width="2.5" marker-end="url(#m2ea44f)"/>
+<circle cx="815" cy="241" r="12" fill="#2ea44f" stroke="#0d0d14" stroke-width="2.5"/><text x="815" y="246" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">2</text>
+<rect x="808.0" y="247" width="134.39999999999998" height="17" rx="4" fill="#0d0d14" stroke="#2ea44f44"/><text x="875" y="260" text-anchor="middle" font-size="9.5" font-weight="600" fill="#2ea44f" font-family="Segoe UI,Arial,sans-serif">git pull + restart</text>
+<path d="M1470,250 L1480,250 L1430,230" fill="none" stroke="#007ACC" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#m007ACC)"/>
+<circle cx="1440" cy="250" r="12" fill="#007ACC" stroke="#0d0d14" stroke-width="2.5"/><text x="1440" y="255" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">3</text>
+<rect x="1450.0" y="231" width="100.39999999999999" height="17" rx="4" fill="#0d0d14" stroke="#007ACC44"/><text x="1500" y="244" text-anchor="middle" font-size="9.5" font-weight="600" fill="#007ACC" font-family="Segoe UI,Arial,sans-serif">HTTPS request</text>
+<line x1="1090" y1="230" x2="1070" y2="230" stroke="#34D399" stroke-width="2.5" marker-end="url(#m34D399)"/>
+<circle cx="1080" cy="200" r="12" fill="#34D399" stroke="#0d0d14" stroke-width="2.5"/><text x="1080" y="205" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">4</text>
+<circle cx="810" cy="282" r="12" fill="#F5C400" stroke="#0d0d14" stroke-width="2.5"/><text x="810" y="287" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">5</text>
+<path d="M1250,195 L1250,145 L1605,145 L1605,185" fill="none" stroke="#8B5CF6" stroke-width="2.5" stroke-linejoin="round" marker-end="url(#m8B5CF6)"/>
+<circle cx="1470" cy="145" r="12" fill="#8B5CF6" stroke="#0d0d14" stroke-width="2.5"/><text x="1470" y="150" text-anchor="middle" font-size="11" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">6</text>
+<rect x="1377.0" y="126" width="107.2" height="17" rx="4" fill="#0d0d14" stroke="#8B5CF644"/><text x="1430" y="139" text-anchor="middle" font-size="9.5" font-weight="600" fill="#8B5CF6" font-family="Segoe UI,Arial,sans-serif">HTTPS response</text>
+<rect x="730" y="620" width="700" height="220" rx="10" fill="#13131A" stroke="#ffffff18" stroke-width="1"/>
+<text x="750" y="642" font-size="10" font-weight="800" fill="#6B7280" font-family="Segoe UI,Arial,sans-serif" letter-spacing="2">FLUXO</text>
+<circle cx="758" cy="666" r="10" fill="#F97316" stroke="#0d0d14" stroke-width="1.5"/>
+<text x="758" y="670" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">1</text>
+<text x="778" y="670" font-size="10" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">Deploy:   release.ps1 faz o build, commita e empurra para o GitHub</text>
+<circle cx="758" cy="694" r="10" fill="#2ea44f" stroke="#0d0d14" stroke-width="1.5"/>
+<text x="758" y="698" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">2</text>
+<text x="778" y="698" font-size="10" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">CI/CD:    GitHub Actions dispara o runner que faz git pull + reinicia o servico</text>
+<circle cx="758" cy="722" r="10" fill="#007ACC" stroke="#0d0d14" stroke-width="1.5"/>
+<text x="758" y="726" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">3</text>
+<text x="778" y="726" font-size="10" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">Request:  Electron / Browser envia requisicao HTTPS pelo tunel ngrok</text>
+<circle cx="758" cy="750" r="10" fill="#34D399" stroke="#0d0d14" stroke-width="1.5"/>
+<text x="758" y="754" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">4</text>
+<text x="778" y="754" font-size="10" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">Tunnel:   ngrok encaminha para uvicorn (FastAPI) na porta 8000</text>
+<circle cx="758" cy="778" r="10" fill="#F5C400" stroke="#0d0d14" stroke-width="1.5"/>
+<text x="758" y="782" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">5</text>
+<text x="778" y="782" font-size="10" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">Dados:    FastAPI consulta/persiste no SQLite (C:\emals-service\)</text>
+<circle cx="758" cy="806" r="10" fill="#8B5CF6" stroke="#0d0d14" stroke-width="1.5"/>
+<text x="758" y="810" text-anchor="middle" font-size="10" font-weight="800" fill="#fff" font-family="Segoe UI,Arial,sans-serif">6</text>
+<text x="778" y="810" font-size="10" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">Response: FastAPI retorna JSON | StaticFiles serve o React SPA</text>
+<line x1="750" y1="654" x2="1410" y2="654" stroke="#ffffff12" stroke-width="1"/>
+<rect x="730" y="855" width="700" height="55" rx="8" fill="#2D1B00" stroke="#E8772255" stroke-width="1"/>
+<text x="746" y="873" font-size="9.5" font-weight="700" fill="#E87722" font-family="Segoe UI,Arial,sans-serif">ngrok pooling_enabled: true</text>
+<text x="746" y="889" font-size="9" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">Duas maquinas (local + servidor) servem a mesma URL. Parar servico local em producao.</text>
+<text x="746" y="903" font-size="9" fill="#9CA3AF" font-family="Segoe UI,Arial,sans-serif">C:\emals-service\  contem banco + uploads + backups. C:\emals-app\  contem o codigo.</text>
+<rect x="0" y="934" width="1780" height="26" fill="#13131A"/>
+<text x="890" y="951" text-anchor="middle" font-size="8.5" fill="#374151" font-family="Segoe UI,Arial,sans-serif">E Mais Consultoria  (c)  2026  --  Arquitetura do Sistema  v2.4.0i  --  Confidencial</text>
+</svg>

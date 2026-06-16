@@ -1,0 +1,129 @@
+﻿<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1280 680" width="1280" height="680" font-family="'Segoe UI', Arial, sans-serif">
+  <defs>
+    <marker id="arrowOrange" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#E87722"/></marker>
+    <marker id="arrowYellow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#F5C400"/></marker>
+    <marker id="arrowGreen" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4CAF50"/></marker>
+    <marker id="arrowBlue" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#4A9EE8"/></marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0,8 3,0 6" fill="#9F7AEA"/></marker>
+    <filter id="glow"><feGaussianBlur stdDeviation="3" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="shadow"><feDropShadow dx="0" dy="2" stdDeviation="4" flood-color="#000" flood-opacity="0.5"/></filter>
+    <clipPath id="circleClip"><circle cx="75" cy="75" r="55"/></clipPath>
+  </defs>
+
+  <rect width="1280" height="680" fill="#1a1a1a"/>
+  <text x="640" y="46" text-anchor="middle" font-size="30" font-weight="900" fill="#ffffff" letter-spacing="2">E MAIS CONSULTORIA — FLUXO DE DEPLOY</text>
+  <text x="640" y="68" text-anchor="middle" font-size="13" fill="#888888" letter-spacing="1">v2.5.1f  ·  FastAPI · React 19 · Motor DRE · SQLite · Electron · ngrok pooling · GitHub Actions</text>
+
+  <!-- DEVELOPER -->
+  <rect x="30" y="110" width="155" height="135" rx="10" fill="#222" stroke="#4A9EE8" stroke-width="2"/>
+  <rect x="55" y="125" width="105" height="72" rx="4" fill="#007ACC"/>
+  <text x="107" y="172" text-anchor="middle" font-size="30" font-weight="900" fill="#ffffff">&lt;/&gt;</text>
+  <text x="107" y="218" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Desenvolvedores (2)</text>
+  <text x="107" y="234" text-anchor="middle" font-size="10" fill="#4A9EE8">VS Code · porta 8001 · branch próprio</text>
+  <rect x="25" y="268" width="168" height="30" rx="6" fill="#111" stroke="#E87722" stroke-width="1.5"/>
+  <text x="109" y="288" text-anchor="middle" font-size="12" fill="#E87722" font-weight="700">.\release.ps1 patch</text>
+
+  <!-- GITHUB -->
+  <circle cx="440" cy="168" r="65" fill="#24292e" filter="url(#shadow)"/>
+  <circle cx="440" cy="168" r="62" fill="none" stroke="#444" stroke-width="1.5"/>
+  <ellipse cx="440" cy="158" rx="26" ry="24" fill="#ffffff"/>
+  <circle cx="432" cy="153" r="4" fill="#24292e"/>
+  <circle cx="448" cy="153" r="4" fill="#24292e"/>
+  <ellipse cx="440" cy="168" rx="13" ry="9" fill="#ffffff"/>
+  <path d="M414 173 Q400 188 406 201" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M466 173 Q480 188 474 201" stroke="#fff" stroke-width="3.5" fill="none" stroke-linecap="round"/>
+  <path d="M422 181 Q414 199 420 210" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M458 181 Q466 199 460 210" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M434 183 Q430 199 434 208" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <path d="M446 183 Q450 199 446 208" stroke="#fff" stroke-width="3" fill="none" stroke-linecap="round"/>
+  <text x="440" y="256" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">GitHub</text>
+  <text x="440" y="273" text-anchor="middle" font-size="10" fill="#aaaaaa">emaiscontrol-cpu/emais-consultoria</text>
+
+  <!-- GITHUB ACTIONS -->
+  <rect x="358" y="355" width="164" height="135" rx="12" fill="#0d1117" stroke="#2ea44f" stroke-width="2.5" filter="url(#shadow)"/>
+  <circle cx="440" cy="400" r="32" fill="#0075FF"/>
+  <polygon points="448,376 432,400 442,400 434,424 454,398 442,398" fill="#ffffff"/>
+  <text x="440" y="452" text-anchor="middle" font-size="13" font-weight="700" fill="#2ea44f">GitHub Actions</text>
+  <text x="440" y="468" text-anchor="middle" font-size="10" fill="#aaaaaa">self-hosted runner</text>
+  <text x="440" y="482" text-anchor="middle" font-size="10" fill="#aaaaaa">C:\actions-runner</text>
+
+  <!-- SERVER -->
+  <rect x="728" y="95" width="178" height="165" rx="10" fill="#222" stroke="#ffffff" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="743" y="112" width="148" height="22" rx="3" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <rect x="743" y="140" width="148" height="22" rx="3" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <rect x="743" y="168" width="148" height="22" rx="3" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <rect x="743" y="196" width="148" height="22" rx="3" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <rect x="743" y="224" width="148" height="22" rx="3" fill="#2a2a2a" stroke="#444" stroke-width="1"/>
+  <circle cx="878" cy="123" r="5" fill="#4CAF50" filter="url(#glow)"/>
+  <circle cx="878" cy="151" r="5" fill="#4CAF50" filter="url(#glow)"/>
+  <circle cx="878" cy="179" r="5" fill="#F5C400" filter="url(#glow)"/>
+  <circle cx="878" cy="207" r="5" fill="#4CAF50" filter="url(#glow)"/>
+  <circle cx="878" cy="235" r="5" fill="#4CAF50" filter="url(#glow)"/>
+  <text x="817" y="278" text-anchor="middle" font-size="14" font-weight="700" fill="#ffffff">Servidor (RDP)</text>
+  <text x="817" y="294" text-anchor="middle" font-size="10" fill="#aaaaaa">C:\emals-app · porta 8000 · EmaisBackend</text>
+  <text x="817" y="308" text-anchor="middle" font-size="10" fill="#4CAF50">Módulos: Projetos · Controladoria · Motor DRE</text>
+  <text x="817" y="322" text-anchor="middle" font-size="10" fill="#9F7AEA">dre_engine.py · variavel_dre · eval() byToken</text>
+
+  <!-- NGROK -->
+  <rect x="718" y="368" width="198" height="115" rx="10" fill="#1a0533" stroke="#9F7AEA" stroke-width="2.5" filter="url(#shadow)"/>
+  <text x="817" y="418" text-anchor="middle" font-size="40" font-weight="900" fill="#9F7AEA" letter-spacing="-2">ngrok</text>
+  <text x="817" y="440" text-anchor="middle" font-size="10" fill="#cc99ff">earlobe-feeble-aground.ngrok-free.app</text>
+  <text x="817" y="455" text-anchor="middle" font-size="10" fill="#9F7AEA">HTTPS tunnel · pooling_enabled: true · 2 máquinas</text>
+  <text x="817" y="497" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">ngrok</text>
+
+  <!-- E+ APP (logo.jpeg circular) -->
+  <rect x="1058" y="100" width="185" height="145" rx="10" fill="#0A1C4E" stroke="#0096CF" stroke-width="2.5" filter="url(#shadow)"/>
+  <circle cx="1150" cy="157" r="55" fill="#f0f0f0" clip-path="url(#circleClip)"/>
+  <image href="data:image/jpeg;base64,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" x="1095" y="102" width="110" height="110" clip-path="url(#circleClip)" preserveAspectRatio="xMidYMid meet"/>
+  <text x="1150" y="230" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Electron App (.exe)</text>
+  <text x="1150" y="246" text-anchor="middle" font-size="10" fill="#0096CF">C:\EmaisConsultoria</text>
+
+  <!-- USUARIOS / BROWSER -->
+  <rect x="1053" y="360" width="194" height="120" rx="10" fill="#222" stroke="#4A9EE8" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="1073" y="375" width="154" height="90" rx="8" fill="#2a2a2a"/>
+  <rect x="1073" y="375" width="154" height="24" rx="8" fill="#3a3a3a"/>
+  <rect x="1073" y="391" width="154" height="8" fill="#3a3a3a"/>
+  <circle cx="1088" cy="387" r="4" fill="#e74c3c"/>
+  <circle cx="1101" cy="387" r="4" fill="#f39c12"/>
+  <circle cx="1114" cy="387" r="4" fill="#2ecc71"/>
+  <rect x="1122" y="381" width="98" height="12" rx="3" fill="#555"/>
+  <line x1="1083" y1="410" x2="1217" y2="410" stroke="#4A9EE8" stroke-width="1.5" opacity="0.6"/>
+  <line x1="1083" y1="422" x2="1200" y2="422" stroke="#4A9EE8" stroke-width="1.5" opacity="0.6"/>
+  <line x1="1083" y1="434" x2="1207" y2="434" stroke="#4A9EE8" stroke-width="1.5" opacity="0.6"/>
+  <line x1="1083" y1="446" x2="1192" y2="446" stroke="#4A9EE8" stroke-width="1.5" opacity="0.6"/>
+  <text x="1150" y="493" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">Usuários</text>
+  <text x="1150" y="508" text-anchor="middle" font-size="10" fill="#aaaaaa">Navegador · acesso web</text>
+
+  <!-- ARROWS -->
+  <path d="M 187 172 C 275 172 330 168 373 168" stroke="#E87722" stroke-width="3.5" fill="none" marker-end="url(#arrowOrange)"/>
+  <text x="280" y="158" text-anchor="middle" font-size="12" fill="#E87722" font-weight="700">git push</text>
+  <path d="M 187 198 C 255 198 285 422 356 422" stroke="#E87722" stroke-width="2" stroke-dasharray="7,4" fill="none" marker-end="url(#arrowOrange)"/>
+  <line x1="440" y1="235" x2="440" y2="353" stroke="#4CAF50" stroke-width="3" marker-end="url(#arrowGreen)"/>
+  <text x="468" y="300" font-size="12" fill="#4CAF50" font-weight="700">trigger</text>
+  <path d="M 522 422 C 610 422 655 248 726 210" stroke="#F5C400" stroke-width="3.5" fill="none" marker-end="url(#arrowYellow)"/>
+  <text x="620" y="295" text-anchor="middle" font-size="12" fill="#F5C400" font-weight="700">git pull &amp;&amp;</text>
+  <text x="620" y="311" text-anchor="middle" font-size="12" fill="#F5C400" font-weight="700">Restart-Service</text>
+  <line x1="817" y1="262" x2="817" y2="366" stroke="#9F7AEA" stroke-width="3" marker-end="url(#arrowPurple)"/>
+  <text x="858" y="320" font-size="11" fill="#9F7AEA" font-weight="600">localhost:8000</text>
+  <path d="M 916 408 C 975 390 1015 228 1056 195" stroke="#E87722" stroke-width="3.5" fill="none" marker-end="url(#arrowOrange)"/>
+  <text x="1010" y="288" text-anchor="middle" font-size="12" fill="#E87722" font-weight="700">HTTPS</text>
+  <path d="M 916 428 C 985 428 1025 418 1051 418" stroke="#E87722" stroke-width="3.5" fill="none" marker-end="url(#arrowOrange)"/>
+  <path d="M 1150 248 C 1248 248 1248 178 1152 178" stroke="#4A9EE8" stroke-width="1.8" fill="none" stroke-dasharray="5,4" marker-end="url(#arrowBlue)"/>
+  <text x="1258" y="215" font-size="10" fill="#4A9EE8">verifica versão</text>
+  <text x="1258" y="228" font-size="10" fill="#4A9EE8">a cada 5 min</text>
+
+  <!-- LEGEND -->
+  <rect x="30" y="570" width="630" height="72" rx="8" fill="#111" stroke="#333" stroke-width="1"/>
+  <text x="50" y="590" font-size="11" font-weight="700" fill="#888">LEGENDA</text>
+  <line x1="50" y1="606" x2="90" y2="606" stroke="#E87722" stroke-width="3"/>
+  <text x="96" y="610" font-size="11" fill="#ccc">Deploy / HTTPS</text>
+  <line x1="215" y1="606" x2="255" y2="606" stroke="#4CAF50" stroke-width="3"/>
+  <text x="261" y="610" font-size="11" fill="#ccc">Actions trigger</text>
+  <line x1="385" y1="606" x2="425" y2="606" stroke="#F5C400" stroke-width="3"/>
+  <text x="431" y="610" font-size="11" fill="#ccc">git pull + Restart-Service</text>
+  <line x1="50" y1="630" x2="90" y2="630" stroke="#9F7AEA" stroke-width="3"/>
+  <text x="96" y="634" font-size="11" fill="#ccc">ngrok tunnel</text>
+  <line x1="215" y1="630" x2="255" y2="630" stroke="#4A9EE8" stroke-width="2" stroke-dasharray="5,3"/>
+  <text x="261" y="634" font-size="11" fill="#ccc">verificação de versão</text>
+  <text x="1100" y="620" text-anchor="middle" font-size="11" fill="#555">E Mais Consultoria · v2.5.1f · Junho/2026</text>
+</svg>
