@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
-import { ChevronDown, ChevronUp } from 'lucide-react'
-import { dashboardAPI, projetosAPI, relatoriosAPI } from '../services/api'
+import { useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle } from 'lucide-react'
+import { dashboardAPI, projetosAPI, relatoriosAPI, tarefasAPI } from '../services/api'
 import { Badge, Progress, LoadingPage } from '../components/shared'
 import { useAuth } from '../contexts/AuthContext'
 import {
@@ -310,6 +311,140 @@ function ProgressoFases({ itens, porFase }) {
   )
 }
 
+// ── Portal simplificado para Analista (UX-3) ─────────────────────────
+function PortalAnalista({ usuario }) {
+  const navigate = useNavigate()
+  const [resumo,   setResumo]   = useState(null)
+  const [projetos, setProjetos] = useState([])
+  const [loading,  setLoading]  = useState(true)
+  const [confirmando, setConfirmando] = useState({})
+
+  useEffect(() => {
+    Promise.all([dashboardAPI.resumo(), projetosAPI.listar()])
+      .then(([r, p]) => { setResumo(r.data); setProjetos(p.data) })
+      .catch(() => toast.error('Erro ao carregar'))
+      .finally(() => setLoading(false))
+  }, [])
+
+  const confirmar = async (tarefaId) => {
+    setConfirmando(s => ({ ...s, [tarefaId]: true }))
+    try {
+      await tarefasAPI.atualizar(tarefaId, { confirmado_cliente: true })
+      toast.success('Tarefa confirmada!')
+      // Recarregar projetos
+      const { data } = await projetosAPI.listar()
+      setProjetos(data)
+    } catch { toast.error('Erro ao confirmar') }
+    finally { setConfirmando(s => ({ ...s, [tarefaId]: false })) }
+  }
+
+  if (loading) return <LoadingPage />
+
+  // Coletar tarefas pendentes de confirmação
+  const tarefasPendentes = []
+  projetos.forEach(p => {
+    (p.fases || []).forEach(f => {
+      (f.tarefas || []).forEach(t => {
+        if (t.ativo !== false && !t.confirmado_cliente && t.status !== 'concluida') {
+          tarefasPendentes.push({ ...t, fase_nome: f.nome, projeto: p })
+        }
+      })
+    })
+  })
+
+  const atrasadas = tarefasPendentes.filter(t => t.status === 'atrasada' || t.status === 'bloqueada')
+
+  return (
+    <div className="page">
+      <div className="page-header">
+        <div>
+          <div className="page-title">Olá, {usuario.nome.split(' ')[0]}</div>
+          <div className="page-sub">Painel do analista — suas tarefas e confirmações pendentes</div>
+        </div>
+      </div>
+
+      <div className="metric-grid" style={{ marginBottom: 20 }}>
+        <div className="metric-card">
+          <div className="metric-label">Projetos</div>
+          <div className="metric-value" style={{ color: 'var(--brand)' }}>{resumo?.total_projetos ?? 0}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Tarefas pendentes</div>
+          <div className="metric-value" style={{ color: 'var(--amber)' }}>{tarefasPendentes.length}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Atrasadas/Bloqueadas</div>
+          <div className="metric-value" style={{ color: atrasadas.length ? 'var(--red)' : 'var(--green)' }}>{atrasadas.length}</div>
+        </div>
+        <div className="metric-card">
+          <div className="metric-label">Concluídas este mês</div>
+          <div className="metric-value" style={{ color: 'var(--green)' }}>{resumo?.tarefas_concluidas_mes ?? 0}</div>
+        </div>
+      </div>
+
+      {/* Projetos com progresso */}
+      {projetos.length > 0 && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="section-title">Seus projetos</div>
+          {projetos.map(p => (
+            <div key={p.id} style={{ display: 'flex', alignItems: 'center', gap: 14, padding: '8px 0', borderBottom: '0.5px solid var(--border)', cursor: 'pointer' }}
+              onClick={() => navigate(`/projetos/${p.id}`)}>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontWeight: 600, fontSize: 13, marginBottom: 4 }}>{p.nome}</div>
+                <Progress value={p.progresso} />
+              </div>
+              <span style={{ fontSize: 12, fontWeight: 700, minWidth: 40, textAlign: 'right' }}>{p.progresso}%</span>
+              <Badge status={p.status} />
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* Tarefas pendentes de confirmação */}
+      {tarefasPendentes.length > 0 && (
+        <div className="card">
+          <div className="section-title">Tarefas aguardando sua confirmação</div>
+          {tarefasPendentes.map(t => {
+            const atrasada = t.status === 'atrasada'
+            const prazo = t.data_prazo ? new Date(t.data_prazo).toLocaleDateString('pt-BR') : null
+            return (
+              <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderBottom: '0.5px solid var(--border)' }}>
+                {atrasada
+                  ? <AlertTriangle size={16} color="var(--red)" />
+                  : <Clock size={16} color="var(--amber)" />}
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontWeight: 600, fontSize: 13 }}>{t.nome}</div>
+                  <div style={{ fontSize: 11, color: 'var(--text-3)' }}>
+                    {t.projeto.nome} › {t.fase_nome}
+                    {prazo && <span style={{ marginLeft: 8, color: atrasada ? 'var(--red)' : undefined }}>· prazo {prazo}</span>}
+                  </div>
+                </div>
+                <button
+                  className="btn btn-primary btn-sm"
+                  disabled={confirmando[t.id]}
+                  onClick={() => confirmar(t.id)}
+                  style={{ display: 'flex', alignItems: 'center', gap: 5 }}
+                >
+                  <CheckCircle2 size={13} />
+                  {confirmando[t.id] ? '...' : 'Confirmar'}
+                </button>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {tarefasPendentes.length === 0 && !loading && (
+        <div className="card" style={{ textAlign: 'center', padding: '40px 20px' }}>
+          <CheckCircle2 size={32} color="var(--green)" style={{ marginBottom: 12 }} />
+          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--text)', marginBottom: 4 }}>Tudo em dia!</div>
+          <div style={{ fontSize: 13, color: 'var(--text-3)' }}>Não há tarefas pendentes de confirmação.</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 const PROJ_KEY = 'emais_dash_projeto'
 
 export default function Dashboard() {
@@ -321,7 +456,7 @@ export default function Dashboard() {
   const [dados,       setDados]       = useState(null)
   const [loadingGraf, setLoadingGraf] = useState(false)
 
-  const isCliente = usuario?.perfil === 'cliente'
+  const isCliente = usuario?.perfil === 'analista'
 
   const handleProjeto = (id) => {
     setProjetoId(id)
@@ -329,6 +464,7 @@ export default function Dashboard() {
   }
 
   useEffect(() => {
+    if (isCliente) { setLoading(false); return }
     Promise.all([dashboardAPI.resumo(), projetosAPI.listar()])
       .then(([r, p]) => {
         setResumo(r.data)
@@ -352,6 +488,9 @@ export default function Dashboard() {
       .catch(() => toast.error('Erro ao carregar gráficos'))
       .finally(() => setLoadingGraf(false))
   }, [projetoId])
+
+  // Portal analista simplificado (UX-3) — depois de todos os hooks
+  if (isCliente) return <PortalAnalista usuario={usuario} />
 
   if (loading) return <LoadingPage />
 

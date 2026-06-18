@@ -3,6 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { orcamentoAPI, planosAPI, bandeiraAPI, dreMotorAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { Pencil, Trash2 } from 'lucide-react'
 
 const ANO_ATUAL = new Date().getFullYear()
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -317,6 +318,10 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
   const [aceitosSug, setAceitosSug] = useState(new Set())
   const [addingComp, setAddingComp] = useState(null) // item.id em modo "adicionar componente"
   const [addingVal, setAddingVal] = useState('')
+  const [editVariavel, setEditVariavel] = useState(null) // item.id editando variavel_dre
+  const [editVariavelVal, setEditVariavelVal] = useState('')
+  const [editRow, setEditRow] = useState(null) // item completo em edição no modal
+  const [editRowData, setEditRowData] = useState({ agrupamento: '', descricao: '', formula: '' })
 
   const carregarDados = () => {
     setLoading(true)
@@ -374,6 +379,64 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
       await _salvarFormula(itemId, novos)
       setAddingComp(null); setAddingVal('')
     } catch { toast.error('Erro ao adicionar componente') }
+  }
+
+  // Parseia "VAR1 + VAR2 - VAR3" em tokens com sinal (só fórmulas simples sem *, /, parens, números)
+  const parseFormulaTokens = (formula) => {
+    if (!formula) return null
+    if (/[*/()0-9]/.test(formula)) return null
+    const tokens = []
+    let sign = 1
+    for (const tok of formula.trim().split(/\s+/)) {
+      if (tok === '+') { sign = 1 }
+      else if (tok === '-') { sign = -1 }
+      else if (tok) { tokens.push({ sign, name: tok }); sign = 1 }
+    }
+    return tokens.length ? tokens : null
+  }
+
+  const toggleSinalFormula = async (item, varName) => {
+    const tokens = parseFormulaTokens(item.formula)
+    if (!tokens) return
+    const updated = tokens.map(t => t.name === varName ? { ...t, sign: -t.sign } : t)
+    const newFormula = updated.map((t, i) =>
+      (i === 0 ? (t.sign === -1 ? '-' : '') : (t.sign === 1 ? ' + ' : ' - ')) + t.name
+    ).join('').trim()
+    try {
+      await planosAPI.atualizarItem(planoId, item.id, { formula: newFormula })
+      setItens(prev => prev.map(i => i.id === item.id ? { ...i, formula: newFormula } : i))
+    } catch { toast.error('Erro ao inverter sinal') }
+  }
+
+  const salvarVariavel = async (itemId) => {
+    const val = editVariavelVal.trim().toUpperCase() || null
+    try {
+      await planosAPI.atualizarItem(planoId, itemId, { variavel_dre: val })
+      setItens(prev => prev.map(i => i.id === itemId ? { ...i, variavel_dre: val } : i))
+      setEditVariavel(null); setEditVariavelVal('')
+      onReload()
+    } catch { toast.error('Erro ao salvar variável') }
+  }
+
+  const abrirEdicaoLinha = (item) => {
+    setEditRow(item)
+    setEditRowData({ agrupamento: item.agrupamento || '', descricao: item.descricao || '', formula: item.formula || '' })
+  }
+
+  const salvarEdicaoLinha = async () => {
+    if (!editRow) return
+    const payload = {
+      agrupamento: editRowData.agrupamento.trim() || null,
+      descricao:   editRowData.descricao.trim()   || '',
+      formula:     editRowData.formula.trim()      || null,
+    }
+    try {
+      await planosAPI.atualizarItem(planoId, editRow.id, payload)
+      setItens(prev => prev.map(i => i.id === editRow.id ? { ...i, ...payload } : i))
+      setEditRow(null)
+      onReload()
+      toast.success('Linha atualizada')
+    } catch { toast.error('Erro ao salvar') }
   }
 
   const sugerirAgrupamentos = async () => {
@@ -530,7 +593,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
               <thead>
                 <tr style={{ background: '#f0f4ff', position: 'sticky', top: 0, zIndex: 5 }}>
-                  {[['Nível',75],['Agrupamento',140],['Conta',100],['Descrição',null],['Fórmula',180],['',50],['',36]].map(([h,w],i) => (
+                  {[['Nível',75],['Aglutinação',120],['Variável',110],['Conta',90],['Descrição',null],['Fórmula',200],['',50],['',36],['',36]].map(([h,w],i) => (
                     <th key={i} style={{ padding: '8px 12px', textAlign: 'left', fontWeight: 700, color: 'var(--brand)', fontSize: 11, letterSpacing: '.04em', borderBottom: '2px solid var(--brand)', width: w||undefined }}>{h}</th>
                   ))}
                 </tr>
@@ -587,39 +650,69 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
 
                   const celFormulaEditavel = (
                     <td style={{ padding: '4px 12px' }}>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
-                        {(fItem?.componentes || []).length === 0 && addingComp !== item.id && (
-                          <span style={{ fontSize: 10, color: '#d1d5db' }}>sem fórmula</span>
-                        )}
-                        {(fItem?.componentes || []).map((c, ci) => (
-                          <span key={ci} style={{ display:'flex', alignItems:'center', gap: 1, fontSize: 10, padding: '2px 5px', borderRadius: 4,
-                            background: c.sinal === 1 ? '#e8f0ff' : '#fff0f0',
-                            color: c.sinal === 1 ? 'var(--brand)' : '#dc2626',
-                            border: `1px solid ${c.sinal === 1 ? '#bfdbfe' : '#fca5a5'}`,
-                            fontFamily: 'monospace' }}>
-                            <span onClick={() => toggleSinal(item.id, c.agrupamento)}
-                              title="Clique para inverter sinal" style={{ cursor: 'pointer' }}>
-                              {c.sinal === 1 ? '+' : '−'} {c.agrupamento}
+                      {/* Fórmula livre — clicar nos tokens inverte sinal; editar via lápis da linha */}
+                      {item.formula ? (() => {
+                        const tokens = parseFormulaTokens(item.formula)
+                        return (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
+                            <span style={{ fontSize: 10, color: '#166534', fontFamily: 'monospace' }}>ƒ</span>
+                            {tokens ? tokens.map((t, ti) => (
+                              <span key={ti} onClick={() => toggleSinalFormula(item, t.name)}
+                                title="Clique para inverter sinal"
+                                style={{ cursor: 'pointer', fontSize: 10, fontFamily: 'monospace', padding: '2px 6px', borderRadius: 4,
+                                  background: t.sign === 1 ? '#f0fdf4' : '#dc2626',
+                                  color:      t.sign === 1 ? '#166534' : '#ffffff',
+                                  border: `1px solid ${t.sign === 1 ? '#bbf7d0' : '#b91c1c'}` }}>
+                                {ti > 0 && <span style={{ marginRight: 2, opacity: .7 }}>{t.sign === 1 ? '+' : '−'}</span>}
+                                {ti === 0 && t.sign === -1 && <span style={{ marginRight: 2, opacity: .7 }}>−</span>}
+                                {t.name}
+                              </span>
+                            )) : (
+                              <span style={{ fontSize: 10, fontFamily: 'monospace', padding: '2px 7px', borderRadius: 4, background: '#f0fdf4', color: '#166534', border: '1px solid #bbf7d0' }}>
+                                {item.formula}
+                              </span>
+                            )}
+                          </div>
+                        )
+                      })() : (
+                        <span style={{ fontSize: 10, color: '#d1d5db' }}>—</span>
+                      )}
+                      {/* Componentes individuais (legado / complementar) */}
+                      {!item.formula && (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center' }}>
+                          {(fItem?.componentes || []).length === 0 && addingComp !== item.id && (
+                            <span style={{ fontSize: 10, color: '#d1d5db' }}>sem fórmula</span>
+                          )}
+                          {(fItem?.componentes || []).map((c, ci) => (
+                            <span key={ci} style={{ display:'flex', alignItems:'center', gap: 1, fontSize: 10, padding: '2px 5px', borderRadius: 4,
+                              background: c.sinal === 1 ? '#e8f0ff' : '#fff0f0',
+                              color: c.sinal === 1 ? 'var(--brand)' : '#dc2626',
+                              border: `1px solid ${c.sinal === 1 ? '#bfdbfe' : '#fca5a5'}`,
+                              fontFamily: 'monospace' }}>
+                              <span onClick={() => toggleSinal(item.id, c.agrupamento)}
+                                title="Clique para inverter sinal" style={{ cursor: 'pointer' }}>
+                                {c.sinal === 1 ? '+' : '−'} {c.agrupamento}
+                              </span>
+                              <span onClick={() => removerComponente(item.id, c.agrupamento)}
+                                title="Remover" style={{ cursor: 'pointer', marginLeft: 3, color: '#dc2626', fontWeight: 700, opacity: .7 }}>×</span>
                             </span>
-                            <span onClick={() => removerComponente(item.id, c.agrupamento)}
-                              title="Remover" style={{ cursor: 'pointer', marginLeft: 3, color: '#dc2626', fontWeight: 700, opacity: .7 }}>×</span>
-                          </span>
-                        ))}
-                        {addingComp === item.id ? (
-                          <span style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-                            <input autoFocus value={addingVal}
-                              onChange={e => setAddingVal(e.target.value.toUpperCase())}
-                              onKeyDown={e => { if (e.key === 'Enter') adicionarComponente(item.id); if (e.key === 'Escape') { setAddingComp(null); setAddingVal('') } }}
-                              placeholder="AGRUP" style={{ fontSize: 10, width: 72, padding: '2px 4px', border: '1px solid var(--brand)', borderRadius: 3, fontFamily: 'monospace' }} />
-                            <button onClick={() => adicionarComponente(item.id)} style={{ fontSize: 10, padding: '2px 5px', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer' }}>✓</button>
-                            <button onClick={() => { setAddingComp(null); setAddingVal('') }} style={{ fontSize: 10, padding: '2px 4px', background: 'none', border: '1px solid #d1d5db', borderRadius: 3, cursor: 'pointer' }}>✕</button>
-                          </span>
-                        ) : (
-                          <button onClick={() => { setAddingComp(item.id); setAddingVal('') }}
-                            title="Adicionar componente"
-                            style={{ fontSize: 10, padding: '1px 6px', background: '#f0f4ff', color: 'var(--brand)', border: '1px dashed var(--brand)', borderRadius: 3, cursor: 'pointer' }}>+</button>
-                        )}
-                      </div>
+                          ))}
+                          {addingComp === item.id ? (
+                            <span style={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                              <input autoFocus value={addingVal}
+                                onChange={e => setAddingVal(e.target.value.toUpperCase())}
+                                onKeyDown={e => { if (e.key === 'Enter') adicionarComponente(item.id); if (e.key === 'Escape') { setAddingComp(null); setAddingVal('') } }}
+                                placeholder="AGRUP" style={{ fontSize: 10, width: 72, padding: '2px 4px', border: '1px solid var(--brand)', borderRadius: 3, fontFamily: 'monospace' }} />
+                              <button onClick={() => adicionarComponente(item.id)} style={{ fontSize: 10, padding: '2px 5px', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 3, cursor: 'pointer' }}>✓</button>
+                              <button onClick={() => { setAddingComp(null); setAddingVal('') }} style={{ fontSize: 10, padding: '2px 4px', background: 'none', border: '1px solid #d1d5db', borderRadius: 3, cursor: 'pointer' }}>✕</button>
+                            </span>
+                          ) : (
+                            <button onClick={() => { setAddingComp(item.id); setAddingVal('') }}
+                              title="Adicionar componente"
+                              style={{ fontSize: 10, padding: '1px 6px', background: '#f0f4ff', color: 'var(--brand)', border: '1px dashed var(--brand)', borderRadius: 3, cursor: 'pointer' }}>+</button>
+                          )}
+                        </div>
+                      )}
                     </td>
                   )
 
@@ -629,6 +722,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                         <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:4,background:N_BADGE.bg,color:N_BADGE.color }}>{N_BADGE.label}</span>
                       </td>
                       <td style={{ padding: '3px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{item.agrupamento || '—'}</td>
+                      <td style={{ padding: '3px 12px' }} />
                       <td style={{ padding: '3px 12px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-3)' }}>{item.conta || '—'}</td>
                       <td style={{ padding: '3px 12px', paddingLeft: 40 }} title="Descrição da conta contábil — não editável">
                         <span style={{ fontSize: 12, color: 'var(--text-2)', cursor: 'default' }}>
@@ -642,7 +736,10 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                         <button onClick={() => moverItem(item,'down')} disabled={idx===itens.length-1} style={{ background:'none',border:'none',cursor:idx===itens.length-1?'default':'pointer',color:idx===itens.length-1?'#d1d5db':'var(--brand)',fontSize:14,padding:'1px 3px' }}>↓</button>
                       </td>
                       <td style={{ padding: '3px 4px', textAlign: 'center' }}>
-                        <button onClick={() => excluirItem(item)} style={{ background:'none',border:'none',cursor:'pointer',color:'#dc2626',fontSize:16,lineHeight:1,padding:'1px 3px' }}>×</button>
+                        <button onClick={() => abrirEdicaoLinha(item)} title="Editar linha" style={{ background:'none',border:'none',cursor:'pointer',color:'var(--brand)',padding:'2px 3px',display:'flex',alignItems:'center',opacity:.7 }}><Pencil size={14}/></button>
+                      </td>
+                      <td style={{ padding: '3px 4px', textAlign: 'center' }}>
+                        <button onClick={() => excluirItem(item)} title="Excluir linha" style={{ background:'none',border:'none',cursor:'pointer',color:'#dc2626',padding:'2px 3px',display:'flex',alignItems:'center' }}><Trash2 size={14}/></button>
                       </td>
                     </tr>
                   )
@@ -654,8 +751,28 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                       <td style={{ padding: '4px 12px' }}>
                         <span style={{ fontSize:10,fontWeight:700,padding:'2px 7px',borderRadius:4,background:N_BADGE.bg,color:N_BADGE.color }}>{N_BADGE.label}</span>
                       </td>
-                      <td style={{ padding: '4px 12px' }}>
-                        <span style={{ fontFamily:'monospace',fontSize:11,color:item.agrupamento?'var(--text-2)':'#d1d5db' }}>{item.agrupamento||'—'}</span>
+                      <td style={{ padding: '4px 8px' }}>
+                        <span style={{ fontFamily: 'monospace', fontSize: 11, color: item.agrupamento ? 'var(--text-2)' : '#d1d5db' }}>{item.agrupamento || '—'}</span>
+                      </td>
+                      <td style={{ padding: '4px 8px' }}>
+                        {editVariavel === item.id ? (
+                          <input autoFocus value={editVariavelVal}
+                            onChange={e => setEditVariavelVal(e.target.value.toUpperCase())}
+                            onBlur={() => salvarVariavel(item.id)}
+                            onKeyDown={e => { if (e.key === 'Enter') salvarVariavel(item.id); if (e.key === 'Escape') { setEditVariavel(null); setEditVariavelVal('') } }}
+                            placeholder="VARIAVEL"
+                            style={{ fontSize: 11, width: 90, padding: '2px 4px', border: '1px solid var(--brand)', borderRadius: 3, fontFamily: 'monospace' }} />
+                        ) : (
+                          <span onClick={() => { setEditVariavel(item.id); setEditVariavelVal(item.variavel_dre || '') }}
+                            title="Clique para editar a variável usada em fórmulas DRE"
+                            style={{ cursor: 'pointer', fontFamily: 'monospace', fontSize: 11,
+                              color: item.variavel_dre ? '#7c3aed' : '#d1d5db',
+                              background: item.variavel_dre ? '#f5f3ff' : 'transparent',
+                              padding: '1px 5px', borderRadius: 3,
+                              border: item.variavel_dre ? '1px solid #ddd6fe' : '1px dashed #e5e7eb' }}>
+                            {item.variavel_dre || '+ var'}
+                          </span>
+                        )}
                       </td>
                       <td style={{ padding: '4px 12px' }}>
                         {editKey === `${item.id}-conta` ? (
@@ -667,21 +784,15 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                         )}
                       </td>
                       <td style={{ padding: '4px 12px', paddingLeft: nivelItem === 2 ? 20 : 8 }}>
-                        {editKey === `${item.id}-descricao` ? (
-                          <input value={editVal} onChange={e=>setEditVal(e.target.value)} onBlur={()=>salvarCampo(item,'descricao')}
-                            onKeyDown={e=>{if(e.key==='Enter')salvarCampo(item,'descricao');if(e.key==='Escape')setEditKey(null)}}
-                            autoFocus style={inputSt} />
-                        ) : (
-                          <span onClick={()=>iniciarEdicao(item,'descricao')} style={{...cellSt, fontWeight:700,
-                            fontSize: nivelItem===1 ? 13 : 12,
-                            textTransform: 'uppercase',
-                            letterSpacing: nivelItem===1 ? '0.04em' : 'normal',
-                            color: nivelItem===1 ? '#1d4ed8' : '#2563eb',
-                          }}>
-                            {nivelItem === 2 && <span style={{ marginRight:4, opacity:.4, userSelect:'none' }}>└</span>}
-                            {item.descricao}
-                          </span>
-                        )}
+                        <span style={{ fontWeight:700,
+                          fontSize: nivelItem===1 ? 13 : 12,
+                          textTransform: 'uppercase',
+                          letterSpacing: nivelItem===1 ? '0.04em' : 'normal',
+                          color: nivelItem===1 ? '#1d4ed8' : '#2563eb',
+                        }}>
+                          {nivelItem === 2 && <span style={{ marginRight:4, opacity:.4, userSelect:'none' }}>└</span>}
+                          {item.descricao}
+                        </span>
                       </td>
                       {formulaColuna}
                       <td style={{ padding: '4px 4px', textAlign: 'center', whiteSpace: 'nowrap' }}>
@@ -689,7 +800,10 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                         <button onClick={()=>moverItem(item,'down')} disabled={idx===itens.length-1} style={{background:'none',border:'none',cursor:idx===itens.length-1?'default':'pointer',color:idx===itens.length-1?'#d1d5db':'var(--brand)',fontSize:14,padding:'1px 3px'}}>↓</button>
                       </td>
                       <td style={{ padding: '4px 4px', textAlign: 'center' }}>
-                        <button onClick={()=>excluirItem(item)} style={{background:'none',border:'none',cursor:'pointer',color:'#dc2626',fontSize:16,lineHeight:1,padding:'1px 3px'}}>×</button>
+                        <button onClick={()=>abrirEdicaoLinha(item)} title="Editar linha" style={{background:'none',border:'none',cursor:'pointer',color:'var(--brand)',padding:'2px 3px',display:'flex',alignItems:'center',opacity:.7}}><Pencil size={14}/></button>
+                      </td>
+                      <td style={{ padding: '4px 4px', textAlign: 'center' }}>
+                        <button onClick={()=>excluirItem(item)} title="Excluir linha" style={{background:'none',border:'none',cursor:'pointer',color:'#dc2626',padding:'2px 3px',display:'flex',alignItems:'center'}}><Trash2 size={14}/></button>
                       </td>
                     </tr>
                   )
@@ -719,6 +833,7 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                   </td>
                   <td />
                   <td />
+                  <td />
                   <td style={{ padding: '8px 10px', textAlign: 'center' }}>
                     <button onClick={adicionarLinha} disabled={salvandoNova||!novaLinha.descricao.trim()}
                       style={{background:'var(--brand)',color:'#fff',border:'none',borderRadius:6,padding:'5px 10px',fontSize:12,cursor:'pointer',fontWeight:600,opacity:(!novaLinha.descricao.trim()||salvandoNova)?.45:1}}>
@@ -738,6 +853,48 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
           <button onClick={onClose} style={{padding:'8px 24px',background:'var(--brand)',color:'#fff',border:'none',borderRadius:6,fontSize:13,cursor:'pointer',fontWeight:600}}>Fechar</button>
         </div>
       </div>
+
+      {/* Modal de edição unificada (Aglutinação + Descrição + Fórmula) */}
+      {editRow && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,.45)', zIndex:1200,
+            display:'flex', alignItems:'center', justifyContent:'center' }}
+          onClick={e => e.target === e.currentTarget && setEditRow(null)}>
+          <div style={{ background:'#fff', borderRadius:10, width:520, padding:24, boxShadow:'0 8px 40px rgba(0,0,0,.22)' }}>
+            <div style={{ fontWeight:700, fontSize:15, marginBottom:4 }}>Editar linha</div>
+            <div style={{ fontSize:11, color:'var(--text-3)', marginBottom:16 }}>{editRow.tipo} · Conta {editRow.conta||'—'}</div>
+            <div style={{ display:'flex', flexDirection:'column', gap:14 }}>
+              <div>
+                <label style={{ fontSize:11, fontWeight:600, display:'block', marginBottom:4 }}>Aglutinação</label>
+                <input value={editRowData.agrupamento}
+                  onChange={e => setEditRowData(p=>({...p,agrupamento:e.target.value.toUpperCase()}))}
+                  placeholder="AGRUPAMENTO"
+                  style={{ fontSize:12, width:'100%', padding:'6px 8px', border:'1px solid var(--border)', borderRadius:5, boxSizing:'border-box', fontFamily:'monospace' }} />
+              </div>
+              <div>
+                <label style={{ fontSize:11, fontWeight:600, display:'block', marginBottom:4 }}>Descrição / Título</label>
+                <input value={editRowData.descricao}
+                  onChange={e => setEditRowData(p=>({...p,descricao:e.target.value}))}
+                  placeholder="Descrição da linha"
+                  style={{ fontSize:12, width:'100%', padding:'6px 8px', border:'1px solid var(--border)', borderRadius:5, boxSizing:'border-box' }} />
+              </div>
+              <div>
+                <label style={{ fontSize:11, fontWeight:600, display:'block', marginBottom:4 }}>
+                  Fórmula <span style={{ fontWeight:400, color:'var(--text-3)' }}>— suporta +, -, *, /, números</span>
+                </label>
+                <input value={editRowData.formula}
+                  onChange={e => setEditRowData(p=>({...p,formula:e.target.value}))}
+                  onKeyDown={e => e.key==='Enter' && salvarEdicaoLinha()}
+                  placeholder="Ex: VDA_VISTA + VDA_PRAZO - DEDUCOES"
+                  style={{ fontSize:12, width:'100%', padding:'6px 8px', border:'1px solid var(--border)', borderRadius:5, boxSizing:'border-box', fontFamily:'monospace' }} />
+              </div>
+            </div>
+            <div style={{ display:'flex', gap:8, marginTop:20, justifyContent:'flex-end' }}>
+              <button onClick={() => setEditRow(null)} className="btn btn-sm">Cancelar</button>
+              <button onClick={salvarEdicaoLinha} className="btn btn-primary btn-sm">Salvar</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Painel lateral de sugestões de agrupamento */}
       {mostrarSugestoes && (

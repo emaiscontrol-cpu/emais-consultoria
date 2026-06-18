@@ -70,7 +70,7 @@ export default function DashboardSubtarefas() {
   const [loading,    setLoading]    = useState(false)
   const [loadingSubs, setLoadingSubs] = useState(false)
 
-  const isCliente = usuario?.perfil === 'cliente'
+  const isCliente = usuario?.perfil === 'analista'
 
   useEffect(() => {
     dashboardAPI.projetosResumo()
@@ -171,10 +171,10 @@ export default function DashboardSubtarefas() {
       {/* Header */}
       <div style={{ marginBottom: 24 }}>
         <div style={{ fontSize: 22, fontWeight: 700, color: D.text, marginBottom: 4 }}>
-          Dashboard — Por Subtarefa
+          Dashboard — Por Atividade
         </div>
         <div style={{ fontSize: 13, color: D.text2 }}>
-          Visão consolidada de todas as subtarefas do projeto
+          Visão consolidada de todas as atividades do projeto
         </div>
       </div>
 
@@ -210,7 +210,7 @@ export default function DashboardSubtarefas() {
 
       {!isBusy && projeto && total === 0 && (
         <div style={{ color: D.text2, textAlign: 'center', padding: '60px 0', fontSize: 14 }}>
-          Nenhuma subtarefa cadastrada nas tarefas deste projeto.
+          Nenhuma atividade cadastrada nas tarefas deste projeto.
         </div>
       )}
 
@@ -254,7 +254,7 @@ export default function DashboardSubtarefas() {
             {/* Bar chart — subtarefas por fase */}
             <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: '20px 16px' }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: D.text2, textTransform: 'uppercase',
-                letterSpacing: '.08em', marginBottom: 16 }}>Subtarefas por Fase</div>
+                letterSpacing: '.08em', marginBottom: 16 }}>Atividades por Fase</div>
               <ResponsiveContainer width="100%" height={260}>
                 <BarChart data={barData} margin={{ top: 0, right: 8, left: -20, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={D.grid} vertical={false} />
@@ -314,7 +314,7 @@ export default function DashboardSubtarefas() {
 
       {!isBusy && !projeto && (
         <div style={{ color: D.text2, textAlign: 'center', padding: '80px 0', fontSize: 14 }}>
-          Selecione um projeto para visualizar o dashboard de subtarefas.
+          Selecione um projeto para visualizar o dashboard de atividades.
         </div>
       )}
     </div>
