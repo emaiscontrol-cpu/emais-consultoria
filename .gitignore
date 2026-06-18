@@ -2,8 +2,9 @@
 backend/.env
 backend/seed_usuarios.py
 
-# Claude Code settings
-.claude/
+# Claude Code settings (commands/ versionado; settings locais ignorados)
+.claude/settings.local.json
+.claude/projects/
 
 # Python
 backend/venv/
