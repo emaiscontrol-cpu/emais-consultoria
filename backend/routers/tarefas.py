@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 from database import get_db
 from auth import get_usuario_atual, requer_perfil
 from routers.fases import recalcular_fase
-from helpers import log
+from helpers import log, notificar_mencoes
 import models, schemas
 
 router = APIRouter()
@@ -172,17 +172,10 @@ def comentar(id: int, data: schemas.ComentarioCreate, db: Session = Depends(get_
     c = models.Comentario(tarefa_id=id, autor_id=usuario.id, texto=data.texto)
     db.add(c); db.commit(); db.refresh(c)
 
-    # Processar menções @usuario (UX-8)
-    mencoes = set(re.findall(r'@(\w+)', data.texto))
-    for nome in mencoes:
-        alvo = db.query(models.Usuario).filter(
-            models.Usuario.nome.ilike(f"{nome}%"),
-            models.Usuario.ativo == True,
-        ).first()
-        if alvo and alvo.id != usuario.id:
-            log(db, usuario.id, "Menção em comentário",
-                f'{usuario.nome} mencionou @{alvo.nome} na tarefa "{t.nome}"',
-                projeto_id=t.fase.projeto_id if t.fase else None)
+    if '@' in data.texto:
+        notificar_mencoes(db, data.texto, usuario,
+            f'{usuario.nome} mencionou você no comentário da tarefa "{t.nome}"',
+            projeto_id=t.fase.projeto_id if t.fase else None)
 
     return c
 

@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
 from auth import get_usuario_atual
+from helpers import notificar_mencoes
 import models
 
 router = APIRouter()
@@ -47,6 +48,7 @@ def enviar(
 ):
     if not body.texto.strip():
         return {}
+    projeto = db.query(models.Projeto).get(projeto_id)
     msg = models.MensagemChat(
         projeto_id=projeto_id,
         autor_id=usuario.id,
@@ -55,6 +57,11 @@ def enviar(
     db.add(msg)
     db.commit()
     db.refresh(msg)
+    if '@' in body.texto:
+        nome_projeto = projeto.nome if projeto else f"projeto {projeto_id}"
+        notificar_mencoes(db, body.texto, usuario,
+            f'{usuario.nome} mencionou você no chat do projeto "{nome_projeto}"',
+            projeto_id=projeto_id)
     return {
         "id": msg.id,
         "texto": msg.texto,

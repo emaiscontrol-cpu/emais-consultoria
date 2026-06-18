@@ -235,6 +235,19 @@ class LogAtividade(Base):
     projeto     = relationship("Projeto")
 
 
+class NotificacaoMencao(Base):
+    __tablename__ = "notificacoes_mencao"
+    id                 = Column(Integer, primary_key=True, index=True)
+    usuario_destino_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    de_usuario_id      = Column(Integer, ForeignKey("usuarios.id"), nullable=False)
+    mensagem           = Column(Text, nullable=False)
+    projeto_id         = Column(Integer, ForeignKey("projetos.id"), nullable=True)
+    lida               = Column(Boolean, default=False)
+    criado_em          = Column(DateTime(timezone=True), server_default=func.now())
+    usuario_destino    = relationship("Usuario", foreign_keys=[usuario_destino_id])
+    de_usuario         = relationship("Usuario", foreign_keys=[de_usuario_id])
+
+
 class ModeloTarefa(Base):
     __tablename__ = "modelos_tarefas"
     id               = Column(Integer, primary_key=True, index=True)

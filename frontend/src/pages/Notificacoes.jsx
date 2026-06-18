@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { notificacoesAPI } from '../services/api'
 import { LoadingPage } from '../components/shared'
-import { AlertTriangle, Clock, FileDown } from 'lucide-react'
+import { AlertTriangle, Clock, FileDown, AtSign } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const TIPO_COR   = { tarefa_atrasada: 'var(--red)',   prazo_proximo: 'var(--amber)' }
-const TIPO_LABEL = { tarefa_atrasada: 'Atrasada',     prazo_proximo: 'Prazo próximo' }
-const TIPO_ICONE = { tarefa_atrasada: AlertTriangle,  prazo_proximo: Clock }
+const TIPO_COR   = { tarefa_atrasada: 'var(--red)', prazo_proximo: 'var(--amber)', mencao: 'var(--brand)' }
+const TIPO_LABEL = { tarefa_atrasada: 'Atrasada',   prazo_proximo: 'Prazo próximo', mencao: 'Menção' }
+const TIPO_ICONE = { tarefa_atrasada: AlertTriangle, prazo_proximo: Clock, mencao: AtSign }
 
 function baixarBlob(blob, nome) {
   const url = URL.createObjectURL(blob)
