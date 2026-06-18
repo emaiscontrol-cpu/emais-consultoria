@@ -1185,7 +1185,7 @@ function KanbanView({ projeto, isConsultor, onRefresh }) {
 }
 
 // ── Chat por projeto (UX-10) ───────────────────────────────
-function ChatPanel({ projetoId, usuario }) {
+function ChatPanel({ projetoId, usuario, usuarios }) {
   const [msgs,    setMsgs]    = useState([])
   const [texto,   setTexto]   = useState('')
   const [loading, setLoading] = useState(true)
@@ -1257,10 +1257,11 @@ function ChatPanel({ projetoId, usuario }) {
         <div ref={bottomRef} />
       </div>
       <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
-        <input
+        <MentionInput
           value={texto}
-          onChange={e => setTexto(e.target.value)}
-          placeholder="Digite uma mensagem..."
+          onChange={setTexto}
+          usuarios={usuarios || []}
+          placeholder="Digite uma mensagem... (@ para mencionar)"
           style={{ flex: 1, fontSize: 13, padding: '7px 10px' }}
           onKeyDown={e => e.key === 'Enter' && !e.shiftKey && enviar()}
         />
@@ -1422,7 +1423,7 @@ export default function ProjetoDetalhe() {
 
       {/* Chat (UX-10) */}
       {viewMode === 'chat' && (
-        <ChatPanel projetoId={id} usuario={usuario} />
+        <ChatPanel projetoId={id} usuario={usuario} usuarios={usuarios} />
       )}
 
       {viewMode === 'lista' && showAddFase && (
