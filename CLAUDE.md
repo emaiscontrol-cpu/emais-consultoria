@@ -53,6 +53,9 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **ngrok:** túnel público — o servidor de produção tem o ngrok rodando permanentemente
 - **Máquina local:** também tem `EmaisNgrok` service, mas serve banco de desenvolvimento (diferente do servidor)
 - **Teste correto:** sempre usar o **Electron** para testar com usuários reais (banco do servidor)
+- **WinSW no servidor:** `C:\emals-service\emals-backend.exe` + `C:\emals-service\emals-backend.xml`
+- **Logs do serviço no servidor:** `C:\emals-service\logs\emals-backend.err.log` (erros) e `emals-backend.out.log` (stdout)
+- **Código rodando no servidor:** `C:\emals-app\backend\` (onde o git pull atualiza)
 
 ---
 
@@ -288,3 +291,31 @@ emals_consultoria/
 ├── ROADMAP.md                   # Backlog de features e correções
 └── CLAUDE.md                    # Este arquivo
 ```
+
+---
+
+## Instrução para o Claude — Histórico de Sessões
+
+**Ao final de cada sessão de trabalho**, antes de encerrar, o Claude deve atualizar a seção `## Histórico de Sessões` abaixo com uma entrada no seguinte formato:
+
+```
+### YYYY-MM-DD
+**O que foi feito:** resumo objetivo do que foi implementado, corrigido ou decidido.
+**Decisões tomadas:** escolhas de arquitetura, convenção ou fluxo que impactam sessões futuras.
+**Próximo passo:** o que ficou pendente ou o que deve ser feito na próxima sessão.
+```
+
+Regras:
+- Entradas mais recentes ficam no **topo** da lista
+- Máximo de **10 entradas** — remover as mais antigas quando ultrapassar
+- Ser objetivo: 1–3 linhas por campo, sem repetir o que já está no `ROADMAP.md`
+- Commitar junto com as demais mudanças da sessão (não criar commit separado só para o histórico)
+
+---
+
+## Histórico de Sessões
+
+### 2026-06-18
+**O que foi feito:** atualização completa do CLAUDE.md (banco Supabase, 28 routers, todas as páginas, sidebar corrigida); commits organizados da branch `feature/testes-automatizados`; PR #2 mergeado; skills criadas (`/novo-modulo`, `/novo-router`, `/fix-permissao`, `/release`) em `.claude/commands/`; `SKILLS.md` criado; PR #3 (`release/v2.5.0t`) mergeado; diagnóstico e correção do 500 em `/api/version` pós-deploy (`_admin_db_path.exists()` quebrava com Supabase); PR #4 mergeado; Electron funcionando.
+**Decisões tomadas:** branch protection na `main` ativa — releases via branch `release/vX` + PR + CI; `gh` CLI em `C:\Program Files\GitHub CLI\gh.exe`; WinSW do servidor em `C:\emals-service\emals-backend.exe`, logs em `C:\emals-service\logs\emals-backend.err.log`, código em `C:\emals-app\backend\`; para diagnosticar erros no servidor, sempre ler `emals-backend.err.log`.
+**Próximo passo:** sistema estável em produção — consultar ROADMAP.md para próxima feature.
