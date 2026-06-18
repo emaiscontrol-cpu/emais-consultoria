@@ -1,5 +1,5 @@
 ---
-description: Executa o fluxo completo de release do E Mais Consultoria — build do frontend, atualização de versão, commit do dist e deploy via release.ps1
+description: Executa o fluxo completo de release do E Mais Consultoria — build do frontend, atualização de versão, commit do dist, PR de release e deploy automático via deploy.yml
 argument-hint: [versao] (ex: 2.5.1a)
 allowed-tools: [Read, Edit, Bash, PowerShell, Glob]
 ---
@@ -8,21 +8,18 @@ allowed-tools: [Read, Edit, Bash, PowerShell, Glob]
 
 Executa o fluxo completo de release. Argumento opcional: versão desejada — $ARGUMENTS
 
-## Passo 1 — Confirmar branch e estado
+> ⚠️ **Branch protection ativa na `main`** — push direto é bloqueado. Todo release vai via branch `release/vX.Y.Za` + PR. O `deploy.yml` dispara automaticamente após o merge na `main`.
+
+## Passo 1 — Partir da main atualizada
 
 ```bash
+git checkout main && git pull
 git status
-git branch
-git log --oneline -5
 ```
 
-- Confirmar que está na branch correta (geralmente `main` após merge do PR)
-- Working tree deve estar limpo — se houver mudanças pendentes, perguntar ao usuário se quer commitar antes
-- Se não estiver na `main`, alertar e perguntar se quer fazer o merge primeiro
+Working tree deve estar limpo. Confirmar que todos os PRs de feature foram mergeados.
 
 ## Passo 2 — Determinar a nova versão
-
-Ler a versão atual em `backend/main.py`:
 
 ```bash
 grep "app.version" backend/main.py
@@ -32,73 +29,68 @@ Padrão de incremento: `2.5.0s` → `2.5.0t` → ... → `2.5.0z` → `2.5.1a`
 
 Se o usuário passou uma versão como argumento, usar essa. Caso contrário, sugerir o próximo incremento e confirmar.
 
-## Passo 3 — Atualizar a versão no backend
+## Passo 3 — Criar branch de release
 
-Editar `backend/main.py`, linha com `app.version = "..."`:
+```bash
+git checkout -b release/v<nova_versao>
+```
+
+## Passo 4 — Atualizar versão em `backend/main.py`
 
 ```python
 app.version = "<nova_versao>"
 ```
 
-## Passo 4 — Build do frontend
+## Passo 5 — Build do frontend
 
 ```powershell
-Set-Location frontend
-npm run build
-Set-Location ..
+Set-Location frontend; npm run build; Set-Location ..
 ```
 
-Verificar se `frontend/dist/index.html` foi atualizado (mtime recente). Se o build falhar, parar e reportar o erro — não prosseguir.
+Se o build falhar, parar e reportar — não prosseguir.
 
-## Passo 5 — Commitar versão + dist
+## Passo 6 — Atualizar ROADMAP.md
 
-Verificar o que mudou:
+- Atualizar `> Última atualização:` para a data de hoje
+- Mover itens implementados para `## ✅ Concluído` com a versão, se houver pendentes
 
-```bash
-git diff --stat
-git status
-```
-
-Adicionar e commitar apenas os arquivos relevantes:
+## Passo 7 — Commitar
 
 ```bash
-git add backend/main.py frontend/dist/
+git add backend/main.py frontend/dist/ ROADMAP.md
 git commit -m "chore: release v<nova_versao>"
 ```
 
-> ⚠️ Não usar `git add .` — pode incluir arquivos sensíveis ou gerados. Adicionar explicitamente.
+> ⚠️ Não usar `git add .` — adicionar explicitamente para evitar arquivos sensíveis.
 
-## Passo 6 — Atualizar o ROADMAP.md
-
-Abrir `ROADMAP.md` e:
-- Mover os itens implementados de `## Em desenvolvimento` para `## ✅ Concluído` com a versão `(v<nova_versao>)`
-- Perguntar ao usuário quais itens devem ser marcados como concluídos, se não estiver claro
-
-Commitar o ROADMAP se houver mudanças:
+## Passo 8 — Push e PR
 
 ```bash
-git add ROADMAP.md
-git commit -m "docs: atualiza ROADMAP para v<nova_versao>"
+git push -u origin release/v<nova_versao>
 ```
 
-## Passo 7 — Push para main
-
-```bash
-git push origin main
-```
-
-## Passo 8 — Deploy via release.ps1
+Abrir PR usando `gh` (disponível em `C:\Program Files\GitHub CLI\gh.exe`):
 
 ```powershell
-.\release.ps1
+& "C:\Program Files\GitHub CLI\gh.exe" pr create `
+  --base main --head release/v<nova_versao> `
+  --title "chore: release v<nova_versao>" `
+  --body "Bump de versão e build do frontend.`n`n- [ ] CI verde`n- [ ] /api/version retorna <nova_versao> após deploy"
 ```
 
-O script:
-- Faz `git push` (já feito no passo 7, mas o script pode fazer novamente — ok)
-- O servidor puxa via git automaticamente
-- O uvicorn recarrega em ~30s
+## Passo 9 — Aguardar CI e mergear
 
-## Passo 9 — Verificação pós-deploy
+```powershell
+# Verificar checks
+& "C:\Program Files\GitHub CLI\gh.exe" pr checks <numero_do_pr>
+
+# Após CI verde:
+& "C:\Program Files\GitHub CLI\gh.exe" pr merge <numero_do_pr> --merge --delete-branch
+```
+
+O `deploy.yml` (self-hosted) dispara automaticamente no push para `main` e faz o deploy no servidor.
+
+## Passo 10 — Verificar no servidor
 
 Aguardar ~30s e verificar:
 
@@ -108,9 +100,7 @@ curl -s https://earlobe-feeble-aground.ngrok-free.dev/api/version
 
 Confirmar que `"version"` retorna `"<nova_versao>"`.
 
-## Passo 10 — Lembrete ao usuário
-
-Sempre encerrar com:
+## Passo 11 — Lembrete ao usuário
 
 > ✅ Release v<nova_versao> publicado com sucesso.
 > Pressione **Ctrl+Shift+R** no Electron para carregar a nova versão.
@@ -120,13 +110,12 @@ Sempre encerrar com:
 
 ## Checklist rápido
 
-- [ ] Branch correta (main)
-- [ ] Working tree limpo antes do build
+- [ ] `main` atualizada e limpa antes de iniciar
+- [ ] Branch `release/v<nova_versao>` criada a partir da `main`
 - [ ] Versão atualizada em `backend/main.py`
-- [ ] Build do frontend concluído sem erros
-- [ ] `frontend/dist/` commitado
-- [ ] ROADMAP atualizado
-- [ ] Push enviado
-- [ ] `release.ps1` executado
+- [ ] Build do frontend sem erros
+- [ ] `backend/main.py` + `frontend/dist/` + `ROADMAP.md` commitados
+- [ ] PR aberto e CI verde
+- [ ] PR mergeado (deploy.yml dispara automaticamente)
 - [ ] `/api/version` confirmado no servidor
 - [ ] Usuário avisado do Ctrl+Shift+R
