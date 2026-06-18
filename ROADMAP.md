@@ -1,7 +1,7 @@
 # Roadmap — E Mais Consultoria
 
 > Marque com `[x]` quando concluído. Adicione novas ideias na seção correspondente.
-> Última atualização: 2026-06-16
+> Última atualização: 2026-06-18
 
 ---
 
