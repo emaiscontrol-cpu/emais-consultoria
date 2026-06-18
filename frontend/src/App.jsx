@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
+import toast from 'react-hot-toast'
 import { AuthProvider, useAuth } from './contexts/AuthContext'
 import { useState, useEffect, useRef } from 'react'
 import Sidebar from './components/Sidebar'
@@ -35,53 +36,50 @@ import BuscaGlobal from './components/BuscaGlobal'
 import FloatingAI from './components/FloatingAI'
 import './index.css'
 
-function AvisoNovaVersao() {
-  const [novaVersao, setNovaVersao] = useState(null)
+// Compara versões semânticas "2.5.0k". Retorna true se a > b.
+function versaoMaiorQue(a, b) {
+  const parse = v => {
+    const m = (v || '').match(/^(\d+)\.(\d+)\.(\d+)([a-z]?)/)
+    if (!m) return [0, 0, 0, -1]
+    return [+m[1], +m[2], +m[3], m[4] ? m[4].charCodeAt(0) : -1]
+  }
+  const pa = parse(a), pb = parse(b)
+  for (let i = 0; i < 4; i++) {
+    if (pa[i] > pb[i]) return true
+    if (pa[i] < pb[i]) return false
+  }
+  return false
+}
 
+function AvisoNovaVersao() {
   useEffect(() => {
-    // Verifica versão uma única vez ao montar (quando o usuário loga)
+    // Verifica apenas uma vez por sessão do navegador (evita loop com ngrok pooling)
+    if (sessionStorage.getItem('versao_checada')) return
+    sessionStorage.setItem('versao_checada', '1')
+
     const versaoSalva = localStorage.getItem('emais_versao')
     fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
       .then(r => r.json())
       .then(d => {
         const v = d.version
-        const isBeta = v.includes('-beta')
+        if (v.includes('-beta')) return
         if (!versaoSalva) {
           localStorage.setItem('emais_versao', v)
-        } else if (v !== versaoSalva && !isBeta) {
-          setNovaVersao(v)
-        } else if (!isBeta) {
+          return
+        }
+        if (versaoMaiorQue(v, versaoSalva)) {
           localStorage.setItem('emais_versao', v)
+          toast(`Nova versão v${v} — pressione Ctrl+Shift+R para atualizar`, {
+            duration: 10000,
+            icon: '🔄',
+            style: { fontSize: 13 },
+          })
         }
       })
       .catch(() => {})
   }, [])
 
-  if (!novaVersao) return null
-
-  return (
-    <div style={{
-      position: 'fixed', top: 0, left: 0, right: 0, zIndex: 99999,
-      background: '#0096CF', color: '#fff',
-      padding: '10px 20px', display: 'flex', alignItems: 'center',
-      justifyContent: 'space-between', fontFamily: 'sans-serif',
-      fontSize: 13, boxShadow: '0 2px 8px rgba(0,0,0,0.25)',
-    }}>
-      <span>Nova versão disponível — <strong>v{novaVersao}</strong>. Deseja atualizar agora?</span>
-      <div style={{ display: 'flex', gap: 8 }}>
-        <button onClick={() => { localStorage.setItem('emais_versao', novaVersao); window.location.reload() }}
-          style={{ background: '#fff', color: '#0096CF', border: 'none', padding: '6px 16px',
-            borderRadius: 4, cursor: 'pointer', fontWeight: 700, fontSize: 13 }}>
-          Atualizar agora
-        </button>
-        <button onClick={() => setNovaVersao(null)}
-          style={{ background: 'transparent', color: 'rgba(255,255,255,0.8)', border: '1px solid rgba(255,255,255,0.4)',
-            padding: '6px 14px', borderRadius: 4, cursor: 'pointer', fontSize: 13 }}>
-          Agora não
-        </button>
-      </div>
-    </div>
-  )
+  return null
 }
 
 function ProtectedLayout() {
