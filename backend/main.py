@@ -180,6 +180,16 @@ with engine.connect() as conn:
         "ALTER TABLE planos_itens ADD COLUMN variavel_dre TEXT",
         # Migração: copia agrupamento → variavel_dre para TT/RES que ainda não têm
         "UPDATE planos_itens SET variavel_dre = agrupamento WHERE variavel_dre IS NULL AND (agrupamento IS NOT NULL AND agrupamento != '') AND tipo IN ('TT', 'RES')",
+        # UX-11: notificações de menção @usuario
+        """CREATE TABLE IF NOT EXISTS notificacoes_mencao (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            usuario_destino_id INTEGER NOT NULL REFERENCES usuarios(id),
+            de_usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
+            mensagem TEXT NOT NULL,
+            projeto_id INTEGER REFERENCES projetos(id),
+            lida BOOLEAN DEFAULT 0,
+            criado_em DATETIME DEFAULT (datetime('now'))
+        )""",
     ]):
         try:
             conn.execute(text(stmt))

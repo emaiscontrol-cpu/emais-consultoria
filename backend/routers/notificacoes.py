@@ -63,7 +63,36 @@ def gerar_alertas(db: Session, usuario: models.Usuario):
 
 @router.get("/")
 def listar(db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
-    return gerar_alertas(db, usuario)
+    alertas = gerar_alertas(db, usuario)
+    mencoes = (
+        db.query(models.NotificacaoMencao)
+        .filter(models.NotificacaoMencao.usuario_destino_id == usuario.id)
+        .order_by(models.NotificacaoMencao.criado_em.desc())
+        .limit(30)
+        .all()
+    )
+    for m in mencoes:
+        alertas.append({
+            "tipo": "mencao",
+            "id_mencao": m.id,
+            "lida": m.lida,
+            "titulo": m.mensagem,
+            "mensagem": f"de {m.de_usuario.nome}",
+            "projeto_id": m.projeto_id,
+            "dias": 0,
+        })
+    return alertas
+
+
+@router.post("/mencao/{id}/lida", status_code=204)
+def marcar_lida(id: int, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
+    m = db.query(models.NotificacaoMencao).filter(
+        models.NotificacaoMencao.id == id,
+        models.NotificacaoMencao.usuario_destino_id == usuario.id,
+    ).first()
+    if m:
+        m.lida = True
+        db.commit()
 
 
 @router.get("/excel")
