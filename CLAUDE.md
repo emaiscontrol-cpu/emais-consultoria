@@ -315,6 +315,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-18 (sessão 2)
+**O que foi feito:** corrigido bug 500 em `/api/version` no PostgreSQL (PR #4); CLAUDE.md atualizado com caminhos reais do servidor e seção de histórico (PR #5); `@` menção adicionada ao ChatPanel que usava input simples (PR #6); notificação no sino ao ser mencionado — nova tabela `notificacoes_mencao`, helper `notificar_mencoes`, integrado em chat e comentários de tarefa (PR #7); badge vermelho de mensagens não lidas no botão Chat com polling 30s e localStorage por projeto (PR #8).
+**Decisões tomadas:** SQLite mantido no dev local (criar Supabase DEV avaliado e descartado — custo sem benefício proporcional para time de 1 dev); menção `@` só funciona para perfis com permissão de listar usuários (`admin/consultor/ger_projeto`); badge de não lidas rastreia por `localStorage` sem tabela extra no banco; para diagnosticar 500 no servidor sempre verificar `C:\emals-service\logs\emals-backend.err.log`.
+**Próximo passo:** consultar ROADMAP.md para próxima feature — sistema estável em produção.
+
 ### 2026-06-18
 **O que foi feito:** atualização completa do CLAUDE.md (banco Supabase, 28 routers, todas as páginas, sidebar corrigida); commits organizados da branch `feature/testes-automatizados`; PR #2 mergeado; skills criadas (`/novo-modulo`, `/novo-router`, `/fix-permissao`, `/release`) em `.claude/commands/`; `SKILLS.md` criado; PR #3 (`release/v2.5.0t`) mergeado; diagnóstico e correção do 500 em `/api/version` pós-deploy (`_admin_db_path.exists()` quebrava com Supabase); PR #4 mergeado; Electron funcionando.
 **Decisões tomadas:** branch protection na `main` ativa — releases via branch `release/vX` + PR + CI; `gh` CLI em `C:\Program Files\GitHub CLI\gh.exe`; WinSW do servidor em `C:\emals-service\emals-backend.exe`, logs em `C:\emals-service\logs\emals-backend.err.log`, código em `C:\emals-app\backend\`; para diagnosticar erros no servidor, sempre ler `emals-backend.err.log`.
