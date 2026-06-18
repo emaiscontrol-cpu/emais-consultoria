@@ -284,7 +284,41 @@ emals_consultoria/
 ├── .github/workflows/
 │   ├── ci.yml                   # CI: testa em todo PR e push para main
 │   └── deploy.yml               # Deploy: self-hosted, só push para main
+├── .claude/commands/            # Skills do projeto (slash commands)
+│   ├── novo-modulo.md           # /novo-modulo
+│   ├── novo-router.md           # /novo-router
+│   ├── fix-permissao.md         # /fix-permissao
+│   └── release.md               # /release
+├── SKILLS.md                    # Documentação das skills
 ├── release.ps1                  # Script de deploy
 ├── ROADMAP.md                   # Backlog de features e correções
 └── CLAUDE.md                    # Este arquivo
 ```
+
+---
+
+## Instrução para o Claude — Histórico de Sessões
+
+**Ao final de cada sessão de trabalho**, antes de encerrar, o Claude deve atualizar a seção `## Histórico de Sessões` abaixo com uma entrada no seguinte formato:
+
+```
+### YYYY-MM-DD
+**O que foi feito:** resumo objetivo do que foi implementado, corrigido ou decidido.
+**Decisões tomadas:** escolhas de arquitetura, convenção ou fluxo que impactam sessões futuras.
+**Próximo passo:** o que ficou pendente ou o que deve ser feito na próxima sessão.
+```
+
+Regras:
+- Entradas mais recentes ficam no **topo** da lista
+- Máximo de **10 entradas** — remover as mais antigas quando ultrapassar
+- Ser objetivo: 1–3 linhas por campo, sem repetir o que já está no `ROADMAP.md`
+- Commitar junto com as demais mudanças da sessão (não criar commit separado só para o histórico)
+
+---
+
+## Histórico de Sessões
+
+### 2026-06-18
+**O que foi feito:** comparação do CLAUDE.md com a estrutura real e atualização completa (banco Supabase, 28 routers, todas as páginas, sidebar corrigida); commits organizados da branch `feature/testes-automatizados` separando pequenos fixes de features maiores (kanban, chat, histórico, @menções, template de projeto, SLA, JWT refresh, F12 Electron); PR #2 mergeado; skills de projeto criadas (`/novo-modulo`, `/novo-router`, `/fix-permissao`, `/release`) em `.claude/commands/`; `SKILLS.md` criado; PR #3 (`release/v2.5.0t`) aberto com build `v2.5.0t`; `.gitignore` ajustado para versionar `.claude/commands/` e ignorar `settings.json`.
+**Decisões tomadas:** branch protection na `main` está ativa — releases passam obrigatoriamente por branch `release/vX` + PR + CI; `gh` CLI localizado em `C:\Program Files\GitHub CLI\gh.exe` (não está no PATH); skills ficam em `.claude/commands/` (não `.claude/skills/`); `.claude/settings.json` e `.claude/settings.local.json` ignorados pelo git.
+**Próximo passo:** aguardar CI do PR #3 ficar verde e mergear para concluir o release `v2.5.0t`; verificar `/api/version` no servidor após deploy.
