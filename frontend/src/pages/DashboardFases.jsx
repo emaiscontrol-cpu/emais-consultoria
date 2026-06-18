@@ -160,7 +160,7 @@ export default function DashboardFases() {
   const [loading,     setLoading]     = useState(false)
   const [loadingProj, setLoadingProj] = useState(true)
 
-  const isCliente = usuario?.perfil === 'cliente'
+  const isCliente = usuario?.perfil === 'analista'
 
   useEffect(() => {
     dashboardAPI.projetosResumo()

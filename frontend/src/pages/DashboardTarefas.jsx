@@ -53,7 +53,7 @@ export default function DashboardTarefas() {
   const [projeto,    setProjeto]    = useState(null)
   const [loading,    setLoading]    = useState(false)
 
-  const isCliente = usuario?.perfil === 'cliente'
+  const isCliente = usuario?.perfil === 'analista'
 
   useEffect(() => {
     dashboardAPI.projetosResumo()
