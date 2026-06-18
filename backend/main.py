@@ -310,7 +310,7 @@ def get_version():
         "db_url": _db_url,
         "db_cwd": _os.getcwd(),
         "admin_db_path": str(_admin_db_path),
-        "admin_db_exists": _admin_db_path.exists(),
+        "admin_db_exists": _admin_db_path.exists() if _admin_db_path else None,
         "backup_dir": str(_backup_dir),
         "clientes": _nc,
         "usuarios": _nu,
