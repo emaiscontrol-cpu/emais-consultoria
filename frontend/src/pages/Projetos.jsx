@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { projetosAPI, clientesAPI } from '../services/api'
+import { projetosAPI, clientesAPI, modelosAPI } from '../services/api'
 import { Badge, Progress, LoadingPage, Modal } from '../components/shared'
 import { useAuth } from '../contexts/AuthContext'
 import { FolderKanban, FileDown, Plus, X, Pencil, Trash2 } from 'lucide-react'
@@ -14,7 +14,8 @@ export default function Projetos() {
   const [clientes,  setClientes]  = useState([])
   const [loading,   setLoading]   = useState(true)
   const [showModal, setShowModal] = useState(false)
-  const [form, setForm] = useState({ nome:'', descricao:'', cliente_id:'', data_inicio:'', data_fim_prev:'' })
+  const [form, setForm] = useState({ nome:'', descricao:'', cliente_id:'', data_inicio:'', data_fim_prev:'', template_id:'' })
+  const [templates, setTemplates] = useState([])
   const [saving, setSaving] = useState(false)
   const [showNovoCliente, setShowNovoCliente] = useState(false)
   const [formCliente, setFormCliente] = useState({ razao_social:'', cnpj:'', contato_nome:'', contato_email:'', contato_fone:'' })
@@ -50,10 +51,12 @@ export default function Projetos() {
   useEffect(() => {
     Promise.all([
       projetosAPI.listar(),
-      isConsultor ? clientesAPI.listar() : Promise.resolve({ data: [] })
-    ]).then(([p, c]) => {
+      isConsultor ? clientesAPI.listar() : Promise.resolve({ data: [] }),
+      isConsultor ? modelosAPI.listar() : Promise.resolve({ data: [] }),
+    ]).then(([p, c, t]) => {
       setProjetos(p.data)
       setClientes(c.data)
+      setTemplates(t.data)
     }).catch(() => toast.error('Erro ao carregar projetos'))
     .finally(() => setLoading(false))
   }, [])
@@ -77,13 +80,23 @@ export default function Projetos() {
     e.preventDefault()
     setSaving(true)
     try {
-      await projetosAPI.criar({
-        ...form,
+      const { data: novoProjeto } = await projetosAPI.criar({
+        nome: form.nome,
+        descricao: form.descricao || null,
         cliente_id: parseInt(form.cliente_id),
         data_inicio: form.data_inicio || null,
         data_fim_prev: form.data_fim_prev || null,
       })
-      toast.success('Projeto criado!')
+      if (form.template_id) {
+        try {
+          await modelosAPI.aplicar(parseInt(form.template_id), novoProjeto.id)
+          toast.success('Projeto criado com template aplicado!')
+        } catch {
+          toast.success('Projeto criado! (template não pôde ser aplicado)')
+        }
+      } else {
+        toast.success('Projeto criado!')
+      }
       setShowModal(false)
       const { data } = await projetosAPI.listar()
       setProjetos(data)
@@ -299,6 +312,23 @@ export default function Projetos() {
                   <input type="date" value={form.data_fim_prev} onChange={e=>setForm(f=>({...f,data_fim_prev:e.target.value}))} />
                 </div>
               </div>
+              {templates.length > 0 && (
+                <div className="form-group">
+                  <label>Template de fases (opcional)</label>
+                  <select value={form.template_id} onChange={e=>setForm(f=>({...f,template_id:e.target.value}))}>
+                    <option value="">— Sem template (projeto em branco) —</option>
+                    {templates.map(t => (
+                      <option key={t.id} value={t.id}>{t.nome} ({t.total_fases} fases, {t.total_tarefas} tarefas)</option>
+                    ))}
+                  </select>
+                  {form.template_id && (
+                    <span style={{ fontSize:11, color:'var(--brand)', marginTop:3, display:'block' }}>
+                      As fases e tarefas serão criadas automaticamente ao salvar.
+                      {form.data_inicio ? ' Prazos calculados a partir da data de início.' : ' Informe a data de início para calcular os prazos automaticamente.'}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           )}
 

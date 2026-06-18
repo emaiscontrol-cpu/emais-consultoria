@@ -1,29 +1,42 @@
 import { useEffect, useState } from 'react'
 import { usuariosAPI, clientesAPI } from '../services/api'
 import { Modal, Avatar, LoadingPage } from '../components/shared'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, KeyRound, X } from 'lucide-react'
+import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
-const PERFIS = { admin:'Administrador', consultor:'Consultor', ger_projeto:'Ger. Projeto', cliente:'Cliente', ti:'T.I' }
-const CORES  = { admin:'blue', consultor:'teal', ger_projeto:'amber', cliente:'purple', ti:'green' }
-const FORM_VAZIO = { nome:'', email:'', senha:'', perfil:'consultor', cliente_id:'' }
+const PERFIS = { admin:'Administrador', consultor:'Consultor', ger_projeto:'Ger. Projeto', analista:'Analista', ti:'T.I' }
+const CORES  = { admin:'blue', consultor:'teal', ger_projeto:'amber', analista:'purple', ti:'green' }
+const FORM_VAZIO = { nome:'', email:'', senha:'', perfil:'consultor', cliente_id:'', ia_claude: false, ia_gemini: false, ia_openrouter: false }
 
 export default function Usuarios() {
-  const [usuarios,  setUsuarios]  = useState([])
-  const [clientes,  setClientes]  = useState([])
-  const [loading,   setLoading]   = useState(true)
-  const [showModal, setShowModal] = useState(false)
-  const [editando,  setEditando]  = useState(null)
-  const [deletando, setDeletando] = useState(null)
-  const [form,      setForm]      = useState(FORM_VAZIO)
-  const [saving,    setSaving]    = useState(false)
+  const { usuario: eu } = useAuth()
+  const isAdmin = eu?.perfil === 'admin'
+
+  const [usuarios,      setUsuarios]      = useState([])
+  const [clientes,      setClientes]      = useState([])
+  const [resetRequests, setResetRequests] = useState([])
+  const [loading,       setLoading]       = useState(true)
+  const [showModal,     setShowModal]     = useState(false)
+  const [editando,      setEditando]      = useState(null)
+  const [deletando,     setDeletando]     = useState(null)
+  const [form,          setForm]          = useState(FORM_VAZIO)
+  const [saving,        setSaving]        = useState(false)
 
   const carregar = async () => {
     try {
       const [u, c] = await Promise.all([usuariosAPI.listar(), clientesAPI.listar()])
-      setUsuarios(u.data); setClientes(c.data)
+      setUsuarios(u.data)
+      setClientes(c.data)
     } catch { toast.error('Erro ao carregar usuários') }
     finally { setLoading(false) }
+
+    if (isAdmin) {
+      try {
+        const rr = await usuariosAPI.listarResetRequests()
+        setResetRequests(rr.data)
+      } catch { /* silencioso — banner simplesmente não aparece */ }
+    }
   }
   useEffect(() => { carregar() }, [])
 
@@ -35,7 +48,7 @@ export default function Usuarios() {
 
   function abrirEditar(u) {
     setEditando(u)
-    setForm({ nome: u.nome, email: u.email, senha: '', perfil: u.perfil, cliente_id: u.cliente_id || '' })
+    setForm({ nome: u.nome, email: u.email, senha: '', perfil: u.perfil, cliente_id: u.cliente_id || '', ia_claude: u.ia_claude ?? false, ia_gemini: u.ia_gemini ?? false, ia_openrouter: u.ia_openrouter ?? false })
     setShowModal(true)
   }
 
@@ -53,6 +66,11 @@ export default function Usuarios() {
         if (form.senha) payload.senha = form.senha
         if (clienteId) payload.cliente_id = clienteId
         if (!clienteId && editando.cliente_id) payload.remover_cliente = true
+        if (isAdmin) {
+          payload.ia_claude     = form.ia_claude
+          payload.ia_gemini     = form.ia_gemini
+          payload.ia_openrouter = form.ia_openrouter
+        }
         await usuariosAPI.atualizar(editando.id, payload)
         toast.success('Usuário atualizado!')
       } else {
@@ -77,7 +95,19 @@ export default function Usuarios() {
     }
   }
 
-  const precisaCliente = ['cliente', 'ger_projeto', 'ti'].includes(form.perfil)
+  const handleAtenderReset = async (req) => {
+    const u = usuarios.find(x => x.id === req.usuario_id)
+    if (u) abrirEditar(u)
+    await usuariosAPI.dispensarReset(req.id)
+    setResetRequests(prev => prev.filter(r => r.id !== req.id))
+  }
+
+  const handleDispensarReset = async (id) => {
+    await usuariosAPI.dispensarReset(id)
+    setResetRequests(prev => prev.filter(r => r.id !== id))
+  }
+
+  const precisaCliente = ['analista', 'ger_projeto', 'ti'].includes(form.perfil)
 
   if (loading) return <LoadingPage />
 
@@ -90,6 +120,46 @@ export default function Usuarios() {
         </div>
         <button className="btn btn-primary" onClick={abrirNovo}>+ Novo usuário</button>
       </div>
+
+      {/* Banner solicitações de reset (admin only) */}
+      {isAdmin && resetRequests.length > 0 && (
+        <div style={{
+          background: '#FFF7ED', border: '1px solid #FED7AA',
+          borderRadius: 10, padding: '14px 18px', marginBottom: 16,
+        }}>
+          <div style={{ display:'flex', alignItems:'center', gap:8, marginBottom:10 }}>
+            <KeyRound size={16} color="#EA580C" />
+            <span style={{ fontWeight:700, fontSize:13, color:'#EA580C' }}>
+              {resetRequests.length} solicitação(ões) de redefinição de senha pendente(s)
+            </span>
+          </div>
+          <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
+            {resetRequests.map(r => (
+              <div key={r.id} style={{
+                display:'flex', alignItems:'center', justifyContent:'space-between',
+                background:'#fff', borderRadius:8, padding:'8px 12px',
+                border:'1px solid #FED7AA',
+              }}>
+                <div>
+                  <span style={{ fontWeight:600, fontSize:13 }}>{r.nome}</span>
+                  <span style={{ color:'#6b7280', fontSize:12, marginLeft:8 }}>{r.email}</span>
+                  <span style={{ color:'#9ca3af', fontSize:11, marginLeft:8 }}>
+                    {new Date(r.criado_em).toLocaleString('pt-BR')}
+                  </span>
+                </div>
+                <div style={{ display:'flex', gap:6 }}>
+                  <button className="btn btn-sm btn-primary" onClick={() => handleAtenderReset(r)}>
+                    Redefinir senha
+                  </button>
+                  <button className="btn btn-sm btn-ghost" title="Dispensar" onClick={() => handleDispensarReset(r.id)}>
+                    <X size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       <div className="card">
         <div className="table-wrap">
@@ -106,6 +176,13 @@ export default function Usuarios() {
                       <div style={{ display:'flex', alignItems:'center', gap:8 }}>
                         <Avatar nome={u.nome} color={CORES[u.perfil] || 'blue'} />
                         <span style={{ fontWeight:500 }}>{u.nome}</span>
+                        {isAdmin && (u.ia_claude || u.ia_gemini || u.ia_openrouter) && (
+                          <div style={{ display:'flex', gap:3 }}>
+                            {u.ia_claude     && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, background:'#7c3aed22', color:'#7c3aed', fontWeight:700 }}>C</span>}
+                            {u.ia_gemini     && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, background:'#1A73E822', color:'#1A73E8', fontWeight:700 }}>G</span>}
+                            {u.ia_openrouter && <span style={{ fontSize:9, padding:'1px 5px', borderRadius:3, background:'#f59e0b22', color:'#f59e0b', fontWeight:700 }}>OR</span>}
+                          </div>
+                        )}
                       </div>
                     </td>
                     <td className="text-muted">{u.email}</td>
@@ -168,9 +245,9 @@ export default function Usuarios() {
               </div>
               {precisaCliente && (
                 <div className="form-group">
-                  <label>Cliente vinculado{form.perfil === 'cliente' ? ' *' : ''}</label>
+                  <label>Cliente vinculado{form.perfil === 'analista' ? ' *' : ''}</label>
                   <select value={form.cliente_id} onChange={e => setForm(f => ({...f, cliente_id: e.target.value}))}
-                    required={form.perfil === 'cliente'}>
+                    required={form.perfil === 'analista'}>
                     <option value="">Nenhum</option>
                     {clientes.filter(c => c.ativo).map(c => (
                       <option key={c.id} value={c.id}>{c.razao_social}</option>
@@ -179,6 +256,35 @@ export default function Usuarios() {
                 </div>
               )}
             </div>
+            {/* Toggles de IA — visíveis apenas para admin */}
+            {isAdmin && (
+              <div style={{ borderTop:'1px solid var(--border)', marginTop:4, paddingTop:14 }}>
+                <div style={{ fontWeight:600, fontSize:13, marginBottom:10 }}>Acesso à IA</div>
+                {[
+                  { key:'ia_claude',     label:'Claude',      sub:'Anthropic',   color:'#7c3aed' },
+                  { key:'ia_gemini',     label:'Gemini',      sub:'Google AI',   color:'#1A73E8' },
+                  { key:'ia_openrouter', label:'OpenRouter',  sub:'Multi-modelo',color:'#f59e0b' },
+                ].map(({ key, label, sub, color }) => (
+                  <div key={key} style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:10 }}>
+                    <div>
+                      <span style={{ fontWeight:600, fontSize:13, color }}>{label}</span>
+                      <span style={{ fontSize:11, color:'var(--text-muted)', marginLeft:6 }}>{sub}</span>
+                    </div>
+                    <button type="button" onClick={() => setForm(f => ({ ...f, [key]: !f[key] }))} style={{
+                      width:44, height:24, borderRadius:12, border:'none', cursor:'pointer',
+                      background: form[key] ? color : 'var(--border)',
+                      position:'relative', flexShrink:0, transition:'background .2s',
+                    }}>
+                      <span style={{
+                        position:'absolute', top:2, left: form[key] ? 20 : 2,
+                        width:20, height:20, borderRadius:'50%', background:'#fff',
+                        transition:'left .2s', display:'block', boxShadow:'0 1px 3px rgba(0,0,0,.3)',
+                      }}/>
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
           </form>
         </Modal>
       )}

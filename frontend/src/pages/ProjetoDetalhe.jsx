@@ -1,10 +1,92 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { projetosAPI, fasesAPI, tarefasAPI, usuariosAPI, subtarefasAPI } from '../services/api'
+import { projetosAPI, fasesAPI, tarefasAPI, usuariosAPI, subtarefasAPI, historicoAPI, chatAPI } from '../services/api'
 import { Badge, Progress, Avatar, Modal, LoadingPage } from '../components/shared'
 import { useAuth } from '../contexts/AuthContext'
-import { ChevronDown, ChevronRight, Plus, MessageSquare, Check, Lock, ArrowLeft, ListTodo, Trash2, Pencil, X, EyeOff, Eye, UserPlus, Settings, SlidersHorizontal } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus, MessageSquare, Check, Lock, ArrowLeft, ListTodo, Trash2, Pencil, X, EyeOff, Eye, UserPlus, Settings, SlidersHorizontal, History, Kanban, SendHorizonal, ChevronUp, ArrowUpDown } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+// ── UX-4: Badge de SLA ────────────────────────────────────
+function BadgeSLA({ dataPrazo, status }) {
+  if (!dataPrazo || status === 'concluida') return null
+  const dias = Math.floor((new Date(dataPrazo) - new Date()) / 86400000)
+  if (dias < 0)  return <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--red)', background: 'var(--red-light)', padding: '1px 6px', borderRadius: 99, marginLeft: 4 }}>Atrasada {Math.abs(dias)}d</span>
+  if (dias <= 5) return <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--amber)', background: 'var(--amber-light)', padding: '1px 6px', borderRadius: 99, marginLeft: 4 }}>Vence em {dias}d</span>
+  return <span style={{ fontSize: 10, fontWeight: 700, color: 'var(--green)', background: 'var(--green-light)', padding: '1px 6px', borderRadius: 99, marginLeft: 4 }}>{dias}d restantes</span>
+}
+
+// ── UX-8: Input com sugestão @mention ─────────────────────
+function MentionInput({ value, onChange, onKeyDown, placeholder, usuarios, style }) {
+  const [show, setShow] = useState(false)
+  const [filtro, setFiltro] = useState([])
+  const inputRef = useRef(null)
+
+  const handleChange = (e) => {
+    const val = e.target.value
+    onChange(val)
+    const match = val.match(/@(\w*)$/)
+    if (match) {
+      const termo = match[1].toLowerCase()
+      const sugs = usuarios.filter(u => u.nome.toLowerCase().includes(termo)).slice(0, 5)
+      setFiltro(sugs)
+      setShow(sugs.length > 0)
+    } else {
+      setShow(false)
+    }
+  }
+
+  const inserir = (nome) => {
+    const novo = value.replace(/@\w*$/, `@${nome.split(' ')[0]} `)
+    onChange(novo)
+    setShow(false)
+    inputRef.current?.focus()
+  }
+
+  return (
+    <div style={{ position: 'relative', flex: 1 }}>
+      <input
+        ref={inputRef}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={onKeyDown}
+        placeholder={placeholder}
+        style={style}
+      />
+      {show && (
+        <div style={{
+          position: 'absolute', top: '100%', left: 0, zIndex: 9999,
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 6, minWidth: 180, boxShadow: '0 4px 12px rgba(0,0,0,.3)',
+          marginTop: 2,
+        }}>
+          {filtro.map(u => (
+            <button key={u.id} onClick={() => inserir(u.nome)}
+              style={{ display: 'block', width: '100%', padding: '7px 12px', background: 'none',
+                border: 'none', cursor: 'pointer', textAlign: 'left', fontSize: 12, color: 'var(--text)' }}
+              onMouseEnter={e => e.currentTarget.style.background = 'var(--hover)'}
+              onMouseLeave={e => e.currentTarget.style.background = 'none'}>
+              @{u.nome}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
+// Renderiza texto com @menções em azul
+function TextoComMencoes({ texto }) {
+  const partes = texto.split(/(@\w+)/g)
+  return (
+    <span>
+      {partes.map((p, i) =>
+        p.startsWith('@')
+          ? <strong key={i} style={{ color: 'var(--brand)' }}>{p}</strong>
+          : p
+      )}
+    </span>
+  )
+}
 
 const SUB_STATUS = {
   a_fazer:  { label:'A fazer',   cor:'var(--gray)',  bg:'var(--gray-light)',  next:'pendente'  },
@@ -123,10 +205,13 @@ function SubtarefaItem({ sub, onUpdate, onDelete, readonly, usuarios }) {
   )
 }
 
-function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
+function TarefaRow({ tarefa, usuarios, onUpdate, perfil, podeAddAtividade, onMover }) {
   const [showComent,   setShowComent]   = useState(false)
   const [showSubs,     setShowSubs]     = useState(false)
   const [showEdit,     setShowEdit]     = useState(false)
+  const [showHistorico,setShowHistorico]= useState(false)
+  const [historico,    setHistorico]    = useState([])
+  const [loadingHist,  setLoadingHist]  = useState(false)
   const [comentarios,  setComentarios]  = useState([])
   const [subtarefas,   setSubtarefas]   = useState(tarefa.subtarefas || [])
   const [novoComent,   setNovoComent]   = useState('')
@@ -145,7 +230,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
   const [savingResp,       setSavingResp]       = useState(false)
   const [formResp, setFormResp] = useState({ nome:'', funcao:'', email:'', telefone:'' })
 
-  const isCliente   = perfil === 'cliente'
+  const isCliente   = perfil === 'analista'
   const isConsultor = ['admin','consultor','ger_projeto'].includes(perfil)
   const responsavel = usuarios.find(u => u.id === tarefa.responsavel_id)
 
@@ -265,7 +350,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
       })
       setNovaSubForm({ nome:'', responsavel_id:'', data_inicio:'', data_fim:'' })
       await recarregarSubs()
-    } catch { toast.error('Erro ao adicionar subtarefa') }
+    } catch { toast.error('Erro ao adicionar atividade') }
     finally { setSavingSub(false) }
   }
 
@@ -273,7 +358,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
     try {
       await subtarefasAPI.deletar(id)
       await recarregarSubs()
-    } catch { toast.error('Erro ao remover subtarefa') }
+    } catch { toast.error('Erro ao remover atividade') }
   }
 
   const carregarComentarios = async () => {
@@ -282,6 +367,20 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
       setComentarios(data)
     }
     setShowComent(v => !v)
+    setShowHistorico(false)
+  }
+
+  const carregarHistorico = async () => {
+    if (!showHistorico) {
+      setLoadingHist(true)
+      try {
+        const { data } = await historicoAPI.porTarefa(tarefa.id)
+        setHistorico(data)
+      } catch { toast.error('Erro ao carregar histórico') }
+      finally { setLoadingHist(false) }
+    }
+    setShowHistorico(v => !v)
+    setShowComent(false)
   }
 
   const enviarComentario = async () => {
@@ -298,7 +397,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
 
   return (
     <div style={{ borderBottom:'0.5px solid var(--border)', opacity: ativa ? 1 : 0.45 }}>
-      <div style={{ display:'grid', gridTemplateColumns:'32px 1fr 100px 80px 100px 185px', alignItems:'center', gap:10, padding:'9px 4px' }}>
+      <div style={{ display:'grid', gridTemplateColumns:'32px 1fr 100px 80px 100px auto', alignItems:'center', gap:10, padding:'9px 4px' }}>
         {/* Checkbox */}
         <div onClick={!bloqueadaParaCliente ? handleToggleStatus : undefined}
           style={{ width:20, height:20, borderRadius:4,
@@ -336,9 +435,10 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
             : <span style={{ color:'var(--text-3)', fontSize:11 }}>—</span>}
         </div>
 
-        {/* Prazo */}
+        {/* Prazo + SLA (UX-4) */}
         <div style={{ fontSize:11, color: tarefa.status === 'atrasada' ? 'var(--red)' : 'var(--text-2)' }}>
           {tarefa.data_prazo ? new Date(tarefa.data_prazo).toLocaleDateString('pt-BR') : '—'}
+          <BadgeSLA dataPrazo={tarefa.data_prazo} status={tarefa.status} />
         </div>
 
         {/* % */}
@@ -350,13 +450,28 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
         {/* Status + botões */}
         <div style={{ display:'flex', alignItems:'center', gap:3, flexWrap:'nowrap' }}>
           <Badge status={tarefa.status} />
-          <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }} title="Subtarefas"
+          <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }} title="Atividades"
             onClick={() => { setShowSubs(v => !v); setShowEdit(false) }}>
             <ListTodo size={13} color={showSubs ? 'var(--brand)' : undefined} />
           </button>
-          <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }} onClick={carregarComentarios}>
+          <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }} onClick={carregarComentarios} title="Comentários">
             <MessageSquare size={13} />
           </button>
+          <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }} onClick={carregarHistorico} title="Histórico de alterações">
+            <History size={13} color={showHistorico ? 'var(--brand)' : undefined} />
+          </button>
+          {isConsultor && onMover && (
+            <>
+              <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }} title="Mover para cima"
+                onClick={() => onMover(tarefa.id, 'up')}>
+                <ChevronUp size={12} />
+              </button>
+              <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }} title="Mover para baixo"
+                onClick={() => onMover(tarefa.id, 'down')}>
+                <ChevronDown size={12} />
+              </button>
+            </>
+          )}
           {isConsultor && (<>
             <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }}
               title={ativa ? 'Desativar tarefa' : 'Reativar tarefa'}
@@ -380,7 +495,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
         <div style={{ padding:'8px 12px 12px 36px', background:'var(--bg)' }}>
           <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom:8 }}>
             <span style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', letterSpacing:'.05em' }}>
-              Subtarefas
+              Atividades
             </span>
             <button className="btn btn-ghost btn-sm" style={{ padding:'2px 5px' }} title="Fechar"
               onClick={() => setShowSubs(false)}>
@@ -388,17 +503,17 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
             </button>
           </div>
           {subtarefas.length === 0 && (
-            <div style={{ fontSize:12, color:'var(--text-3)', marginBottom:8 }}>Nenhuma subtarefa ainda.</div>
+            <div style={{ fontSize:12, color:'var(--text-3)', marginBottom:8 }}>Nenhuma atividade ainda.</div>
           )}
           {subtarefas.map(s => (
             <SubtarefaItem key={s.id} sub={s} onUpdate={recarregarSubs} onDelete={deletarSub} readonly={false} usuarios={usuarios} />
           ))}
-          {isConsultor && (
+          {(isConsultor || podeAddAtividade) && (
             <div style={{ marginTop:10 }}>
               <div style={{ display:'flex', gap:6, marginBottom:6 }}>
                 <input value={novaSubForm.nome}
                   onChange={e=>setNovaSubForm(f=>({...f,nome:e.target.value}))}
-                  placeholder="Nova subtarefa..." style={{ flex:1, fontSize:12, padding:'5px 9px' }}
+                  placeholder="Nova atividade..." style={{ flex:1, fontSize:12, padding:'5px 9px' }}
                   onKeyDown={e=>e.key==='Enter'&&adicionarSub()} />
                 <button className="btn btn-primary btn-sm" onClick={adicionarSub} disabled={savingSub || !novaSubForm.nome.trim()}>
                   {savingSub ? '...' : <Plus size={13}/>}
@@ -525,7 +640,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
         </div>
       )}
 
-      {/* Painel de comentários */}
+      {/* Painel de comentários (UX-8: MentionInput) */}
       {showComent && (
         <div style={{ padding:'8px 12px 12px 36px', background:'var(--bg)' }}>
           {comentarios.length === 0 && <div className="text-sm text-muted">Nenhum comentário ainda.</div>}
@@ -533,24 +648,52 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil }) {
             <div key={c.id} style={{ marginBottom:8 }}>
               <span style={{ fontWeight:600, fontSize:12 }}>{c.autor.nome}</span>
               <span className="text-sm text-muted" style={{ marginLeft:8 }}>{new Date(c.criado_em).toLocaleString('pt-BR')}</span>
-              <div className="text-sm" style={{ marginTop:2 }}>{c.texto}</div>
+              <div className="text-sm" style={{ marginTop:2 }}><TextoComMencoes texto={c.texto} /></div>
             </div>
           ))}
           <div style={{ display:'flex', gap:6, marginTop:8 }}>
-            <input value={novoComent} onChange={e=>setNovoComent(e.target.value)}
-              placeholder="Adicionar comentário..." style={{ flex:1, fontSize:12, padding:'6px 9px' }}
-              onKeyDown={e=>e.key==='Enter'&&enviarComentario()} />
+            <MentionInput
+              value={novoComent}
+              onChange={setNovoComent}
+              placeholder="Adicionar comentário... (@ para mencionar)"
+              usuarios={usuarios}
+              style={{ flex:1, fontSize:12, padding:'6px 9px' }}
+              onKeyDown={e=>e.key==='Enter'&&!e.shiftKey&&enviarComentario()}
+            />
             <button className="btn btn-primary btn-sm" onClick={enviarComentario} disabled={loadingComent}>
               Enviar
             </button>
           </div>
         </div>
       )}
+
+      {/* Painel de histórico de alterações (UX-7) */}
+      {showHistorico && (
+        <div style={{ padding:'8px 12px 12px 36px', background:'var(--bg)' }}>
+          <div style={{ fontSize:11, fontWeight:700, color:'var(--text-3)', textTransform:'uppercase', letterSpacing:'.05em', marginBottom:8 }}>
+            Histórico de alterações
+          </div>
+          {loadingHist && <div className="text-sm text-muted">Carregando...</div>}
+          {!loadingHist && historico.length === 0 && (
+            <div className="text-sm text-muted">Nenhuma alteração registrada ainda.</div>
+          )}
+          {historico.map(h => (
+            <div key={h.id} style={{ display:'flex', gap:10, padding:'5px 0', borderBottom:'0.5px solid var(--border)', fontSize:11 }}>
+              <span style={{ color:'var(--text-3)', whiteSpace:'nowrap' }}>{new Date(h.criado_em).toLocaleString('pt-BR')}</span>
+              <span style={{ fontWeight:600, color:'var(--text-2)', minWidth:90 }}>{h.campo}</span>
+              <span style={{ color:'var(--text-3)' }}>{h.valor_antes ?? '—'}</span>
+              <span style={{ color:'var(--text-3)' }}>→</span>
+              <span style={{ color:'var(--text)', fontWeight:500 }}>{h.valor_depois ?? '—'}</span>
+              <span style={{ color:'var(--text-3)', marginLeft:'auto', whiteSpace:'nowrap' }}>{h.usuario_nome}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
 
-function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, onRefresh }) {
+function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, onRefresh, onMoverFase }) {
   const [open, setOpen] = useState(false)
   const [painel,        setPainel]        = useState(null) // 'editar' | 'comentarios' | 'parametros' | null
   const [showAddTarefa, setShowAddTarefa] = useState(false)
@@ -584,7 +727,7 @@ function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, 
   const isConsultor   = ['admin','consultor','ger_projeto'].includes(perfil)
   const isAdmin       = perfil === 'admin'
   const podeAddTarefa = isConsultor || (
-    perfil === 'cliente' &&
+    perfil === 'analista' &&
     clienteIdUsuario === clienteIdProjeto &&
     fase.responsavel?.perfil === 'ger_projeto'
   )
@@ -708,6 +851,18 @@ function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, 
         {/* Botões de ação da fase */}
         {isConsultor && (
           <div style={{ display:'flex', gap:2, flexShrink:0 }} onClick={e => e.stopPropagation()}>
+            {onMoverFase && (
+              <>
+                <button className="btn btn-ghost btn-sm" style={{ padding:'4px 5px' }} title="Mover fase para cima"
+                  onClick={() => onMoverFase(fase.id, 'up')}>
+                  <ChevronUp size={12} />
+                </button>
+                <button className="btn btn-ghost btn-sm" style={{ padding:'4px 5px' }} title="Mover fase para baixo"
+                  onClick={() => onMoverFase(fase.id, 'down')}>
+                  <ChevronDown size={12} />
+                </button>
+              </>
+            )}
             <button className="btn btn-ghost btn-sm" style={{ padding:'4px 6px' }} title="Editar fase"
               onClick={() => togglePainel('editar')}>
               <Pencil size={12} color={painel === 'editar' ? 'var(--brand)' : undefined} />
@@ -758,7 +913,7 @@ function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, 
             <label>Responsável pela fase</label>
             <select value={formFase.responsavel_id} onChange={e=>setFormFase(f=>({...f,responsavel_id:e.target.value}))}>
               <option value="">— Nenhum —</option>
-              {usuarios.filter(u => u.perfil === 'ger_projeto').map(u => (
+              {usuarios.filter(u => ['ger_projeto','consultor','admin'].includes(u.perfil)).map(u => (
                 <option key={u.id} value={String(u.id)}>{u.nome}</option>
               ))}
             </select>
@@ -884,7 +1039,8 @@ function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, 
           )}
 
           {fase.tarefas?.map(t => (
-            <TarefaRow key={t.id} tarefa={t} usuarios={usuarios} onUpdate={onRefresh} perfil={perfil} />
+            <TarefaRow key={t.id} tarefa={t} usuarios={usuarios} onUpdate={onRefresh} perfil={perfil} podeAddAtividade={podeAddTarefa}
+              onMover={isConsultor ? async (tid, dir) => { await tarefasAPI.reordenar(tid, dir); onRefresh() } : null} />
           ))}
 
           {podeAddTarefa && (
@@ -970,6 +1126,153 @@ function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, 
   )
 }
 
+// ── Kanban (UX-5) ─────────────────────────────────────────
+const KANBAN_COLS = [
+  { status: 'pendente',          label: 'Pendente',          cor: 'var(--text-3)' },
+  { status: 'em_andamento',      label: 'Em andamento',      cor: 'var(--brand)'  },
+  { status: 'aguard_validacao',  label: 'Aguard. Validação', cor: 'var(--amber)'  },
+  { status: 'concluida',         label: 'Concluída',         cor: 'var(--green)'  },
+]
+
+function KanbanView({ projeto, isConsultor, onRefresh }) {
+  const todas = (projeto.fases || []).flatMap(f =>
+    (f.tarefas || []).filter(t => t.ativo !== false).map(t => ({ ...t, fase_nome: f.nome }))
+  )
+
+  const moverStatus = async (tarefa, novoStatus) => {
+    try {
+      await tarefasAPI.atualizar(tarefa.id, { status: novoStatus })
+      onRefresh()
+    } catch { toast.error('Erro ao mover tarefa') }
+  }
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, overflowX: 'auto' }}>
+      {KANBAN_COLS.map(col => {
+        const cards = todas.filter(t => t.status === col.status)
+        return (
+          <div key={col.status} style={{ background: 'var(--bg)', borderRadius: 10, padding: '10px 8px', minHeight: 160 }}>
+            <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', marginBottom: 10, padding: '0 4px' }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: col.cor, textTransform: 'uppercase', letterSpacing: '.06em' }}>{col.label}</span>
+              <span style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-3)', background: 'var(--border)', borderRadius: 99, padding: '1px 7px' }}>{cards.length}</span>
+            </div>
+            {cards.map(t => (
+              <div key={t.id} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 8, padding: '8px 10px', marginBottom: 8 }}>
+                <div style={{ fontSize: 12, fontWeight: 500, color: 'var(--text)', marginBottom: 4 }}>{t.nome}</div>
+                <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 6 }}>{t.fase_nome}</div>
+                {t.data_prazo && <BadgeSLA dataPrazo={t.data_prazo} status={t.status} />}
+                {isConsultor && (
+                  <div style={{ display: 'flex', gap: 4, marginTop: 6, flexWrap: 'wrap' }}>
+                    {KANBAN_COLS.filter(c => c.status !== col.status).map(c => (
+                      <button key={c.status} onClick={() => moverStatus(t, c.status)}
+                        style={{ fontSize: 10, padding: '2px 7px', borderRadius: 99, cursor: 'pointer',
+                          background: 'var(--bg)', border: `1px solid ${c.cor}`, color: c.cor }}>
+                        → {c.label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+            {cards.length === 0 && (
+              <div style={{ fontSize: 11, color: 'var(--text-3)', textAlign: 'center', padding: '16px 0' }}>Vazio</div>
+            )}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
+// ── Chat por projeto (UX-10) ───────────────────────────────
+function ChatPanel({ projetoId, usuario }) {
+  const [msgs,    setMsgs]    = useState([])
+  const [texto,   setTexto]   = useState('')
+  const [loading, setLoading] = useState(true)
+  const [enviando,setEnviando]= useState(false)
+  const bottomRef = useRef(null)
+
+  const carregar = useCallback(async () => {
+    try { const { data } = await chatAPI.listar(projetoId); setMsgs(data) }
+    catch { /* silencioso */ }
+    finally { setLoading(false) }
+  }, [projetoId])
+
+  useEffect(() => { carregar() }, [carregar])
+
+  // Polling a cada 8s
+  useEffect(() => {
+    const interval = setInterval(carregar, 8000)
+    return () => clearInterval(interval)
+  }, [carregar])
+
+  useEffect(() => {
+    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [msgs])
+
+  const enviar = async () => {
+    if (!texto.trim()) return
+    setEnviando(true)
+    try {
+      const { data } = await chatAPI.enviar(projetoId, texto)
+      setMsgs(m => [...m, data])
+      setTexto('')
+    } catch { toast.error('Erro ao enviar') }
+    finally { setEnviando(false) }
+  }
+
+  if (loading) return <div style={{ padding: 20, color: 'var(--text-3)', fontSize: 13 }}>Carregando chat...</div>
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', height: 420, background: 'var(--bg)', borderRadius: 10, border: '1px solid var(--border)' }}>
+      <div style={{ flex: 1, overflowY: 'auto', padding: '12px 14px' }}>
+        {msgs.length === 0 && (
+          <div style={{ textAlign: 'center', color: 'var(--text-3)', fontSize: 13, padding: '40px 0' }}>
+            Nenhuma mensagem ainda. Seja o primeiro a falar!
+          </div>
+        )}
+        {msgs.map(m => {
+          const minha = m.autor_id === usuario?.id
+          return (
+            <div key={m.id} style={{ display: 'flex', flexDirection: minha ? 'row-reverse' : 'row', gap: 8, marginBottom: 10, alignItems: 'flex-end' }}>
+              <div style={{ width: 28, height: 28, borderRadius: 99, background: 'var(--brand)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 11, fontWeight: 700, color: '#fff', flexShrink: 0 }}>
+                {m.autor_nome?.[0]?.toUpperCase()}
+              </div>
+              <div style={{ maxWidth: '72%' }}>
+                <div style={{ fontSize: 10, color: 'var(--text-3)', marginBottom: 2, textAlign: minha ? 'right' : 'left' }}>
+                  {minha ? 'Você' : m.autor_nome} · {new Date(m.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div style={{
+                  background: minha ? 'var(--brand)' : 'var(--card)',
+                  color: minha ? '#fff' : 'var(--text)',
+                  padding: '7px 12px', borderRadius: minha ? '12px 2px 12px 12px' : '2px 12px 12px 12px',
+                  fontSize: 13, border: minha ? 'none' : '1px solid var(--border)',
+                }}>
+                  {m.texto}
+                </div>
+              </div>
+            </div>
+          )
+        })}
+        <div ref={bottomRef} />
+      </div>
+      <div style={{ padding: '8px 12px', borderTop: '1px solid var(--border)', display: 'flex', gap: 8 }}>
+        <input
+          value={texto}
+          onChange={e => setTexto(e.target.value)}
+          placeholder="Digite uma mensagem..."
+          style={{ flex: 1, fontSize: 13, padding: '7px 10px' }}
+          onKeyDown={e => e.key === 'Enter' && !e.shiftKey && enviar()}
+        />
+        <button className="btn btn-primary btn-sm" onClick={enviar} disabled={enviando || !texto.trim()}
+          style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+          <SendHorizonal size={14} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
 export default function ProjetoDetalhe() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -981,6 +1284,7 @@ export default function ProjetoDetalhe() {
   const [showAddFase, setShowAddFase] = useState(false)
   const [formFase, setFormFase] = useState({ nome:'', descricao:'', perc_desbloqueio:80, bloqueado_por_anterior:true, data_inicio:'', data_fim_prev:'' })
   const [savingFase, setSavingFase] = useState(false)
+  const [viewMode, setViewMode] = useState('lista') // 'lista' | 'kanban' | 'chat'
 
   const isConsultor = ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
 
@@ -992,8 +1296,12 @@ export default function ProjetoDetalhe() {
         projetosAPI.detalhe(id),
         isConsultor ? usuariosAPI.listar() : Promise.resolve({ data: [] }),
       ])
+      const clienteId = p.data?.cliente_id
+      const filtrados = u.data.filter(usr =>
+        !usr.cliente_id || usr.cliente_id === clienteId
+      )
       setProjeto(p.data)
-      setUsuarios(u.data)
+      setUsuarios(filtrados)
     } catch {
       setErro(true)
       toast.error('Erro ao carregar projeto. Verifique a conexão.')
@@ -1002,6 +1310,13 @@ export default function ProjetoDetalhe() {
   }
 
   useEffect(() => { carregar() }, [id])
+
+  const handleMoverFase = async (faseId, direcao) => {
+    try {
+      await fasesAPI.reordenar(faseId, direcao)
+      carregar()
+    } catch { toast.error('Erro ao reordenar fase') }
+  }
 
   const handleAddFase = async e => {
     e.preventDefault()
@@ -1077,17 +1392,40 @@ export default function ProjetoDetalhe() {
         </div>
       </div>
 
-      {/* Fases */}
+      {/* Tabs de visualização */}
       <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:10 }}>
-        <div className="section-title" style={{ margin:0 }}>Fases do projeto</div>
-        {isConsultor && (
+        <div style={{ display:'flex', gap:2 }}>
+          {[
+            { key:'lista',  label:'Fases', icon: <ChevronRight size={13}/> },
+            { key:'kanban', label:'Kanban', icon: <Kanban size={13}/> },
+            { key:'chat',   label:'Chat',   icon: <MessageSquare size={13}/> },
+          ].map(tab => (
+            <button key={tab.key}
+              className={`btn btn-sm ${viewMode === tab.key ? 'btn-primary' : ''}`}
+              onClick={() => setViewMode(tab.key)}
+              style={{ display:'flex', alignItems:'center', gap:4 }}>
+              {tab.icon} {tab.label}
+            </button>
+          ))}
+        </div>
+        {viewMode === 'lista' && isConsultor && (
           <button className="btn btn-sm" onClick={()=>setShowAddFase(v=>!v)}>
             <Plus size={13}/> Adicionar fase
           </button>
         )}
       </div>
 
-      {showAddFase && (
+      {/* Kanban (UX-5) */}
+      {viewMode === 'kanban' && projeto && (
+        <KanbanView projeto={projeto} isConsultor={isConsultor} onRefresh={carregar} />
+      )}
+
+      {/* Chat (UX-10) */}
+      {viewMode === 'chat' && (
+        <ChatPanel projetoId={id} usuario={usuario} />
+      )}
+
+      {viewMode === 'lista' && showAddFase && (
         <div className="card" style={{ marginBottom:10, border:'1px dashed var(--brand)' }}>
           <form onSubmit={handleAddFase}>
             <div className="form-row">
@@ -1155,11 +1493,13 @@ export default function ProjetoDetalhe() {
         </div>
       )}
 
-      {projeto.fases?.map(fase => (
-        <FaseCard key={fase.id} fase={fase} usuarios={usuarios} perfil={usuario?.perfil} clienteIdUsuario={usuario?.cliente_id} clienteIdProjeto={projeto.cliente_id} onRefresh={carregar} />
+      {viewMode === 'lista' && projeto.fases?.map(fase => (
+        <FaseCard key={fase.id} fase={fase} usuarios={usuarios} perfil={usuario?.perfil}
+          clienteIdUsuario={usuario?.cliente_id} clienteIdProjeto={projeto.cliente_id}
+          onRefresh={carregar} onMoverFase={isConsultor ? handleMoverFase : null} />
       ))}
 
-      {projeto.fases?.length === 0 && (
+      {viewMode === 'lista' && projeto.fases?.length === 0 && (
         <div className="empty-state">Nenhuma fase cadastrada. Adicione a primeira fase acima.</div>
       )}
 

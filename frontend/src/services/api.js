@@ -267,7 +267,8 @@ export const dreMotorAPI = {
   gerarFormulas:   (planoId, sobrescrever = false) =>
     api.post(`/dre/formulas/gerar/${planoId}?sobrescrever=${sobrescrever}`),
   listarFormulas:  planoId  => api.get(`/dre/formulas/${planoId}`),
-  atualizarFormula:(id, d)  => api.put(`/dre/formulas/${id}`, d),
+  atualizarFormula:(id, d)      => api.put(`/dre/formulas/${id}`, d),
+  upsertFormula:   (itemId, d)  => api.put(`/dre/formulas/item/${itemId}`, d),
   // Recálculo
   recalcular: (clienteId, ano, unidade, mes = null, persistir = true) => {
     const p = new URLSearchParams({ cliente_id: clienteId, ano, unidade, persistir })

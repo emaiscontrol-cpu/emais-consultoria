@@ -93,7 +93,7 @@ const bgSticky = tipo => {
 // ── Componente principal ──────────────────────────────────────────────────────
 export default function Orcamento() {
   const { usuario } = useAuth()
-  const isCliente = usuario?.perfil === 'cliente'
+  const isCliente = usuario?.perfil === 'analista'
 
   const [clientes,  setClientes]  = useState([])
   const [clienteId, setClienteId] = useState('')

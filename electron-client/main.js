@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session } = require('electron')
+const { app, BrowserWindow, session, globalShortcut } = require('electron')
 const path = require('path')
 
 const SERVER_URL = 'https://earlobe-feeble-aground.ngrok-free.dev'
@@ -32,6 +32,13 @@ function createWindow() {
   // Mostra janela só quando estiver pronta
   mainWindow.once('ready-to-show', () => {
     mainWindow.show()
+  })
+
+  // F12 abre DevTools para depuração
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.key === 'F12') {
+      mainWindow.webContents.toggleDevTools()
+    }
   })
 
   // Página de erro se servidor estiver offline

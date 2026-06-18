@@ -1,10 +1,27 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { clientesAPI, dashboardAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { LoadingPage } from '../components/shared'
 import { ChevronDown, AlertTriangle, CheckCircle2, Clock, Layers } from 'lucide-react'
-import Plot from 'react-plotly.js'
+
+function PlotChart({ data, layout, config, style }) {
+  const el = useRef(null)
+  useEffect(() => {
+    let P
+    let cancelled = false
+    import('plotly.js-dist-min').then(mod => {
+      if (cancelled || !el.current) return
+      P = mod.default ?? mod
+      P.newPlot(el.current, data, layout, config ?? { displayModeBar: false, responsive: true })
+    })
+    return () => {
+      cancelled = true
+      if (P && el.current) P.purge(el.current)
+    }
+  }, [JSON.stringify(data), JSON.stringify(layout)])
+  return <div ref={el} style={style} />
+}
 
 const STATUS_COR = {
   concluido:    '#4CAF50',
@@ -37,7 +54,6 @@ const plotLayout = (extra = {}) => ({
   ...extra,
 })
 
-const plotConfig = { displayModeBar: false, responsive: true }
 
 function CardResumo({ icon: Icon, label, valor, cor }) {
   return (
@@ -184,10 +200,9 @@ export default function DashboardCliente() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#c9d1d9', marginBottom: 12 }}>
                 Tarefas por Status
               </div>
-              <Plot
+              <PlotChart
                 data={pieTrace}
                 layout={plotLayout({ height: 260 })}
-                config={plotConfig}
                 style={{ width: '100%' }}
               />
             </div>
@@ -200,7 +215,7 @@ export default function DashboardCliente() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#c9d1d9', marginBottom: 12 }}>
                 Progresso por Projeto (%)
               </div>
-              <Plot
+              <PlotChart
                 data={barTrace}
                 layout={plotLayout({
                   height: 260,
@@ -215,7 +230,6 @@ export default function DashboardCliente() {
                   showlegend: false,
                   bargap: 0.35,
                 })}
-                config={plotConfig}
                 style={{ width: '100%' }}
               />
             </div>

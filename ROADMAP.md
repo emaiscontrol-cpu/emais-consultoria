@@ -1,7 +1,7 @@
 # Roadmap — E Mais Consultoria
 
 > Marque com `[x]` quando concluído. Adicione novas ideias na seção correspondente.
-> Última atualização: 2026-06-11 — v2.4.0y
+> Última atualização: 2026-06-16
 
 ---
 
@@ -79,11 +79,15 @@
 
 ## 🔧 INFRAESTRUTURA E DEVOPS
 
-- [ ] **INF-1** — Migrar banco de SQLite para PostgreSQL quando número de clientes/usuários simultâneos crescer.
-- [ ] **INF-2** — Implementar CI/CD com GitHub Actions: rodar lint + testes automatizados a cada push antes do deploy.
+- [x] **INF-1** — Migrar banco de SQLite para Supabase PostgreSQL. 40 tabelas, 90.034 registros, backup automático `.sql.gz`. — `v2.5.0s`
+- [x] **INF-2** — Implementar CI com GitHub Actions: testes automatizados (`pytest`) a cada PR/push para `main`. — `2026-06-16`
+- [ ] **INF-2b** — **Branch protection na `main`** — Configurar em Settings → Branches a regra exigindo o check `ci-status` antes de permitir merge. Ação manual no GitHub, ainda pendente.
 - [ ] **INF-3** — Criar arquivo `.env.example` com todas as variáveis necessárias documentadas.
 - [ ] **INF-4** — Adicionar versionamento automático via git tag (script lê a tag mais recente e injeta em `app.version`).
 - [ ] **INF-5** — Armazenar fotos de usuário em disco (pasta `/uploads`) em vez de base64 no banco. Servir via endpoint estático.
+- [ ] **INF-6** — **GitHub Secrets para DATABASE_URL** — Automatizar credenciais do Supabase via GitHub Secrets/Actions, eliminando edição manual do `.env` via RDP.
+- [ ] **INF-7** — **UI de Backup para PostgreSQL** — Atualizar tela Administração > Backup para exibir `.sql.gz`, mensagem contextual "PostgreSQL/Supabase" e remover referências a `.db`. (API já retorna `postgres: true`)
+- [ ] **INF-8** — **Estender cobertura de testes** — `tests/test_api.py` cobre auth/clientes/projetos/fases/tarefas/usuarios/dashboard/anotações/subtarefas. Faltam: controladoria, fluxo de caixa, orçamento, balancete, IA (claude/gemini/openrouter), importação DRE, admin/backup.
 
 ---
 
@@ -138,3 +142,22 @@
 - [x] UX-7 Histórico detalhado por tarefa — tabela de mudanças por campo na aba histórico — `v2.4.0c`
 - [x] UX-8 Comentários com menções @usuario — autocomplete + log de menção — `v2.4.0c`
 - [x] UX-10 Chat interno por projeto — canal de mensagens com polling de 8s — `v2.4.0c`
+
+---
+
+### 🗄️ Migração SQLite → Supabase PostgreSQL — 2026-06-15 (v2.5.0s)
+
+- [x] **INF-1** — **Migração SQLite → Supabase PostgreSQL** — 40 tabelas criadas via `create_all`, 90.034 registros migrados com conversão de booleanos e filtro de colunas legadas (`ia_habilitado`). — `v2.5.0s`
+- [x] **INF-1b** — **Backup automático PostgreSQL** — `admin.py` reescrito com suporte dual SQLite/PostgreSQL. Backups gzip (`.sql.gz`) com `TRUNCATE + INSERT`, `SET session_replication_role = 'replica'` no restore. Agendamento diário às 03:00 via `threading.Timer`. — `v2.5.0s`
+- [x] **INF-1c** — **UPLOADS_DIR e BACKUP_DIR via env** — Removidos paths hardcoded de Windows. Ambos os diretórios configuráveis via variáveis de ambiente com fallback sensato. — `v2.5.0s`
+- [x] **INF-1d** — **Pooler IPv4 para servidor sem IPv6** — Host direto `db.xxx.supabase.co` retorna apenas AAAA (IPv6); servidor de produção não tem IPv6. Solução: pooler `aws-1-sa-east-1.pooler.supabase.com:5432` com usuário `postgres.jlnipsscnsanfklfmbin`. — `v2.5.0s`
+
+---
+
+### 🧪 Testes automatizados e CI/CD — 2026-06-16
+
+- [x] **INF-2** — **Suíte de testes (`tests/`) + GitHub Actions** — `tests/conftest.py` (FastAPI mínimo + SQLite isolado em arquivo temporário, nunca toca no Supabase), `tests/test_api.py` (38 testes de endpoints críticos: auth, clientes, projetos, fases, tarefas, usuários, dashboard, anotações, subtarefas — inclui isolamento multi-tenant e regras de permissão por perfil), `tests/test_frontend_build.py` (valida `frontend/dist/`). `.github/workflows/ci.yml` roda tudo a cada PR/push para `main`.
+- [x] **INF-2a** — **Node.js alinhado no CI** — `node-version-file: frontend/.nvmrc` + `engines.node` no `package.json`, corrigindo falha de binding nativo do rolldown/Vite por divergência de versão entre local e runner.
+- [x] **INF-2c** — **`package-lock.json` ressincronizado** — `npm install` para registrar `plotly.js-dist-min@3.6.0`, que estava no `package.json` mas faltava no lock (causava falha de `npm ci` no CI).
+- [x] **INF-2d** — **Arquivos fonte órfãos resgatados** — `DashboardExecutivo.jsx`, `Procedimentos.jsx`, `Modelos.jsx`, `BuscaGlobal.jsx`, `AIButton.jsx` existiam localmente e eram importados pelo app, mas nunca tinham sido commitados (não eram ignorados pelo git — só esquecidos). Causavam falha de build no CI por import inexistente no repositório remoto.
+- [x] **INF-2e** — **Varredura geral de untracked + `.gitignore` revisado** — Auditoria de todo o projeto (não só frontend): docs de arquitetura, assets do Electron, scripts de dev/ops e `CLAUDE.md` passaram a ser rastreados; `.gitignore` ganhou regra genérica para `__pycache__/`/`*.pyc` (cobria só `backend/`) e `backend/backup/` (backups gerados localmente).

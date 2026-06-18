@@ -2,6 +2,7 @@ import logo from '../assets/logo.jpeg'
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
+import { authAPI } from '../services/api'
 import toast from 'react-hot-toast'
 
 const INPUT_STYLE = {
@@ -13,9 +14,13 @@ const INPUT_STYLE = {
 export default function Login() {
   const { login } = useAuth()
   const navigate  = useNavigate()
-  const [form, setForm] = useState({ email: '', senha: '' })
-  const [loading, setLoading] = useState(false)
-  const [versao, setVersao] = useState('')
+  const [form, setForm]           = useState({ email: '', senha: '' })
+  const [loading, setLoading]     = useState(false)
+  const [versao, setVersao]       = useState('')
+  const [telaReset, setTelaReset] = useState(false)
+  const [emailReset, setEmailReset] = useState('')
+  const [enviando, setEnviando]   = useState(false)
+  const [enviado, setEnviado]     = useState(false)
 
   useEffect(() => {
     fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
@@ -37,6 +42,17 @@ export default function Login() {
     } finally {
       setLoading(false)
     }
+  }
+
+  const handleEnviarReset = async e => {
+    e.preventDefault()
+    setEnviando(true)
+    try {
+      await authAPI.esqueciSenha(emailReset)
+      setEnviado(true)
+    } catch {
+      toast.error('Erro ao enviar solicitação.')
+    } finally { setEnviando(false) }
   }
 
   const onFocus = e => { e.target.style.borderColor='#0096CF'; e.target.style.boxShadow='0 0 0 3px rgba(0,150,207,.12)' }
@@ -106,49 +122,111 @@ export default function Login() {
         background:'#F4F6F9', padding:'48px 40px',
       }}>
         <div style={{ width:'100%', maxWidth:360 }}>
-          <div style={{ marginBottom:30 }}>
-            <div style={{ fontSize:22, fontWeight:800, color:'#0A1C4E', marginBottom:6, letterSpacing:'-.4px' }}>
-              Bem-vindo
-            </div>
-            <div style={{ fontSize:13, color:'#6B7280' }}>Acesse sua conta para continuar</div>
-          </div>
 
-          <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom:14 }}>
-              <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:5 }}>Email</label>
-              <input
-                type="email" placeholder="seu@email.com.br"
-                value={form.email} required
-                onChange={e => setForm(f=>({...f, email:e.target.value}))}
-                onFocus={onFocus} onBlur={onBlur}
-                style={INPUT_STYLE}
-              />
-            </div>
-            <div style={{ marginBottom:26 }}>
-              <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:5 }}>Senha</label>
-              <input
-                type="password" placeholder="••••••••"
-                value={form.senha} required
-                onChange={e => setForm(f=>({...f, senha:e.target.value}))}
-                onFocus={onFocus} onBlur={onBlur}
-                style={INPUT_STYLE}
-              />
-            </div>
-            <button
-              type="submit" disabled={loading}
-              onMouseEnter={e => { if (!loading) e.currentTarget.style.background='#007BAD' }}
-              onMouseLeave={e => { if (!loading) e.currentTarget.style.background='#0096CF' }}
-              style={{
-                width:'100%', padding:'11px', border:'none', borderRadius:8,
-                background: loading ? '#7CBFDA' : '#0096CF',
-                color:'#fff', fontSize:14, fontWeight:700,
-                cursor: loading ? 'default' : 'pointer', transition:'background .15s',
-                letterSpacing:'.01em',
-              }}
-            >
-              {loading ? 'Entrando...' : 'Entrar'}
-            </button>
-          </form>
+          {/* ── Tela de esqueci a senha ── */}
+          {telaReset ? (
+            <>
+              <div style={{ marginBottom:28 }}>
+                <div style={{ fontSize:22, fontWeight:800, color:'#0A1C4E', marginBottom:6, letterSpacing:'-.4px' }}>
+                  Esqueci minha senha
+                </div>
+                <div style={{ fontSize:13, color:'#6B7280' }}>
+                  {enviado
+                    ? 'Solicitação enviada! O administrador foi notificado e entrará em contato com uma nova senha.'
+                    : 'Informe seu e-mail e o administrador será avisado para redefinir sua senha.'}
+                </div>
+              </div>
+
+              {!enviado && (
+                <form onSubmit={handleEnviarReset}>
+                  <div style={{ marginBottom:20 }}>
+                    <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:5 }}>E-mail</label>
+                    <input
+                      type="email" placeholder="seu@email.com.br"
+                      value={emailReset} required
+                      onChange={e => setEmailReset(e.target.value)}
+                      onFocus={onFocus} onBlur={onBlur}
+                      style={INPUT_STYLE}
+                    />
+                  </div>
+                  <button
+                    type="submit" disabled={enviando}
+                    style={{
+                      width:'100%', padding:'11px', border:'none', borderRadius:8,
+                      background: enviando ? '#7CBFDA' : '#0096CF',
+                      color:'#fff', fontSize:14, fontWeight:700,
+                      cursor: enviando ? 'default' : 'pointer', transition:'background .15s',
+                    }}
+                  >
+                    {enviando ? 'Enviando...' : 'Solicitar redefinição'}
+                  </button>
+                </form>
+              )}
+
+              <button
+                onClick={() => { setTelaReset(false); setEnviado(false); setEmailReset('') }}
+                style={{ marginTop:16, background:'none', border:'none', color:'#0096CF', fontSize:13, cursor:'pointer', padding:0 }}
+              >
+                ← Voltar ao login
+              </button>
+            </>
+          ) : (
+            <>
+              <div style={{ marginBottom:30 }}>
+                <div style={{ fontSize:22, fontWeight:800, color:'#0A1C4E', marginBottom:6, letterSpacing:'-.4px' }}>
+                  Bem-vindo
+                </div>
+                <div style={{ fontSize:13, color:'#6B7280' }}>Acesse sua conta para continuar</div>
+              </div>
+
+              <form onSubmit={handleSubmit}>
+                <div style={{ marginBottom:14 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:5 }}>Usuário</label>
+                  <input
+                    type="text" placeholder="Digite seu usuário"
+                    value={form.email} required
+                    onChange={e => setForm(f=>({...f, email:e.target.value}))}
+                    onFocus={onFocus} onBlur={onBlur}
+                    style={INPUT_STYLE}
+                  />
+                </div>
+                <div style={{ marginBottom:20 }}>
+                  <label style={{ display:'block', fontSize:12, fontWeight:600, color:'#374151', marginBottom:5 }}>Senha</label>
+                  <input
+                    type="password" placeholder="••••••••"
+                    value={form.senha} required
+                    onChange={e => setForm(f=>({...f, senha:e.target.value}))}
+                    onFocus={onFocus} onBlur={onBlur}
+                    style={INPUT_STYLE}
+                  />
+                </div>
+                <button
+                  type="submit" disabled={loading}
+                  onMouseEnter={e => { if (!loading) e.currentTarget.style.background='#007BAD' }}
+                  onMouseLeave={e => { if (!loading) e.currentTarget.style.background='#0096CF' }}
+                  style={{
+                    width:'100%', padding:'11px', border:'none', borderRadius:8,
+                    background: loading ? '#7CBFDA' : '#0096CF',
+                    color:'#fff', fontSize:14, fontWeight:700,
+                    cursor: loading ? 'default' : 'pointer', transition:'background .15s',
+                    letterSpacing:'.01em',
+                  }}
+                >
+                  {loading ? 'Entrando...' : 'Entrar'}
+                </button>
+              </form>
+
+              <div style={{ textAlign:'center', marginTop:16 }}>
+                <button
+                  onClick={() => setTelaReset(true)}
+                  style={{ background:'none', border:'none', color:'#0096CF', fontSize:12, cursor:'pointer', padding:0 }}
+                >
+                  Esqueci minha senha
+                </button>
+              </div>
+            </>
+          )}
+
         </div>
       </div>
     </div>

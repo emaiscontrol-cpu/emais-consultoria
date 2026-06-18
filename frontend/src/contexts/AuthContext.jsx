@@ -1,32 +1,59 @@
-import { createContext, useContext, useState, useEffect } from 'react'
+import { createContext, useContext, useState, useEffect, useRef } from 'react'
 import { authAPI } from '../services/api'
 
 const AuthContext = createContext(null)
+
+function getTokenExpiry(token) {
+  try {
+    const payload = JSON.parse(atob(token.split('.')[1]))
+    return payload.exp ? payload.exp * 1000 : null
+  } catch { return null }
+}
 
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(() => {
     try { return JSON.parse(localStorage.getItem('usuario')) } catch { return null }
   })
   const [loading, setLoading] = useState(true)
+  const refreshTimer = useRef(null)
+
+  const agendarRefresh = (token) => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
+    const exp = getTokenExpiry(token)
+    if (!exp) return
+    // Renova 1 hora antes de expirar
+    const delay = exp - Date.now() - 60 * 60 * 1000
+    if (delay <= 0) return
+    refreshTimer.current = setTimeout(async () => {
+      try {
+        const { data } = await authAPI.refresh()
+        localStorage.setItem('token', data.access_token)
+        agendarRefresh(data.access_token)
+      } catch { /* silencioso — interceptor redireciona para login se 401 */ }
+    }, delay)
+  }
 
   useEffect(() => {
     const token = localStorage.getItem('token')
     if (token) {
       authAPI.me()
-        .then(r => { setUsuario(r.data); localStorage.setItem('usuario', JSON.stringify(r.data)) })
+        .then(r => {
+          setUsuario(r.data)
+          localStorage.setItem('usuario', JSON.stringify(r.data))
+          agendarRefresh(token)
+        })
         .catch(err => {
-          // Só invalida o token em 401 — erros de rede/servidor não deslogam
           if (err.response?.status === 401 || err.response?.status === 403) {
             localStorage.removeItem('token')
             localStorage.removeItem('usuario')
             setUsuario(null)
           }
-          // Rede indisponível ou 5xx: mantém usuário do localStorage
         })
         .finally(() => setLoading(false))
     } else {
       setLoading(false)
     }
+    return () => { if (refreshTimer.current) clearTimeout(refreshTimer.current) }
   }, [])
 
   const login = async (email, senha) => {
@@ -34,17 +61,25 @@ export function AuthProvider({ children }) {
     localStorage.setItem('token', data.access_token)
     localStorage.setItem('usuario', JSON.stringify(data.usuario))
     setUsuario(data.usuario)
+    agendarRefresh(data.access_token)
     return data.usuario
   }
 
   const logout = () => {
+    if (refreshTimer.current) clearTimeout(refreshTimer.current)
     localStorage.removeItem('token')
     localStorage.removeItem('usuario')
     setUsuario(null)
   }
 
+  const atualizarUsuario = (dados) => {
+    const novo = { ...usuario, ...dados }
+    setUsuario(novo)
+    localStorage.setItem('usuario', JSON.stringify(novo))
+  }
+
   return (
-    <AuthContext.Provider value={{ usuario, login, logout, loading }}>
+    <AuthContext.Provider value={{ usuario, login, logout, loading, atualizarUsuario }}>
       {children}
     </AuthContext.Provider>
   )

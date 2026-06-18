@@ -6,8 +6,7 @@ const SECOES = [
     conteudo: [
       { tipo: 'subtitulo', texto: 'Como entrar' },
       { tipo: 'lista', itens: [
-        'Abra o navegador (recomendado: Google Chrome)',
-        'Digite o endereço do sistema na barra de navegação',
+        'Abra o aplicativo Electron ou o navegador (recomendado: Google Chrome)',
         'Preencha o campo Email com seu endereço cadastrado',
         'Preencha o campo Senha',
         'Clique em Entrar',
@@ -15,18 +14,22 @@ const SECOES = [
       { tipo: 'aviso', texto: 'Se aparecer "Email ou senha inválidos", verifique se o email está completo (ex: nome@emaiscontrol.com.br) e tente novamente.' },
       { tipo: 'subtitulo', texto: 'Como sair' },
       { tipo: 'texto', texto: 'No menu lateral esquerdo, role até o final e clique em Sair.' },
+      { tipo: 'subtitulo', texto: 'Foto de perfil' },
+      { tipo: 'texto', texto: 'No rodapé do menu lateral, clique sobre o avatar com seu nome. Selecione uma foto do seu computador (JPEG ou PNG, máximo 500 KB). A foto ficará visível para todos os usuários do sistema.' },
     ],
   },
   {
     id: 'perfis', titulo: '2. Perfis de Usuário',
     conteudo: [
-      { tipo: 'texto', texto: 'O sistema possui 4 perfis com permissões diferentes:' },
+      { tipo: 'texto', texto: 'O sistema possui 5 perfis com permissões diferentes:' },
       { tipo: 'tabela', colunas: ['Perfil', 'O que pode fazer'], linhas: [
-        ['Administrador', 'Acesso total: projetos, clientes, usuários, relatórios, histórico'],
-        ['Consultor', 'Projetos, clientes, relatórios, histórico — não gerencia usuários'],
-        ['Ger. Projeto', 'Igual ao Consultor'],
-        ['Cliente', 'Visualiza apenas os projetos da sua empresa'],
+        ['Administrador', 'Acesso total: projetos, clientes, usuários, relatórios, histórico, backup, templates'],
+        ['Consultor', 'Projetos, clientes, relatórios, histórico, controladoria, templates — não gerencia backup'],
+        ['Ger. Projeto', 'Gerencia o projeto específico do cliente, sem acesso à administração'],
+        ['Analista', 'Visualiza e confirma tarefas apenas dos projetos da sua empresa'],
+        ['T.I.', 'Visualiza dados da sua empresa — perfil técnico'],
       ]},
+      { tipo: 'aviso', texto: 'Perfis Analista, Ger. Projeto e T.I. com empresa vinculada enxergam somente os dados daquela empresa.' },
     ],
   },
   {
@@ -58,8 +61,10 @@ const SECOES = [
         'Data de início e Previsão de término',
         'Progresso (%) — percentual manual de conclusão',
         'Descrição — informações adicionais',
+        'Template de fases (opcional) — selecione um template para criar fases, tarefas e atividades automaticamente',
         'Clique em Salvar',
       ]},
+      { tipo: 'aviso', texto: 'Se selecionar um template, todas as fases, tarefas e atividades do modelo serão criadas automaticamente. Os prazos são calculados a partir da data de início informada.' },
       { tipo: 'subtitulo', texto: 'Editar um projeto' },
       { tipo: 'texto', texto: 'Abra o projeto e clique no ícone de lápis no cabeçalho. Altere os campos e clique em Salvar.' },
       { tipo: 'subtitulo', texto: 'Excluir um projeto' },
@@ -67,7 +72,42 @@ const SECOES = [
     ],
   },
   {
-    id: 'fases', titulo: '5. Fases',
+    id: 'templates', titulo: '5. Templates de Projeto',
+    conteudo: [
+      { tipo: 'texto', texto: 'Templates são modelos reutilizáveis que definem a estrutura padrão de um projeto — conjuntos predefinidos de Fases, Tarefas e Atividades. Ao aplicar um template a um novo projeto, toda a estrutura é criada automaticamente com os prazos calculados.' },
+      { tipo: 'subtitulo', texto: 'Acessar Templates' },
+      { tipo: 'texto', texto: 'No menu lateral, expanda a seção Procedimentos (visível apenas para Administradores) e clique em Templates de Projeto.' },
+      { tipo: 'subtitulo', texto: 'Criar um template' },
+      { tipo: 'lista', itens: [
+        'Clique em + Novo Template',
+        'Informe o nome e uma descrição (opcional)',
+        'Clique em Salvar — o template aparece na lista à esquerda',
+        'Clique no template para abrir o painel de edição à direita',
+      ]},
+      { tipo: 'subtitulo', texto: 'Estrutura: Fases → Tarefas → Atividades' },
+      { tipo: 'texto', texto: 'Com o template selecionado, construa a hierarquia usando os botões no painel direito:' },
+      { tipo: 'lista', itens: [
+        '+ Nova Fase — defina nome, duração em dias e percentual de desbloqueio da fase anterior',
+        '+ Nova Tarefa (dentro de uma fase) — nome, duração em dias e se requer validação do cliente',
+        '+ Nova Atividade (dentro de uma tarefa) — item de checklist com nome e duração opcional',
+        'A numeração é automática: fases em 1, 2, 3 — tarefas em 1.1, 1.2 — atividades em 1.1.1, 1.1.2',
+      ]},
+      { tipo: 'subtitulo', texto: 'Prazos automáticos' },
+      { tipo: 'texto', texto: 'Informe a duração em dias nas fases e tarefas do template. Ao aplicá-lo, o sistema calculará os prazos de cada fase e tarefa em sequência a partir da data de início do projeto.' },
+      { tipo: 'subtitulo', texto: 'Aplicar template ao criar um projeto' },
+      { tipo: 'lista', itens: [
+        'Vá em Projetos e clique em + Novo Projeto',
+        'Preencha os dados normalmente, incluindo a data de início',
+        'No campo Template de fases (opcional), selecione o modelo desejado',
+        'Clique em Salvar — fases, tarefas e atividades são criadas automaticamente',
+      ]},
+      { tipo: 'aviso', texto: 'O template só pode ser aplicado a projetos que ainda não possuem fases. Se o projeto já tiver fases, remova-as antes de aplicar.' },
+      { tipo: 'subtitulo', texto: 'Editar e excluir elementos do template' },
+      { tipo: 'texto', texto: 'Clique no ícone de lápis ao lado de qualquer fase, tarefa ou atividade para editar. Clique na lixeira para excluir. A exclusão de uma fase remove também todas as suas tarefas e atividades.' },
+    ],
+  },
+  {
+    id: 'fases', titulo: '6. Fases',
     conteudo: [
       { tipo: 'texto', texto: 'As fases representam as grandes etapas de um projeto (ex: Levantamento, Desenvolvimento, Testes, Entrega).' },
       { tipo: 'subtitulo', texto: 'Criar uma fase' },
@@ -92,13 +132,13 @@ const SECOES = [
         ['Em andamento', 'Fase em execução'],
         ['Atrasada', 'Prazo ultrapassado'],
         ['Concluída', 'Todas as tarefas concluídas'],
-        ['Bloqueada', 'Aguardando fase anterior'],
+        ['Bloqueada', 'Aguardando fase anterior atingir o percentual definido'],
         ['Livre', 'Fase independente, sem bloqueio'],
       ]},
     ],
   },
   {
-    id: 'tarefas', titulo: '6. Tarefas',
+    id: 'tarefas', titulo: '7. Tarefas',
     conteudo: [
       { tipo: 'texto', texto: 'As tarefas são as atividades específicas dentro de cada fase.' },
       { tipo: 'subtitulo', texto: 'Criar uma tarefa' },
@@ -107,14 +147,14 @@ const SECOES = [
         'Nome da tarefa (obrigatório)',
         'Responsável — usuário responsável pela execução',
         'Data prazo — prazo para conclusão',
-        'Requer validação — marque se precisa de aprovação',
+        'Requer validação — marque se precisa de aprovação do cliente',
         'Clique em Adicionar',
       ]},
       { tipo: 'subtitulo', texto: 'Status das tarefas' },
       { tipo: 'tabela', colunas: ['Status', 'Descrição'], linhas: [
         ['Pendente', 'Criada, aguardando início'],
         ['Em andamento', 'Em execução'],
-        ['Aguard. validação', 'Concluída, aguarda aprovação'],
+        ['Aguard. validação', 'Concluída, aguarda aprovação do cliente'],
         ['Concluída', 'Finalizada e aprovada'],
         ['Bloqueada', 'Fase bloqueada impede avanço'],
         ['Atrasada', 'Prazo vencido sem conclusão'],
@@ -129,22 +169,22 @@ const SECOES = [
     ],
   },
   {
-    id: 'subtarefas', titulo: '7. Subtarefas',
+    id: 'subtarefas', titulo: '8. Atividades (Subtarefas)',
     conteudo: [
-      { tipo: 'texto', texto: 'Subtarefas são itens de checklist dentro de uma tarefa — pequenas ações necessárias para concluí-la.' },
-      { tipo: 'subtitulo', texto: 'Criar uma subtarefa' },
+      { tipo: 'texto', texto: 'Atividades são itens de checklist dentro de uma tarefa — pequenas ações necessárias para concluí-la. No banco de dados são chamadas de subtarefas.' },
+      { tipo: 'subtitulo', texto: 'Criar uma atividade' },
       { tipo: 'lista', itens: [
         'Expanda a tarefa e clique na aba Subtarefas (ícone de lista)',
-        'Digite o nome da subtarefa',
+        'Digite o nome da atividade',
         'Defina uma data prazo (opcional)',
         'Clique em Adicionar',
       ]},
       { tipo: 'subtitulo', texto: 'Avançar o status' },
-      { tipo: 'texto', texto: 'Clique no botão quadrado à esquerda da subtarefa para avançar: A fazer (cinza) → Pendente (amarelo) → Concluído (verde) → volta para A fazer.' },
+      { tipo: 'texto', texto: 'Clique no botão quadrado à esquerda da atividade para avançar: A fazer (cinza) → Pendente (amarelo) → Concluído (verde) → volta para A fazer.' },
     ],
   },
   {
-    id: 'clientes', titulo: '8. Clientes',
+    id: 'clientes', titulo: '9. Clientes',
     conteudo: [
       { tipo: 'texto', texto: 'O cadastro de clientes permite vincular projetos às empresas atendidas.' },
       { tipo: 'subtitulo', texto: 'Cadastrar um novo cliente' },
@@ -156,10 +196,12 @@ const SECOES = [
         'Clique em Salvar',
       ]},
       { tipo: 'texto', texto: 'Para editar, clique no ícone de lápis ao lado do cliente na lista.' },
+      { tipo: 'subtitulo', texto: 'Anotações do cliente' },
+      { tipo: 'texto', texto: 'Dentro de cada cliente há uma aba de Anotações. Use para registrar informações relevantes, observações de reuniões ou pontos de atenção sobre o cliente.' },
     ],
   },
   {
-    id: 'usuarios', titulo: '9. Usuários',
+    id: 'usuarios', titulo: '10. Usuários',
     conteudo: [
       { tipo: 'aviso', texto: 'Disponível apenas para Administradores.' },
       { tipo: 'subtitulo', texto: 'Criar um novo usuário' },
@@ -169,29 +211,32 @@ const SECOES = [
         'Nome completo (obrigatório)',
         'Email (obrigatório) — usado para login',
         'Senha (mínimo 6 caracteres)',
-        'Perfil: Administrador / Consultor / Ger. Projeto / Cliente',
+        'Perfil: Administrador / Consultor / Ger. Projeto / Analista / T.I.',
+        'Empresa: selecione a empresa para perfis Analista, Ger. Projeto e T.I.',
         'Clique em Salvar — o usuário já pode fazer login imediatamente',
       ]},
+      { tipo: 'subtitulo', texto: 'Editar um usuário' },
+      { tipo: 'texto', texto: 'Clique no ícone de lápis ao lado do usuário. É possível alterar nome, email, perfil, empresa vinculada e redefinir a senha.' },
       { tipo: 'subtitulo', texto: 'Desativar um usuário' },
       { tipo: 'texto', texto: 'Clique na lixeira ao lado do usuário e confirme. O histórico de atividades é preservado.' },
     ],
   },
   {
-    id: 'notificacoes', titulo: '10. Notificações',
+    id: 'notificacoes', titulo: '11. Notificações',
     conteudo: [
       { tipo: 'texto', texto: 'O sistema monitora automaticamente os projetos e gera alertas para situações que precisam de atenção. O número em vermelho no ícone de sino indica alertas não lidos.' },
       { tipo: 'subtitulo', texto: 'Tipos de alertas' },
       { tipo: 'tabela', colunas: ['Alerta', 'Descrição'], linhas: [
         ['Tarefa atrasada', 'Prazo vencido e tarefa não concluída'],
         ['Prazo próximo', 'Tarefa com prazo nos próximos dias'],
-        ['Aguardando validação', 'Tarefa concluída aguardando aprovação'],
+        ['Aguardando validação', 'Tarefa concluída aguardando aprovação do cliente'],
         ['Projeto atrasado', 'Data prevista do projeto ultrapassada'],
       ]},
       { tipo: 'texto', texto: 'Clique em Exportar Excel para baixar a lista de alertas em planilha.' },
     ],
   },
   {
-    id: 'relatorios', titulo: '11. Relatórios',
+    id: 'relatorios', titulo: '12. Relatórios',
     conteudo: [
       { tipo: 'texto', texto: 'Visualizações gráficas do andamento dos projetos. Clique em Relatórios no menu lateral e selecione o projeto desejado.' },
       { tipo: 'subtitulo', texto: 'Gráficos disponíveis' },
@@ -206,14 +251,14 @@ const SECOES = [
     ],
   },
   {
-    id: 'historico', titulo: '12. Histórico de Atividades',
+    id: 'historico', titulo: '13. Histórico de Atividades',
     conteudo: [
       { tipo: 'texto', texto: 'Registra todas as ações realizadas no sistema com data, hora, usuário e descrição.' },
       { tipo: 'texto', texto: 'Clique em Histórico no menu lateral. Use o filtro de Projeto para ver atividades de um projeto específico.' },
     ],
   },
   {
-    id: 'senha', titulo: '13. Alterar Senha',
+    id: 'senha', titulo: '14. Alterar Senha',
     conteudo: [
       { tipo: 'lista', itens: [
         'No rodapé do menu lateral, clique em Alterar senha',
@@ -224,20 +269,20 @@ const SECOES = [
     ],
   },
   {
-    id: 'controladoria', titulo: '14. Controladoria',
+    id: 'controladoria', titulo: '15. Controladoria',
     conteudo: [
       { tipo: 'texto', texto: 'O módulo de Controladoria centraliza a análise financeira dos clientes. Ele é composto por Planos de Contas, Balancetes e três demonstrações: DRE, Orçamento e Fluxo de Caixa.' },
       { tipo: 'subtitulo', texto: 'Acesso' },
-      { tipo: 'texto', texto: 'Disponível para Administradores, Consultores e Gerentes de Projeto. Clique em Controladoria no menu lateral para ver o painel resumo.' },
+      { tipo: 'texto', texto: 'Disponível para Administradores, Consultores e Gerentes de Projeto. Clique em Controladoria no menu lateral para ver o painel resumo com os indicadores dos clientes.' },
     ],
   },
   {
-    id: 'planos', titulo: '15. Planos de Contas',
+    id: 'planos', titulo: '16. Planos de Contas',
     conteudo: [
       { tipo: 'texto', texto: 'O Plano de Contas define a estrutura de contas que será usada nas demonstrações financeiras (DRE, Orçamento, Fluxo de Caixa) de um cliente.' },
       { tipo: 'subtitulo', texto: 'Criar um plano' },
       { tipo: 'lista', itens: [
-        'Acesse Planos de Contas no menu lateral',
+        'Acesse Modelos & Contas no menu lateral (seção Procedimentos)',
         'Clique em + Novo Plano e informe o nome',
         'Após criar, clique no plano para abrir e gerenciar as contas',
       ]},
@@ -269,7 +314,7 @@ const SECOES = [
     ],
   },
   {
-    id: 'balancetes', titulo: '16. Balancetes',
+    id: 'balancetes', titulo: '17. Balancetes',
     conteudo: [
       { tipo: 'texto', texto: 'O Balancete é a fonte dos valores financeiros. Os dados importados aqui aparecem automaticamente no DRE, Orçamento e Fluxo de Caixa do cliente, sem necessidade de redigitar.' },
       { tipo: 'subtitulo', texto: 'Importar um balancete' },
@@ -297,7 +342,7 @@ const SECOES = [
     ],
   },
   {
-    id: 'demonstracoes', titulo: '17. DRE / Orçamento / Fluxo de Caixa',
+    id: 'demonstracoes', titulo: '18. DRE / Orçamento / Fluxo de Caixa',
     conteudo: [
       { tipo: 'texto', texto: 'As três demonstrações funcionam da mesma forma: exibem o plano de contas do cliente com os valores do balancete do período selecionado.' },
       { tipo: 'subtitulo', texto: 'Como usar' },
@@ -312,13 +357,36 @@ const SECOES = [
       { tipo: 'texto', texto: 'Clique sobre qualquer valor de conta analítica para editá-lo diretamente. Pressione Enter para salvar ou Esc para cancelar. O valor é salvo no balancete do período selecionado.' },
       { tipo: 'subtitulo', texto: 'Importar balancete direto da demonstração' },
       { tipo: 'texto', texto: 'Com um cliente selecionado, clique em Importar Balancete no topo. O arquivo é importado para o mês/ano exibido e os valores são atualizados imediatamente.' },
-      { tipo: 'aviso', texto: 'Se o cliente não tiver um plano vinculado, as demonstrações exibirão aviso de "Nenhum plano vinculado". Configure o vínculo em Planos de Contas → aba Clientes.' },
+      { tipo: 'aviso', texto: 'Se o cliente não tiver um plano vinculado, as demonstrações exibirão aviso de "Nenhum plano vinculado". Configure o vínculo em Modelos & Contas → aba Clientes.' },
     ],
   },
   {
-    id: 'dicas', titulo: '18. Dicas Gerais',
+    id: 'backup', titulo: '19. Backup e Restauração',
+    conteudo: [
+      { tipo: 'aviso', texto: 'Disponível apenas para Administradores.' },
+      { tipo: 'subtitulo', texto: 'Backup manual' },
+      { tipo: 'lista', itens: [
+        'Clique em Backup no menu lateral (seção Procedimentos)',
+        'Clique em Fazer Backup Agora',
+        'O arquivo é salvo na pasta de backups do servidor e listado abaixo',
+      ]},
+      { tipo: 'subtitulo', texto: 'Backup automático' },
+      { tipo: 'texto', texto: 'Configure o horário de backup automático diário no painel de Backup. O sistema cria um arquivo por dia automaticamente.' },
+      { tipo: 'subtitulo', texto: 'Restaurar backup' },
+      { tipo: 'lista', itens: [
+        'Clique em Restaurar e selecione um arquivo .db de backup',
+        'Confirme a operação — o banco atual será substituído pelo arquivo selecionado',
+        'O servidor reinicia automaticamente após a restauração',
+      ]},
+      { tipo: 'aviso', texto: 'A restauração substitui todos os dados atuais. Faça um backup do estado atual antes de restaurar um arquivo antigo.' },
+    ],
+  },
+  {
+    id: 'dicas', titulo: '20. Dicas Gerais',
     conteudo: [
       { tipo: 'lista', itens: [
+        'Crie Templates de Projeto para projetos recorrentes — economize tempo na configuração inicial',
+        'Defina a data de início ao criar o projeto para que os prazos dos templates sejam calculados automaticamente',
         'Mantenha os percentuais de conclusão das tarefas atualizados — eles alimentam os gráficos',
         'Use os comentários para registrar decisões importantes — ficam no histórico',
         'Defina sempre datas de prazo nas tarefas — o sistema usa para gerar alertas de atraso',
@@ -326,6 +394,7 @@ const SECOES = [
         'O badge vermelho no sino indica notificações pendentes que precisam de atenção',
         'Importe o balancete uma vez por mês — os dados ficam disponíveis para DRE, Orçamento e Fluxo de Caixa automaticamente',
         'Use a seleção múltipla (Flag) em Planos de Contas para classificar várias contas de uma vez',
+        'Faça backup antes de importar planilhas — a importação sobrescreve os dados anteriores',
       ]},
     ],
   },
@@ -368,7 +437,7 @@ export default function Manual() {
               Manual Operacional
             </div>
             <div style={{ fontSize:13, color:'var(--text-3)' }}>
-              E Mais Consultoria — Sistema de Gestão &nbsp;·&nbsp; Versão 2.0
+              E Mais Consultoria — Sistema de Gestão &nbsp;·&nbsp; Versão 2.3
             </div>
           </div>
 
@@ -436,7 +505,7 @@ export default function Manual() {
           ))}
 
           <div style={{ borderTop:'0.5px solid var(--border)', paddingTop:16, fontSize:11, color:'var(--text-3)', textAlign:'center' }}>
-            Manual Operacional v2.0 — E Mais Consultoria · Maio/2026
+            Manual Operacional v2.3 — E Mais Consultoria · Junho/2026
           </div>
         </div>
       </div>

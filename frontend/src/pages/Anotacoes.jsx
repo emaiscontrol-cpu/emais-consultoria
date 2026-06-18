@@ -96,7 +96,7 @@ export default function Anotacoes() {
   const { usuario } = useAuth()
 
   const clienteVinculado = usuario?.cliente_id || null
-  const isRestrito = clienteVinculado && ['cliente','ger_projeto','ti'].includes(usuario?.perfil)
+  const isRestrito = clienteVinculado && ['analista','ger_projeto','ti'].includes(usuario?.perfil)
 
   const [clientes, setClientes]       = useState([])
   const [clienteId, setClienteId]     = useState(isRestrito ? String(clienteVinculado) : '')
