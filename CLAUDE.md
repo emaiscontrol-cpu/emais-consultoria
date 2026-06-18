@@ -13,7 +13,9 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 ## Arquitetura do Sistema
 
 ### Backend
-- **Framework:** FastAPI + SQLAlchemy + SQLite
+- **Framework:** FastAPI + SQLAlchemy
+- **Banco local (dev):** SQLite (`C:\emals-service\emais_consultoria.db`)
+- **Banco produção:** PostgreSQL via **Supabase** (migrado na v2.5.0s)
 - **Porta:** 8000
 - **Reload automático:** `uvicorn --reload` — detecta mudanças de arquivo automaticamente
 
@@ -22,13 +24,13 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 | | Máquina do Desenvolvedor (Luiz) | Servidor de Produção |
 |---|---|---|
 | Código | `emals_consultoria\backend\` | `C:\emals-app\backend\` |
-| **Banco de dados** | `C:\emals-service\emais_consultoria.db` | **`C:\emals-app\backend\emais_consultoria.db`** |
-| DATABASE_URL | padrão (sem .env) | `sqlite:///./emais_consultoria.db` (via `.env`) |
+| **Banco de dados** | SQLite: `C:\emals-service\emais_consultoria.db` | **PostgreSQL — Supabase (pooler IPv4)** |
+| DATABASE_URL | padrão sem `.env` → SQLite local | `postgresql://...` via `.env` no servidor |
 | Serviço WinSW | `EmaisBackend` (local, porta 8000) | `EmaisBackend` (produção, porta 8000) |
 | ngrok | `EmaisNgrok` (local) | processo separado |
 | Dados | desenvolvimento / testes | **PRODUÇÃO — dados reais dos clientes** |
 
-> ⚠️ **REGRA CRÍTICA:** O banco local (`C:\emals-service\`) é de desenvolvimento e está SEMPRE desatualizado em relação à produção. NUNCA enviar o banco local para o servidor. Os dados reais ficam no servidor em `C:\emals-app\backend\emais_consultoria.db`.
+> ⚠️ **REGRA CRÍTICA:** Banco local é SQLite e produção é PostgreSQL (Supabase) — são engines diferentes. NUNCA tentar copiar ou restaurar o banco local para o servidor. Os dados reais ficam exclusivamente no Supabase de produção.
 
 > ⚠️ **ANTES de qualquer ação no banco:** verificar contagem via `/api/version` (expõe `clientes`, `usuarios`, `projetos`, `db_url`, `admin_db_path`). Confirmar que `admin_db_path` == caminho esperado ANTES de qualquer restore.
 
@@ -43,7 +45,8 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → uvicorn recarrega
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Padrão de versão:** `2.3.0a`, `2.3.0b`, ... `2.3.0z`, `2.3.1a`, etc.
+- **Versão atual:** `2.5.0s` (em `backend/main.py` → `app.version`)
+- **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
 ### Infraestrutura
@@ -71,8 +74,10 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 
 ```
 Principal           → todos
-Controladoria       → isControladoria (todos exceto analista/ger_projeto/ti sem cliente)
-Clientes (Anotações)→ isConsultor
+Controladoria       → isControladoria: admin, consultor, ger_projeto, ti
+                       + analista/ger_projeto/ti com cliente_id preenchido (isRestrito)
+Clientes/Anotações  → isConsultor: admin, consultor, ger_projeto, ti
+                       + analista/ger_projeto/ti com cliente_id preenchido (isRestrito)
 Administração       → isAdminConsultor (admin + consultor) — colapsável
 Procedimentos       → isAdmin (admin apenas) — colapsável
   ├── Templates de Projeto
@@ -81,12 +86,14 @@ Procedimentos       → isAdmin (admin apenas) — colapsável
 Footer              → todos (foto, Manual, Alterar senha, Sair)
 ```
 
+> Nota: `isControladoria` e `isConsultor` são equivalentes no código atual (ambos incluem `ger_projeto` e `ti`). Não confundir com o perfil `consultor` — são flags de visibilidade compostas.
+
 ---
 
 ## Convenções de Código
 
 ### Backend
-- Migrações de banco via bloco `with engine.connect()` em `main.py` (padrão `ALTER TABLE ... ADD COLUMN`, tolerante a erros)
+- Migrações de banco via bloco `with engine.connect()` em `main.py` — **somente SQLite** (`if _is_sqlite`); Supabase começa limpo via `create_all`. Tolerante a erros (coluna já existe = silencioso).
 - Novos routers: criar em `backend/routers/`, registrar em `main.py`
 - Permissões: usar `requer_perfil("admin", "consultor")` ou verificação inline com `usuario.perfil`
 - Padrão de resposta: retornar sempre o objeto atualizado após salvar
@@ -171,7 +178,7 @@ Para **toda nova implementação** (feature, fix, refactor):
 
 ## Pontos de Atenção (Não Quebrar)
 
-1. **Migração no startup:** o bloco `with engine.connect()` em `main.py` roda a cada inicialização — deve ser tolerante a erros (coluna já existe = silencioso)
+1. **Migração no startup:** o bloco `with engine.connect()` em `main.py` roda a cada inicialização, **mas somente em SQLite** (`_is_sqlite`). No Supabase de produção, `create_all` é suficiente — deve ser tolerante a erros (coluna já existe = silencioso)
 2. **Frontend servido pelo backend:** `frontend/dist/` é servido estático — sempre fazer build antes do release
 3. **JWT sem refresh:** token expira em 8h; não há renovação automática ainda
 4. **Foto em base64:** armazenada como TEXT no banco — sem validação de tamanho ainda (limite recomendado: 500KB)
@@ -185,27 +192,99 @@ Para **toda nova implementação** (feature, fix, refactor):
 ```
 emals_consultoria/
 ├── backend/
-│   ├── main.py              # Startup, routers, versão, migrações
-│   ├── models.py            # Todos os modelos SQLAlchemy
-│   ├── schemas.py           # Todos os schemas Pydantic
-│   ├── auth.py              # JWT, hash de senha, get_usuario_atual
-│   ├── database.py          # Engine, SessionLocal, Base
-│   ├── helpers.py           # Função log() para LogAtividade
-│   └── routers/             # Um arquivo por domínio
+│   ├── main.py                  # Startup, routers, versão, migrações
+│   ├── models.py                # Todos os modelos SQLAlchemy
+│   ├── schemas.py               # Todos os schemas Pydantic
+│   ├── auth.py                  # JWT, hash de senha, get_usuario_atual
+│   ├── database.py              # Engine, SessionLocal, Base, _is_sqlite
+│   ├── helpers.py               # Função log() para LogAtividade
+│   ├── dre_engine.py            # Cálculo e consolidação do DRE
+│   ├── importacao_service.py    # Pipeline de importação de extratos
+│   ├── plano_import_service.py  # Importação de planos de conta
+│   ├── plano_parser.py          # Parser de estrutura de planos
+│   ├── xlsx_parser.py           # Leitura de planilhas .xlsx
+│   ├── formula_generator.py     # Geração de fórmulas para itens do plano
+│   ├── agrupamento_suggester.py # Sugestão de agrupamento de contas
+│   ├── nivel_detector.py        # Detecção de nível em planos de conta
+│   ├── migrar_para_supabase.py  # Script de migração SQLite → Supabase (já executado)
+│   └── routers/                 # Um arquivo por domínio:
+│       ├── auth.py              # Login, token JWT
+│       ├── usuarios.py          # CRUD de usuários
+│       ├── clientes.py          # CRUD de clientes
+│       ├── projetos.py          # CRUD de projetos
+│       ├── fases.py             # Fases dos projetos
+│       ├── tarefas.py           # Tarefas das fases
+│       ├── subtarefas.py        # Atividades (subtarefas)
+│       ├── dashboard.py         # Dados do dashboard principal
+│       ├── anotacoes.py         # Anotações por cliente
+│       ├── arquivos.py          # Upload e gestão de arquivos
+│       ├── notificacoes.py      # Notificações de usuário
+│       ├── historico.py         # Histórico de atividades
+│       ├── relatorios.py        # Geração de relatórios
+│       ├── busca.py             # Busca global (Ctrl+K)
+│       ├── chat.py              # Chat interno
+│       ├── modelos.py           # Templates de projeto
+│       ├── bandeiras.py         # Bandeiras/unidades de clientes
+│       ├── controladoria.py     # Módulo de controladoria
+│       ├── fluxo_caixa.py       # Fluxo de caixa
+│       ├── dre_import.py        # Importação de DRE
+│       ├── orcamento.py         # Orçamento
+│       ├── balancete.py         # Balancete
+│       ├── planos.py            # Planos de conta
+│       ├── plano_import.py      # Importação de planos
+│       ├── ia.py                # IA (Claude)
+│       ├── gemini.py            # IA (Gemini)
+│       ├── openrouter.py        # IA (OpenRouter)
+│       └── admin.py             # Backup e administração
 ├── frontend/
 │   ├── src/
-│   │   ├── App.jsx          # Rotas React
+│   │   ├── App.jsx              # Rotas React + aviso de nova versão
 │   │   ├── components/
-│   │   │   ├── Sidebar.jsx  # Navegação principal
-│   │   │   └── shared.jsx   # Componentes reutilizáveis
+│   │   │   ├── Sidebar.jsx      # Navegação principal
+│   │   │   ├── shared.jsx       # Modal, Avatar, Badge, Progress, LoadingPage
+│   │   │   ├── BuscaGlobal.jsx  # Busca global (Ctrl+K)
+│   │   │   └── FloatingAI.jsx   # Widget de IA flutuante (Claude/Gemini/OpenRouter)
 │   │   ├── contexts/
 │   │   │   └── AuthContext.jsx
-│   │   ├── pages/           # Uma página por rota
+│   │   ├── pages/
+│   │   │   ├── Dashboard.jsx
+│   │   │   ├── DashboardExecutivo.jsx
+│   │   │   ├── DashboardCliente.jsx
+│   │   │   ├── DashboardFases.jsx
+│   │   │   ├── DashboardTarefas.jsx
+│   │   │   ├── DashboardSubtarefas.jsx
+│   │   │   ├── Projetos.jsx / ProjetoDetalhe.jsx
+│   │   │   ├── Clientes.jsx
+│   │   │   ├── Usuarios.jsx
+│   │   │   ├── Anotacoes.jsx
+│   │   │   ├── Arquivos.jsx
+│   │   │   ├── Notificacoes.jsx
+│   │   │   ├── HistoricoAtividades.jsx
+│   │   │   ├── Relatorios.jsx
+│   │   │   ├── Procedimentos.jsx / Modelos.jsx
+│   │   │   ├── Manual.jsx
+│   │   │   └── controladoria/
+│   │   │       ├── Index.jsx / ModuloBase.jsx
+│   │   │       ├── FluxoCaixa.jsx
+│   │   │       ├── DRE.jsx / DreDashboard2.jsx
+│   │   │       ├── Orcamento.jsx
+│   │   │       ├── Planos.jsx
+│   │   │       ├── Balancetes.jsx
+│   │   │       └── Importacoes.jsx / ImportacaoRealizado.jsx
 │   │   └── services/
-│   │       └── api.js       # Todos os endpoints da API
-│   └── dist/                # Build de produção (commitado no git)
-├── electron-client/         # App desktop
-├── release.ps1              # Script de deploy
-├── ROADMAP.md               # Backlog de features e correções
-└── CLAUDE.md                # Este arquivo
+│   │       └── api.js           # Todos os endpoints da API
+│   └── dist/                    # Build de produção (commitado no git)
+├── tests/
+│   ├── conftest.py              # Fixture: FastAPI mínimo + SQLite temporário
+│   ├── test_api.py              # Testes de integração dos endpoints críticos
+│   └── test_frontend_build.py  # Verifica integridade do dist/
+├── deploy/                      # Configurações de deploy no servidor
+├── documentos/                  # Diagramas de arquitetura (drawio, svg)
+├── electron-client/             # App desktop (carrega URL ngrok)
+├── .github/workflows/
+│   ├── ci.yml                   # CI: testa em todo PR e push para main
+│   └── deploy.yml               # Deploy: self-hosted, só push para main
+├── release.ps1                  # Script de deploy
+├── ROADMAP.md                   # Backlog de features e correções
+└── CLAUDE.md                    # Este arquivo
 ```
