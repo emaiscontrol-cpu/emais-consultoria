@@ -106,8 +106,9 @@ export const buscaAPI = {
 }
 
 export const chatAPI = {
-  listar:  (projetoId)         => api.get(`/chat/projeto/${projetoId}`),
-  enviar:  (projetoId, texto)  => api.post(`/chat/projeto/${projetoId}`, { texto }),
+  listar:   (projetoId)        => api.get(`/chat/projeto/${projetoId}`),
+  enviar:   (projetoId, texto) => api.post(`/chat/projeto/${projetoId}`, { texto }),
+  naoLidas: (projetoId, desde) => api.get(`/chat/projeto/${projetoId}/nao-lidas`, { params: { desde } }),
 }
 
 export const subtarefasAPI = {

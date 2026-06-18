@@ -1286,8 +1286,15 @@ export default function ProjetoDetalhe() {
   const [formFase, setFormFase] = useState({ nome:'', descricao:'', perc_desbloqueio:80, bloqueado_por_anterior:true, data_inicio:'', data_fim_prev:'' })
   const [savingFase, setSavingFase] = useState(false)
   const [viewMode, setViewMode] = useState('lista') // 'lista' | 'kanban' | 'chat'
+  const [chatNaoLidas, setChatNaoLidas] = useState(0)
 
   const isConsultor = ['admin','consultor','ger_projeto'].includes(usuario?.perfil)
+
+  const _chatVistoKey = `chat_visto_${id}`
+  const marcarChatVisto = () => {
+    localStorage.setItem(_chatVistoKey, new Date().toISOString())
+    setChatNaoLidas(0)
+  }
 
   const carregar = async () => {
     setLoading(true)
@@ -1311,6 +1318,20 @@ export default function ProjetoDetalhe() {
   }
 
   useEffect(() => { carregar() }, [id])
+
+  useEffect(() => {
+    const verificarNaoLidas = async () => {
+      if (viewMode === 'chat') return
+      try {
+        const desde = localStorage.getItem(_chatVistoKey)
+        const { data } = await chatAPI.naoLidas(id, desde)
+        setChatNaoLidas(data.count)
+      } catch { /* silencioso */ }
+    }
+    verificarNaoLidas()
+    const interval = setInterval(verificarNaoLidas, 30000)
+    return () => clearInterval(interval)
+  }, [id, viewMode])
 
   const handleMoverFase = async (faseId, direcao) => {
     try {
@@ -1399,13 +1420,20 @@ export default function ProjetoDetalhe() {
           {[
             { key:'lista',  label:'Fases', icon: <ChevronRight size={13}/> },
             { key:'kanban', label:'Kanban', icon: <Kanban size={13}/> },
-            { key:'chat',   label:'Chat',   icon: <MessageSquare size={13}/> },
+            { key:'chat',   label:'Chat',   icon: <MessageSquare size={13}/>, badge: chatNaoLidas },
           ].map(tab => (
             <button key={tab.key}
               className={`btn btn-sm ${viewMode === tab.key ? 'btn-primary' : ''}`}
-              onClick={() => setViewMode(tab.key)}
-              style={{ display:'flex', alignItems:'center', gap:4 }}>
+              onClick={() => { setViewMode(tab.key); if (tab.key === 'chat') marcarChatVisto() }}
+              style={{ display:'flex', alignItems:'center', gap:4, position:'relative' }}>
               {tab.icon} {tab.label}
+              {tab.badge > 0 && (
+                <span style={{
+                  background: 'var(--red)', color: '#fff', borderRadius: 99,
+                  fontSize: 10, fontWeight: 700, padding: '1px 5px', lineHeight: 1.4,
+                  marginLeft: 2,
+                }}>{tab.badge > 99 ? '99+' : tab.badge}</span>
+              )}
             </button>
           ))}
         </div>
