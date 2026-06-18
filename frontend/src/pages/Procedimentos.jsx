@@ -18,6 +18,7 @@ function fmtData(iso) {
 export default function Procedimentos() {
   const [backups,      setBackups]      = useState([])
   const [auto,         setAuto]         = useState(null)
+  const [postgres,     setPostgres]     = useState(false)
   const [carregando,   setCarregando]   = useState(false)
   const [fazendo,      setFazendo]      = useState(false)
   const [novoHorario,  setNovoHorario]  = useState('')
@@ -32,6 +33,7 @@ export default function Procedimentos() {
       const r = await adminAPI.listarBackups()
       setBackups(r.data.backups)
       setAuto(r.data.auto)
+      setPostgres(r.data.postgres ?? false)
       setNovoHorario(r.data.auto?.horario ?? '03:00')
     } catch {
       toast.error('Erro ao carregar backups')
@@ -110,7 +112,10 @@ export default function Procedimentos() {
       <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>Backup Manual</div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
-          Gera imediatamente uma cópia do banco de dados em <code>C:\emals-service\backup\</code>.
+          {postgres
+            ? <>Exporta todos os dados do <strong>Supabase (PostgreSQL)</strong> e salva um arquivo <code>.sql.gz</code> no servidor local como cópia de segurança adicional.</>
+            : <>Gera imediatamente uma cópia do banco de dados local em <code>.db</code>.</>
+          }
         </div>
         <button className="btn btn-primary" onClick={fazerBackup} disabled={fazendo}
           style={{ display: 'flex', alignItems: 'center', gap: 7 }}>
@@ -123,7 +128,7 @@ export default function Procedimentos() {
       <div style={{ background: '#fff', border: '1px solid var(--border)', borderRadius: 8, padding: 20, marginBottom: 20 }}>
         <div style={{ fontWeight: 600, fontSize: 14, marginBottom: 6 }}>Restaurar Banco de Dados</div>
         <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 14 }}>
-          Selecione um arquivo <code>.db</code> de backup para restaurar. Um backup de segurança é gerado automaticamente antes da restauração.
+          Selecione um arquivo <code>{postgres ? '.sql.gz' : '.db'}</code> de backup para restaurar. Um backup de segurança é gerado automaticamente antes da restauração.
         </div>
 
         <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
@@ -133,8 +138,8 @@ export default function Procedimentos() {
             cursor: 'pointer', fontSize: 13, color: 'var(--brand)', fontWeight: 600,
           }}>
             <Upload size={14} />
-            Selecionar arquivo .db
-            <input ref={inputRef} type="file" accept=".db" style={{ display: 'none' }}
+            Selecionar arquivo {postgres ? '.sql.gz' : '.db'}
+            <input ref={inputRef} type="file" accept={postgres ? '.sql.gz,.gz' : '.db'} style={{ display: 'none' }}
               onChange={e => setArquivoRest(e.target.files?.[0] || null)} />
           </label>
 
