@@ -1,4 +1,6 @@
+from datetime import datetime
 from fastapi import APIRouter, Depends
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
@@ -11,6 +13,26 @@ router = APIRouter()
 
 class MensagemIn(BaseModel):
     texto: str
+
+
+@router.get("/projeto/{projeto_id}/nao-lidas")
+def nao_lidas(
+    projeto_id: int,
+    desde: str = None,
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    q = db.query(func.count(models.MensagemChat.id)).filter(
+        models.MensagemChat.projeto_id == projeto_id,
+        models.MensagemChat.autor_id != usuario.id,
+    )
+    if desde:
+        try:
+            dt = datetime.fromisoformat(desde.replace('Z', '+00:00'))
+            q = q.filter(models.MensagemChat.criado_em > dt)
+        except Exception:
+            pass
+    return {"count": q.scalar() or 0}
 
 
 @router.get("/projeto/{projeto_id}")
