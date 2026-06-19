@@ -233,7 +233,7 @@ function ProcSection() {
 
 // ── Sidebar principal ─────────────────────────────────────────────────────────
 export default function Sidebar({ onBusca }) {
-  const { usuario, logout, atualizarUsuario } = useAuth()
+  const { usuario, logout, atualizarUsuario, temModulo } = useAuth()
   const navigate = useNavigate()
   const [showSenha, setShowSenha] = useState(false)
   const [formSenha, setFormSenha] = useState({ senha_atual: '', nova_senha: '', confirmar: '' })
@@ -314,26 +314,32 @@ export default function Sidebar({ onBusca }) {
             <span style={{ fontSize: 10, background: 'rgba(255,255,255,.12)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.02em' }}>Ctrl+K</span>
           </button>
 
-          {/* ── Projetos (destaque) + sub-seção Dashboards ── */}
-          <ProjetosSection isAdminConsultor={isAdminConsultor} />
+          {/* ── Projetos (destaque) + Dashboards + Notificações — módulo "projetos" ── */}
+          {temModulo('projetos') && (
+            <>
+              <ProjetosSection isAdminConsultor={isAdminConsultor} />
 
-          {/* ── Notificações ── */}
-          <NavLink to="/notificacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-            <div style={{ position: 'relative', display: 'inline-flex' }}>
-              <Bell size={16} />
-              {qtdAlertas > 0 && (
-                <span style={{
-                  position: 'absolute', top: -6, right: -8, background: 'var(--red)', color: '#fff',
-                  borderRadius: 99, fontSize: 9, fontWeight: 700, padding: '1px 4px', minWidth: 14, textAlign: 'center',
-                }}>
-                  {qtdAlertas}
-                </span>
-              )}
-            </div>
-            {' '}Notificações
-          </NavLink>
+              <NavLink to="/notificacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
+                <div style={{ position: 'relative', display: 'inline-flex' }}>
+                  <Bell size={16} />
+                  {qtdAlertas > 0 && (
+                    <span style={{
+                      position: 'absolute', top: -6, right: -8, background: 'var(--red)', color: '#fff',
+                      borderRadius: 99, fontSize: 9, fontWeight: 700, padding: '1px 4px', minWidth: 14, textAlign: 'center',
+                    }}>
+                      {qtdAlertas}
+                    </span>
+                  )}
+                </div>
+                {' '}Notificações
+              </NavLink>
+            </>
+          )}
 
-          {isControladoria && <AnalisesSection />}
+          {/* ── Inteligência de Mercado — módulo "inteligencia_mercado" (seção a implementar) ── */}
+
+          {/* ── Análises Gerenciais — módulo "analises_gerenciais" ── */}
+          {isControladoria && temModulo('analises_gerenciais') && <AnalisesSection />}
 
           {isConsultor && (
             <NavLink to="/anotacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
