@@ -315,6 +315,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-19 (sessão 2)
+**O que foi feito:** módulos contratados por cliente (`modulo_projetos`, `modulo_inteligencia_mercado`, `modulo_analises_gerenciais`) — colunas no banco (SQLite + PostgreSQL), schemas, auth (`ModulosCliente` no Token, `_modulos_do_cliente` no login/refresh), AuthContext (`modulos` + `temModulo`), sidebar reorganizada (Projetos em destaque, Dashboards colapsável, círculo "E"), visibilidade de seções por módulo, toggle UI em Clientes.jsx, dica discreta no rodapé para usuários com módulos parciais. Release v2.5.0u consolidado a partir da revisão de inconsistências entre branches.
+**Decisões tomadas:** migração PostgreSQL adicionada com `ADD COLUMN IF NOT EXISTS` em bloco separado (`if not _is_sqlite`) — `create_all` não altera tabelas existentes no Supabase; footer hint usa `temModulo` (não localStorage) pois AuthContext já tem o helper; branches PR #12/#13 consolidados em `release/v2.5.0u` com PR #14 incorporado.
+**Próximo passo:** REL-1 — relatório de projeto em PDF com `weasyprint`.
+
 ### 2026-06-19
 **O que foi feito:** revisão do ROADMAP e plano de ação; tela de Backup corrigida para PostgreSQL/Supabase — textos, `accept` do input e descrição adaptados dinamicamente via campo `postgres` da API (PR #10); discutido e descartado Supabase DEV separado (custo sem benefício para 1 dev); sequência de próximas features definida: REL-1 (PDF), NOTIF-1/2 (email), IA-1 (balancete PDF).
 **Decisões tomadas:** ROADMAP revisado — próximas prioridades são REL-1 (relatório PDF), depois NOTIF-1/2 (requer SMTP), depois IA-1 (maior diferencial); INF-2b (branch protection manual no GitHub) ainda pendente de ação manual.
