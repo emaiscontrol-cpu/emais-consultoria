@@ -50,6 +50,9 @@ class ClienteCreate(BaseModel):
     contato_nome: Optional[str] = None
     contato_email: Optional[str] = None
     contato_fone: Optional[str] = None
+    modulo_projetos: bool = True
+    modulo_inteligencia_mercado: bool = False
+    modulo_analises_gerenciais: bool = False
 
     @field_validator('cnpj', 'contato_nome', 'contato_email', 'contato_fone', mode='before')
     @classmethod
@@ -64,6 +67,9 @@ class ClienteOut(BaseModel):
     contato_email: Optional[str]
     contato_fone: Optional[str]
     ativo: bool
+    modulo_projetos: bool = True
+    modulo_inteligencia_mercado: bool = False
+    modulo_analises_gerenciais: bool = False
     class Config:
         from_attributes = True
 
@@ -294,10 +300,16 @@ class DashboardResumo(BaseModel):
     tarefas_atrasadas: int
 
 # ── TOKEN ─────────────────────────────────────────────
+class ModulosCliente(BaseModel):
+    projetos: bool = True
+    inteligencia_mercado: bool = False
+    analises_gerenciais: bool = False
+
 class Token(BaseModel):
     access_token: str
     token_type: str
     usuario: UsuarioOut
+    modulos: Optional[ModulosCliente] = None
 
 # ── MODELOS DE PROJETO ─────────────────────────────────
 class ModeloSubtarefaCreate(BaseModel):

@@ -14,6 +14,9 @@ export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(() => {
     try { return JSON.parse(localStorage.getItem('usuario')) } catch { return null }
   })
+  const [modulos, setModulos] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('modulos')) } catch { return null }
+  })
   const [loading, setLoading] = useState(true)
   const refreshTimer = useRef(null)
 
@@ -28,6 +31,10 @@ export function AuthProvider({ children }) {
       try {
         const { data } = await authAPI.refresh()
         localStorage.setItem('token', data.access_token)
+        if (data.modulos !== undefined) {
+          setModulos(data.modulos)
+          localStorage.setItem('modulos', JSON.stringify(data.modulos))
+        }
         agendarRefresh(data.access_token)
       } catch { /* silencioso — interceptor redireciona para login se 401 */ }
     }, delay)
@@ -60,7 +67,9 @@ export function AuthProvider({ children }) {
     const { data } = await authAPI.login(email, senha)
     localStorage.setItem('token', data.access_token)
     localStorage.setItem('usuario', JSON.stringify(data.usuario))
+    localStorage.setItem('modulos', JSON.stringify(data.modulos ?? null))
     setUsuario(data.usuario)
+    setModulos(data.modulos ?? null)
     agendarRefresh(data.access_token)
     return data.usuario
   }
@@ -69,7 +78,9 @@ export function AuthProvider({ children }) {
     if (refreshTimer.current) clearTimeout(refreshTimer.current)
     localStorage.removeItem('token')
     localStorage.removeItem('usuario')
+    localStorage.removeItem('modulos')
     setUsuario(null)
+    setModulos(null)
   }
 
   const atualizarUsuario = (dados) => {
@@ -78,8 +89,12 @@ export function AuthProvider({ children }) {
     localStorage.setItem('usuario', JSON.stringify(novo))
   }
 
+  // modulos === null → usuário sem cliente_id (admin/consultor) → acesso irrestrito
+  // modulos === objeto → respeitar os flags do cliente contratante
+  const temModulo = (mod) => modulos === null ? true : Boolean(modulos[mod])
+
   return (
-    <AuthContext.Provider value={{ usuario, login, logout, loading, atualizarUsuario }}>
+    <AuthContext.Provider value={{ usuario, modulos, temModulo, login, logout, loading, atualizarUsuario }}>
       {children}
     </AuthContext.Provider>
   )

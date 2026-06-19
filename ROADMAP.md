@@ -86,7 +86,7 @@
 - [ ] **INF-4** — Adicionar versionamento automático via git tag (script lê a tag mais recente e injeta em `app.version`).
 - [ ] **INF-5** — Armazenar fotos de usuário em disco (pasta `/uploads`) em vez de base64 no banco. Servir via endpoint estático.
 - [ ] **INF-6** — **GitHub Secrets para DATABASE_URL** — Automatizar credenciais do Supabase via GitHub Secrets/Actions, eliminando edição manual do `.env` via RDP.
-- [ ] **INF-7** — **UI de Backup para PostgreSQL** — Atualizar tela Administração > Backup para exibir `.sql.gz`, mensagem contextual "PostgreSQL/Supabase" e remover referências a `.db`. (API já retorna `postgres: true`)
+- [x] **INF-7** — **UI de Backup para PostgreSQL** — Tela Backup adaptada: textos e `accept` do input mudam dinamicamente quando `postgres=true`. — `v2.5.0t`
 - [ ] **INF-8** — **Estender cobertura de testes** — `tests/test_api.py` cobre auth/clientes/projetos/fases/tarefas/usuarios/dashboard/anotações/subtarefas. Faltam: controladoria, fluxo de caixa, orçamento, balancete, IA (claude/gemini/openrouter), importação DRE, admin/backup.
 
 ---

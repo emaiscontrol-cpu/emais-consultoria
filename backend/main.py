@@ -180,6 +180,10 @@ with engine.connect() as conn:
         "ALTER TABLE planos_itens ADD COLUMN variavel_dre TEXT",
         # Migração: copia agrupamento → variavel_dre para TT/RES que ainda não têm
         "UPDATE planos_itens SET variavel_dre = agrupamento WHERE variavel_dre IS NULL AND (agrupamento IS NOT NULL AND agrupamento != '') AND tipo IN ('TT', 'RES')",
+        # Módulos contratados por cliente
+        "ALTER TABLE clientes ADD COLUMN modulo_projetos BOOLEAN NOT NULL DEFAULT 1",
+        "ALTER TABLE clientes ADD COLUMN modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT 0",
+        "ALTER TABLE clientes ADD COLUMN modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT 0",
         # UX-11: notificações de menção @usuario
         """CREATE TABLE IF NOT EXISTS notificacoes_mencao (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -196,6 +200,21 @@ with engine.connect() as conn:
             conn.commit()
         except Exception:
             pass  # column already exists
+
+# Migrações para PostgreSQL (Supabase) — colunas novas em tabelas existentes
+# SQLite usa ALTER TABLE acima; PostgreSQL precisa de ADD COLUMN IF NOT EXISTS
+if not _is_sqlite:
+    with engine.connect() as conn:
+        for stmt in [
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_projetos BOOLEAN NOT NULL DEFAULT TRUE",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT FALSE",
+        ]:
+            try:
+                conn.execute(text(stmt))
+                conn.commit()
+            except Exception:
+                pass
 
 # Reclassificar niveis (logica por formato de conta: AN=3, sem ponto=1, com ponto=2)
 try:
@@ -299,7 +318,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0t"
+app.version = "2.5.0u"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
