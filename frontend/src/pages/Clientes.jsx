@@ -4,12 +4,23 @@ import { Modal, LoadingPage } from '../components/shared'
 import { Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+const MODULOS = [
+  { key: 'modulo_projetos',             label: 'Projetos' },
+  { key: 'modulo_inteligencia_mercado', label: 'Inteligência de Mercado' },
+  { key: 'modulo_analises_gerenciais',  label: 'Análises Gerenciais' },
+]
+
+const FORM_VAZIO = {
+  razao_social: '', cnpj: '', contato_nome: '', contato_email: '', contato_fone: '',
+  modulo_projetos: true, modulo_inteligencia_mercado: false, modulo_analises_gerenciais: false,
+}
+
 export default function Clientes() {
   const [clientes,  setClientes]  = useState([])
   const [loading,   setLoading]   = useState(true)
   const [showModal, setShowModal] = useState(false)
   const [editando,  setEditando]  = useState(null)
-  const [form, setForm] = useState({ razao_social:'', cnpj:'', contato_nome:'', contato_email:'', contato_fone:'' })
+  const [form, setForm] = useState(FORM_VAZIO)
   const [saving, setSaving] = useState(false)
 
   const carregar = async () => {
@@ -23,12 +34,21 @@ export default function Clientes() {
 
   const abrirNovo = () => {
     setEditando(null)
-    setForm({ razao_social:'', cnpj:'', contato_nome:'', contato_email:'', contato_fone:'' })
+    setForm(FORM_VAZIO)
     setShowModal(true)
   }
   const abrirEditar = c => {
     setEditando(c)
-    setForm({ razao_social:c.razao_social, cnpj:c.cnpj||'', contato_nome:c.contato_nome||'', contato_email:c.contato_email||'', contato_fone:c.contato_fone||'' })
+    setForm({
+      razao_social: c.razao_social,
+      cnpj: c.cnpj || '',
+      contato_nome: c.contato_nome || '',
+      contato_email: c.contato_email || '',
+      contato_fone: c.contato_fone || '',
+      modulo_projetos: c.modulo_projetos ?? true,
+      modulo_inteligencia_mercado: c.modulo_inteligencia_mercado ?? false,
+      modulo_analises_gerenciais: c.modulo_analises_gerenciais ?? false,
+    })
     setShowModal(true)
   }
   const handleSalvar = async e => {
@@ -64,7 +84,7 @@ export default function Clientes() {
           <div className="table-wrap">
             <table>
               <thead>
-                <tr><th>Razão social</th><th>CNPJ</th><th>Contato</th><th>Email</th><th>Telefone</th><th></th></tr>
+                <tr><th>Razão social</th><th>CNPJ</th><th>Contato</th><th>Email</th><th>Telefone</th><th>Módulos</th><th></th></tr>
               </thead>
               <tbody>
                 {clientes.map(c => (
@@ -74,6 +94,13 @@ export default function Clientes() {
                     <td>{c.contato_nome || '—'}</td>
                     <td className="text-muted">{c.contato_email || '—'}</td>
                     <td className="text-muted">{c.contato_fone || '—'}</td>
+                    <td>
+                      <div style={{ display:'flex', gap:4, flexWrap:'wrap' }}>
+                        {c.modulo_projetos            && <span style={tagStyle('var(--brand)')}>Projetos</span>}
+                        {c.modulo_inteligencia_mercado && <span style={tagStyle('#7c3aed')}>Int. Mercado</span>}
+                        {c.modulo_analises_gerenciais  && <span style={tagStyle('#059669')}>Análises</span>}
+                      </div>
+                    </td>
                     <td>
                       <button className="btn btn-sm btn-ghost" onClick={()=>abrirEditar(c)}>Editar</button>
                     </td>
@@ -109,9 +136,29 @@ export default function Clientes() {
               <div className="form-group"><label>Telefone</label>
                 <input value={form.contato_fone} onChange={e=>setForm(f=>({...f,contato_fone:e.target.value}))} /></div>
             </div>
+
+            <div className="form-group" style={{ marginTop:8 }}>
+              <label style={{ marginBottom:8, display:'block' }}>Módulos contratados</label>
+              <div style={{ display:'flex', flexDirection:'column', gap:8 }}>
+                {MODULOS.map(m => (
+                  <label key={m.key} style={{ display:'flex', alignItems:'center', gap:8, cursor:'pointer', fontSize:14 }}>
+                    <input type="checkbox" checked={form[m.key]} onChange={e=>setForm(f=>({...f,[m.key]:e.target.checked}))} />
+                    {m.label}
+                  </label>
+                ))}
+              </div>
+            </div>
           </form>
         </Modal>
       )}
     </div>
   )
+}
+
+function tagStyle(color) {
+  return {
+    fontSize: 11, fontWeight: 600, padding: '2px 7px',
+    borderRadius: 99, background: color + '18', color,
+    whiteSpace: 'nowrap',
+  }
 }

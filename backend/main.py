@@ -180,6 +180,10 @@ with engine.connect() as conn:
         "ALTER TABLE planos_itens ADD COLUMN variavel_dre TEXT",
         # Migração: copia agrupamento → variavel_dre para TT/RES que ainda não têm
         "UPDATE planos_itens SET variavel_dre = agrupamento WHERE variavel_dre IS NULL AND (agrupamento IS NOT NULL AND agrupamento != '') AND tipo IN ('TT', 'RES')",
+        # Módulos contratados por cliente
+        "ALTER TABLE clientes ADD COLUMN modulo_projetos BOOLEAN NOT NULL DEFAULT 1",
+        "ALTER TABLE clientes ADD COLUMN modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT 0",
+        "ALTER TABLE clientes ADD COLUMN modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT 0",
         # UX-11: notificações de menção @usuario
         """CREATE TABLE IF NOT EXISTS notificacoes_mencao (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
