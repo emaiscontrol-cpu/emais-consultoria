@@ -300,10 +300,16 @@ class DashboardResumo(BaseModel):
     tarefas_atrasadas: int
 
 # ── TOKEN ─────────────────────────────────────────────
+class ModulosCliente(BaseModel):
+    projetos: bool = True
+    inteligencia_mercado: bool = False
+    analises_gerenciais: bool = False
+
 class Token(BaseModel):
     access_token: str
     token_type: str
     usuario: UsuarioOut
+    modulos: Optional[ModulosCliente] = None
 
 # ── MODELOS DE PROJETO ─────────────────────────────────
 class ModeloSubtarefaCreate(BaseModel):

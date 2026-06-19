@@ -31,6 +31,19 @@ def _get_ip(request: Request) -> str:
 
 # ── Endpoints ─────────────────────────────────────────────────────────────────
 
+def _modulos_do_cliente(usuario, db: Session):
+    """Retorna ModulosCliente se o usuário tiver cliente_id, senão None."""
+    if not usuario.cliente_id:
+        return None
+    cliente = db.query(models.Cliente).filter(models.Cliente.id == usuario.cliente_id).first()
+    if not cliente:
+        return None
+    return schemas.ModulosCliente(
+        projetos=bool(cliente.modulo_projetos),
+        inteligencia_mercado=bool(cliente.modulo_inteligencia_mercado),
+        analises_gerenciais=bool(cliente.modulo_analises_gerenciais),
+    )
+
 @router.post("/login", response_model=schemas.Token)
 def login(req: schemas.LoginRequest, request: Request, db: Session = Depends(get_db)):
     ip = _get_ip(request)
@@ -42,7 +55,7 @@ def login(req: schemas.LoginRequest, request: Request, db: Session = Depends(get
     if not usuario.ativo:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta desativada. Entre em contato com o administrador.")
     token = criar_token({"sub": usuario.email, "perfil": usuario.perfil})
-    return {"access_token": token, "token_type": "bearer", "usuario": usuario}
+    return {"access_token": token, "token_type": "bearer", "usuario": usuario, "modulos": _modulos_do_cliente(usuario, db)}
 
 @router.get("/me", response_model=schemas.UsuarioOut)
 def me(usuario=Depends(get_usuario_atual)):
@@ -68,10 +81,10 @@ def atualizar_foto(req: FotoRequest, usuario=Depends(get_usuario_atual), db: Ses
     return usuario
 
 @router.post("/refresh", response_model=schemas.Token)
-def refresh_token(usuario=Depends(get_usuario_atual)):
+def refresh_token(usuario=Depends(get_usuario_atual), db: Session = Depends(get_db)):
     """Renova o token JWT antes de expirar, sem precisar de novo login."""
     token = criar_token({"sub": usuario.email, "perfil": usuario.perfil})
-    return {"access_token": token, "token_type": "bearer", "usuario": usuario}
+    return {"access_token": token, "token_type": "bearer", "usuario": usuario, "modulos": _modulos_do_cliente(usuario, db)}
 
 
 class EsqueciSenhaRequest(BaseModel):
