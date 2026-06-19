@@ -81,7 +81,7 @@
 
 - [x] **INF-1** — Migrar banco de SQLite para Supabase PostgreSQL. 40 tabelas, 90.034 registros, backup automático `.sql.gz`. — `v2.5.0s`
 - [x] **INF-2** — Implementar CI com GitHub Actions: testes automatizados (`pytest`) a cada PR/push para `main`. — `2026-06-16`
-- [ ] **INF-2b** — **Branch protection na `main`** — Configurar em Settings → Branches a regra exigindo o check `ci-status` antes de permitir merge. Ação manual no GitHub, ainda pendente.
+- [x] **INF-2b** — **Branch protection na `main`** — Confirmado ativo em v2.5.0v: push direto rejeitado pelo GitHub, CI exigido antes do merge. — `v2.5.0v`
 - [ ] **INF-3** — Criar arquivo `.env.example` com todas as variáveis necessárias documentadas.
 - [ ] **INF-4** — Adicionar versionamento automático via git tag (script lê a tag mais recente e injeta em `app.version`).
 - [ ] **INF-5** — Armazenar fotos de usuário em disco (pasta `/uploads`) em vez de base64 no banco. Servir via endpoint estático.

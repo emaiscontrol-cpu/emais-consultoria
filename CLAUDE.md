@@ -316,8 +316,8 @@ Regras:
 ## Histórico de Sessões
 
 ### 2026-06-19 (sessão 2)
-**O que foi feito:** módulos contratados por cliente (`modulo_projetos`, `modulo_inteligencia_mercado`, `modulo_analises_gerenciais`) — colunas no banco (SQLite + PostgreSQL), schemas, auth (`ModulosCliente` no Token, `_modulos_do_cliente` no login/refresh), AuthContext (`modulos` + `temModulo`), sidebar reorganizada (Projetos em destaque, Dashboards colapsável, círculo "E"), visibilidade de seções por módulo, toggle UI em Clientes.jsx, dica discreta no rodapé para usuários com módulos parciais. Release v2.5.0u consolidado a partir da revisão de inconsistências entre branches.
-**Decisões tomadas:** migração PostgreSQL adicionada com `ADD COLUMN IF NOT EXISTS` em bloco separado (`if not _is_sqlite`) — `create_all` não altera tabelas existentes no Supabase; footer hint usa `temModulo` (não localStorage) pois AuthContext já tem o helper; branches PR #12/#13 consolidados em `release/v2.5.0u` com PR #14 incorporado.
+**O que foi feito:** módulos contratados por cliente (`modulo_projetos`, `modulo_inteligencia_mercado`, `modulo_analises_gerenciais`) — colunas no banco (SQLite + PostgreSQL), schemas, auth (`ModulosCliente` no Token, `_modulos_do_cliente` no login/refresh), AuthContext (`modulos` + `temModulo`), sidebar reorganizada (Projetos em destaque, Dashboards colapsável, círculo "E"), visibilidade de seções por módulo, toggle UI em Clientes.jsx, dica discreta no rodapé para usuários com módulos parciais. PRs #12–14 consolidados em `release/v2.5.0u` (PR #15) + bump `v2.5.0v` (PR #16), ambos mergeados e em produção. Branch protection confirmada ativa — push direto na `main` rejeitado pelo GitHub (INF-2b concluído).
+**Decisões tomadas:** migração PostgreSQL adicionada com `ADD COLUMN IF NOT EXISTS` em bloco separado (`if not _is_sqlite`) — `create_all` não altera tabelas existentes no Supabase; footer hint usa `temModulo` (não localStorage) pois AuthContext já tem o helper; `release.ps1` não funciona quando main tem proteção + commits à frente — usar sempre o fluxo PR.
 **Próximo passo:** REL-1 — relatório de projeto em PDF com `weasyprint`.
 
 ### 2026-06-19
