@@ -218,6 +218,11 @@ export default function Sidebar({ onBusca }) {
   const isConsultor      = isRestrito || ['admin', 'consultor', 'ger_projeto', 'ti'].includes(usuario?.perfil)
   const isControladoria  = isRestrito || ['admin', 'consultor', 'ger_projeto', 'ti'].includes(usuario?.perfil)
 
+  const isCliente = ['analista', 'ger_projeto', 'ti'].includes(usuario?.perfil)
+  const _modulos  = (() => { try { return JSON.parse(localStorage.getItem('modulos')) } catch { return null } })()
+  const mostrarDicaModulos = isCliente && _modulos !== null &&
+    !(_modulos.projetos && _modulos.inteligencia_mercado && _modulos.analises_gerenciais)
+
   return (
     <>
       <aside className="sidebar">
@@ -289,6 +294,17 @@ export default function Sidebar({ onBusca }) {
         </nav>
 
         <div className="sidebar-footer">
+          {mostrarDicaModulos && (
+            <div style={{
+              fontSize: 10, color: 'rgba(255,255,255,.28)',
+              marginBottom: 10, lineHeight: 1.5, textAlign: 'center',
+              padding: '6px 8px', borderRadius: 6,
+              background: 'rgba(255,255,255,.04)',
+            }}>
+              Módulos adicionais disponíveis.<br />Consulte seu responsável.
+            </div>
+          )}
+
           <input type="file" accept="image/*" id="foto-upload" style={{ display: 'none' }}
             onChange={async e => {
               const file = e.target.files?.[0]
