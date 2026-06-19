@@ -315,6 +315,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-19
+**O que foi feito:** revisão do ROADMAP e plano de ação; tela de Backup corrigida para PostgreSQL/Supabase — textos, `accept` do input e descrição adaptados dinamicamente via campo `postgres` da API (PR #10); discutido e descartado Supabase DEV separado (custo sem benefício para 1 dev); sequência de próximas features definida: REL-1 (PDF), NOTIF-1/2 (email), IA-1 (balancete PDF).
+**Decisões tomadas:** ROADMAP revisado — próximas prioridades são REL-1 (relatório PDF), depois NOTIF-1/2 (requer SMTP), depois IA-1 (maior diferencial); INF-2b (branch protection manual no GitHub) ainda pendente de ação manual.
+**Próximo passo:** implementar REL-1 — relatório de projeto em PDF com `weasyprint`.
+
 ### 2026-06-18 (sessão 2)
 **O que foi feito:** corrigido bug 500 em `/api/version` no PostgreSQL (PR #4); CLAUDE.md atualizado com caminhos reais do servidor e seção de histórico (PR #5); `@` menção adicionada ao ChatPanel que usava input simples (PR #6); notificação no sino ao ser mencionado — nova tabela `notificacoes_mencao`, helper `notificar_mencoes`, integrado em chat e comentários de tarefa (PR #7); badge vermelho de mensagens não lidas no botão Chat com polling 30s e localStorage por projeto (PR #8).
 **Decisões tomadas:** SQLite mantido no dev local (criar Supabase DEV avaliado e descartado — custo sem benefício proporcional para time de 1 dev); menção `@` só funciona para perfis com permissão de listar usuários (`admin/consultor/ger_projeto`); badge de não lidas rastreia por `localStorage` sem tabela extra no banco; para diagnosticar 500 no servidor sempre verificar `C:\emals-service\logs\emals-backend.err.log`.
