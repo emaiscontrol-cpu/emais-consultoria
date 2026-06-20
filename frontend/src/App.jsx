@@ -32,6 +32,7 @@ import DashboardCliente from './pages/DashboardCliente'
 import DashboardFases from './pages/DashboardFases'
 import DashboardTarefas from './pages/DashboardTarefas'
 import DashboardSubtarefas from './pages/DashboardSubtarefas'
+import SaibaMais from './pages/SaibaMais'
 import BuscaGlobal from './components/BuscaGlobal'
 import FloatingAI from './components/FloatingAI'
 import './index.css'
@@ -134,6 +135,7 @@ function ProtectedLayout() {
           <Route path="/dashboard/subtarefas"     element={<DashboardSubtarefas />} />
           <Route path="/procedimentos"             element={<Procedimentos />} />
           <Route path="/modelos"                   element={<Modelos />} />
+          <Route path="/saiba-mais/:modulo"        element={<SaibaMais />} />
         </Routes>
       </div>
       {showBusca && <BuscaGlobal onClose={() => setShowBusca(false)} />}
