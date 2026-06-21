@@ -5,6 +5,7 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
 from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import, plano_import
+from routers import ref_segmentos, ref_plano, ref_lancamentos, ref_depara, ref_templates, ref_demonstrativos, ref_benchmark
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -184,6 +185,8 @@ with engine.connect() as conn:
         "ALTER TABLE clientes ADD COLUMN modulo_projetos BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE clientes ADD COLUMN modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT 0",
         "ALTER TABLE clientes ADD COLUMN modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT 0",
+        # Segmento do cliente (Plano Referencial)
+        "ALTER TABLE clientes ADD COLUMN segmento_id INTEGER REFERENCES ref_segmentos(id)",
         # UX-11: notificações de menção @usuario
         """CREATE TABLE IF NOT EXISTS notificacoes_mencao (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -209,6 +212,7 @@ if not _is_sqlite:
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_projetos BOOLEAN NOT NULL DEFAULT TRUE",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS segmento_id INTEGER REFERENCES ref_segmentos(id)",
         ]:
             try:
                 conn.execute(text(stmt))
@@ -252,6 +256,7 @@ from database import SessionLocal
 from seed_controladoria import seed_agrupadores
 from seed_orcamento import seed_orcamento
 from seed_dre import seed_dre
+from seed_ref_plano import seed_ref_plano
 _db = SessionLocal()
 try:
     seed_agrupadores(_db)
@@ -263,6 +268,10 @@ try:
         seed_dre(_db)
     except Exception as _e:
         print(f"[warning] seed_dre: {_e}")
+    try:
+        seed_ref_plano(_db)
+    except Exception as _e:
+        print(f"[warning] seed_ref_plano: {_e}")
 finally:
     _db.close()
 
@@ -306,8 +315,15 @@ app.include_router(arquivos.router,       prefix="/api/arquivos",       tags=["A
 app.include_router(ia.router,             prefix="/api/ia",             tags=["IA"])
 app.include_router(gemini.router,         prefix="/api/gemini",         tags=["Gemini"])
 app.include_router(openrouter.router,     prefix="/api/openrouter",     tags=["OpenRouter"])
-app.include_router(dre_import.router,     prefix="/api/dre",            tags=["Motor DRE"])
-app.include_router(plano_import.router,   prefix="/api/plano",          tags=["Importação Plano"])
+app.include_router(dre_import.router,          prefix="/api/dre",              tags=["Motor DRE"])
+app.include_router(plano_import.router,        prefix="/api/plano",            tags=["Importação Plano"])
+app.include_router(ref_segmentos.router,       prefix="/api/ref/segmentos",    tags=["Ref: Segmentos"])
+app.include_router(ref_plano.router,           prefix="/api/ref/plano",        tags=["Ref: Plano"])
+app.include_router(ref_lancamentos.router,     prefix="/api/ref/lancamentos",  tags=["Ref: Lançamentos"])
+app.include_router(ref_depara.router,          prefix="/api/ref/depara",       tags=["Ref: De-Para"])
+app.include_router(ref_templates.router,       prefix="/api/ref/templates",    tags=["Ref: Templates"])
+app.include_router(ref_demonstrativos.router,  prefix="/api/ref/demonstrativos", tags=["Ref: Demonstrativos"])
+app.include_router(ref_benchmark.router,       prefix="/api/ref/benchmark",    tags=["Ref: Benchmark"])
 
 # Cria diretório de uploads se não existir
 from pathlib import Path as _Path
@@ -318,7 +334,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0v"
+app.version = "2.5.0w"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():

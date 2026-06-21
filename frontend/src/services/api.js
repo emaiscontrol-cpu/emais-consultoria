@@ -307,4 +307,63 @@ export const dreMotorAPI = {
   resolverPendencia: data    => api.post('/dre/importar/pendencias/resolver', data),
 }
 
+// ── PLANO REFERENCIAL ─────────────────────────────────────────────────────────
+
+export const refSegmentosAPI = {
+  listar:   ()         => api.get('/ref/segmentos/'),
+  criar:    data       => api.post('/ref/segmentos/', data),
+  atualizar:(id, data) => api.put(`/ref/segmentos/${id}`, data),
+  deletar:  id         => api.delete(`/ref/segmentos/${id}`),
+}
+
+export const refPlanoAPI = {
+  listar:           ()              => api.get('/ref/plano/'),
+  criar:            data            => api.post('/ref/plano/', data),
+  listarContas:     planoId         => api.get(`/ref/plano/${planoId}/contas`),
+  criarConta:       (planoId, data) => api.post(`/ref/plano/${planoId}/contas`, data),
+  criarSubconta:    (id, data)      => api.post(`/ref/plano/contas/${id}/subcontas`, data),
+  atualizarConta:   (id, data)      => api.put(`/ref/plano/contas/${id}`, data),
+  deletarConta:     id              => api.delete(`/ref/plano/contas/${id}`),
+  listarAgrupamentos: planoId       => api.get(`/ref/plano/agrupamentos/${planoId}`),
+}
+
+export const refLancamentosAPI = {
+  importar:           data                    => api.post('/ref/lancamentos/importar', data),
+  listar:             (cid, ano, mes)         => api.get(`/ref/lancamentos/cliente/${cid}`, { params: { ano, mes } }),
+  deletarCompetencia: (cid, ano, mes)         => api.delete(`/ref/lancamentos/cliente/${cid}/competencia/${ano}/${mes}`),
+}
+
+export const refDeParaAPI = {
+  pendencias:       clienteId  => api.get('/ref/depara/pendencias', { params: clienteId ? { cliente_id: clienteId } : {} }),
+  sugestoes:        ccId       => api.get(`/ref/depara/sugestoes/${ccId}`),
+  confirmar:        data       => api.post('/ref/depara/confirmar', data),
+  porCliente:       clienteId  => api.get(`/ref/depara/cliente/${clienteId}`),
+  contasCliente:    clienteId  => api.get(`/ref/depara/contas-cliente/${clienteId}`),
+}
+
+export const refTemplatesAPI = {
+  listar:         (tipo, segId)     => api.get('/ref/templates/', { params: { tipo, segmento_id: segId } }),
+  criar:          data              => api.post('/ref/templates/', data),
+  detalhe:        id                => api.get(`/ref/templates/${id}`),
+  atualizar:      (id, data)        => api.put(`/ref/templates/${id}`, data),
+  deletar:        id                => api.delete(`/ref/templates/${id}`),
+  criarLinha:     (id, data)        => api.post(`/ref/templates/${id}/linhas`, data),
+  atualizarLinha: (id, lid, data)   => api.put(`/ref/templates/${id}/linhas/${lid}`, data),
+  deletarLinha:   (id, lid)         => api.delete(`/ref/templates/${id}/linhas/${lid}`),
+  duplicar:       (id, data)        => api.post(`/ref/templates/${id}/duplicar`, data),
+}
+
+export const refDemonstrativosAPI = {
+  calcular:       (cid, tid, ano, mes)          => api.get(`/ref/demonstrativos/cliente/${cid}/template/${tid}`, { params: { ano, mes } }),
+  comparativo:    (cid, ano, mes, tReal, tOrc)  => api.get(`/ref/demonstrativos/cliente/${cid}/comparativo`, { params: { ano, mes, template_realizado_id: tReal, template_orcado_id: tOrc } }),
+  fecharPeriodo:  (cid, ano, mes)               => api.post(`/ref/demonstrativos/cliente/${cid}/periodo/${ano}/${mes}/fechar`),
+  reabrirPeriodo: (cid, ano, mes)               => api.delete(`/ref/demonstrativos/cliente/${cid}/periodo/${ano}/${mes}/reabrir`),
+  periodos:       cid                           => api.get(`/ref/demonstrativos/cliente/${cid}/periodos`),
+}
+
+export const refBenchmarkAPI = {
+  calcular: (segId, ano, mes, templateId) =>
+    api.get(`/ref/benchmark/segmento/${segId}`, { params: { ano, mes, template_id: templateId } }),
+}
+
 export default api
