@@ -1,199 +1,88 @@
 ---
-description: Cria um novo módulo completo no projeto E Mais Consultoria (router backend + página frontend + rota + sidebar + API)
+description: Cria um módulo completo em qualquer projeto — router backend, modelos, schemas, migração, página frontend, rota e sidebar
 argument-hint: <nome-do-modulo> [descrição curta]
 allowed-tools: [Read, Edit, Write, Glob, Grep, Bash]
 ---
 
-# Novo Módulo — E Mais Consultoria
+# Novo Módulo
 
-Cria um módulo completo seguindo as convenções do projeto. O argumento é o nome do módulo: $ARGUMENTS
+Cria um módulo completo a partir do zero. Argumento: $ARGUMENTS
 
 ## Passo 1 — Entender o escopo
 
-Antes de criar qualquer arquivo, pergunte ao usuário (se não estiver claro nos argumentos):
-- Qual o nome do módulo? (ex: `bandeiras`, `relatorios`, `chat`)
-- Quais perfis terão acesso? (`admin`, `consultor`, `ger_projeto`, `analista`, `ti`)
-- O módulo aparece na Sidebar? Em qual seção? (Principal / Controladoria / Administração / Procedimentos)
-- Precisa de modelos no banco? (novos campos ou nova tabela?)
+Antes de criar qualquer arquivo, pergunte ao usuário (se não estiver claro):
+- Qual o nome do módulo e qual problema ele resolve?
+- Quais perfis/roles terão acesso?
+- Precisa de nova tabela no banco ou só novos campos?
+- Aparece na navegação (sidebar/menu)? Em qual seção?
+- Quais operações são necessárias? (listar, criar, editar, deletar)
 
-## Passo 2 — Backend: Router
+## Passo 2 — Backend: Modelo
 
-Crie `backend/routers/<nome>.py` seguindo este padrão:
+Se precisar de nova tabela, criar em `models.py` (ou equivalente do projeto):
+- Incluir `id` como chave primária
+- Incluir `criado_em` com `server_default`
+- Se multi-tenant: incluir FK para a entidade de cliente/organização
 
-```python
-from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.orm import Session
-from database import get_db
-from auth import get_usuario_atual
-import models, schemas
+## Passo 3 — Backend: Schema / Serialização
 
-router = APIRouter(prefix="/<nome>", tags=["<Nome>"])
+Criar schemas de entrada (Create/Update) e saída (Out/Response):
+- Campos obrigatórios vs opcionais bem definidos
+- Schema de saída com `from_attributes = True` (Pydantic) ou equivalente
 
-@router.get("/")
-def listar(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
-    # Filtro multi-tenant: analista/ger_projeto/ti só veem seu cliente
-    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id:
-        return db.query(models.<Modelo>).filter_by(cliente_id=usuario.cliente_id).all()
-    return db.query(models.<Modelo>).all()
-```
+## Passo 4 — Backend: Router / Controller
 
-**Regras obrigatórias:**
-- Sempre usar `Depends(get_usuario_atual)` para proteger endpoints
-- Filtro multi-tenant em TODOS os endpoints que retornam dados de cliente
-- Retornar sempre o objeto atualizado após salvar (não apenas `{"ok": True}`)
-- Usar `requer_perfil("admin", "consultor")` para endpoints restritos
+Criar arquivo de rotas com CRUD completo:
+- Proteger todos os endpoints com autenticação
+- Aplicar filtro de escopo (tenant/organização) em listagens
+- Retornar sempre o objeto atualizado após salvar
 
-## Passo 3 — Registrar o router em `backend/main.py`
+## Passo 5 — Backend: Registrar o router
 
-Adicionar na linha de imports dos routers e no `app.include_router(...)`:
+Incluir o novo router no ponto de entrada da aplicação (`main.py` ou equivalente).
 
-```python
-# No import (linha ~7):
-from routers import ..., <nome>
+## Passo 6 — Migração de banco
 
-# No corpo (após os outros include_router):
-app.include_router(<nome>.router)
-```
+Se adicionou coluna em tabela existente:
+- Verificar se o projeto usa migrações automáticas (Alembic, Prisma, etc.) ou manuais
+- Criar migração seguindo o padrão já usado no projeto
+- Testar que a migração é idempotente (pode rodar mais de uma vez sem erro)
 
-## Passo 4 — Modelos e Schemas (se necessário)
+## Passo 7 — Frontend: Serviço de API
 
-Se o módulo precisar de nova tabela, adicionar em `backend/models.py`:
+Adicionar funções de chamada à API no arquivo de serviços do projeto (ex: `api.js`, `services/modulo.ts`):
+- `listar`, `buscarPorId`, `criar`, `atualizar`, `deletar`
+- Usar o cliente HTTP já configurado no projeto (nunca `fetch` direto)
 
-```python
-class <Modelo>(Base):
-    __tablename__ = "<tabela>"
-    id         = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, ForeignKey("clientes.id"))
-    nome       = Column(String, nullable=False)
-    criado_em  = Column(DateTime, server_default=func.now())
-```
+## Passo 8 — Frontend: Página / Componente
 
-Adicionar schema em `backend/schemas.py`:
+Criar a página seguindo os padrões visuais do projeto:
+- Estado de loading enquanto carrega dados
+- Tratamento de erros com feedback para o usuário (toast, alert, etc.)
+- Usar componentes compartilhados do projeto (Modal, Table, Form, etc.)
+- Nunca hardcodar cores ou tamanhos — usar as variáveis/tokens do design system
 
-```python
-class <Modelo>Base(BaseModel):
-    nome: str
+## Passo 9 — Frontend: Rota
 
-class <Modelo>Criar(<Modelo>Base):
-    cliente_id: int
+Registrar a rota no roteador do projeto (React Router, Next.js, Vue Router, etc.):
+- Aplicar guard de autenticação se necessário
+- Nomear a rota seguindo o padrão já usado no projeto
 
-class <Modelo>Out(<Modelo>Base):
-    id: int
-    cliente_id: int
-    class Config:
-        from_attributes = True
-```
+## Passo 10 — Frontend: Navegação
 
-## Passo 5 — Migração de banco (SQLite apenas)
+Adicionar link na sidebar/menu principal:
+- Respeitar as regras de visibilidade por perfil já existentes
+- Usar o ícone e estilo consistente com os outros itens do menu
 
-Se adicionou coluna em tabela existente, incluir no bloco de migrações em `backend/main.py`:
+## Passo 11 — Verificação final
 
-```python
-"ALTER TABLE <tabela> ADD COLUMN <coluna> <TIPO> DEFAULT <valor>",
-```
-
-O bloco já é tolerante a erros (coluna já existe = silencioso). **Não** adicionar migração para Supabase — ele usa `create_all`.
-
-## Passo 6 — Frontend: Endpoint na API
-
-Adicionar em `frontend/src/services/api.js`:
-
-```js
-export const <nome>API = {
-  listar:   ()      => api.get('/<nome>/'),
-  criar:    (d)     => api.post('/<nome>/', d),
-  atualizar:(id, d) => api.put(`/<nome>/${id}`, d),
-  deletar:  (id)    => api.delete(`/<nome>/${id}`),
-}
-```
-
-## Passo 7 — Frontend: Página
-
-Criar `frontend/src/pages/<Nome>.jsx`:
-
-```jsx
-import { useEffect, useState } from 'react'
-import { <nome>API } from '../services/api'
-import { LoadingPage, Modal } from '../components/shared'
-import { useAuth } from '../contexts/AuthContext'
-import { Plus, Pencil, Trash2 } from 'lucide-react'
-import toast from 'react-hot-toast'
-
-export default function <Nome>() {
-  const { usuario } = useAuth()
-  const [itens,    setItens]    = useState([])
-  const [loading,  setLoading]  = useState(true)
-
-  const carregar = async () => {
-    try {
-      const { data } = await <nome>API.listar()
-      setItens(data)
-    } catch { toast.error('Erro ao carregar') }
-    finally { setLoading(false) }
-  }
-
-  useEffect(() => { carregar() }, [])
-
-  if (loading) return <LoadingPage />
-
-  return (
-    <div className="page-content">
-      <div className="page-header">
-        <h1 className="page-title"><Nome></h1>
-      </div>
-      {/* conteúdo */}
-    </div>
-  )
-}
-```
-
-**Regras obrigatórias do frontend:**
-- Ícones: exclusivamente **Lucide React** — nunca emoji, nunca outra lib
-- Cores: exclusivamente **CSS variables** (`var(--brand)`, `var(--text)`, `var(--border)`, `var(--card)`, `var(--bg)`, `var(--text-2)`, `var(--text-3)`, `var(--red)`, `var(--green)`, `var(--amber)`) — nunca hex hardcoded
-- API: sempre via `api.js` — nunca `fetch` direto
-- Toasts: `toast.success()` / `toast.error()` — nunca `alert()`
-- Componentes reutilizáveis: `Modal`, `Avatar`, `Badge`, `Progress`, `LoadingPage` de `../components/shared`
-
-## Passo 8 — Rota em `frontend/src/App.jsx`
-
-Adicionar import e rota dentro de `<ProtectedLayout>`:
-
-```jsx
-import <Nome> from './pages/<Nome>'
-
-// Dentro de <Routes>:
-<Route path="/<nome>" element={<Nome />} />
-```
-
-## Passo 9 — Sidebar em `frontend/src/components/Sidebar.jsx`
-
-Adicionar o link na seção correta, respeitando as flags de visibilidade:
-
-```jsx
-// Exemplo para seção principal (todos os perfis com acesso):
-{ isConsultor && (
-  <NavLink to="/<nome>" className={navClass}>
-    <IconeEscolhido size={15} />
-    <span><Nome></span>
-  </NavLink>
-)}
-```
-
-Flags de visibilidade disponíveis:
-- `isAdmin` — apenas `admin`
-- `isAdminConsultor` — `admin` + `consultor`
-- `isConsultor` — todos exceto analista restrito sem cliente
-- `isControladoria` — mesmo que `isConsultor` (equivalentes atualmente)
-- `isRestrito` — analista/ger_projeto/ti com `cliente_id` preenchido
-
-## Passo 10 — Verificação final
-
-Antes de reportar concluído:
-- [ ] Router criado e registrado no `main.py`
-- [ ] Filtro multi-tenant em todos os endpoints de listagem
-- [ ] Endpoint adicionado em `api.js`
-- [ ] Página criada sem cores hardcoded e sem ícones de outra lib
-- [ ] Rota adicionada no `App.jsx`
-- [ ] Link adicionado na Sidebar com a flag correta
-- [ ] Se backend tocado: rodar `pytest tests/ -v` antes de commitar
-- [ ] Lembrar o usuário: **Ctrl+Shift+R** no Electron após recarregar o servidor
+- [ ] Modelo criado com todos os campos necessários
+- [ ] Schema de entrada e saída definidos
+- [ ] Router com CRUD completo e autenticação
+- [ ] Router registrado no ponto de entrada
+- [ ] Migração criada e testada
+- [ ] Serviço de API adicionado
+- [ ] Página criada seguindo o design system do projeto
+- [ ] Rota registrada
+- [ ] Link na navegação com visibilidade correta
+- [ ] Testes rodando (se o projeto tiver suite de testes)
