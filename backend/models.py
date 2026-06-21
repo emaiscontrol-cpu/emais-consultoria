@@ -323,78 +323,6 @@ class AgrupadorFC(Base):
 
 
 
-class PlanoContas(Base):
-    __tablename__ = "planos_contas"
-    id         = Column(Integer, primary_key=True, index=True)
-    nome       = Column(String(200), nullable=False)
-    descricao  = Column(Text, nullable=True)
-    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
-    ativo      = Column(Boolean, default=True)
-    criado_em  = Column(DateTime(timezone=True), server_default=func.now())
-    cliente    = relationship("Cliente")
-    contas     = relationship("ContaFC", back_populates="plano", order_by="ContaFC.ordem")
-
-
-class ContaFC(Base):
-    __tablename__ = "contas_fc"
-    id       = Column(Integer, primary_key=True, index=True)
-    plano_id = Column(Integer, ForeignKey("planos_contas.id"), nullable=False)
-    codigo   = Column(String(50), nullable=True)
-    nome     = Column(String(300), nullable=False)
-    tipo     = Column(String(20), nullable=False)   # 'entrada' | 'saida'
-    classe       = Column(String(100), nullable=True)   # legado
-    agrupador_id = Column(Integer, ForeignKey("agrupadores_fc.id"), nullable=True)
-    agrupador    = relationship("AgrupadorFC")
-    pai_id   = Column(Integer, ForeignKey("contas_fc.id"), nullable=True)
-    nivel    = Column(Integer, default=1)
-    ordem    = Column(Integer, default=0)
-    ativo    = Column(Boolean, default=True)
-    plano    = relationship("PlanoContas", back_populates="contas")
-    pai      = relationship("ContaFC", remote_side="ContaFC.id", back_populates="filhos", foreign_keys="ContaFC.pai_id")
-    filhos   = relationship("ContaFC", back_populates="pai", foreign_keys="ContaFC.pai_id")
-
-
-class ValorMensalFC(Base):
-    __tablename__ = "valores_mensais_fc"
-    id       = Column(Integer, primary_key=True, index=True)
-    conta_id = Column(Integer, ForeignKey("contas_fc.id"), nullable=False)
-    ano      = Column(Integer, nullable=False)
-    mes      = Column(Integer, nullable=False)
-    valor    = Column(Float, default=0.0)
-    conta    = relationship("ContaFC")
-
-
-class SaldoInicialFC(Base):
-    __tablename__ = "saldos_iniciais_fc"
-    id       = Column(Integer, primary_key=True, index=True)
-    plano_id = Column(Integer, ForeignKey("planos_contas.id"), nullable=False)
-    ano      = Column(Integer, nullable=False)
-    mes      = Column(Integer, nullable=False)
-    valor    = Column(Float, default=0.0)
-    plano    = relationship("PlanoContas")
-
-
-class OrcamentoValor(Base):
-    __tablename__ = "orcamento_valores"
-    id            = Column(Integer, primary_key=True, index=True)
-    plano_item_id = Column(Integer, ForeignKey("planos_itens.id"), nullable=False)
-    cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
-    ano           = Column(Integer, nullable=False)
-    mes           = Column(Integer, nullable=False)   # 1–12
-    valor         = Column(Float, default=0.0)
-    __table_args__ = (UniqueConstraint("plano_item_id", "cliente_id", "ano", "mes"),)
-
-
-class OrcamentoUnidadeValor(Base):
-    __tablename__ = "orcamento_unidade_valores"
-    id            = Column(Integer, primary_key=True, index=True)
-    plano_item_id = Column(Integer, ForeignKey("planos_itens.id"), nullable=False)
-    cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
-    ano           = Column(Integer, nullable=False)
-    mes           = Column(Integer, nullable=False)   # 1–12
-    unidade       = Column(String, nullable=False)    # código da unidade ex: "001", "CONSOLIDADO"
-    valor         = Column(Float, default=0.0)
-    __table_args__ = (UniqueConstraint("plano_item_id", "cliente_id", "ano", "mes", "unidade"),)
 
 
 class OrcamentoLinha(Base):
@@ -412,35 +340,6 @@ class OrcamentoLinha(Base):
     projeto         = relationship("Projeto")
 
 
-# ─── PLANOS DE CONTAS (templates reutilizáveis) ───────────────────────────────
-
-class Plano(Base):
-    __tablename__ = "planos"
-    id        = Column(Integer, primary_key=True, index=True)
-    nome      = Column(String(200), nullable=False)
-    descricao = Column(Text, nullable=True)
-    ativo     = Column(Boolean, default=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
-    itens     = relationship("PlanoItem", back_populates="plano",
-                             order_by="PlanoItem.ordem", cascade="all, delete-orphan")
-    vinculos  = relationship("ClientePlano", back_populates="plano", cascade="all, delete-orphan")
-
-
-class PlanoItem(Base):
-    __tablename__ = "planos_itens"
-    id          = Column(Integer, primary_key=True, index=True)
-    plano_id    = Column(Integer, ForeignKey("planos.id"), nullable=False)
-    agrupamento = Column(String(60), nullable=False)
-    descricao   = Column(String(300), nullable=False)
-    conta       = Column(String(30), nullable=True)    # código contábil ex: 111101
-    tipo        = Column(String(20), nullable=True)    # TT, CX, CS, CB, etc.
-    modulo      = Column(String(20), nullable=True)    # F | D | O | F,D | F,D,O etc.
-    movimento   = Column(String(50), nullable=True)    # Entrada/Saída ou Receita/Despesa
-    ordem       = Column(Integer, default=0)
-    formula      = Column(Text, nullable=True)          # ex: "FAT - DED" ou "RECEITA - DEDUCOES"
-    nivel        = Column(Integer, nullable=True)       # 1=Totalizador Principal, 2=Sub-totalizador, 3=Analítica
-    variavel_dre = Column(String(60), nullable=True)   # nome único da variável para fórmulas DRE
-    plano       = relationship("Plano", back_populates="itens")
 
 
 class BalanceteLancamento(Base):
@@ -451,7 +350,7 @@ class BalanceteLancamento(Base):
     cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False)
     ano        = Column(Integer, nullable=False)
     mes        = Column(Integer, nullable=False)   # 1-12
-    conta      = Column(String(30), nullable=False) # chave → PlanoItem.conta
+    conta      = Column(String(30), nullable=False)
     valor      = Column(Float, default=0.0)
     cliente    = relationship("Cliente")
 
@@ -479,15 +378,6 @@ class Anotacao(Base):
     autor      = relationship("Usuario", foreign_keys=[usuario_id])
 
 
-class ClientePlano(Base):
-    """Um cliente tem no máximo um plano."""
-    __tablename__ = "cliente_plano"
-    __table_args__ = (UniqueConstraint("cliente_id"),)
-    id         = Column(Integer, primary_key=True, index=True)
-    cliente_id = Column(Integer, ForeignKey("clientes.id"), nullable=False, unique=True)
-    plano_id   = Column(Integer, ForeignKey("planos.id"), nullable=False)
-    cliente    = relationship("Cliente")
-    plano      = relationship("Plano", back_populates="vinculos")
 
 
 class LogTarefa(Base):
@@ -539,23 +429,7 @@ class Arquivo(Base):
     enviado_por    = relationship("Usuario")
 
 
-# ─── MOTOR DE FÓRMULAS ────────────────────────────────────────────────────────
-
-class TemplateFormula(Base):
-    """Fórmula estruturada de um item do plano (N1/N2). N3 = VALOR (sem fórmula)."""
-    __tablename__ = "template_formulas"
-    id            = Column(Integer, primary_key=True, index=True)
-    plano_item_id = Column(Integer, ForeignKey("planos_itens.id"), nullable=False, unique=True)
-    tipo_formula  = Column(String(20), nullable=False)  # FILHOS | AGRUPAMENTOS | VALOR
-    # JSON: [{"agrupamento": "VDA_VISTA", "sinal": 1}, ...]
-    componentes   = Column(Text, default="[]")
-    auto_gerada   = Column(Boolean, default=True)
-    criado_em     = Column(DateTime(timezone=True), server_default=func.now())
-    atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
-    item          = relationship("PlanoItem")
-
-
-# ─── IMPORTAÇÃO COM DE-PARA ───────────────────────────────────────────────────
+# ─── IMPORTAÇÃO ───────────────────────────────────────────────────────────────
 
 class ImportLayout(Base):
     """Configuração de como ler um XLSX do ERP (realizado ou plano de contas)."""
@@ -578,24 +452,6 @@ class ImportLayout(Base):
     ativo              = Column(Boolean, default=True)
     criado_em          = Column(DateTime(timezone=True), server_default=func.now())
     cliente            = relationship("Cliente", foreign_keys=[cliente_id])
-    de_paras           = relationship("ContaDePara", back_populates="layout",
-                                      cascade="all, delete-orphan")
-
-
-class ContaDePara(Base):
-    """Mapeamento código ERP → conta do sistema (N3 analítica)."""
-    __tablename__ = "conta_de_para"
-    id            = Column(Integer, primary_key=True, index=True)
-    cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
-    layout_id     = Column(Integer, ForeignKey("import_layouts.id"), nullable=True)
-    codigo_erp    = Column(String(60), nullable=False)
-    plano_item_id = Column(Integer, ForeignKey("planos_itens.id"), nullable=False)
-    ativo         = Column(Boolean, default=True)
-    criado_em     = Column(DateTime(timezone=True), server_default=func.now())
-    __table_args__ = (UniqueConstraint("cliente_id", "layout_id", "codigo_erp"),)
-    cliente       = relationship("Cliente")
-    layout        = relationship("ImportLayout", back_populates="de_paras")
-    item          = relationship("PlanoItem")
 
 
 class ImportacaoLog(Base):
