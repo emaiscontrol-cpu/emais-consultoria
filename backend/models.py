@@ -69,9 +69,11 @@ class Cliente(Base):
     modulo_projetos            = Column(Boolean, default=True)
     modulo_inteligencia_mercado = Column(Boolean, default=False)
     modulo_analises_gerenciais = Column(Boolean, default=False)
+    segmento_id   = Column(Integer, ForeignKey("ref_segmentos.id"), nullable=True)
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     projetos      = relationship("Projeto", back_populates="cliente")
     usuarios      = relationship("Usuario", back_populates="cliente", foreign_keys=[Usuario.cliente_id])
+    segmento      = relationship("Segmento", back_populates="clientes", foreign_keys="Cliente.segmento_id")
 
 
 class TipoConsultoria(Base):
@@ -627,3 +629,133 @@ class ImportacaoPendencia(Base):
     mes         = Column(Integer, default=0)
     resolvido   = Column(Boolean, default=False)
     log         = relationship("ImportacaoLog", back_populates="itens_pendentes")
+
+
+# ─── PLANO DE CONTAS REFERENCIAL ─────────────────────────────────────────────
+
+class Segmento(Base):
+    """Segmento de mercado do cliente (ex: Varejo Alimentar, Drogarias)."""
+    __tablename__ = "ref_segmentos"
+    id        = Column(Integer, primary_key=True, index=True)
+    nome      = Column(String(200), nullable=False, unique=True)
+    ativo     = Column(Boolean, default=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    clientes  = relationship("Cliente", back_populates="segmento", foreign_keys="Cliente.segmento_id")
+    templates = relationship("TemplateRef", back_populates="segmento")
+
+
+class PlanoReferencial(Base):
+    """Plano de contas único e centralizado (praticamente singleton)."""
+    __tablename__ = "ref_planos"
+    id        = Column(Integer, primary_key=True, index=True)
+    nome      = Column(String(200), nullable=False, default="Plano Referencial E Mais")
+    ativo     = Column(Boolean, default=True)
+    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    contas    = relationship("ContaReferencial", back_populates="plano", order_by="ContaReferencial.codigo")
+
+
+class ContaReferencial(Base):
+    """Conta do plano referencial (sintética ou analítica)."""
+    __tablename__ = "ref_contas"
+    id          = Column(Integer, primary_key=True, index=True)
+    plano_id    = Column(Integer, ForeignKey("ref_planos.id"), nullable=False)
+    codigo      = Column(String(50), nullable=False)
+    descricao   = Column(String(300), nullable=False)
+    tipo        = Column(String(20), nullable=False, default="analitica")   # 'sintetica' | 'analitica'
+    natureza    = Column(String(20), nullable=True)                         # 'soma' | 'subtrai' — só analíticas
+    agrupamento = Column(String(60), nullable=True)                         # código usado em fórmulas
+    pai_id      = Column(Integer, ForeignKey("ref_contas.id"), nullable=True)
+    ativo       = Column(Boolean, default=True)
+    criado_em   = Column(DateTime(timezone=True), server_default=func.now())
+    plano       = relationship("PlanoReferencial", back_populates="contas")
+    pai         = relationship("ContaReferencial", remote_side="ContaReferencial.id",
+                               back_populates="filhos", foreign_keys="ContaReferencial.pai_id")
+    filhos      = relationship("ContaReferencial", back_populates="pai",
+                               foreign_keys="ContaReferencial.pai_id")
+    __table_args__ = (UniqueConstraint("plano_id", "codigo"),)
+
+
+class ContaClienteRef(Base):
+    """Conta do ERP do cliente (origem) usada no plano referencial."""
+    __tablename__ = "ref_contas_cliente"
+    id               = Column(Integer, primary_key=True, index=True)
+    cliente_id       = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    codigo_origem    = Column(String(60), nullable=False)
+    descricao_origem = Column(String(300), nullable=False)
+    criado_em        = Column(DateTime(timezone=True), server_default=func.now())
+    cliente          = relationship("Cliente")
+    de_paras         = relationship("DeParaRef", back_populates="conta_cliente",
+                                    order_by="DeParaRef.vigente_a_partir")
+    lancamentos      = relationship("LancamentoRef", back_populates="conta_cliente")
+    __table_args__ = (UniqueConstraint("cliente_id", "codigo_origem"),)
+
+
+class DeParaRef(Base):
+    """Mapeamento de conta do cliente → conta referencial, com versionamento por data."""
+    __tablename__ = "ref_de_para"
+    id                   = Column(Integer, primary_key=True, index=True)
+    conta_cliente_id     = Column(Integer, ForeignKey("ref_contas_cliente.id"), nullable=False)
+    conta_referencial_id = Column(Integer, ForeignKey("ref_contas.id"), nullable=False)
+    percentual           = Column(Float, default=100.0)   # 0-100; soma por conta_cliente deve ser ≤100
+    status               = Column(String(20), default="pendente_revisao")   # 'confirmado' | 'pendente_revisao'
+    confianca            = Column(Float, default=0.0)     # 0.0–1.0
+    origem_vinculo       = Column(String(50), default="sugestao_automatica")
+    # 'sugestao_automatica' | 'manual' | 'aprendido_de_outro_cliente'
+    vigente_a_partir     = Column(Date, nullable=False)   # ao criar novo, não apaga o anterior
+    criado_em            = Column(DateTime(timezone=True), server_default=func.now())
+    conta_cliente        = relationship("ContaClienteRef", back_populates="de_paras")
+    conta_referencial    = relationship("ContaReferencial")
+
+
+class LancamentoRef(Base):
+    """Lançamento do cliente vinculado a uma conta do ERP (para o plano referencial)."""
+    __tablename__ = "ref_lancamentos"
+    id               = Column(Integer, primary_key=True, index=True)
+    conta_cliente_id = Column(Integer, ForeignKey("ref_contas_cliente.id"), nullable=False)
+    valor            = Column(Float, nullable=False)
+    ano              = Column(Integer, nullable=False)
+    mes              = Column(Integer, nullable=False)   # 1–12
+    data_importacao  = Column(DateTime(timezone=True), server_default=func.now())
+    conta_cliente    = relationship("ContaClienteRef", back_populates="lancamentos")
+    __table_args__ = (UniqueConstraint("conta_cliente_id", "ano", "mes"),)
+
+
+class TemplateRef(Base):
+    """Template de demonstrativo (DRE, Fluxo de Caixa, Orçamento) por segmento."""
+    __tablename__ = "ref_templates"
+    id          = Column(Integer, primary_key=True, index=True)
+    tipo        = Column(String(20), nullable=False)   # 'dre' | 'fluxo_caixa' | 'orcamento'
+    segmento_id = Column(Integer, ForeignKey("ref_segmentos.id"), nullable=False)
+    nome        = Column(String(200), nullable=False)
+    ativo       = Column(Boolean, default=True)
+    criado_em   = Column(DateTime(timezone=True), server_default=func.now())
+    segmento    = relationship("Segmento", back_populates="templates")
+    linhas      = relationship("TemplateLinhaRef", back_populates="template",
+                               order_by="TemplateLinhaRef.ordem", cascade="all, delete-orphan")
+
+
+class TemplateLinhaRef(Base):
+    """Linha de um template referencial com fórmula."""
+    __tablename__ = "ref_template_linhas"
+    id                   = Column(Integer, primary_key=True, index=True)
+    template_id          = Column(Integer, ForeignKey("ref_templates.id"), nullable=False)
+    rotulo               = Column(String(300), nullable=False)
+    ordem                = Column(Integer, nullable=False, default=0)
+    negrito_totalizador  = Column(Boolean, default=False)
+    # ex: '( {agrupamento:receita_bruta} - {agrupamento:cmv} ) / {agrupamento:receita_bruta} * 100'
+    formula_texto        = Column(Text, nullable=True)
+    template             = relationship("TemplateRef", back_populates="linhas")
+
+
+class PeriodoFechado(Base):
+    """Competência fechada: bloqueia nova importação de lançamentos para cliente/mês."""
+    __tablename__ = "ref_periodos_fechados"
+    id               = Column(Integer, primary_key=True, index=True)
+    cliente_id       = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    ano              = Column(Integer, nullable=False)
+    mes              = Column(Integer, nullable=False)
+    data_fechamento  = Column(DateTime(timezone=True), server_default=func.now())
+    usuario_id       = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
+    cliente          = relationship("Cliente")
+    usuario          = relationship("Usuario")
+    __table_args__ = (UniqueConstraint("cliente_id", "ano", "mes"),)

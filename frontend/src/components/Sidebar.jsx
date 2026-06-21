@@ -226,6 +226,7 @@ const ITEMS_ANALISES = [
   { to: '/controladoria/dre',             label: 'DRE Gerencial',            icon: BarChart2 },
   { to: '/controladoria/balancetes',      label: 'Balancete',                icon: FileSpreadsheet },
   { to: '/controladoria/orcamento',       label: 'Controle Orçamentário',    icon: Target },
+  { to: '/controladoria/demonstrativo',   label: 'Demonstrativo Ref.',       icon: TrendingUp },
 ]
 
 function AnalisesSection({ bloqueado }) {
@@ -304,6 +305,10 @@ function ProcSection() {
   const location = useLocation()
   const isActive = location.pathname.startsWith('/procedimentos') ||
     location.pathname.startsWith('/controladoria/planos') ||
+    location.pathname.startsWith('/controladoria/plano-referencial') ||
+    location.pathname.startsWith('/controladoria/templates-ref') ||
+    location.pathname.startsWith('/controladoria/revisao-depara') ||
+    location.pathname.startsWith('/controladoria/benchmark') ||
     location.pathname.startsWith('/modelos') ||
     location.pathname.startsWith('/importacoes')
   const [open, setOpen] = useState(isActive)
@@ -325,6 +330,22 @@ function ProcSection() {
           </NavLink>
           <NavLink to="/importacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
             <Download size={13} /> Importações
+          </NavLink>
+          <div style={{ borderTop: '1px solid rgba(255,255,255,.08)', margin: '6px 0' }} />
+          <div style={{ fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase', color: 'rgba(255,255,255,.35)', padding: '2px 10px', marginBottom: 2 }}>
+            Plano Referencial
+          </div>
+          <NavLink to="/controladoria/plano-referencial" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <List size={13} /> Plano de Contas
+          </NavLink>
+          <NavLink to="/controladoria/templates-ref" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <FileSpreadsheet size={13} /> Templates DRE/FC/Orç.
+          </NavLink>
+          <NavLink to="/controladoria/revisao-depara" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <BarChart2 size={13} /> Revisão De-Para
+          </NavLink>
+          <NavLink to="/controladoria/benchmark" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <TrendingUp size={13} /> Benchmark Segmento
           </NavLink>
         </div>
       )}
