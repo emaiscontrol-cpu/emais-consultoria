@@ -5,7 +5,7 @@ Seed dos dados padrão do módulo Controladoria:
 Executado automaticamente no startup do backend se os dados ainda não existirem.
 """
 from sqlalchemy.orm import Session
-from models import AgrupadorFC, PlanoContas, ContaFC
+from models import AgrupadorFC
 
 AGRUPADORES = [
     "Venda Dinheiro",
@@ -252,29 +252,3 @@ def seed_agrupadores(db: Session):
     print(f"[seed] {len(AGRUPADORES)} agrupadores criados.")
 
 
-def seed_plano_template(db: Session, cliente_id: int, nome_plano: str = "Plano Padrão") -> PlanoContas:
-    """Cria um plano de contas completo para um cliente a partir do template padrão."""
-    # Mapa nome_agrupador → id
-    agrup_map = {a.nome: a.id for a in db.query(AgrupadorFC).filter(AgrupadorFC.ativo == True).all()}
-
-    plano = PlanoContas(nome=nome_plano, cliente_id=cliente_id,
-                        descricao="Gerado a partir do template padrão")
-    db.add(plano)
-    db.flush()
-
-    codigo_map = {}  # codigo → ContaFC.id (para resolver pai_id)
-    for ordem, (codigo, nome, tipo, agrup_nome, codigo_pai) in enumerate(PLANO_PADRAO):
-        pai_id      = codigo_map.get(codigo_pai) if codigo_pai else None
-        agrupador_id= agrup_map.get(agrup_nome)
-        nivel       = 2 if pai_id else 1
-        c = ContaFC(
-            plano_id=plano.id, codigo=codigo, nome=nome, tipo=tipo,
-            agrupador_id=agrupador_id, pai_id=pai_id, nivel=nivel, ordem=ordem,
-        )
-        db.add(c)
-        db.flush()
-        codigo_map[codigo] = c.id
-
-    db.commit()
-    print(f"[seed] Plano '{nome_plano}' criado com {len(PLANO_PADRAO)} contas.")
-    return plano

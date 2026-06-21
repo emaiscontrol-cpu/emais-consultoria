@@ -13,17 +13,15 @@ router = APIRouter()
 
 # Ordem de inserção respeitando dependências de FK
 TABELAS_BACKUP_ORDEM = [
-    "agrupadores_fc", "clientes", "planos", "tipos_consultoria",
-    "usuarios", "projetos", "planos_itens", "fases", "tarefas",
+    "agrupadores_fc", "clientes", "tipos_consultoria",
+    "usuarios", "projetos", "fases", "tarefas",
     "modelos_projeto", "modelos_fases", "modelos_tarefas", "modelos_subtarefas",
     "subtarefas", "responsaveis_tarefa", "comentarios", "comentarios_fase",
     "log_tarefas", "log_atividades", "mensagens_chat", "anotacoes", "arquivos",
-    "bandeiras", "solicitacoes_reset", "cliente_plano", "planos_contas",
-    "contas_fc", "valores_mensais_fc", "saldos_iniciais_fc",
+    "bandeiras", "solicitacoes_reset",
     "balancete_lancamentos", "categorias_financeiras", "lancamentos",
-    "orcamento_linhas", "orcamento_valores", "template_formulas",
-    "import_layouts", "conta_de_para", "importacao_logs",
-    "importacao_pendencias", "orcamento_unidade_valores",
+    "orcamento_linhas", "import_layouts", "importacao_logs",
+    "importacao_pendencias",
 ]
 
 

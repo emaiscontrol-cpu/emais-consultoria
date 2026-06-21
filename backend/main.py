@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
-from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, planos, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import, plano_import
+from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import
 from routers import ref_segmentos, ref_plano, ref_lancamentos, ref_depara, ref_templates, ref_demonstrativos, ref_benchmark
 
 try:
@@ -19,10 +19,6 @@ with engine.connect() as conn:
     for stmt in ([] if not _is_sqlite else [
         "ALTER TABLE tarefas ADD COLUMN ativo BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE fases ADD COLUMN bloqueado_por_anterior BOOLEAN NOT NULL DEFAULT 1",
-        "ALTER TABLE contas_fc ADD COLUMN agrupador_id INTEGER REFERENCES agrupadores_fc(id)",
-        "ALTER TABLE planos_itens ADD COLUMN modulo TEXT",
-        "ALTER TABLE planos_itens ADD COLUMN conta TEXT",
-        "ALTER TABLE planos DROP COLUMN tipo",
         "ALTER TABLE fases ADD COLUMN responsavel_id INTEGER REFERENCES usuarios(id)",
         "ALTER TABLE subtarefas ADD COLUMN responsavel_id INTEGER REFERENCES usuarios(id)",
         "ALTER TABLE subtarefas ADD COLUMN data_inicio DATETIME",
@@ -34,33 +30,11 @@ with engine.connect() as conn:
         "ALTER TABLE usuarios ADD COLUMN ia_openrouter BOOLEAN NOT NULL DEFAULT 0",
         "ALTER TABLE usuarios ADD COLUMN foto TEXT",
         "UPDATE usuarios SET perfil='analista' WHERE perfil='cliente'",
-        "ALTER TABLE planos_itens ADD COLUMN formula TEXT",
-        "UPDATE planos_itens SET tipo='AN' WHERE tipo='NN' OR tipo IS NULL",
-        # Tabela nova — create_all já cria, mas garante caso banco antigo
-        """CREATE TABLE IF NOT EXISTS orcamento_valores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            plano_item_id INTEGER NOT NULL REFERENCES planos_itens(id),
-            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
-            ano INTEGER NOT NULL,
-            mes INTEGER NOT NULL,
-            valor REAL DEFAULT 0.0,
-            UNIQUE(plano_item_id, cliente_id, ano, mes)
-        )""",
         """CREATE TABLE IF NOT EXISTS bandeiras (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente_id INTEGER NOT NULL REFERENCES clientes(id),
             nome TEXT NOT NULL,
             unidades_json TEXT DEFAULT '[]'
-        )""",
-        """CREATE TABLE IF NOT EXISTS orcamento_unidade_valores (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            plano_item_id INTEGER NOT NULL REFERENCES planos_itens(id),
-            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
-            ano INTEGER NOT NULL,
-            mes INTEGER NOT NULL,
-            unidade TEXT NOT NULL,
-            valor REAL DEFAULT 0.0,
-            UNIQUE(plano_item_id, cliente_id, ano, mes, unidade)
         )""",
         """CREATE TABLE IF NOT EXISTS modelos_subtarefas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -113,18 +87,6 @@ with engine.connect() as conn:
             enviado_por_id INTEGER REFERENCES usuarios(id),
             criado_em DATETIME DEFAULT (datetime('now'))
         )""",
-        # Nível hierárquico no plano de contas
-        "ALTER TABLE planos_itens ADD COLUMN nivel INTEGER DEFAULT NULL",
-        # Motor de Fórmulas — tabelas novas (create_all cria; isso garante bancos antigos)
-        """CREATE TABLE IF NOT EXISTS template_formulas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            plano_item_id INTEGER NOT NULL UNIQUE REFERENCES planos_itens(id),
-            tipo_formula TEXT NOT NULL,
-            componentes TEXT DEFAULT '[]',
-            auto_gerada BOOLEAN DEFAULT 1,
-            criado_em DATETIME DEFAULT (datetime('now')),
-            atualizado_em DATETIME
-        )""",
         """CREATE TABLE IF NOT EXISTS import_layouts (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente_id INTEGER REFERENCES clientes(id),
@@ -141,16 +103,6 @@ with engine.connect() as conn:
             linhas_ignorar TEXT DEFAULT '[]',
             ativo BOOLEAN DEFAULT 1,
             criado_em DATETIME DEFAULT (datetime('now'))
-        )""",
-        """CREATE TABLE IF NOT EXISTS conta_de_para (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            cliente_id INTEGER NOT NULL REFERENCES clientes(id),
-            layout_id INTEGER REFERENCES import_layouts(id),
-            codigo_erp TEXT NOT NULL,
-            plano_item_id INTEGER NOT NULL REFERENCES planos_itens(id),
-            ativo BOOLEAN DEFAULT 1,
-            criado_em DATETIME DEFAULT (datetime('now')),
-            UNIQUE(cliente_id, layout_id, codigo_erp)
         )""",
         """CREATE TABLE IF NOT EXISTS importacao_logs (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -177,10 +129,6 @@ with engine.connect() as conn:
         )""",
         # Categoria de layout (REALIZADO | PLANO)
         "ALTER TABLE import_layouts ADD COLUMN categoria TEXT DEFAULT 'REALIZADO'",
-        # Variável DRE — nome único por linha TT/RES para uso em fórmulas
-        "ALTER TABLE planos_itens ADD COLUMN variavel_dre TEXT",
-        # Migração: copia agrupamento → variavel_dre para TT/RES que ainda não têm
-        "UPDATE planos_itens SET variavel_dre = agrupamento WHERE variavel_dre IS NULL AND (agrupamento IS NOT NULL AND agrupamento != '') AND tipo IN ('TT', 'RES')",
         # Módulos contratados por cliente
         "ALTER TABLE clientes ADD COLUMN modulo_projetos BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE clientes ADD COLUMN modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT 0",
@@ -197,6 +145,18 @@ with engine.connect() as conn:
             lida BOOLEAN DEFAULT 0,
             criado_em DATETIME DEFAULT (datetime('now'))
         )""",
+        # DROP tabelas do plano de contas antigo (migração definitiva)
+        "DROP TABLE IF EXISTS template_formulas",
+        "DROP TABLE IF EXISTS conta_de_para",
+        "DROP TABLE IF EXISTS orcamento_valores",
+        "DROP TABLE IF EXISTS orcamento_unidade_valores",
+        "DROP TABLE IF EXISTS valores_mensais_fc",
+        "DROP TABLE IF EXISTS saldos_iniciais_fc",
+        "DROP TABLE IF EXISTS contas_fc",
+        "DROP TABLE IF EXISTS cliente_plano",
+        "DROP TABLE IF EXISTS planos_itens",
+        "DROP TABLE IF EXISTS planos_contas",
+        "DROP TABLE IF EXISTS planos",
     ]):
         try:
             conn.execute(text(stmt))
@@ -213,6 +173,18 @@ if not _is_sqlite:
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS segmento_id INTEGER REFERENCES ref_segmentos(id)",
+            # DROP tabelas do plano de contas antigo
+            "DROP TABLE IF EXISTS template_formulas CASCADE",
+            "DROP TABLE IF EXISTS conta_de_para CASCADE",
+            "DROP TABLE IF EXISTS orcamento_valores CASCADE",
+            "DROP TABLE IF EXISTS orcamento_unidade_valores CASCADE",
+            "DROP TABLE IF EXISTS valores_mensais_fc CASCADE",
+            "DROP TABLE IF EXISTS saldos_iniciais_fc CASCADE",
+            "DROP TABLE IF EXISTS contas_fc CASCADE",
+            "DROP TABLE IF EXISTS cliente_plano CASCADE",
+            "DROP TABLE IF EXISTS planos_itens CASCADE",
+            "DROP TABLE IF EXISTS planos_contas CASCADE",
+            "DROP TABLE IF EXISTS planos CASCADE",
         ]:
             try:
                 conn.execute(text(stmt))
@@ -220,54 +192,13 @@ if not _is_sqlite:
             except Exception:
                 pass
 
-# Reclassificar niveis (logica por formato de conta: AN=3, sem ponto=1, com ponto=2)
-try:
-    from database import SessionLocal as _SL
-    from models import PlanoItem as _PI
-    _db_n = _SL()
-    try:
-        items_all = _db_n.query(_PI).order_by(_PI.plano_id, _PI.ordem).all()
-        for it in items_all:
-            t = (it.tipo or '').upper()
-            if t not in ('TT', 'RES'):
-                it.nivel = 3
-            else:
-                s = (it.conta or '').rstrip('0')
-                it.nivel = 1 if len(s) <= 1 else 2
-        # Limpar agrupamento N3 identico ao N2 pai (redundante)
-        ultimo_agr_n2: dict = {}
-        for it in items_all:
-            if it.nivel == 2:
-                ultimo_agr_n2[it.plano_id] = it.agrupamento or ''
-            elif it.nivel == 3:
-                agr_pai = ultimo_agr_n2.get(it.plano_id, '')
-                if agr_pai and it.agrupamento == agr_pai:
-                    it.agrupamento = ''
-        _db_n.commit()
-    except Exception as _e:
-        print(f"[warning] reclassificar niveis: {_e}")
-    finally:
-        _db_n.close()
-except Exception as _e:
-    print(f"[warning] nivel import: {_e}")
-
-# Seed dados padrÃ£o (executa apenas uma vez)
+# Seed dados padrão (executa apenas uma vez)
 from database import SessionLocal
 from seed_controladoria import seed_agrupadores
-from seed_orcamento import seed_orcamento
-from seed_dre import seed_dre
 from seed_ref_plano import seed_ref_plano
 _db = SessionLocal()
 try:
     seed_agrupadores(_db)
-    try:
-        seed_orcamento(_db)
-    except Exception as _e:
-        print(f"[warning] seed_orcamento: {_e}")
-    try:
-        seed_dre(_db)
-    except Exception as _e:
-        print(f"[warning] seed_dre: {_e}")
     try:
         seed_ref_plano(_db)
     except Exception as _e:
@@ -302,7 +233,6 @@ app.include_router(historico.router,      prefix="/api/historico",      tags=["H
 app.include_router(subtarefas.router,     prefix="/api/subtarefas",     tags=["Subtarefas"])
 app.include_router(controladoria.router,  prefix="/api/controladoria",  tags=["Controladoria"])
 app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["Fluxo de Caixa"])
-app.include_router(planos.router,         prefix="/api/planos",         tags=["Planos de Contas"])
 app.include_router(balancete.router,      prefix="/api/balancete",      tags=["Balancete"])
 app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["Anotações"])
 app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["Orçamento"])
@@ -316,7 +246,6 @@ app.include_router(ia.router,             prefix="/api/ia",             tags=["I
 app.include_router(gemini.router,         prefix="/api/gemini",         tags=["Gemini"])
 app.include_router(openrouter.router,     prefix="/api/openrouter",     tags=["OpenRouter"])
 app.include_router(dre_import.router,          prefix="/api/dre",              tags=["Motor DRE"])
-app.include_router(plano_import.router,        prefix="/api/plano",            tags=["Importação Plano"])
 app.include_router(ref_segmentos.router,       prefix="/api/ref/segmentos",    tags=["Ref: Segmentos"])
 app.include_router(ref_plano.router,           prefix="/api/ref/plano",        tags=["Ref: Plano"])
 app.include_router(ref_lancamentos.router,     prefix="/api/ref/lancamentos",  tags=["Ref: Lançamentos"])
@@ -334,7 +263,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0x"
+app.version = "2.5.0y"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -377,6 +306,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
