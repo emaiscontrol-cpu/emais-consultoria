@@ -263,7 +263,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.5.0y"
+app.version = "2.5.0z"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -306,6 +306,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
