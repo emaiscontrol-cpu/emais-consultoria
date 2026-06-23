@@ -119,23 +119,9 @@ export const subtarefasAPI = {
 }
 
 export const fluxoCaixaAPI = {
-  planos:           clienteId  => api.get('/fluxo/planos', { params: { cliente_id: clienteId } }),
-  criarPlano:       data        => api.post('/fluxo/planos', data),
-  atualizarPlano:   (id, data)  => api.put(`/fluxo/planos/${id}`, data),
-  deletarPlano:     id          => api.delete(`/fluxo/planos/${id}`),
-  contas:           planoId     => api.get(`/fluxo/planos/${planoId}/contas`),
-  criarConta:       data        => api.post('/fluxo/contas', data),
-  atualizarConta:   (id, data)  => api.put(`/fluxo/contas/${id}`, data),
-  deletarConta:     id          => api.delete(`/fluxo/contas/${id}`),
-  importar:         (id, lista) => api.post(`/fluxo/planos/${id}/importar`, lista),
-  aplicarTemplate:  id          => api.post(`/fluxo/planos/${id}/template`),
   agrupadores:      ()          => api.get('/fluxo/agrupadores'),
   criarAgrupador:   data        => api.post('/fluxo/agrupadores', data),
   deletarAgrupador: id          => api.delete(`/fluxo/agrupadores/${id}`),
-  valores:          (planoId, ano) => api.get(`/fluxo/valores/${planoId}/${ano}`),
-  salvarValor:      data        => api.post('/fluxo/valores', data),
-  saldos:           (planoId, ano) => api.get(`/fluxo/saldos/${planoId}/${ano}`),
-  salvarSaldo:      data        => api.post('/fluxo/saldos', data),
 }
 
 export const controladoriaAPI = {
@@ -152,24 +138,6 @@ export const controladoriaAPI = {
   deletarOrcamento:    id          => api.delete(`/controladoria/orcamento/${id}`),
 }
 
-export const planosAPI = {
-  listar:              ()              => api.get('/planos'),
-  criar:               data            => api.post('/planos', data),
-  obter:               id              => api.get(`/planos/${id}`),
-  atualizar:           (id, data)      => api.put(`/planos/${id}`, data),
-  excluir:             id              => api.delete(`/planos/${id}`),
-  adicionarItem:       (id, data)      => api.post(`/planos/${id}/itens`, data),
-  atualizarItem:       (id, iid, d)    => api.put(`/planos/${id}/itens/${iid}`, d),
-  excluirItem:         (id, iid)       => api.delete(`/planos/${id}/itens/${iid}`),
-  importar:            (id, arquivo)   => {
-    const fd = new FormData(); fd.append('arquivo', arquivo)
-    return api.post(`/planos/${id}/importar`, fd)
-  },
-  clientesDoPlano:     id              => api.get(`/planos/${id}/clientes`),
-  vincularCliente:     (id, cid)       => api.put(`/planos/${id}/clientes/${cid}`),
-  desvincularCliente:  (id, cid)       => api.delete(`/planos/${id}/clientes/${cid}`),
-  planoPorClienteModulo: (cid, mod)    => api.get(`/planos/cliente/${cid}/modulo/${mod}`),
-}
 
 export const balanceteAPI = {
   obter:          (cid, ano, mes)             => api.get(`/balancete/cliente/${cid}/ano/${ano}/mes/${mes}`),
@@ -209,7 +177,7 @@ export const arquivosAPI = {
     fd.append('arquivo', arquivo)
     return api.post(`/arquivos/cliente/${clienteId}`, fd)
   },
-  download: (id) => api.get(`/arquivos/${id}/download`, { responseType: 'blob' }),
+  download: (id) => api.get(`/arquivos/${id}/download`),
   deletar:  (id) => api.delete(`/arquivos/${id}`),
 }
 

@@ -89,20 +89,7 @@ export default function Arquivos() {
   const handleAbrirOuBaixar = async (arq) => {
     try {
       const r = await arquivosAPI.download(arq.id)
-      const blob = new Blob([r.data], { type: arq.tipo_mime || 'application/octet-stream' })
-      const url = URL.createObjectURL(blob)
-      if (podeAbrirInline(arq.tipo_mime, arq.nome_original)) {
-        window.open(url, '_blank')
-        setTimeout(() => URL.revokeObjectURL(url), 15000)
-      } else {
-        const a = document.createElement('a')
-        a.href = url
-        a.download = arq.nome_original
-        document.body.appendChild(a)
-        a.click()
-        document.body.removeChild(a)
-        URL.revokeObjectURL(url)
-      }
+      window.open(r.data.url, '_blank')
     } catch {
       toast.error('Erro ao abrir arquivo')
     }
@@ -230,8 +217,10 @@ export default function Arquivos() {
                       <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
                         <button
                           className="btn btn-sm btn-ghost"
-                          title={podeAbrirInline(arq.tipo_mime, arq.nome_original) ? 'Abrir' : 'Baixar'}
-                          onClick={() => handleAbrirOuBaixar(arq)}
+                          title={!arq.disponivel ? 'Arquivo não disponível — reenvie o documento' : podeAbrirInline(arq.tipo_mime, arq.nome_original) ? 'Abrir' : 'Baixar'}
+                          disabled={!arq.disponivel}
+                          onClick={() => arq.disponivel && handleAbrirOuBaixar(arq)}
+                          style={!arq.disponivel ? { opacity: 0.35, cursor: 'not-allowed' } : {}}
                         >
                           {podeAbrirInline(arq.tipo_mime, arq.nome_original)
                             ? <Eye size={13} />
