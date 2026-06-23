@@ -1,0 +1,50 @@
+name: Diagnostic (temp)
+on:
+  workflow_dispatch:
+jobs:
+  diagnose:
+    runs-on: self-hosted
+    steps:
+      - name: 1 - Versao de arquivos.py no servidor
+        shell: powershell
+        run: |
+          $f = "C:\emals-app\backend\routers\arquivos.py"
+          Write-Host "=== HEAD (primeiras 25 linhas) ==="
+          Get-Content $f | Select-Object -First 25
+          Write-Host ""
+          Write-Host "=== Contém 'storage/v1' ? ==="
+          $hits = Select-String -Path $f -Pattern "storage/v1" -SimpleMatch
+          if ($hits) { $hits | ForEach-Object { Write-Host $_.Line } }
+          else { Write-Host "NAO ENCONTRADO — ainda versao disco local" }
+
+      - name: 2 - Chaves SUPABASE no .env do servidor
+        shell: powershell
+        run: |
+          $env_path = "C:\emals-app\backend\.env"
+          if (Test-Path $env_path) {
+            Write-Host "=== .env existe ==="
+            Get-Content $env_path | ForEach-Object {
+              if ($_ -match "^(SUPABASE_URL|SUPABASE_SERVICE_KEY|DATABASE_URL)=") {
+                # Mostra chave + primeiros 40 chars do valor (ofusca o resto)
+                $parts = $_ -split "=", 2
+                $val = $parts[1]
+                $shown = $val.Substring(0, [Math]::Min(40, $val.Length))
+                Write-Host "$($parts[0])=$shown..."
+              }
+            }
+          } else {
+            Write-Host ".env NAO ENCONTRADO em $env_path"
+          }
+
+      - name: 3 - Ultimas 40 linhas do log de erro
+        shell: powershell
+        run: |
+          $log = "C:\emals-service\logs\emals-backend.err.log"
+          if (Test-Path $log) {
+            Write-Host "=== $log (tail 40) ==="
+            Get-Content $log -Tail 40
+          } else {
+            Write-Host "Log NAO ENCONTRADO: $log"
+            Write-Host "Arquivos em C:\emals-service\logs\:"
+            Get-ChildItem "C:\emals-service\logs\" -ErrorAction SilentlyContinue
+          }
