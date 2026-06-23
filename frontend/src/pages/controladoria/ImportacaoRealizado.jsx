@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { dreMotorAPI, clientesAPI, planosAPI } from '../../services/api'
+import { dreMotorAPI, clientesAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -188,14 +188,7 @@ function Passo3({ logId, clienteId, planoId, onConcluir }) {
   }, [logId])
 
   useEffect(() => {
-    if (planoId) {
-      planosAPI.obter(planoId).then(r => {
-        const n3 = (r.data.itens || []).filter(i =>
-          i.tipo && !['TT', 'RES'].includes(i.tipo.toUpperCase())
-        )
-        setItensPlano(n3)
-      })
-    }
+    setItensPlano([])
   }, [planoId])
 
   const set = (id, k, v) => setResolucoes(p => ({ ...p, [id]: { ...p[id], [k]: v } }))
@@ -355,12 +348,6 @@ export default function ImportacaoRealizado() {
   const aoAvancar = async (form) => {
     setImportando(true)
     setConfigForm(form)
-
-    // Buscar plano_id para poder resolver pendências
-    try {
-      const rp = await planosAPI.listarPorCliente?.(form.cliente_id) || { data: null }
-      if (rp?.data?.id) setClientePlanoId(rp.data.id)
-    } catch { /* ignorar */ }
 
     try {
       const params = {

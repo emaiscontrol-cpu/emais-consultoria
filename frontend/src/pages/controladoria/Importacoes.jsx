@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { dreMotorAPI, clientesAPI, planosAPI } from '../../services/api'
+import { dreMotorAPI, clientesAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -373,10 +373,6 @@ function ImportarPlano() {
       )}
 
       <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-        <button onClick={() => navigate('/controladoria/planos')}
-          style={{ padding: '9px 18px', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>
-          Ir para Plano de Contas →
-        </button>
         <button onClick={reiniciar}
           style={{ padding: '9px 18px', background: 'none', border: '1px solid var(--border)', borderRadius: 7, cursor: 'pointer', fontSize: 13 }}>
           Nova importação
@@ -510,9 +506,7 @@ function Passo3Realizado({ logId, clienteId, planoId, onConcluir }) {
   }, [logId])
 
   useEffect(() => {
-    if (planoId) planosAPI.obter(planoId).then(r => {
-      setItensPlano((r.data.itens || []).filter(i => i.tipo && !['TT','RES'].includes(i.tipo.toUpperCase())))
-    })
+    setItensPlano([])
   }, [planoId])
 
   const set = (id, k, v) => setResolucoes(p => ({ ...p, [id]: { ...p[id], [k]: v } }))
@@ -638,13 +632,6 @@ function ImportarRealizado() {
   const aoAvancar = async form => {
     setImportando(true); setConfigForm(form)
     try {
-      const rp = await planosAPI.listar()
-      const planos = rp?.data || []
-      const cid = parseInt(form.cliente_id)
-      const planoCliente = planos.find(p =>
-        (p.clientes_vinculados || []).some(cv => cv.id === cid)
-      )
-      if (planoCliente?.id) setClientePlanoId(planoCliente.id)
     } catch { /**/ }
     try {
       const params = { layout_id: form.layout_id, cliente_id: form.cliente_id, unidade: form.unidade, ano: form.ano, reprocessar: form.reprocessar }
