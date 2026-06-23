@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { orcamentoAPI, planosAPI, bandeiraAPI, dreMotorAPI } from '../../services/api'
+import { orcamentoAPI, bandeiraAPI, dreMotorAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { Pencil, Trash2 } from 'lucide-react'
@@ -325,21 +325,16 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
 
   const carregarDados = () => {
     setLoading(true)
-    Promise.all([
-      planosAPI.obter(planoId),
-      dreMotorAPI.listarFormulas(planoId).catch(() => ({ data: [] })),
-    ]).then(([rp, rf]) => {
-      const dreItens = (rp.data.itens || []).filter(i =>
-        i.modulo && i.modulo.toUpperCase().split(',').map(s => s.trim()).includes('D')
-      )
-      setItens(dreItens.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)))
-      const fm = {}
-      ;(rf.data || []).forEach(f => {
-        fm[f.item_id] = { formula_id: f.formula_id, tipo_formula: f.tipo_formula, componentes: f.componentes || [], auto_gerada: f.auto_gerada }
+    dreMotorAPI.listarFormulas(planoId).catch(() => ({ data: [] }))
+      .then(rf => {
+        setItens([])
+        const fm = {}
+        ;(rf.data || []).forEach(f => {
+          fm[f.item_id] = { formula_id: f.formula_id, tipo_formula: f.tipo_formula, componentes: f.componentes || [], auto_gerada: f.auto_gerada }
+        })
+        setFormulas(fm)
       })
-      setFormulas(fm)
-    })
-      .catch(() => toast.error('Erro ao carregar template'))
+      .catch(() => {})
       .finally(() => setLoading(false))
   }
 
@@ -402,152 +397,22 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
     const newFormula = updated.map((t, i) =>
       (i === 0 ? (t.sign === -1 ? '-' : '') : (t.sign === 1 ? ' + ' : ' - ')) + t.name
     ).join('').trim()
-    try {
-      await planosAPI.atualizarItem(planoId, item.id, { formula: newFormula })
-      setItens(prev => prev.map(i => i.id === item.id ? { ...i, formula: newFormula } : i))
-    } catch { toast.error('Erro ao inverter sinal') }
+    toast.error('Edição de template desativada — use o módulo Plano de Contas Referencial')
   }
 
-  const salvarVariavel = async (itemId) => {
-    const val = editVariavelVal.trim().toUpperCase() || null
-    try {
-      await planosAPI.atualizarItem(planoId, itemId, { variavel_dre: val })
-      setItens(prev => prev.map(i => i.id === itemId ? { ...i, variavel_dre: val } : i))
-      setEditVariavel(null); setEditVariavelVal('')
-      onReload()
-    } catch { toast.error('Erro ao salvar variável') }
-  }
-
-  const abrirEdicaoLinha = (item) => {
-    setEditRow(item)
-    setEditRowData({ agrupamento: item.agrupamento || '', descricao: item.descricao || '', formula: item.formula || '' })
-  }
-
-  const salvarEdicaoLinha = async () => {
-    if (!editRow) return
-    const payload = {
-      agrupamento: editRowData.agrupamento.trim() || null,
-      descricao:   editRowData.descricao.trim()   || '',
-      formula:     editRowData.formula.trim()      || null,
-    }
-    try {
-      await planosAPI.atualizarItem(planoId, editRow.id, payload)
-      setItens(prev => prev.map(i => i.id === editRow.id ? { ...i, ...payload } : i))
-      setEditRow(null)
-      onReload()
-      toast.success('Linha atualizada')
-    } catch { toast.error('Erro ao salvar') }
-  }
-
-  const sugerirAgrupamentos = async () => {
-    setCarregandoSug(true)
-    try {
-      const r = await dreMotorAPI.sugerirAgrupamentos(planoId)
-      const sug = r.data.sugestoes || []
-      setSugestoes(sug)
-      setMostrarSugestoes(true)
-      if (!sug.length) toast('Nenhuma sugestão encontrada — todos os TTs já têm agrupamento', { icon: 'ℹ️' })
-    } catch { toast.error('Erro ao buscar sugestões') }
-    finally { setCarregandoSug(false) }
-  }
-
-  const aceitarSugestao = async (sug) => {
-    try {
-      await planosAPI.atualizarItem(planoId, sug.linha_id, { agrupamento: sug.agrupamento_sugerido })
-      setItens(prev => prev.map(i => i.id === sug.linha_id ? { ...i, agrupamento: sug.agrupamento_sugerido } : i))
-      setSugestoes(prev => prev.filter(s => s.linha_id !== sug.linha_id))
-      toast.success(`Agrupamento ${sug.agrupamento_sugerido} aplicado`)
-      onReload()
-    } catch { toast.error('Erro ao aceitar sugestão') }
-  }
-
-  const aceitarAlternativa = async (sug, agr) => {
-    try {
-      await planosAPI.atualizarItem(planoId, sug.linha_id, { agrupamento: agr })
-      setItens(prev => prev.map(i => i.id === sug.linha_id ? { ...i, agrupamento: agr } : i))
-      setSugestoes(prev => prev.filter(s => s.linha_id !== sug.linha_id))
-      toast.success(`Agrupamento ${agr} aplicado`)
-      onReload()
-    } catch { toast.error('Erro ao aceitar alternativa') }
-  }
-
-  const aceitarTodas = async () => {
-    for (const sug of sugestoes) {
-      if (!aceitosSug.has(sug.linha_id)) await aceitarSugestao(sug)
-    }
-    setSugestoes([])
-    setMostrarSugestoes(false)
-  }
-
+  const salvarVariavel = async () => { toast.error('Edição desativada') }
+  const abrirEdicaoLinha = () => {}
+  const salvarEdicaoLinha = async () => {}
+  const sugerirAgrupamentos = async () => {}
+  const aceitarSugestao = async () => {}
+  const aceitarAlternativa = async () => {}
+  const aceitarTodas = async () => {}
   const ttsList = useMemo(() => itens.filter(i => i.tipo === 'TT' || i.tipo === 'RES'), [itens])
-
-  const iniciarEdicao = (item, field) => { setEditKey(`${item.id}-${field}`); setEditVal(item[field] ?? '') }
-
-  const salvarCampo = async (item, field) => {
-    const val = (field === 'tipo' || field === 'conta') ? (editVal || null) : editVal
-    setEditKey(null)
-    try {
-      await planosAPI.atualizarItem(planoId, item.id, { [field]: val })
-      setItens(prev => prev.map(i => i.id === item.id ? { ...i, [field]: val } : i))
-      onReload()
-    } catch { toast.error('Erro ao salvar') }
-  }
-
-  const excluirItem = async item => {
-    if (!window.confirm(`Excluir "${item.descricao}"?\nOs valores históricos desta linha serão removidos permanentemente.`)) return
-    try {
-      await planosAPI.excluirItem(planoId, item.id)
-      setItens(prev => prev.filter(i => i.id !== item.id))
-      onReload()
-      toast.success('Linha removida')
-    } catch { toast.error('Erro ao excluir') }
-  }
-
-  const moverItem = async (item, direcao) => {
-    const idx = itens.findIndex(i => i.id === item.id)
-    const vizinho = direcao === 'up' ? itens[idx - 1] : itens[idx + 1]
-    if (!vizinho) return
-    const ordemA = item.ordem ?? idx
-    const ordemB = vizinho.ordem ?? (direcao === 'up' ? idx - 1 : idx + 1)
-    try {
-      await Promise.all([
-        planosAPI.atualizarItem(planoId, item.id,    { ordem: ordemB }),
-        planosAPI.atualizarItem(planoId, vizinho.id, { ordem: ordemA }),
-      ])
-      setItens(prev => {
-        const next = prev.map(i => {
-          if (i.id === item.id)    return { ...i, ordem: ordemB }
-          if (i.id === vizinho.id) return { ...i, ordem: ordemA }
-          return i
-        })
-        return next.sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0))
-      })
-      onReload()
-    } catch { toast.error('Erro ao reordenar') }
-  }
-
-  const adicionarLinha = async () => {
-    if (!novaLinha.descricao.trim()) { toast.error('Descrição obrigatória'); return }
-    setSalvandoNova(true)
-    const tipoMap = { N1: 'TT', N2: 'TT', N3: 'AN', RES: 'RES' }
-    const tipo = tipoMap[novaLinha.nivel] || 'AN'
-    try {
-      const mesmoAgr = novaLinha.agrupamento ? itens.filter(i => i.agrupamento === novaLinha.agrupamento) : []
-      const ordemBase = mesmoAgr.length > 0
-        ? Math.max(...mesmoAgr.map(i => i.ordem ?? 0))
-        : Math.max(0, ...itens.map(i => i.ordem ?? 0))
-      const r = await planosAPI.adicionarItem(planoId, {
-        descricao: novaLinha.descricao, tipo,
-        agrupamento: novaLinha.agrupamento || null,
-        conta: novaLinha.conta || null, modulo: 'D', ordem: ordemBase + 1,
-      })
-      setItens(prev => [...prev, r.data].sort((a, b) => (a.ordem ?? 0) - (b.ordem ?? 0)))
-      setNovaLinha({ nivel: 'N3', descricao: '', agrupamento: '', conta: '' })
-      onReload()
-      toast.success('Linha adicionada')
-    } catch { toast.error('Erro ao adicionar linha') }
-    finally { setSalvandoNova(false) }
-  }
+  const iniciarEdicao = () => {}
+  const salvarCampo = async () => {}
+  const excluirItem = async () => { toast.error('Edição desativada') }
+  const moverItem = async () => {}
+  const adicionarLinha = async () => { toast.error('Edição desativada') }
 
   const tipoBadgeStyle = (tipo, clicavel = true) => ({
     display: 'inline-block', cursor: clicavel ? 'pointer' : 'default', padding: '2px 7px',

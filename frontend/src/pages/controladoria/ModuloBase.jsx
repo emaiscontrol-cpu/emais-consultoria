@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Upload } from 'lucide-react'
-import { clientesAPI, planosAPI, balanceteAPI } from '../../services/api'
+import { clientesAPI, balanceteAPI } from '../../services/api'
 import toast from 'react-hot-toast'
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -43,12 +43,7 @@ export default function ModuloBase({ modulo, titulo, descricao, children }) {
   }, [])
 
   useEffect(() => {
-    if (!clienteId) { setDadosPlano(null); return }
-    setLoadingPlano(true)
-    planosAPI.planoPorClienteModulo(clienteId, modulo)
-      .then(r => setDadosPlano(r.data))
-      .catch(() => setDadosPlano(null))
-      .finally(() => setLoadingPlano(false))
+    setDadosPlano(null)
   }, [clienteId, modulo])
 
   useEffect(() => {
@@ -175,7 +170,7 @@ export default function ModuloBase({ modulo, titulo, descricao, children }) {
           {!loadingPlano && !dadosPlano?.plano && (
             <div style={{ color:'var(--text-3)', fontSize:13, padding:'16px 0' }}>
               Nenhum plano vinculado.{' '}
-              <a href="/controladoria/planos" style={{ color:'var(--brand)' }}>Configurar em Planos de Contas</a>.
+              Utilize o módulo Plano de Contas Referencial para configurar os dados.
             </div>
           )}
 
