@@ -12,10 +12,10 @@ jobs:
           Write-Host "=== HEAD (primeiras 25 linhas) ==="
           Get-Content $f | Select-Object -First 25
           Write-Host ""
-          Write-Host "=== Contém 'storage/v1' ? ==="
+          Write-Host "=== Contem storage/v1 ? ==="
           $hits = Select-String -Path $f -Pattern "storage/v1" -SimpleMatch
           if ($hits) { $hits | ForEach-Object { Write-Host $_.Line } }
-          else { Write-Host "NAO ENCONTRADO — ainda versao disco local" }
+          else { Write-Host "NAO ENCONTRADO - ainda versao disco local" }
 
       - name: 2 - Chaves SUPABASE no .env do servidor
         shell: powershell
@@ -25,7 +25,6 @@ jobs:
             Write-Host "=== .env existe ==="
             Get-Content $env_path | ForEach-Object {
               if ($_ -match "^(SUPABASE_URL|SUPABASE_SERVICE_KEY|DATABASE_URL)=") {
-                # Mostra chave + primeiros 40 chars do valor (ofusca o resto)
                 $parts = $_ -split "=", 2
                 $val = $parts[1]
                 $shown = $val.Substring(0, [Math]::Min(40, $val.Length))
