@@ -176,8 +176,34 @@ if not _is_sqlite:
             # Storage: colunas adicionadas na v2.6.0
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS tipo_mime VARCHAR(120)",
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS enviado_por_id INTEGER REFERENCES usuarios(id)",
-            # Corrige sequence dessincronizada (ocorre quando rows foram inseridas com id explícito)
-            "SELECT setval('arquivos_id_seq', (SELECT COALESCE(MAX(id), 0) FROM arquivos))",
+            # Corrige TODAS as sequences dessincronizadas (UniqueViolation na PK após migração/import)
+            """DO $$
+DECLARE
+    r RECORD;
+    max_val BIGINT;
+BEGIN
+    FOR r IN
+        SELECT seq.relname AS seq_name, tab.relname AS tab_name
+        FROM pg_class seq
+        JOIN pg_depend d ON d.objid = seq.oid
+            AND d.classid = 'pg_class'::regclass
+            AND d.refclassid = 'pg_class'::regclass
+            AND d.deptype = 'a'
+        JOIN pg_class tab ON tab.oid = d.refobjid
+        JOIN pg_namespace ns ON ns.oid = seq.relnamespace
+        WHERE seq.relkind = 'S' AND ns.nspname = 'public'
+    LOOP
+        BEGIN
+            EXECUTE 'SELECT COALESCE(MAX(id), 0) FROM ' || quote_ident(r.tab_name) INTO max_val;
+            IF max_val > 0 THEN
+                PERFORM setval(r.seq_name::regclass, max_val);
+            END IF;
+        EXCEPTION WHEN OTHERS THEN
+            NULL;
+        END;
+    END LOOP;
+END;
+$$""",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
@@ -268,7 +294,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0a"
+app.version = "2.6.0c"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -311,6 +337,7 @@ else:
     @app.get("/")
     def root():
         return {"message": "E Mais Consultoria API â€” Online"}
+
 
 
 
