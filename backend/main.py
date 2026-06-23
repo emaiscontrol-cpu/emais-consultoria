@@ -173,6 +173,9 @@ if not _is_sqlite:
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS segmento_id INTEGER REFERENCES ref_segmentos(id)",
+            # Storage: colunas adicionadas na v2.6.0
+            "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS tipo_mime VARCHAR(120)",
+            "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS enviado_por_id INTEGER REFERENCES usuarios(id)",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
