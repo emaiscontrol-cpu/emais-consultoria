@@ -176,6 +176,8 @@ if not _is_sqlite:
             # Storage: colunas adicionadas na v2.6.0
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS tipo_mime VARCHAR(120)",
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS enviado_por_id INTEGER REFERENCES usuarios(id)",
+            # Corrige sequence dessincronizada (ocorre quando rows foram inseridas com id explícito)
+            "SELECT setval('arquivos_id_seq', (SELECT COALESCE(MAX(id), 0) FROM arquivos))",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
