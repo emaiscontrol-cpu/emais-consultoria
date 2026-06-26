@@ -32,7 +32,7 @@ TABELAS = [
     "import_layouts",
     "importacao_logs",
     "importacao_pendencias",
-    "agrupadores_fc",
+    "agrupamentos",
     "log_atividades",
     "log_tarefas",
     "notificacoes",

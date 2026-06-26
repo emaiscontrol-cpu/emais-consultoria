@@ -135,6 +135,9 @@ with engine.connect() as conn:
         "ALTER TABLE agrupadores_fc ADD COLUMN natureza TEXT NOT NULL DEFAULT 'soma'",
         "ALTER TABLE agrupadores_fc ADD COLUMN slug TEXT",
         'ALTER TABLE agrupadores_fc ADD COLUMN demonstrativos TEXT DEFAULT \'["fluxo_caixa"]\'',
+        # v2.6.0g: natureza removido (sinal definido na fórmula); tabela renomeada para agrupamentos
+        "ALTER TABLE agrupadores_fc DROP COLUMN natureza",
+        "ALTER TABLE agrupadores_fc RENAME TO agrupamentos",
         # Módulos contratados por cliente
         "ALTER TABLE clientes ADD COLUMN modulo_projetos BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE clientes ADD COLUMN modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT 0",
@@ -188,6 +191,9 @@ if not _is_sqlite:
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS natureza VARCHAR(20) NOT NULL DEFAULT 'soma'",
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS slug VARCHAR(100)",
             'ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS demonstrativos TEXT DEFAULT \'["fluxo_caixa"]\'',
+            # v2.6.0g: natureza removido; tabela renomeada para agrupamentos
+            "ALTER TABLE agrupadores_fc DROP COLUMN IF EXISTS natureza",
+            "ALTER TABLE agrupadores_fc RENAME TO agrupamentos",
             # Corrige TODAS as sequences dessincronizadas (UniqueViolation na PK após migração/import)
             """DO $$
 DECLARE
@@ -306,7 +312,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0f"
+app.version = "2.6.0g"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
