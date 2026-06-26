@@ -172,9 +172,10 @@ export const anotacoesAPI = {
 
 export const arquivosAPI = {
   listar:  (clienteId) => api.get(`/arquivos/cliente/${clienteId}`),
-  upload:  (clienteId, arquivo) => {
+  upload:  (clienteId, arquivo, categoria = 'Outros') => {
     const fd = new FormData()
     fd.append('arquivo', arquivo)
+    fd.append('categoria', categoria)
     return api.post(`/arquivos/cliente/${clienteId}`, fd)
   },
   download: (id) => api.get(`/arquivos/${id}/download`),

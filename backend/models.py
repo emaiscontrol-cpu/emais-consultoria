@@ -423,6 +423,7 @@ class Arquivo(Base):
     nome_arquivo   = Column(String(255), nullable=False)  # nome no disco (UUID)
     tamanho        = Column(Integer, nullable=False)
     tipo_mime      = Column(String(120), nullable=True)
+    categoria      = Column(String(50), nullable=False, server_default='Outros')
     enviado_por_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True)
     criado_em      = Column(DateTime(timezone=True), server_default=func.now())
     cliente        = relationship("Cliente")
