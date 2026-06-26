@@ -315,11 +315,14 @@ class Lancamento(Base):
 
 class AgrupadorFC(Base):
     __tablename__ = "agrupadores_fc"
-    id        = Column(Integer, primary_key=True, index=True)
-    nome      = Column(String(200), nullable=False, unique=True)
-    padrao    = Column(Boolean, default=True)
-    ativo     = Column(Boolean, default=True)
-    criado_em = Column(DateTime(timezone=True), server_default=func.now())
+    id             = Column(Integer, primary_key=True, index=True)
+    nome           = Column(String(200), nullable=False, unique=True)
+    natureza       = Column(String(20), nullable=False, server_default='soma')
+    slug           = Column(String(100), nullable=True)
+    demonstrativos = Column(Text, nullable=True, server_default='["fluxo_caixa"]')
+    padrao         = Column(Boolean, default=True)
+    ativo          = Column(Boolean, default=True)
+    criado_em      = Column(DateTime(timezone=True), server_default=func.now())
 
 
 

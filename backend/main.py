@@ -131,6 +131,10 @@ with engine.connect() as conn:
         "ALTER TABLE import_layouts ADD COLUMN categoria TEXT DEFAULT 'REALIZADO'",
         # Categoria de arquivo (Contrato, Relatório, Financeiro, Jurídico, Outros)
         "ALTER TABLE arquivos ADD COLUMN categoria TEXT NOT NULL DEFAULT 'Outros'",
+        # Agrupadores FC — colunas de metadados adicionadas na v2.6.0f
+        "ALTER TABLE agrupadores_fc ADD COLUMN natureza TEXT NOT NULL DEFAULT 'soma'",
+        "ALTER TABLE agrupadores_fc ADD COLUMN slug TEXT",
+        'ALTER TABLE agrupadores_fc ADD COLUMN demonstrativos TEXT DEFAULT \'["fluxo_caixa"]\'',
         # Módulos contratados por cliente
         "ALTER TABLE clientes ADD COLUMN modulo_projetos BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE clientes ADD COLUMN modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT 0",
@@ -180,6 +184,10 @@ if not _is_sqlite:
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS enviado_por_id INTEGER REFERENCES usuarios(id)",
             # Categoria de arquivo adicionada na v2.6.0e
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS categoria VARCHAR(50) NOT NULL DEFAULT 'Outros'",
+            # Agrupadores FC — colunas de metadados adicionadas na v2.6.0f
+            "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS natureza VARCHAR(20) NOT NULL DEFAULT 'soma'",
+            "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS slug VARCHAR(100)",
+            'ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS demonstrativos TEXT DEFAULT \'["fluxo_caixa"]\'',
             # Corrige TODAS as sequences dessincronizadas (UniqueViolation na PK após migração/import)
             """DO $$
 DECLARE
@@ -298,7 +306,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0e"
+app.version = "2.6.0f"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
