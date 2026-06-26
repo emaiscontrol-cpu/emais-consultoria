@@ -311,13 +311,12 @@ class Lancamento(Base):
     usuario      = relationship("Usuario")
 
 
-# ─── FLUXO DE CAIXA ──────────────────────────────────────────────────────────
+# ─── AGRUPAMENTOS (compartilhados entre DRE, FC e Orçamento) ─────────────────
 
-class AgrupadorFC(Base):
-    __tablename__ = "agrupadores_fc"
+class Agrupamento(Base):
+    __tablename__ = "agrupamentos"
     id             = Column(Integer, primary_key=True, index=True)
     nome           = Column(String(200), nullable=False, unique=True)
-    natureza       = Column(String(20), nullable=False, server_default='soma')
     slug           = Column(String(100), nullable=True)
     demonstrativos = Column(Text, nullable=True, server_default='["fluxo_caixa"]')
     padrao         = Column(Boolean, default=True)

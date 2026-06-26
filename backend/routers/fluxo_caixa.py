@@ -1,11 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from models import AgrupadorFC
+from models import Agrupamento
 from auth import get_usuario_atual
 from schemas import UsuarioOut
 from pydantic import BaseModel
-from typing import Optional
 
 router = APIRouter()
 
@@ -18,27 +17,27 @@ def check(u):
 
 # ── Schemas ───────────────────────────────────────────────────────────────────
 
-class AgrupadorIn(BaseModel):
+class AgrupamentoIn(BaseModel):
     nome: str
     padrao: bool = False
 
 
-# ── Agrupadores ───────────────────────────────────────────────────────────────
+# ── Agrupamentos ──────────────────────────────────────────────────────────────
 
 @router.get("/agrupadores")
 def listar_agrupadores(db: Session = Depends(get_db),
                        u: UsuarioOut = Depends(get_usuario_atual)):
     check(u)
     return [{"id": a.id, "nome": a.nome, "padrao": a.padrao}
-            for a in db.query(AgrupadorFC).filter(AgrupadorFC.ativo == True).order_by(AgrupadorFC.nome).all()]
+            for a in db.query(Agrupamento).filter(Agrupamento.ativo == True).order_by(Agrupamento.nome).all()]
 
 @router.post("/agrupadores", status_code=201)
-def criar_agrupador(data: AgrupadorIn, db: Session = Depends(get_db),
+def criar_agrupador(data: AgrupamentoIn, db: Session = Depends(get_db),
                     u: UsuarioOut = Depends(get_usuario_atual)):
     check(u)
-    if db.query(AgrupadorFC).filter(AgrupadorFC.nome == data.nome, AgrupadorFC.ativo == True).first():
-        raise HTTPException(400, "Agrupador já existe")
-    a = AgrupadorFC(nome=data.nome, padrao=data.padrao)
+    if db.query(Agrupamento).filter(Agrupamento.nome == data.nome, Agrupamento.ativo == True).first():
+        raise HTTPException(400, "Agrupamento já existe")
+    a = Agrupamento(nome=data.nome, padrao=data.padrao)
     db.add(a); db.commit(); db.refresh(a)
     return {"id": a.id, "nome": a.nome, "padrao": a.padrao}
 
@@ -46,9 +45,7 @@ def criar_agrupador(data: AgrupadorIn, db: Session = Depends(get_db),
 def deletar_agrupador(id: int, db: Session = Depends(get_db),
                       u: UsuarioOut = Depends(get_usuario_atual)):
     check(u)
-    a = db.get(AgrupadorFC, id)
-    if not a: raise HTTPException(404, "Agrupador não encontrado")
+    a = db.get(Agrupamento, id)
+    if not a: raise HTTPException(404, "Agrupamento não encontrado")
     a.ativo = False; db.commit()
     return {"ok": True}
-
-
