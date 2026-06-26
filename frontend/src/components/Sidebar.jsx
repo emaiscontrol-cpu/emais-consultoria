@@ -4,7 +4,8 @@ import {
   LayoutDashboard, FolderKanban, Users, Building2, LogOut, KeyRound, Bell,
   History, BarChart2, BookOpen, List, FileSpreadsheet, NotebookPen,
   ChevronDown, ChevronUp, Layers, ListTodo, AlignLeft, DatabaseBackup,
-  Camera, Copy, Search, Globe, FolderOpen, Target, Download, Lock, TrendingUp,
+  Camera, Copy, Search, Globe, FolderOpen, Target, Download, Lock,
+  TrendingUp, LineChart,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
@@ -13,8 +14,11 @@ import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
 
 const DIM = 'rgba(255,255,255,.25)'
+const COL_PROJETOS     = '#5DCAA5'
+const COL_INTELIGENCIA = '#AFA9EC'
+const COL_ANALISES     = '#EF9F27'
 
-// ── Item bloqueado: substitui NavLink quando módulo não está contratado ────────
+// ── Item bloqueado ─────────────────────────────────────────────────────────────
 function LockedItem({ icon: Icon, emoji, label, target }) {
   const navigate = useNavigate()
   return (
@@ -36,8 +40,46 @@ function LockedItem({ icon: Icon, emoji, label, target }) {
   )
 }
 
-// ── Botão de título de seção colapsável ──────────────────────────────────────
-function SectionBtn({ emoji, label, open, isActive, onClick, bloqueado }) {
+// ── Cabeçalho de módulo comercial (colorido) ──────────────────────────────────
+function ModuleHeader({ color, icon: Icon, label, open, onClick, bloqueado }) {
+  return (
+    <button onClick={onClick} style={{
+      display: 'flex', alignItems: 'center', gap: 9,
+      width: '100%', padding: '7px 14px', border: 'none',
+      cursor: 'pointer', background: 'transparent', marginTop: 6,
+    }}>
+      <div style={{
+        width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+        background: bloqueado ? 'rgba(255,255,255,.07)' : `${color}26`,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        transition: 'background .15s',
+      }}>
+        {bloqueado
+          ? <Lock size={12} color="rgba(255,255,255,.22)" />
+          : <Icon size={14} color={color} />
+        }
+      </div>
+      <span style={{
+        flex: 1, textAlign: 'left',
+        fontSize: 12, fontWeight: 700, letterSpacing: '.04em',
+        color: bloqueado ? 'rgba(255,255,255,.28)' : color,
+        transition: 'color .15s',
+      }}>
+        {label}
+      </span>
+      {bloqueado
+        ? <Lock size={11} color="rgba(255,255,255,.18)" />
+        : (open
+            ? <ChevronUp   size={11} color={`${color}99`} />
+            : <ChevronDown size={11} color={`${color}99`} />
+          )
+      }
+    </button>
+  )
+}
+
+// ── Botão de título de seção interna (austero) ────────────────────────────────
+function SectionBtn({ emoji, label, open, isActive, onClick }) {
   return (
     <button onClick={onClick} style={{
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -46,22 +88,21 @@ function SectionBtn({ emoji, label, open, isActive, onClick, bloqueado }) {
     }}>
       <span style={{
         fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
-        color: bloqueado ? DIM : (isActive ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.45)'),
+        color: isActive ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.45)',
         display: 'flex', alignItems: 'center', gap: 5,
         transition: 'color .15s',
       }}>
         <span style={{ fontSize: 13 }}>{emoji}</span> {label}
-        {bloqueado && <Lock size={10} style={{ marginLeft: 3 }} />}
       </span>
-      {!bloqueado && (open
+      {open
         ? <ChevronUp   size={11} color={isActive ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.35)'} />
         : <ChevronDown size={11} color={isActive ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.35)'} />
-      )}
+      }
     </button>
   )
 }
 
-// ── Sub-seção Dashboards colapsável (dentro do bloco Projetos) ────────────────
+// ── Sub-seção Dashboards ───────────────────────────────────────────────────────
 const DASH_SUB = [
   { to: '/',                     label: 'Geral',         icon: LayoutDashboard, end: true },
   { to: '/dashboard/fases',      label: 'Por Fase',      icon: Layers },
@@ -69,122 +110,172 @@ const DASH_SUB = [
   { to: '/dashboard/subtarefas', label: 'Por Atividade', icon: AlignLeft },
 ]
 
-// ── Bloco principal: PROJETOS + Dashboards ────────────────────────────────────
-function ProjetosSection({ isAdminConsultor, bloqueado }) {
-  const navigate = useNavigate()
-  const location = useLocation()
+// ── MÓDULO 1: PROJETOS ────────────────────────────────────────────────────────
+function ProjetosSection({ isAdminConsultor, isConsultor, bloqueado, qtdAlertas }) {
+  const navigate  = useNavigate()
+  const location  = useLocation()
 
   const isDashActive = !bloqueado && (
     location.pathname === '/' ||
     location.pathname.startsWith('/dashboard') ||
     location.pathname.startsWith('/dashboard-executivo')
   )
-  const [dashOpen, setDashOpen] = useState(bloqueado || isDashActive)
+  const isSectionActive = !bloqueado && (
+    isDashActive ||
+    location.pathname.startsWith('/projetos') ||
+    location.pathname.startsWith('/notificacoes') ||
+    location.pathname.startsWith('/anotacoes') ||
+    location.pathname.startsWith('/arquivos')
+  )
+
+  const [sectionOpen, setSectionOpen] = useState(isSectionActive)
+  const [dashOpen, setDashOpen]       = useState(isDashActive)
+
   useEffect(() => {
-    if (bloqueado) setDashOpen(true)
-    else if (isDashActive) setDashOpen(true)
-  }, [bloqueado, isDashActive])
+    if (bloqueado) { setSectionOpen(true); setDashOpen(true); return }
+    if (isSectionActive) setSectionOpen(true)
+    if (isDashActive)    setDashOpen(true)
+  }, [bloqueado, isSectionActive, isDashActive])
 
   return (
-    <div style={{ marginBottom: 4 }}>
-      {bloqueado ? (
-        <button
-          onClick={() => navigate('/saiba-mais/projetos')}
-          style={{
-            display: 'flex', alignItems: 'center', gap: 8, width: '100%',
-            fontWeight: 700, fontSize: 14, padding: '10px 14px',
-            background: 'rgba(255,255,255,.03)', borderRadius: 8, marginBottom: 2,
-            border: '1px solid rgba(255,255,255,.06)',
-            color: DIM, cursor: 'pointer',
-          }}
-        >
-          <FolderKanban size={17} color={DIM} />
-          <span style={{ flex: 1, textAlign: 'left' }}>Projetos</span>
-          <Lock size={12} color={DIM} />
-        </button>
-      ) : (
-        <NavLink
-          to="/projetos"
-          className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-          style={({ isActive }) => ({
-            fontWeight: 700, fontSize: 14, padding: '10px 14px',
-            background: isActive ? 'rgba(255,255,255,.18)' : 'rgba(255,255,255,.07)',
-            borderRadius: 8, marginBottom: 2,
-            border: '1px solid rgba(255,255,255,.10)',
-          })}
-        >
-          <FolderKanban size={17} />
-          <span style={{ flex: 1 }}>Projetos</span>
-          <span style={{
-            fontSize: 9, fontWeight: 800, letterSpacing: '.06em', textTransform: 'uppercase',
-            background: 'var(--brand)', color: '#fff', borderRadius: 99, padding: '2px 7px',
-          }}>trabalho</span>
-        </NavLink>
-      )}
+    <div>
+      <ModuleHeader
+        color={COL_PROJETOS}
+        icon={FolderKanban}
+        label="Projetos"
+        open={sectionOpen}
+        bloqueado={bloqueado}
+        onClick={() => bloqueado ? navigate('/saiba-mais/projetos') : setSectionOpen(v => !v)}
+      />
 
-      {/* ── Sub-seção Dashboards ── */}
-      <div style={{ paddingLeft: 10 }}>
-        <button
-          onClick={() => { if (!bloqueado) setDashOpen(v => !v) }}
-          style={{
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            width: '100%', padding: '5px 10px', border: 'none',
-            cursor: bloqueado ? 'default' : 'pointer',
-            background: 'transparent', marginTop: 2,
-          }}
-        >
-          <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
-            color: bloqueado ? 'rgba(255,255,255,.18)' : (isDashActive ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.38)'),
-            display: 'flex', alignItems: 'center', gap: 5,
-          }}>
-            <LayoutDashboard size={11} /> Dashboards
-          </span>
-          {!bloqueado && (dashOpen
-            ? <ChevronUp   size={10} color="rgba(255,255,255,.35)" />
-            : <ChevronDown size={10} color="rgba(255,255,255,.35)" />
+      {sectionOpen && (
+        <div style={{ paddingLeft: 10, marginTop: 2 }}>
+
+          {/* Hero: Projetos */}
+          {bloqueado ? (
+            <LockedItem icon={FolderKanban} label="Projetos" target="/saiba-mais/projetos" />
+          ) : (
+            <NavLink
+              to="/projetos"
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              style={({ isActive }) => ({
+                fontWeight: 700, fontSize: 13, padding: '8px 12px',
+                background: isActive ? `${COL_PROJETOS}22` : `${COL_PROJETOS}0d`,
+                borderRadius: 7, marginBottom: 2,
+                border: `1px solid ${COL_PROJETOS}40`,
+                color: isActive ? '#fff' : COL_PROJETOS,
+                gap: 7,
+              })}
+            >
+              <FolderKanban size={14} color={COL_PROJETOS} /> Projetos
+            </NavLink>
           )}
-        </button>
 
-        {dashOpen && (
-          <div style={{ paddingLeft: 8, marginTop: 2 }}>
-            {DASH_SUB.map(({ to, label, icon: Icon, end }) => (
-              bloqueado ? (
-                <LockedItem key={to} icon={Icon} label={label} target="/saiba-mais/projetos" />
-              ) : (
-                <NavLink key={to} to={to} end={end}
-                  className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                  style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                  <Icon size={13} /> {label}
-                </NavLink>
-              )
-            ))}
-            {!bloqueado && isAdminConsultor && (
-              <NavLink to="/dashboard-executivo"
-                className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
-                style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-                <Globe size={13} /> Por Cliente
-              </NavLink>
+          {/* Sub-seção Dashboards */}
+          <div style={{ paddingLeft: 4 }}>
+            <button
+              onClick={() => { if (!bloqueado) setDashOpen(v => !v) }}
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                width: '100%', padding: '5px 10px', border: 'none',
+                cursor: bloqueado ? 'default' : 'pointer',
+                background: 'transparent', marginTop: 2,
+              }}
+            >
+              <span style={{
+                fontSize: 10, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
+                color: bloqueado ? 'rgba(255,255,255,.18)' : (isDashActive ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.38)'),
+                display: 'flex', alignItems: 'center', gap: 5,
+              }}>
+                <LayoutDashboard size={11} /> Dashboards
+              </span>
+              {!bloqueado && (dashOpen
+                ? <ChevronUp   size={10} color="rgba(255,255,255,.35)" />
+                : <ChevronDown size={10} color="rgba(255,255,255,.35)" />
+              )}
+            </button>
+
+            {dashOpen && (
+              <div style={{ paddingLeft: 8, marginTop: 2 }}>
+                {DASH_SUB.map(({ to, label, icon: Icon, end }) => (
+                  bloqueado ? (
+                    <LockedItem key={to} icon={Icon} label={label} target="/saiba-mais/projetos" />
+                  ) : (
+                    <NavLink key={to} to={to} end={end}
+                      className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                      style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+                      <Icon size={13} /> {label}
+                    </NavLink>
+                  )
+                ))}
+                {!bloqueado && isAdminConsultor && (
+                  <NavLink to="/dashboard-executivo"
+                    className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+                    style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+                    <Globe size={13} /> Por Cliente
+                  </NavLink>
+                )}
+              </div>
             )}
           </div>
-        )}
-      </div>
+
+          {/* Notificações */}
+          {bloqueado ? (
+            <LockedItem icon={Bell} label="Notificações" target="/saiba-mais/projetos" />
+          ) : (
+            <NavLink to="/notificacoes"
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+              <div style={{ position: 'relative', display: 'inline-flex' }}>
+                <Bell size={13} />
+                {qtdAlertas > 0 && (
+                  <span style={{
+                    position: 'absolute', top: -6, right: -8, background: 'var(--red)', color: '#fff',
+                    borderRadius: 99, fontSize: 9, fontWeight: 700, padding: '1px 4px', minWidth: 14, textAlign: 'center',
+                  }}>
+                    {qtdAlertas}
+                  </span>
+                )}
+              </div>
+              Notificações
+            </NavLink>
+          )}
+
+          {/* Anotações (isConsultor) */}
+          {!bloqueado && isConsultor && (
+            <NavLink to="/anotacoes"
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+              <NotebookPen size={13} /> Anotações
+            </NavLink>
+          )}
+
+          {/* Arquivos (isAdminConsultor) */}
+          {!bloqueado && isAdminConsultor && (
+            <NavLink to="/arquivos"
+              className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}
+              style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+              <FolderOpen size={13} /> Arquivos
+            </NavLink>
+          )}
+        </div>
+      )}
     </div>
   )
 }
 
-// ── Inteligência de Mercado ───────────────────────────────────────────────────
+// ── MÓDULO 2: INTELIGÊNCIA DE MERCADO ─────────────────────────────────────────
 const ITEMS_INT = [
-  { label: 'Painel de Mercado',       icon: Globe },
-  { label: 'Benchmarks Setoriais',    icon: BarChart2 },
-  { label: 'Indicadores de Mercado',  icon: Target },
+  { label: 'Painel de Mercado',      icon: Globe },
+  { label: 'Benchmarks Setoriais',   icon: BarChart2 },
+  { label: 'Indicadores de Mercado', icon: Target },
 ]
 
 function InteligenciaSection({ bloqueado }) {
   const navigate = useNavigate()
   const location = useLocation()
   const isActive = !bloqueado && location.pathname.startsWith('/inteligencia-mercado')
-  const [open, setOpen] = useState(bloqueado || isActive)
+  const [open, setOpen] = useState(isActive)
   useEffect(() => {
     if (bloqueado) setOpen(true)
     else if (isActive) setOpen(true)
@@ -192,12 +283,12 @@ function InteligenciaSection({ bloqueado }) {
 
   return (
     <div>
-      <SectionBtn
-        emoji="🌐"
+      <ModuleHeader
+        color={COL_INTELIGENCIA}
+        icon={LineChart}
         label="Inteligência de Mercado"
-        bloqueado={bloqueado}
         open={open}
-        isActive={isActive}
+        bloqueado={bloqueado}
         onClick={() => bloqueado ? navigate('/saiba-mais/inteligencia_mercado') : setOpen(v => !v)}
       />
       {open && (
@@ -220,21 +311,21 @@ function InteligenciaSection({ bloqueado }) {
   )
 }
 
-// ── Análises Gerenciais ───────────────────────────────────────────────────────
+// ── MÓDULO 3: ANÁLISES GERENCIAIS ─────────────────────────────────────────────
 const ITEMS_ANALISES = [
   { to: '/controladoria/fluxo-de-caixa', label: 'Fluxo de Caixa Executivo', emoji: '💲' },
   { to: '/controladoria/dre',             label: 'DRE Gerencial',            icon: BarChart2 },
   { to: '/controladoria/balancetes',      label: 'Balancete',                icon: FileSpreadsheet },
   { to: '/controladoria/orcamento',       label: 'Controle Orçamentário',    icon: Target },
-  { to: '/controladoria/demonstrativo',   label: 'Demonstrativo Ref.',       icon: TrendingUp },
+  { to: '/controladoria/demonstrativo',   label: 'Demonstrativo Ref.',       icon: LineChart },
+  { to: '/controladoria/benchmark',       label: 'Benchmark Segmento',       icon: TrendingUp },
 ]
 
 function AnalisesSection({ bloqueado }) {
   const navigate = useNavigate()
   const location = useLocation()
-  const isActive = !bloqueado && location.pathname.startsWith('/controladoria') &&
-    !location.pathname.startsWith('/controladoria/planos')
-  const [open, setOpen] = useState(bloqueado || isActive)
+  const isActive = !bloqueado && location.pathname.startsWith('/controladoria')
+  const [open, setOpen] = useState(isActive)
   useEffect(() => {
     if (bloqueado) setOpen(true)
     else if (isActive) setOpen(true)
@@ -242,12 +333,12 @@ function AnalisesSection({ bloqueado }) {
 
   return (
     <div>
-      <SectionBtn
-        emoji="📈"
+      <ModuleHeader
+        color={COL_ANALISES}
+        icon={BarChart2}
         label="Análises Gerenciais"
-        bloqueado={bloqueado}
         open={open}
-        isActive={isActive}
+        bloqueado={bloqueado}
         onClick={() => bloqueado ? navigate('/saiba-mais/analises_gerenciais') : setOpen(v => !v)}
       />
       {open && (
@@ -270,7 +361,7 @@ function AnalisesSection({ bloqueado }) {
   )
 }
 
-// ── Administração ─────────────────────────────────────────────────────────────
+// ── INTERNO 1: ADMINISTRAÇÃO ──────────────────────────────────────────────────
 function AdminSection() {
   const location = useLocation()
   const isActive = ['/relatorios', '/historico', '/usuarios', '/clientes'].some(p => location.pathname.startsWith(p))
@@ -300,15 +391,14 @@ function AdminSection() {
   )
 }
 
-// ── Procedimentos ─────────────────────────────────────────────────────────────
+// ── INTERNO 2: PROCEDIMENTOS ──────────────────────────────────────────────────
 function ProcSection() {
   const location = useLocation()
-  const isActive = location.pathname.startsWith('/procedimentos') ||
-    location.pathname.startsWith('/controladoria/planos') ||
+  const isActive =
+    location.pathname.startsWith('/procedimentos') ||
     location.pathname.startsWith('/controladoria/plano-referencial') ||
     location.pathname.startsWith('/controladoria/templates-ref') ||
     location.pathname.startsWith('/controladoria/revisao-depara') ||
-    location.pathname.startsWith('/controladoria/benchmark') ||
     location.pathname.startsWith('/modelos') ||
     location.pathname.startsWith('/importacoes')
   const [open, setOpen] = useState(isActive)
@@ -321,9 +411,6 @@ function ProcSection() {
         <div style={{ paddingLeft: 10, marginTop: 2 }}>
           <NavLink to="/modelos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
             <Copy size={13} /> Templates de Projeto
-          </NavLink>
-          <NavLink to="/controladoria/planos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-            <List size={13} /> Modelos & Contas
           </NavLink>
           <NavLink to="/procedimentos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
             <DatabaseBackup size={13} /> Backup
@@ -343,9 +430,6 @@ function ProcSection() {
           </NavLink>
           <NavLink to="/controladoria/revisao-depara" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
             <BarChart2 size={13} /> Revisão De-Para
-          </NavLink>
-          <NavLink to="/controladoria/benchmark" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
-            <TrendingUp size={13} /> Benchmark Segmento
           </NavLink>
         </div>
       )}
@@ -391,8 +475,6 @@ export default function Sidebar({ onBusca }) {
   const isConsultor      = isRestrito || ['admin', 'consultor', 'ger_projeto', 'ti'].includes(usuario?.perfil)
   const isCliente        = ['analista', 'ger_projeto', 'ti'].includes(usuario?.perfil)
 
-  // Módulos bloqueados: só para perfis de cliente sem o módulo contratado
-  // Admin e consultor nunca têm módulos bloqueados (temModulo retorna true para modulos===null)
   const bloqueadoProjetos     = isCliente && !temModulo('projetos')
   const bloqueadoInteligencia = isCliente && !temModulo('inteligencia_mercado')
   const bloqueadoAnalises     = isCliente && !temModulo('analises_gerenciais')
@@ -438,48 +520,23 @@ export default function Sidebar({ onBusca }) {
             <span style={{ fontSize: 10, background: 'rgba(255,255,255,.12)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.02em' }}>Ctrl+K</span>
           </button>
 
-          {/* ── Projetos (destaque) + Dashboards ── */}
-          <ProjetosSection isAdminConsultor={isAdminConsultor} bloqueado={bloqueadoProjetos} />
-
-          {/* ── Notificações (parte do módulo Projetos) ── */}
-          {bloqueadoProjetos ? (
-            <LockedItem icon={Bell} label="Notificações" target="/saiba-mais/projetos" />
-          ) : (
-            <NavLink to="/notificacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-              <div style={{ position: 'relative', display: 'inline-flex' }}>
-                <Bell size={16} />
-                {qtdAlertas > 0 && (
-                  <span style={{
-                    position: 'absolute', top: -6, right: -8, background: 'var(--red)', color: '#fff',
-                    borderRadius: 99, fontSize: 9, fontWeight: 700, padding: '1px 4px', minWidth: 14, textAlign: 'center',
-                  }}>
-                    {qtdAlertas}
-                  </span>
-                )}
-              </div>
-              {' '}Notificações
-            </NavLink>
-          )}
-
-          {/* ── Inteligência de Mercado ── */}
+          {/* ── GRUPO 1: Módulos comerciais ── */}
+          <ProjetosSection
+            isAdminConsultor={isAdminConsultor}
+            isConsultor={isConsultor}
+            bloqueado={bloqueadoProjetos}
+            qtdAlertas={qtdAlertas}
+          />
           <InteligenciaSection bloqueado={bloqueadoInteligencia} />
+          <AnalisesSection     bloqueado={bloqueadoAnalises} />
 
-          {/* ── Análises Gerenciais ── */}
-          <AnalisesSection bloqueado={bloqueadoAnalises} />
-
-          {isConsultor && (
-            <NavLink to="/anotacoes" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-              <NotebookPen size={16} /> Anotações
-            </NavLink>
-          )}
-
+          {/* ── GRUPO 2: Internos (admin/consultor apenas) ── */}
           {isAdminConsultor && (
-            <NavLink to="/arquivos" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`}>
-              <FolderOpen size={16} /> Arquivos
-            </NavLink>
+            <>
+              <div style={{ margin: '10px 14px 2px', borderTop: '1px solid rgba(255,255,255,.08)' }} />
+              <AdminSection />
+            </>
           )}
-
-          {isAdminConsultor && <AdminSection />}
           {isAdmin && <ProcSection />}
         </nav>
 

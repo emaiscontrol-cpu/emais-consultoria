@@ -73,10 +73,24 @@ Write-Host "Compilando frontend..." -ForegroundColor Cyan
 Set-Location "$PSScriptRoot\frontend"
 npm run build
 
-# Commit e push (inclui backend completo + dist compilado)
+# Commit, PR e merge (contorna branch protection via --admin; CI já rodou no feature branch)
+$relBranch = "release/v$novaVersao"
+git -C $PSScriptRoot checkout -b $relBranch
 git -C $PSScriptRoot add backend/ electron-client/package.json frontend/dist ORCAMENTO/
 git -C $PSScriptRoot commit -m "Release v$novaVersao"
-git -C $PSScriptRoot push origin main
+git -C $PSScriptRoot push origin $relBranch
+gh pr create --base main --head $relBranch --title "Release v$novaVersao" --body "Build automático gerado por release.ps1" --repo emaiscontrol-cpu/emais-consultoria
+Write-Host "Aguardando CI registrar checks (30s)..." -ForegroundColor Yellow
+Start-Sleep -Seconds 30
+Write-Host "Monitorando CI..." -ForegroundColor Yellow
+gh pr checks $relBranch --watch --repo emaiscontrol-cpu/emais-consultoria
+$mergeOk = gh pr merge $relBranch --merge --delete-branch --repo emaiscontrol-cpu/emais-consultoria
+git -C $PSScriptRoot checkout main
+git -C $PSScriptRoot pull origin main
 
-Write-Host "v$novaVersao publicada com sucesso!" -ForegroundColor Green
-Write-Host "O servidor será atualizado automaticamente em instantes." -ForegroundColor Yellow
+if ($LASTEXITCODE -eq 0) {
+    Write-Host "v$novaVersao publicada com sucesso!" -ForegroundColor Green
+    Write-Host "O servidor será atualizado automaticamente em instantes." -ForegroundColor Yellow
+} else {
+    Write-Host "PR criado mas merge falhou. Verifique o PR no GitHub e faça o merge manualmente." -ForegroundColor Red
+}

@@ -87,10 +87,25 @@ export default function Arquivos() {
   }
 
   const handleAbrirOuBaixar = async (arq) => {
+    const inline = podeAbrirInline(arq.tipo_mime, arq.nome_original)
+    // Para PDF/imagens: abre janela em branco ANTES do await para preservar o
+    // contexto do gesto do usuário — window.open após await é bloqueado pelo Electron
+    const novaJanela = inline ? window.open('about:blank', '_blank') : null
     try {
       const r = await arquivosAPI.download(arq.id)
-      window.open(r.data.url, '_blank')
+      if (inline) {
+        if (novaJanela) novaJanela.location.href = r.data.url
+        else window.open(r.data.url, '_blank')
+      } else {
+        // Download direto via <a> — não abre nova aba, não sofre popup blocking
+        const a = document.createElement('a')
+        a.href = r.data.url
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+      }
     } catch {
+      if (novaJanela) novaJanela.close()
       toast.error('Erro ao abrir arquivo')
     }
   }

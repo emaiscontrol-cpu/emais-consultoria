@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → uvicorn recarrega
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.5.0s` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.5.0z` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -73,23 +73,39 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 
 ---
 
-## Sidebar — Visibilidade por Perfil
+## Sidebar — Estrutura e Visibilidade
+
+### GRUPO 1 — Módulos comerciais (visual: ícone colorido + fundo translúcido + título colorido)
+Aparecem para **todos os usuários**. Quando o módulo não está contratado (cliente sem o módulo), o cabeçalho fica com cadeado e os itens são substituídos por `LockedItem` que navega para `/saiba-mais/<modulo>`.
+
+| Módulo | Cor | Itens internos | Visibilidade dos itens |
+|---|---|---|---|
+| **Projetos** | `#5DCAA5` (teal) | Projetos (hero), Dashboards, Notificações, Anotações, Arquivos | Anotações: `isConsultor`; Arquivos: `isAdminConsultor`; demais: todos |
+| **Inteligência de Mercado** | `#AFA9EC` (roxo) | Painel de Mercado, Benchmarks Setoriais, Indicadores | Todos com o módulo |
+| **Análises Gerenciais** | `#EF9F27` (âmbar) | Fluxo de Caixa Executivo, DRE Gerencial, Balancete, Controle Orçamentário, Demonstrativo Ref., Benchmark Segmento | Todos com o módulo |
+
+### GRUPO 2 — Internos (visual austero: SectionBtn com texto apagado, sem ícone colorido)
+**Nunca visíveis para clientes** (analista, ger_projeto, ti), sem exceção.
 
 ```
-Principal           → todos
-Controladoria       → isControladoria: admin, consultor, ger_projeto, ti
-                       + analista/ger_projeto/ti com cliente_id preenchido (isRestrito)
-Clientes/Anotações  → isConsultor: admin, consultor, ger_projeto, ti
-                       + analista/ger_projeto/ti com cliente_id preenchido (isRestrito)
-Administração       → isAdminConsultor (admin + consultor) — colapsável
-Procedimentos       → isAdmin (admin apenas) — colapsável
+Administração  → isAdminConsultor (admin + consultor) — colapsável
+  ├── Relatórios, Histórico, Usuários, Clientes
+
+Procedimentos  → isAdmin (admin apenas) — colapsável
   ├── Templates de Projeto
-  ├── Modelos & Contas
-  └── Backup
-Footer              → todos (foto, Manual, Alterar senha, Sair)
+  ├── Backup
+  ├── Importações
+  └── Plano Referencial (Plano de Contas, Templates DRE/FC/Orç., Revisão De-Para)
+
+Footer         → todos (foto, Manual, Alterar senha, Sair)
 ```
 
-> Nota: `isControladoria` e `isConsultor` são equivalentes no código atual (ambos incluem `ger_projeto` e `ti`). Não confundir com o perfil `consultor` — são flags de visibilidade compostas.
+### Flags de visibilidade usadas no código
+- `isAdmin` — perfil `admin` apenas
+- `isAdminConsultor` — `admin` + `consultor`
+- `isConsultor` — `admin`, `consultor`, `ger_projeto`, `ti`, ou (`analista`/`ger_projeto`/`ti` com `cliente_id` preenchido = `isRestrito`)
+- `isCliente` — `analista`, `ger_projeto`, `ti` (perfis de cliente)
+- `bloqueadoProjetos/Inteligencia/Analises` — `isCliente && !temModulo('...')`
 
 ---
 
@@ -152,10 +168,10 @@ O arquivo `ROADMAP.md` na raiz do projeto contém o backlog oficial.
 - **Node.js:** versão lida de `frontend/.nvmrc` (`node-version-file`), alinhada com `frontend/package.json` → `engines.node`. Sempre que atualizar o Node local, atualizar os dois arquivos juntos — é a causa mais provável de falha de build no CI (binding nativo do rolldown/Vite é compilado por versão de Node)
 - Existe também `.github/workflows/deploy.yml` (self-hosted, dispara só em push para `main`) — não roda testes, só faz o deploy em produção
 
-### Branch protection — ⚠️ AINDA NÃO CONFIGURADA
-- O check `ci-status` existe e funciona, mas **ninguém configurou a regra no GitHub** para exigi-lo antes do merge
-- Pendente: Settings → Branches → regra para `main` → "Require status checks to pass before merging" → selecionar `ci-status`
-- Até isso ser feito, é possível mergear PRs com CI vermelho — não assumir que está bloqueando
+### Branch protection — ✅ ATIVA (desde 2026-06-19)
+- A regra exige `ci-status` (que depende do job `test`) antes de qualquer merge na `main`
+- Push direto na `main` é rejeitado pelo GitHub — todo deploy passa pelo fluxo `release.ps1` → branch `release/vX` → PR → CI → merge automático
+- `release.ps1` aguarda 30s para o CI registrar, monitora com `gh pr checks --watch`, depois faz `gh pr merge`
 
 ### Regras do `.gitignore`
 - `backend/.env`, `backend/seed_usuarios.py` — segredos, nunca commitar
@@ -201,14 +217,10 @@ emals_consultoria/
 │   ├── auth.py                  # JWT, hash de senha, get_usuario_atual
 │   ├── database.py              # Engine, SessionLocal, Base, _is_sqlite
 │   ├── helpers.py               # Função log() para LogAtividade
-│   ├── dre_engine.py            # Cálculo e consolidação do DRE
-│   ├── importacao_service.py    # Pipeline de importação de extratos
-│   ├── plano_import_service.py  # Importação de planos de conta
-│   ├── plano_parser.py          # Parser de estrutura de planos
 │   ├── xlsx_parser.py           # Leitura de planilhas .xlsx
-│   ├── formula_generator.py     # Geração de fórmulas para itens do plano
-│   ├── agrupamento_suggester.py # Sugestão de agrupamento de contas
 │   ├── nivel_detector.py        # Detecção de nível em planos de conta
+│   ├── ref_formula_engine.py    # Motor de fórmulas do Plano Referencial (topological sort + AST eval)
+│   ├── depara_service.py        # Sugestão de De-Para via rapidfuzz WRatio
 │   ├── migrar_para_supabase.py  # Script de migração SQLite → Supabase (já executado)
 │   └── routers/                 # Um arquivo por domínio:
 │       ├── auth.py              # Login, token JWT
@@ -229,12 +241,11 @@ emals_consultoria/
 │       ├── modelos.py           # Templates de projeto
 │       ├── bandeiras.py         # Bandeiras/unidades de clientes
 │       ├── controladoria.py     # Módulo de controladoria
-│       ├── fluxo_caixa.py       # Fluxo de caixa
-│       ├── dre_import.py        # Importação de DRE
-│       ├── orcamento.py         # Orçamento
+│       ├── fluxo_caixa.py       # Fluxo de caixa (apenas agrupadores_fc agora)
+│       ├── dre_import.py        # Importação de DRE (layouts e logs; DE-PARA e fórmulas removidos)
+│       ├── orcamento.py         # Orçamento (todos os endpoints retornam 410 — módulo substituído)
 │       ├── balancete.py         # Balancete
-│       ├── planos.py            # Planos de conta
-│       ├── plano_import.py      # Importação de planos
+│       ├── ref.py               # Plano de Contas Referencial (/api/ref/...)
 │       ├── ia.py                # IA (Claude)
 │       ├── gemini.py            # IA (Gemini)
 │       ├── openrouter.py        # IA (OpenRouter)
@@ -271,7 +282,8 @@ emals_consultoria/
 │   │   │       ├── FluxoCaixa.jsx
 │   │   │       ├── DRE.jsx / DreDashboard2.jsx
 │   │   │       ├── Orcamento.jsx
-│   │   │       ├── Planos.jsx
+│   │   │       ├── PlanoReferencial.jsx / RevisaoDepara.jsx / TemplatesRef.jsx
+│   │   │       ├── Demonstrativo.jsx / BenchmarkSegmento.jsx
 │   │   │       ├── Balancetes.jsx
 │   │   │       └── Importacoes.jsx / ImportacaoRealizado.jsx
 │   │   └── services/
@@ -307,13 +319,34 @@ emals_consultoria/
 
 Regras:
 - Entradas mais recentes ficam no **topo** da lista
-- Máximo de **10 entradas** — remover as mais antigas quando ultrapassar
+- Máximo de **10 entradas** — remover as mais antigas quando ultrapassar (janela deslizante)
+- **Decisões arquiteturais importantes não ficam só no histórico** — devem ser propagadas para a seção permanente correspondente (Arquitetura, Sidebar, Convenções, Pontos de Atenção, Estrutura de Arquivos). O histórico é para "o que mudou recentemente"; as seções permanentes são o contexto técnico duradouro.
 - Ser objetivo: 1–3 linhas por campo, sem repetir o que já está no `ROADMAP.md`
 - Commitar junto com as demais mudanças da sessão (não criar commit separado só para o histórico)
 
 ---
 
 ## Histórico de Sessões
+
+### 2026-06-23 (sessão 2)
+**O que foi feito:** fix de sequences dessincronizadas no Supabase — erro "UniqueViolation na PK" ao adicionar tarefa. Substituído o setval pontual de `arquivos_id_seq` por um bloco `DO $$` dinâmico que itera sobre todas as sequences do schema `public` via `pg_class`/`pg_depend`, compara com `MAX(id)` de cada tabela e executa `setval` automaticamente a cada startup. Release v2.6.0c — adição de tarefa confirmada funcionando no Electron.
+**Decisões tomadas:** fix de sequences roda no bloco PostgreSQL do startup (`if not _is_sqlite`) — garante proteção permanente contra regressão após qualquer import com IDs explícitos. Porta 5432 do Supabase bloqueada na máquina local — conexão direta via psycopg2 não funciona no dev; fixes de banco devem ir via código + release.
+**Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
+
+### 2026-06-23
+**O que foi feito:** deploy do módulo de Storage para arquivos. PR #27 (fix: `tipo_mime`/`enviado_por_id` no bloco PostgreSQL de `main.py`) confirmado no banco via REST API — colunas já existiam. PR #28 (feat: `arquivos.py` reescrito para Supabase Storage): upload via `POST /storage/v1/object`, download via URL assinada 1h, delete via Storage API; `_is_storage()` garante retrocompatibilidade com arquivos locais legados; `Arquivos.jsx` abre URL diretamente em nova aba; `api.js` limpo (removidas `planosAPI` e endpoints FC extintos) junto com `Planos.jsx`, `DRE.jsx`, `Importacoes.jsx`, `ImportacaoRealizado.jsx`, `ModuloBase.jsx` e `App.jsx` (remoção de referências). CI: 57 testes passaram. Deploy em produção confirmado; upload, URL assinada e delete testados direto no bucket.
+**Decisões tomadas:** arquivos legados (nome_arquivo sem prefixo `clientes/`) ficam com `disponivel: false` e botão desabilitado na UI — não são excluídos; `SUPABASE_URL` é auto-derivada do `DATABASE_URL` se não estiver no `.env`; `SUPABASE_SERVICE_KEY` obrigatória no `.env` do servidor.
+**Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
+
+### 2026-06-22
+**O que foi feito:** reorganização final da sidebar em dois grupos visuais distintos. Grupo 1 (módulos comerciais): novo componente `ModuleHeader` com ícone colorido + fundo translúcido + título colorido, idêntico para os 3 módulos (Projetos teal, Inteligência roxo, Análises âmbar). Notificações, Anotações e Arquivos movidos para dentro de Projetos. Benchmark Segmento movido de Procedimentos para Análises Gerenciais. Badge "trabalho" removido. Grupo 2 (internos): Administração e Procedimentos mantidos com visual austero, separados por `borderTop`. `SectionBtn` simplificado (removido suporte a `bloqueado` que não era mais usado). Release v2.5.0z mergeado e em produção (57 testes passaram).
+**Decisões tomadas:** `ModuleHeader` é o único ponto de entrada click para expand/collapse ou navegação para saiba-mais (quando bloqueado); `LockedItem` dentro de Projetos mostrado apenas para os itens universais (Projetos hero, Dashboards, Notificações) — Anotações e Arquivos simplesmente não aparecem quando o módulo está bloqueado, pois são ferramentas internas; Benchmark abre para clientes com módulo contratado (antes era admin-only em Procedimentos).
+**Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
+
+### 2026-06-21 (sessão 2)
+**O que foi feito:** remoção completa e definitiva do sistema antigo "Modelos & Contas" — deletados 11 arquivos backend (planos.py, plano_import.py, dre_engine.py, importacao_service.py, formula_generator.py, agrupamento_suggester.py, plano_parser.py, plano_import_service.py, seed_orcamento.py, seed_dre.py, Planos.jsx), removidos 9 modelos SQLAlchemy (PlanoContas, ContaFC, ValorMensalFC, SaldoInicialFC, OrcamentoValor, OrcamentoUnidadeValor, Plano, PlanoItem, ClientePlano + TemplateFormula + ContaDePara), DROPs via CASCADE no startup (SQLite e PostgreSQL), endpoints de orçamento stubados com 410 Gone, limpeza em fluxo_caixa.py/dre_import.py/frontend (DRE.jsx, Importacoes.jsx, ImportacaoRealizado.jsx, ModuloBase.jsx, App.jsx, Sidebar.jsx, api.js, Manual.jsx). CI: 53 testes passaram. Release v2.5.0y mergeado e em produção.
+**Decisões tomadas:** `AgrupadorFC` mantido (usado pelo fluxo de caixa); `orcamento.py` mantido como stub 410 (não deletado para não quebrar o import do router); `TemplateFormula` e `ContaDePara` removidos dos modelos (suas tabelas são dropadas no startup); `clientePlanoId` states nos componentes de importação mantidos como `null` permanente (harmless); `release.ps1` corrigido para aguardar 30s antes de checar CI (resolvia falha "no checks reported").
+**Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
 
 ### 2026-06-21
 **O que foi feito:** implementação completa do módulo Plano de Contas Referencial — 8 novos modelos SQLAlchemy (`Segmento`, `PlanoReferencial`, `ContaReferencial`, `ContaClienteRef`, `DeParaRef`, `LancamentoRef`, `TemplateRef`, `TemplateLinhaRef`, `PeriodoFechado`), `segmento_id` adicionado a `Cliente`, schemas Pydantic, 2 módulos utilitários (`ref_formula_engine.py` com topological sort + safe eval + ciclo DFS; `depara_service.py` com rapidfuzz WRatio + cross-client boost), seed de 5 segmentos + 1 plano singleton, 7 routers FastAPI (`/api/ref/...`), 5 páginas React (`PlanoReferencial`, `RevisaoDepara`, `TemplatesRef`, `Demonstrativo`, `BenchmarkSegmento`), sidebar e rotas atualizadas. Versão bump para `2.5.0w`. Build do frontend passou limpo.
