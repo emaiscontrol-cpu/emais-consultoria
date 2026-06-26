@@ -4,7 +4,7 @@ import uuid
 from pathlib import Path
 
 import httpx
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
@@ -83,12 +83,16 @@ def _is_storage(nome_arquivo: str) -> bool:
     return bool(nome_arquivo and nome_arquivo.startswith('clientes/'))
 
 
+CATEGORIAS_VALIDAS = {'Contrato', 'Relatório', 'Financeiro', 'Jurídico', 'Outros'}
+
+
 def _fmt(a: models.Arquivo) -> dict:
     return {
         'id': a.id,
         'nome_original': a.nome_original,
         'tamanho': a.tamanho,
         'tipo_mime': a.tipo_mime or 'application/octet-stream',
+        'categoria': a.categoria or 'Outros',
         'criado_em': a.criado_em.isoformat() if a.criado_em else None,
         'enviado_por': a.enviado_por.nome if a.enviado_por else None,
         'disponivel': _is_storage(a.nome_arquivo),
@@ -112,10 +116,13 @@ def listar(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_u
 async def upload(
     cliente_id: int,
     arquivo: UploadFile = File(...),
+    categoria: str = Form(default='Outros'),
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
     _so_consultor(usuario)
+    if categoria not in CATEGORIAS_VALIDAS:
+        categoria = 'Outros'
     conteudo = await arquivo.read()
     ext = Path(arquivo.filename).suffix
     nome_disco = f"clientes/{cliente_id}/{uuid.uuid4().hex}{ext}"
@@ -126,6 +133,7 @@ async def upload(
         nome_arquivo=nome_disco,
         tamanho=len(conteudo),
         tipo_mime=arquivo.content_type,
+        categoria=categoria,
         enviado_por_id=usuario.id,
     )
     db.add(registro)
