@@ -80,7 +80,7 @@ def _so_consultor(usuario):
 
 def _is_storage(nome_arquivo: str) -> bool:
     """Retorna True se o arquivo está no Supabase Storage (caminho novo)."""
-    return nome_arquivo.startswith('clientes/')
+    return bool(nome_arquivo and nome_arquivo.startswith('clientes/'))
 
 
 def _fmt(a: models.Arquivo) -> dict:
