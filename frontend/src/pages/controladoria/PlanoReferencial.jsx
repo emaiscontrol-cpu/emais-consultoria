@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, ChevronDown, Plus, Pencil, Trash2, GitBranch, X, CornerDownRight, Zap, Link } from 'lucide-react'
+import { ChevronRight, ChevronDown, Plus, Pencil, Trash2, GitBranch, X, Zap, Link } from 'lucide-react'
 import { refPlanoAPI, fluxoCaixaAPI } from '../../services/api'
 import { Modal } from '../../components/shared'
 import toast from 'react-hot-toast'
@@ -20,9 +20,6 @@ const DEMOS = [
 // ── Badge de vínculo ──────────────────────────────────────────────────────────
 function BadgeVinculo({ v, onRemover }) {
   const cor = DEMO_COR[v.demonstrativo] || { bg: 'var(--surface-hover)', text: 'var(--text-muted)' }
-  const estilo = v.herdado
-    ? { background: 'var(--surface-hover)', color: 'var(--text-muted)', opacity: 0.7 }
-    : { background: cor.bg, color: cor.text }
 
   return (
     <span
@@ -30,10 +27,9 @@ function BadgeVinculo({ v, onRemover }) {
       style={{
         display: 'inline-flex', alignItems: 'center', gap: 2,
         borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700,
-        cursor: 'default', ...estilo,
+        cursor: 'default', background: cor.bg, color: cor.text,
       }}
     >
-      {v.herdado && <CornerDownRight size={8} />}
       {DEMO_LABEL[v.demonstrativo] || v.demonstrativo}
       {!v.herdado && onRemover && (
         <button
