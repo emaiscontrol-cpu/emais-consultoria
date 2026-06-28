@@ -294,6 +294,13 @@ export const refPlanoAPI = {
   atualizarConta:   (id, data)      => api.put(`/ref/plano/contas/${id}`, data),
   deletarConta:     id              => api.delete(`/ref/plano/contas/${id}`),
   listarAgrupamentos: planoId       => api.get(`/ref/plano/agrupamentos/${planoId}`),
+  // Vínculos de agrupamento
+  listarVinculos:         id              => api.get(`/ref/plano/contas/${id}/agrupamentos`),
+  vincularAgrupamento:    (id, data)      => api.post(`/ref/plano/contas/${id}/agrupamentos`, data),
+  removerVinculo:         (id, vinculoId) => api.delete(`/ref/plano/contas/${id}/agrupamentos/${vinculoId}`),
+  propagarAgrupamento:    id              => api.post(`/ref/plano/contas/${id}/propagar-agrupamento`),
+  sugerirAgrupamento:     id              => api.get(`/ref/plano/contas/${id}/sugerir-agrupamento`),
+  autoSugerirAgrupamentos: planoId        => api.post(`/ref/plano/auto-sugerir-agrupamentos`, null, { params: { plano_id: planoId } }),
 }
 
 export const refLancamentosAPI = {
