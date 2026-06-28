@@ -41,7 +41,7 @@ function LockedItem({ icon: Icon, emoji, label, target }) {
 }
 
 // ── Cabeçalho de módulo comercial (colorido) ──────────────────────────────────
-function ModuleHeader({ color, icon: Icon, label, open, onClick, bloqueado }) {
+function ModuleHeader({ color, bg, icon: Icon, label, open, onClick, bloqueado }) {
   return (
     <button onClick={onClick} style={{
       display: 'flex', alignItems: 'center', gap: 9,
@@ -50,7 +50,7 @@ function ModuleHeader({ color, icon: Icon, label, open, onClick, bloqueado }) {
     }}>
       <div style={{
         width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-        background: bloqueado ? 'rgba(255,255,255,.07)' : `${color}26`,
+        background: bloqueado ? 'rgba(255,255,255,.07)' : (bg || `${color}26`),
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         transition: 'background .15s',
       }}>
@@ -141,6 +141,7 @@ function ProjetosSection({ isAdminConsultor, isConsultor, bloqueado, qtdAlertas 
     <div>
       <ModuleHeader
         color={COL_PROJETOS}
+        bg="var(--module-projetos-bg)"
         icon={FolderKanban}
         label="Projetos"
         open={sectionOpen}
@@ -285,6 +286,7 @@ function InteligenciaSection({ bloqueado }) {
     <div>
       <ModuleHeader
         color={COL_INTELIGENCIA}
+        bg="var(--module-mercado-bg)"
         icon={LineChart}
         label="Inteligência de Mercado"
         open={open}
@@ -335,6 +337,7 @@ function AnalisesSection({ bloqueado }) {
     <div>
       <ModuleHeader
         color={COL_ANALISES}
+        bg="var(--module-analises-bg)"
         icon={BarChart2}
         label="Análises Gerenciais"
         open={open}

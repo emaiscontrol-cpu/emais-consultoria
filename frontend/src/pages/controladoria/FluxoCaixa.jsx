@@ -499,7 +499,7 @@ export default function FluxoCaixa() {
                   <tbody>
                     {/* Saldo Inicial */}
                     <tr style={{ background:'#EFF6FF' }}>
-                      <td style={{ padding:'6px 8px', fontSize:12, fontWeight:700, color:'#1D4ED8',
+                      <td style={{ padding:'6px 8px', fontSize:12, fontWeight:700, color:'var(--demo-orc)',
                         position:'sticky', left:0, background:'#EFF6FF', borderRight:'1px solid #E5E7EB' }}>
                         Saldo Inicial
                       </td>
@@ -510,7 +510,7 @@ export default function FluxoCaixa() {
                           <td key={mes} style={{ padding:'2px 4px', background:'#EFF6FF' }}>
                             {mes === 1
                               ? <CelulaEdit value={v} onSave={val => saveSaldo(1, val)} />
-                              : <div style={{ textAlign:'right', fontSize:12, color:'#1D4ED8',
+                              : <div style={{ textAlign:'right', fontSize:12, color:'var(--demo-orc)',
                                   fontWeight:600, padding:'2px 4px' }}>{fmt(v)}</div>
                             }
                           </td>

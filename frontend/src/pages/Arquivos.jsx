@@ -10,10 +10,10 @@ import toast from 'react-hot-toast'
 const CATEGORIAS = ['Contrato', 'Relatório', 'Financeiro', 'Jurídico', 'Outros']
 
 const CATEGORIA_COR = {
-  'Contrato':  { bg: '#DBEAFE', text: '#1D4ED8' },
-  'Relatório': { bg: '#EDE9FE', text: '#6D28D9' },
+  'Contrato':  { bg: 'var(--demo-orc-bg)', text: 'var(--demo-orc)' },
+  'Relatório': { bg: 'var(--demo-dre-bg)', text: 'var(--demo-dre)' },
   'Financeiro':{ bg: '#DCFCE7', text: '#15803D' },
-  'Jurídico':  { bg: '#FEF3C7', text: '#B45309' },
+  'Jurídico':  { bg: 'var(--demo-fc-bg)',  text: 'var(--demo-fc)'  },
   'Outros':    { bg: '#F3F4F6', text: '#4B5563' },
 }
 

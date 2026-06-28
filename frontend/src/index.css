@@ -55,6 +55,16 @@
   --text:#1A1A18; --text-2:#5F5E5A; --text-3:#9B9A94;
   --radius-sm:6px; --radius:10px; --radius-lg:14px;
   --shadow:0 2px 8px rgba(0,0,0,.09);
+  /* Aliases para componentes novos */
+  --text-muted:#9B9A94; --surface-hover:#EFEDE6;
+  /* Módulos comerciais */
+  --module-projetos:#5DCAA5; --module-projetos-bg:rgba(29,158,117,0.15);
+  --module-mercado:#AFA9EC;  --module-mercado-bg:rgba(127,119,221,0.15);
+  --module-analises:#EF9F27; --module-analises-bg:rgba(239,159,39,0.15);
+  /* Demonstrativos */
+  --demo-fc:#633806;  --demo-fc-bg:#FAEEDA;
+  --demo-dre:#534AB7; --demo-dre-bg:#EEEDFE;
+  --demo-orc:#1a6eb5; --demo-orc-bg:#E3F0FB;
 }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:14px; color:var(--text); background:var(--bg); line-height:1.5; }
 .app-shell { display:flex; height:100vh; }
