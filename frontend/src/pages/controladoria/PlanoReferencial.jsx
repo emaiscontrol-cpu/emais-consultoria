@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { ChevronRight, ChevronDown, Plus, Pencil, Trash2, GitBranch, X, CornerDownRight, Zap, Link } from 'lucide-react'
 import { refPlanoAPI, fluxoCaixaAPI } from '../../services/api'
 import { Modal } from '../../components/shared'
@@ -49,7 +49,10 @@ function BadgeVinculo({ v, onRemover }) {
 
 // ── Painel inline de vinculação ───────────────────────────────────────────────
 function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFechar }) {
-  const [demo, setDemo]                   = useState('fluxo_caixa')
+  // Demos sem vínculo direto (não-herdado) — são as opções disponíveis
+  const demosDisponiveis = DEMOS.filter(d => !vinculos.some(v => v.demonstrativo === d.value && !v.herdado))
+
+  const [demo, setDemo]                   = useState(() => demosDisponiveis[0]?.value || 'fluxo_caixa')
   const [busca, setBusca]                 = useState('')
   const [agrupamentoId, setAgrupamentoId] = useState('')
   const [propagar, setPropagar]           = useState(false)
@@ -70,7 +73,7 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
   const fonte = porDemo.length > 0 ? porDemo : agrupamentos
   const filtrados = fonte
     .filter(a => busca === '' || a.nome.toLowerCase().includes(busca.toLowerCase()))
-    .slice(0, 25)
+    .slice(0, 50)
 
   const salvar = async () => {
     setSalvando(true)
@@ -97,15 +100,35 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
     }
   }
 
+  // Todos os demonstrativos já vinculados
+  if (demosDisponiveis.length === 0) {
+    return (
+      <tr>
+        <td colSpan={4} style={{ padding: '10px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+          <div style={{ paddingLeft: nivel * 20 + 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 500 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                Todos os demonstrativos já estão vinculados.
+              </span>
+              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
+                Use o × em cada badge para remover um vínculo.
+              </span>
+            </div>
+            <button className="btn" style={{ height: 28, fontSize: 12 }} onClick={onFechar}>Fechar</button>
+          </div>
+        </td>
+      </tr>
+    )
+  }
+
   return (
     <tr>
       <td colSpan={4} style={{ padding: '8px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ paddingLeft: nivel * 20 + 20, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 500 }}>
 
-          {/* Tabs de demonstrativo */}
+          {/* Tabs de demonstrativo — só mostra demos disponíveis */}
           <div style={{ display: 'flex', gap: 4 }}>
-            {DEMOS.map(d => {
-              const temVinculo = vinculos.some(v => v.demonstrativo === d.value && !v.herdado)
+            {demosDisponiveis.map(d => {
               const ativo = demo === d.value
               const cor = DEMO_COR[d.value]
               return (
@@ -114,28 +137,31 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
                   border: ativo ? 'none' : '1px solid var(--border)',
                   background: ativo ? cor.bg : 'transparent',
                   color: ativo ? cor.text : 'var(--text-muted)',
-                  outline: temVinculo ? `2px solid ${cor.text}` : 'none',
-                  outlineOffset: 1,
                 }}>
-                  {d.label}{temVinculo ? ' ✓' : ''}
+                  {d.label}
                 </button>
+              )
+            })}
+            {/* Demos já vinculados — apenas informativo */}
+            {DEMOS.filter(d => !demosDisponiveis.some(dd => dd.value === d.value)).map(d => {
+              const cor = DEMO_COR[d.value]
+              return (
+                <span key={d.value} style={{
+                  padding: '4px 10px', borderRadius: 4, fontSize: 12, fontWeight: 700,
+                  background: cor.bg, color: cor.text, opacity: 0.5,
+                }} title="Já vinculado">
+                  {d.label} ✓
+                </span>
               )
             })}
           </div>
 
-          {/* Vínculo atual para este demonstrativo */}
-          {vinculoAtual && (
-            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-              Atual: <strong style={{ color: 'var(--text)' }}>{vinculoAtual.agrupamento_nome}</strong>
-            </div>
-          )}
-
-          {/* Autocomplete */}
+          {/* Autocomplete com radio buttons */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             <input
               placeholder="Buscar agrupamento..."
               value={busca}
-              onChange={e => { setBusca(e.target.value); setAgrupamentoId('') }}
+              onChange={e => setBusca(e.target.value)}
               style={{
                 padding: '6px 8px', fontSize: 12,
                 border: '1px solid var(--border)', borderBottom: 'none',
@@ -146,28 +172,40 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
             />
             <div style={{ border: '1px solid var(--border)', borderRadius: '0 0 4px 4px', maxHeight: 168, overflowY: 'auto' }}>
               {/* Opção Nenhum */}
-              <div
-                onClick={() => { setAgrupamentoId('__nenhum__'); setBusca('') }}
-                style={{
-                  padding: '6px 10px', fontSize: 12, cursor: 'pointer', fontStyle: 'italic',
-                  borderBottom: '1px solid var(--border)',
-                  background: agrupamentoId === '__nenhum__' ? '#FEE2E2' : 'transparent',
-                  color: agrupamentoId === '__nenhum__' ? '#DC2626' : 'var(--text-muted)',
-                }}
-              >
+              <label style={{
+                display: 'flex', alignItems: 'center', gap: 8,
+                padding: '5px 10px', fontSize: 12, cursor: 'pointer', fontStyle: 'italic',
+                borderBottom: '1px solid var(--border)',
+                background: agrupamentoId === '__nenhum__' ? '#FEE2E2' : 'transparent',
+                color: agrupamentoId === '__nenhum__' ? '#DC2626' : 'var(--text-muted)',
+              }}>
+                <input
+                  type="radio"
+                  name={`agrup-${conta.id}`}
+                  value="__nenhum__"
+                  checked={agrupamentoId === '__nenhum__'}
+                  onChange={() => setAgrupamentoId('__nenhum__')}
+                  style={{ accentColor: '#DC2626', margin: 0 }}
+                />
                 — Nenhum (remover vínculo)
-              </div>
+              </label>
               {filtrados.map(a => (
-                <div key={a.id}
-                  onClick={() => { setAgrupamentoId(String(a.id)); setBusca(a.nome) }}
-                  style={{
-                    padding: '6px 10px', fontSize: 12, cursor: 'pointer',
-                    background: agrupamentoId === String(a.id) ? 'var(--brand-light)' : 'transparent',
-                    color: agrupamentoId === String(a.id) ? 'var(--brand)' : 'var(--text)',
-                  }}
-                >
+                <label key={a.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '5px 10px', fontSize: 12, cursor: 'pointer',
+                  background: agrupamentoId === String(a.id) ? 'var(--brand-light)' : 'transparent',
+                  color: agrupamentoId === String(a.id) ? 'var(--brand)' : 'var(--text)',
+                }}>
+                  <input
+                    type="radio"
+                    name={`agrup-${conta.id}`}
+                    value={String(a.id)}
+                    checked={agrupamentoId === String(a.id)}
+                    onChange={() => setAgrupamentoId(String(a.id))}
+                    style={{ accentColor: 'var(--brand)', margin: 0 }}
+                  />
                   {a.nome}
-                </div>
+                </label>
               ))}
               {filtrados.length === 0 && (
                 <div style={{ padding: '8px 10px', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>
@@ -198,13 +236,20 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
 }
 
 // ── Linha de conta ────────────────────────────────────────────────────────────
-function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh }) {
+function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh, expandKey, expandTarget }) {
   const [aberto, setAberto]         = useState(false)
   const [editando, setEditando]     = useState(false)
   const [criandoSub, setCriandoSub] = useState(false)
   const [vinculando, setVinculando] = useState(false)
   const [form, setForm]             = useState({})
   const temFilhos = conta.filhos?.length > 0
+
+  // Sincroniza expansão quando o controle de nível muda
+  useEffect(() => {
+    if (expandKey > 0) {
+      setAberto(expandTarget === Infinity || nivel < expandTarget)
+    }
+  }, [expandKey])
 
   const abrirEdicao = () => {
     setForm({ codigo: conta.codigo, descricao: conta.descricao, tipo: conta.tipo, agrupamento: conta.agrupamento || '' })
@@ -337,7 +382,8 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh }) {
       {/* Filhos */}
       {aberto && conta.filhos?.map(f => (
         <ContaRow key={f.id} conta={f} nivel={nivel + 1} planoId={planoId}
-          agrupamentos={agrupamentos} onRefresh={onRefresh} />
+          agrupamentos={agrupamentos} onRefresh={onRefresh}
+          expandKey={expandKey} expandTarget={expandTarget} />
       ))}
 
       {editando && (
@@ -473,6 +519,13 @@ function contarPendentes(contas) {
   return n
 }
 
+// Controles de nível de expansão
+const btnNivelStyle = {
+  padding: '3px 10px', fontSize: 11, fontWeight: 500, cursor: 'pointer',
+  border: '1px solid var(--border)', borderRadius: 4,
+  background: 'transparent', color: 'var(--text-muted)',
+}
+
 export default function PlanoReferencial() {
   const [planos, setPlanos]       = useState([])
   const [planoId, setPlanoId]     = useState(null)
@@ -482,6 +535,14 @@ export default function PlanoReferencial() {
   const [agrupamentos, setAgrupamentos] = useState([])
   const [autoSugerindo, setAutoSugerindo] = useState(false)
   const [relatorio, setRelatorio] = useState(null)
+  // Controle de expansão por nível: expandKey muda para disparar useEffect em todas as ContaRow
+  const [expandKey, setExpandKey]     = useState(0)
+  const [expandTarget, setExpandTarget] = useState(0)
+
+  const aplicarNivel = useCallback((target) => {
+    setExpandTarget(target)
+    setExpandKey(k => k + 1)
+  }, [])
 
   useEffect(() => {
     refPlanoAPI.listar().then(r => {
@@ -572,10 +633,21 @@ export default function PlanoReferencial() {
         </div>
       )}
 
+      {/* Controles de nível de expansão */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginBottom: 10 }}>
+        <span style={{ fontSize: 11, color: 'var(--text-muted)', marginRight: 4 }}>Expandir:</span>
+        <button style={btnNivelStyle} onClick={() => aplicarNivel(0)}>Nível 1</button>
+        <button style={btnNivelStyle} onClick={() => aplicarNivel(1)}>Nível 2</button>
+        <button style={btnNivelStyle} onClick={() => aplicarNivel(2)}>Nível 3</button>
+        <button style={btnNivelStyle} onClick={() => aplicarNivel(Infinity)}>Todos</button>
+        <span style={{ width: 1, height: 16, background: 'var(--border)', margin: '0 4px' }} />
+        <button style={{ ...btnNivelStyle, color: 'var(--text-muted)' }} onClick={() => aplicarNivel(-1)}>Colapsar tudo</button>
+      </div>
+
       {loading ? (
         <div style={{ textAlign: 'center', padding: 40, color: 'var(--text-muted)' }}>Carregando...</div>
       ) : (
-        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 220px)' }}>
+        <div style={{ overflowX: 'auto', overflowY: 'auto', maxHeight: 'calc(100vh - 260px)' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
             <thead>
               <tr style={{ borderBottom: '2px solid var(--border)' }}>
@@ -588,7 +660,8 @@ export default function PlanoReferencial() {
             <tbody>
               {contas.map(c => (
                 <ContaRow key={c.id} conta={c} nivel={0} planoId={planoId}
-                  agrupamentos={agrupamentos} onRefresh={carregar} />
+                  agrupamentos={agrupamentos} onRefresh={carregar}
+                  expandKey={expandKey} expandTarget={expandTarget} />
               ))}
               {contas.length === 0 && (
                 <tr>
