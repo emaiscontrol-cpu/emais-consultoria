@@ -100,7 +100,7 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
   if (demosDisponiveis.length === 0) {
     return (
       <tr>
-        <td colSpan={4} style={{ padding: '10px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+        <td colSpan={5} style={{ padding: '10px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
           <div style={{ paddingLeft: nivel * 20 + 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 500 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
@@ -119,7 +119,7 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
 
   return (
     <tr>
-      <td colSpan={4} style={{ padding: '8px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+      <td colSpan={5} style={{ padding: '8px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
         <div style={{ paddingLeft: nivel * 20 + 20, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 500 }}>
 
           {/* Tabs de demonstrativo — só mostra demos disponíveis */}
@@ -342,6 +342,31 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh, expandKey, e
               <Link size={10} />
             </button>
           </div>
+        </td>
+
+        {/* Agrupamento */}
+        <td style={{ paddingLeft: 8, paddingRight: 8, fontSize: 12, maxWidth: 180 }}>
+          {vinculos.length === 0
+            ? <span style={{ color: 'var(--text-muted)' }}>—</span>
+            : (
+              <span
+                title={vinculos.length > 1
+                  ? vinculos.map(v => `${DEMO_LABEL[v.demonstrativo]}: ${v.agrupamento_nome}`).join('\n')
+                  : undefined}
+                style={{
+                  display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  cursor: vinculos.length > 1 ? 'help' : 'default',
+                }}
+              >
+                {vinculos[0].agrupamento_nome}
+                {vinculos.length > 1 && (
+                  <span style={{ color: 'var(--text-muted)', fontSize: 10, marginLeft: 4 }}>
+                    +{vinculos.length - 1}
+                  </span>
+                )}
+              </span>
+            )
+          }
         </td>
 
         {/* Ações */}
@@ -650,6 +675,7 @@ export default function PlanoReferencial() {
                 <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600 }}>Conta / Descrição</th>
                 <th style={{ textAlign: 'center', padding: '8px 12px', fontWeight: 600 }}>Tipo</th>
                 <th style={{ textAlign: 'left', padding: '8px 8px', fontWeight: 600 }}>Demonstrativo</th>
+                <th style={{ textAlign: 'left', padding: '8px 8px', fontWeight: 600 }}>Agrupamento</th>
                 <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 600 }}>Ações</th>
               </tr>
             </thead>
@@ -661,7 +687,7 @@ export default function PlanoReferencial() {
               ))}
               {contas.length === 0 && (
                 <tr>
-                  <td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
+                  <td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
                     Nenhuma conta cadastrada. Clique em "Nova Conta" para começar.
                   </td>
                 </tr>
