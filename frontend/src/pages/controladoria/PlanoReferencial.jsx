@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, ChevronDown, Plus, Pencil, Trash2, GitBranch, X, Zap, Link } from 'lucide-react'
+import { ChevronRight, ChevronDown, Plus, Pencil, Trash2, GitBranch, X, Zap, Link, Check } from 'lucide-react'
 import { refPlanoAPI, fluxoCaixaAPI } from '../../services/api'
 import { Modal } from '../../components/shared'
 import toast from 'react-hot-toast'
@@ -44,32 +44,33 @@ function BadgeVinculo({ v, onRemover }) {
 }
 
 // ── Painel inline de vinculação ───────────────────────────────────────────────
-function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFechar }) {
-  // Demos sem vínculo direto (não-herdado) — são as opções disponíveis
-  const demosDisponiveis = DEMOS.filter(d => !vinculos.some(v => v.demonstrativo === d.value && !v.herdado))
+const DEMO_VAR = {
+  fluxo_caixa: 'var(--demo-fc)',
+  dre:         'var(--demo-dre)',
+  orcamento:   'var(--demo-orc)',
+}
 
-  const [demo, setDemo]                   = useState(() => demosDisponiveis[0]?.value || 'fluxo_caixa')
+function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFechar }) {
+  const temVinculo = (d) => vinculos.some(v => v.demonstrativo === d && !v.herdado)
+  const primeiroSemVinculo = DEMOS.find(d => !temVinculo(d.value))
+
+  const [demo, setDemo]                   = useState(() => (primeiroSemVinculo || DEMOS[0]).value)
   const [busca, setBusca]                 = useState('')
   const [agrupamentoId, setAgrupamentoId] = useState('')
   const [propagar, setPropagar]           = useState(false)
   const [salvando, setSalvando]           = useState(false)
 
-  // Vínculo direto (não-herdado) para o demonstrativo selecionado
   const vinculoAtual = vinculos.find(v => v.demonstrativo === demo && !v.herdado) || null
+  const cor          = DEMO_COR[demo] || { bg: 'var(--surface-hover)', text: 'var(--text-muted)' }
 
   useEffect(() => {
     setAgrupamentoId('')
     setBusca('')
   }, [demo])
 
-  // Filtra agrupamentos por demo; fallback para todos se nenhum configurado
-  const porDemo = agrupamentos.filter(a =>
-    Array.isArray(a.demonstrativos) && a.demonstrativos.includes(demo)
-  )
-  const fonte = porDemo.length > 0 ? porDemo : agrupamentos
-  const filtrados = fonte
-    .filter(a => busca === '' || a.nome.toLowerCase().includes(busca.toLowerCase()))
-    .slice(0, 50)
+  const porDemo  = agrupamentos.filter(a => Array.isArray(a.demonstrativos) && a.demonstrativos.includes(demo))
+  const fonte    = porDemo.length > 0 ? porDemo : agrupamentos
+  const filtrados = fonte.filter(a => busca === '' || a.nome.toLowerCase().includes(busca.toLowerCase()))
 
   const salvar = async () => {
     setSalvando(true)
@@ -96,135 +97,145 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
     }
   }
 
-  // Todos os demonstrativos já vinculados
-  if (demosDisponiveis.length === 0) {
-    return (
-      <tr>
-        <td colSpan={5} style={{ padding: '10px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-          <div style={{ paddingLeft: nivel * 20 + 20, display: 'flex', alignItems: 'center', justifyContent: 'space-between', maxWidth: 500 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                Todos os demonstrativos já estão vinculados.
-              </span>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                Use o × em cada badge para remover um vínculo.
-              </span>
-            </div>
-            <button className="btn" style={{ height: 28, fontSize: 12 }} onClick={onFechar}>Fechar</button>
-          </div>
-        </td>
-      </tr>
-    )
-  }
-
   return (
     <tr>
-      <td colSpan={5} style={{ padding: '8px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ paddingLeft: nivel * 20 + 20, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 500 }}>
+      <td colSpan={5} style={{
+        padding: 0, background: 'var(--bg)',
+        borderBottom: '0.5px solid var(--border)',
+      }}>
+        <div style={{ paddingLeft: nivel * 20 + 20, paddingRight: 20, paddingTop: 10, paddingBottom: 12 }}>
 
-          {/* Tabs de demonstrativo — só mostra demos disponíveis */}
-          <div style={{ display: 'flex', gap: 4 }}>
-            {demosDisponiveis.map(d => {
-              const ativo = demo === d.value
-              const cor = DEMO_COR[d.value]
-              return (
-                <button key={d.value} onClick={() => setDemo(d.value)} style={{
-                  padding: '4px 14px', borderRadius: 4, fontSize: 12, fontWeight: 700, cursor: 'pointer',
-                  border: ativo ? 'none' : '1px solid var(--border)',
-                  background: ativo ? cor.bg : 'transparent',
-                  color: ativo ? cor.text : 'var(--text-muted)',
-                }}>
-                  {d.label}
-                </button>
-              )
-            })}
-            {/* Demos já vinculados — apenas informativo */}
-            {DEMOS.filter(d => !demosDisponiveis.some(dd => dd.value === d.value)).map(d => {
-              const cor = DEMO_COR[d.value]
-              return (
-                <span key={d.value} style={{
-                  padding: '4px 10px', borderRadius: 4, fontSize: 12, fontWeight: 700,
-                  background: cor.bg, color: cor.text, opacity: 0.5,
-                }} title="Já vinculado">
-                  {d.label} ✓
-                </span>
-              )
-            })}
-          </div>
+          {/* ── Painel: duas colunas ── */}
+          <div style={{
+            display: 'flex', maxWidth: 520,
+            border: '0.5px solid var(--border)', borderRadius: 8, overflow: 'hidden',
+            background: 'var(--surface)',
+          }}>
 
-          {/* Autocomplete com radio buttons */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <input
-              placeholder="Buscar agrupamento..."
-              value={busca}
-              onChange={e => setBusca(e.target.value)}
-              style={{
-                padding: '6px 8px', fontSize: 12,
-                border: '1px solid var(--border)', borderBottom: 'none',
-                borderRadius: '4px 4px 0 0',
-                background: 'var(--surface)', color: 'var(--text)',
-                outline: 'none',
-              }}
-            />
-            <div style={{ border: '1px solid var(--border)', borderRadius: '0 0 4px 4px', maxHeight: 168, overflowY: 'auto' }}>
-              {/* Opção Nenhum */}
-              <label style={{
-                display: 'flex', alignItems: 'center', gap: 8,
-                padding: '5px 10px', fontSize: 12, cursor: 'pointer', fontStyle: 'italic',
-                borderBottom: '1px solid var(--border)',
-                background: agrupamentoId === '__nenhum__' ? '#FEE2E2' : 'transparent',
-                color: agrupamentoId === '__nenhum__' ? '#DC2626' : 'var(--text-muted)',
+            {/* COLUNA ESQUERDA — tabs verticais */}
+            <div style={{ width: 84, flexShrink: 0, borderRight: '0.5px solid var(--border)' }}>
+              <div style={{
+                padding: '7px 10px 4px', fontSize: 9, fontWeight: 700,
+                color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '.08em',
               }}>
+                Demo
+              </div>
+              {DEMOS.map(d => {
+                const ativo    = demo === d.value
+                const vinculado = temVinculo(d.value)
+                const corTab   = DEMO_COR[d.value]
+                return (
+                  <button
+                    key={d.value}
+                    onClick={() => setDemo(d.value)}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 5, width: '100%',
+                      padding: '8px 10px', border: 'none', cursor: 'pointer', textAlign: 'left',
+                      fontSize: 11, fontWeight: ativo ? 700 : 500,
+                      background: ativo ? corTab.bg : 'transparent',
+                      color: ativo ? corTab.text : (vinculado ? 'var(--text-2)' : 'var(--text-muted)'),
+                      opacity: vinculado && !ativo ? 0.65 : 1,
+                      borderLeft: ativo ? `2px solid ${DEMO_VAR[d.value]}` : '2px solid transparent',
+                      transition: 'all .1s',
+                    }}
+                  >
+                    {vinculado && !ativo && <Check size={9} strokeWidth={3} color="#1D9E75" />}
+                    {d.label}
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* COLUNA DIREITA — busca + lista */}
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+
+              {/* Cabeçalho com info do vínculo atual e busca */}
+              <div style={{ padding: '7px 10px 6px', borderBottom: '0.5px solid var(--border)' }}>
+                {vinculoAtual ? (
+                  <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 5 }}>
+                    Atual: <strong style={{ color: 'var(--text)' }}>{vinculoAtual.agrupamento_nome}</strong>
+                    <span style={{ fontSize: 10, marginLeft: 4 }}>(selecione outro para trocar)</span>
+                  </div>
+                ) : null}
                 <input
-                  type="radio"
-                  name={`agrup-${conta.id}`}
-                  value="__nenhum__"
-                  checked={agrupamentoId === '__nenhum__'}
-                  onChange={() => setAgrupamentoId('__nenhum__')}
-                  style={{ accentColor: '#DC2626', margin: 0 }}
+                  placeholder="Buscar agrupamento..."
+                  value={busca}
+                  onChange={e => setBusca(e.target.value)}
+                  style={{
+                    width: '100%', padding: '5px 8px', fontSize: 12,
+                    border: '0.5px solid var(--border)', borderRadius: 5,
+                    background: 'var(--bg)', color: 'var(--text)',
+                    outline: 'none', boxSizing: 'border-box',
+                  }}
                 />
-                — Nenhum (remover vínculo)
-              </label>
-              {filtrados.map(a => (
-                <label key={a.id} style={{
-                  display: 'flex', alignItems: 'center', gap: 8,
-                  padding: '5px 10px', fontSize: 12, cursor: 'pointer',
-                  background: agrupamentoId === String(a.id) ? 'var(--brand-light)' : 'transparent',
-                  color: agrupamentoId === String(a.id) ? 'var(--brand)' : 'var(--text)',
-                }}>
-                  <input
-                    type="radio"
-                    name={`agrup-${conta.id}`}
-                    value={String(a.id)}
-                    checked={agrupamentoId === String(a.id)}
-                    onChange={() => setAgrupamentoId(String(a.id))}
-                    style={{ accentColor: 'var(--brand)', margin: 0 }}
-                  />
-                  {a.nome}
-                </label>
-              ))}
-              {filtrados.length === 0 && (
-                <div style={{ padding: '8px 10px', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>
-                  Nenhum resultado
+              </div>
+
+              {/* Lista de agrupamentos */}
+              <div style={{ maxHeight: 180, overflowY: 'auto' }}>
+                {/* Nenhum */}
+                <div
+                  onClick={() => setAgrupamentoId('__nenhum__')}
+                  style={{
+                    padding: '7px 10px', fontSize: 12, cursor: 'pointer',
+                    fontStyle: 'italic', fontWeight: agrupamentoId === '__nenhum__' ? 600 : 400,
+                    borderBottom: '0.5px solid var(--border)',
+                    background: agrupamentoId === '__nenhum__' ? 'var(--red-light)' : 'transparent',
+                    color: agrupamentoId === '__nenhum__' ? 'var(--red)' : 'var(--text-muted)',
+                  }}
+                >
+                  — Nenhum (remover vínculo)
                 </div>
-              )}
+
+                {filtrados.map(a => {
+                  const sel = agrupamentoId === String(a.id)
+                  return (
+                    <div
+                      key={a.id}
+                      onClick={() => setAgrupamentoId(String(a.id))}
+                      style={{
+                        padding: '7px 10px', fontSize: 12, cursor: 'pointer',
+                        fontWeight: sel ? 700 : 400,
+                        borderBottom: '0.5px solid var(--border)',
+                        background: sel ? cor.bg : 'transparent',
+                        color: sel ? cor.text : 'var(--text)',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }}
+                    >
+                      {a.nome}
+                    </div>
+                  )
+                })}
+
+                {filtrados.length === 0 && (
+                  <div style={{ padding: '14px 10px', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>
+                    Nenhum resultado
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
-          {/* Propagar — apenas para contas sintéticas com filhos */}
-          {conta.tipo === 'sintetica' && conta.filhos?.length > 0 && (
-            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
-              <input type="checkbox" checked={propagar} onChange={e => setPropagar(e.target.checked)} />
-              Propagar para filhas diretas
-            </label>
-          )}
-
-          <div style={{ display: 'flex', gap: 8 }}>
-            <button className="btn btn-primary" style={{ height: 30, fontSize: 12 }} onClick={salvar} disabled={salvando}>
-              {salvando ? 'Salvando...' : 'Salvar'}
-            </button>
-            <button className="btn" style={{ height: 30, fontSize: 12 }} onClick={onFechar}>Cancelar</button>
+          {/* ── Footer ── */}
+          <div style={{
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            maxWidth: 520, marginTop: 8,
+          }}>
+            <div>
+              {conta.tipo === 'sintetica' && conta.filhos?.length > 0 && (
+                <label style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, cursor: 'pointer', color: 'var(--text-2)' }}>
+                  <input type="checkbox" checked={propagar} onChange={e => setPropagar(e.target.checked)} />
+                  Propagar para filhas diretas
+                </label>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button className="btn btn-sm" onClick={onFechar}>Cancelar</button>
+              <button className="btn btn-primary btn-sm" onClick={salvar} disabled={salvando}>
+                {salvando ? 'Salvando...' : 'Salvar'}
+              </button>
+            </div>
           </div>
+
         </div>
       </td>
     </tr>
@@ -346,27 +357,29 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh, expandKey, e
 
         {/* Agrupamento */}
         <td style={{ paddingLeft: 8, paddingRight: 8, fontSize: 12, maxWidth: 180 }}>
-          {vinculos.length === 0
-            ? <span style={{ color: 'var(--text-muted)' }}>—</span>
-            : (
+          {(() => {
+            if (vinculos.length === 0) return <span style={{ color: 'var(--text-muted)' }}>—</span>
+            const principal = vinculos.find(v => v.demonstrativo === 'fluxo_caixa') || vinculos[0]
+            const extras    = vinculos.filter(v => v.id !== principal.id)
+            return (
               <span
-                title={vinculos.length > 1
+                title={extras.length > 0
                   ? vinculos.map(v => `${DEMO_LABEL[v.demonstrativo]}: ${v.agrupamento_nome}`).join('\n')
                   : undefined}
                 style={{
                   display: 'block', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  cursor: vinculos.length > 1 ? 'help' : 'default',
+                  cursor: extras.length > 0 ? 'help' : 'default',
                 }}
               >
-                {vinculos[0].agrupamento_nome}
-                {vinculos.length > 1 && (
+                {principal.agrupamento_nome}
+                {extras.length > 0 && (
                   <span style={{ color: 'var(--text-muted)', fontSize: 10, marginLeft: 4 }}>
-                    +{vinculos.length - 1}
+                    +{extras.length}
                   </span>
                 )}
               </span>
             )
-          }
+          })()}
         </td>
 
         {/* Ações */}
