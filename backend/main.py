@@ -222,6 +222,14 @@ BEGIN
     END LOOP;
 END;
 $$""",
+            # v2.6.0j: remove vinculos duplicados (mesmo conta+demo, não-herdado — mantém o mais recente)
+            """DELETE FROM ref_conta_agrupamento
+WHERE herdado = false
+AND id NOT IN (
+    SELECT MAX(id) FROM ref_conta_agrupamento
+    WHERE herdado = false
+    GROUP BY conta_referencial_id, demonstrativo
+)""",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
@@ -312,7 +320,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0i"
+app.version = "2.6.0j"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
