@@ -328,6 +328,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-28
+**O que foi feito:** DEMO-2 — módulo de vínculos de agrupamento no Plano Referencial. `ContaAgrupamento` (tabela `ref_conta_agrupamento`) adicionada a `models.py`. `ref_plano.py` reescrito: `_fmt_conta/_fmt_vinculo/_build_tree` com vínculos embutidos, endpoints GET/POST/DELETE `/contas/{id}/agrupamentos`, sugestão individual (rapidfuzz), sugestão automática em lote (≥80% → vínculo, <80% → pendente), propagação para filhas. `PlanoReferencial.jsx` ganhou `BadgeVinculo`, `PainelVincular` inline, badge de pendências no topo e `RelatorioModal` com contadores + lista dos 10 menores scoress. Build do dist, 52 testes passaram no CI, PR #37 mergeado, v2.6.0h confirmado no servidor (ngrok respondeu com versão correta).
+**Decisões tomadas:** auto-sugestão vincula no demonstrativo `fluxo_caixa` por padrão (usuário pode alterar no `PainelVincular`); `_build_tree` agora retorna dicts (não SQLAlchemy objects) para incluir `vinculos` serializados; `agrupamentos` no frontend carregados via `fluxoCaixaAPI.agrupadores()` que já usa a tabela `agrupamentos` correta.
+**Próximo passo:** rodar "Sugestão automática" no Electron para obter o relatório de vínculos. REL-1 (relatório PDF) permanece na fila.
+
 ### 2026-06-23 (sessão 2)
 **O que foi feito:** fix de sequences dessincronizadas no Supabase — erro "UniqueViolation na PK" ao adicionar tarefa. Substituído o setval pontual de `arquivos_id_seq` por um bloco `DO $$` dinâmico que itera sobre todas as sequences do schema `public` via `pg_class`/`pg_depend`, compara com `MAX(id)` de cada tabela e executa `setval` automaticamente a cada startup. Release v2.6.0c — adição de tarefa confirmada funcionando no Electron.
 **Decisões tomadas:** fix de sequences roda no bloco PostgreSQL do startup (`if not _is_sqlite`) — garante proteção permanente contra regressão após qualquer import com IDs explícitos. Porta 5432 do Supabase bloqueada na máquina local — conexão direta via psycopg2 não funciona no dev; fixes de banco devem ir via código + release.
