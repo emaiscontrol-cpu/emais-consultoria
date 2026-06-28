@@ -7,9 +7,9 @@ import toast from 'react-hot-toast'
 const TIPO_LABEL = { sintetica: 'Sintética', analitica: 'Analítica' }
 const DEMO_LABEL = { fluxo_caixa: 'FC', dre: 'DRE', orcamento: 'ORC' }
 const DEMO_COR   = {
-  fluxo_caixa: { bg: '#FEF3C7', text: '#B45309' },
-  dre:         { bg: '#EDE9FE', text: '#6D28D9' },
-  orcamento:   { bg: '#DBEAFE', text: '#1D4ED8' },
+  fluxo_caixa: { bg: 'var(--demo-fc-bg)',  text: 'var(--demo-fc)'  },
+  dre:         { bg: 'var(--demo-dre-bg)', text: 'var(--demo-dre)' },
+  orcamento:   { bg: 'var(--demo-orc-bg)', text: 'var(--demo-orc)' },
 }
 const DEMOS = [
   { value: 'fluxo_caixa', label: 'FC' },
@@ -487,8 +487,8 @@ function RelatorioModal({ dados, onFechar }) {
             <div style={{ fontSize: 28, fontWeight: 700, color: '#065F46' }}>{vinculados}</div>
             <div style={{ fontSize: 11, color: '#047857', marginTop: 2 }}>vinculados (≥ 80%)</div>
           </div>
-          <div style={{ flex: 1, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
-            <div style={{ fontSize: 28, fontWeight: 700, color: '#B45309' }}>{pendentes}</div>
+          <div style={{ flex: 1, background: 'var(--demo-fc-bg)', border: '1px solid #FCD34D', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
+            <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--demo-fc)' }}>{pendentes}</div>
             <div style={{ fontSize: 11, color: '#92400E', marginTop: 2 }}>pendentes ({'<'} 80%)</div>
           </div>
         </div>
@@ -507,7 +507,7 @@ function RelatorioModal({ dados, onFechar }) {
                   <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)', minWidth: 60 }}>{item.codigo}</span>
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descricao}</span>
                   <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ {item.melhor_agrupamento}</span>
-                  <span style={{ minWidth: 40, textAlign: 'right', fontWeight: 600, color: item.confianca >= 0.6 ? '#B45309' : 'var(--red)' }}>
+                  <span style={{ minWidth: 40, textAlign: 'right', fontWeight: 600, color: item.confianca >= 0.6 ? 'var(--demo-fc)' : 'var(--red)' }}>
                     {Math.round(item.confianca * 100)}%
                   </span>
                 </div>
@@ -643,14 +643,14 @@ export default function PlanoReferencial() {
       {pendentes > 0 && (
         <div style={{
           display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12,
-          padding: '8px 12px', background: '#FEF3C7', borderRadius: 6,
+          padding: '8px 12px', background: 'var(--demo-fc-bg)', borderRadius: 6,
           border: '1px solid #FCD34D', fontSize: 13,
         }}>
-          <span style={{ fontWeight: 600, color: '#B45309' }}>{pendentes}</span>
+          <span style={{ fontWeight: 600, color: 'var(--demo-fc)' }}>{pendentes}</span>
           <span style={{ color: '#78350F' }}>
             conta{pendentes !== 1 ? 's' : ''} analítica{pendentes !== 1 ? 's' : ''} sem vínculo de demonstrativo
           </span>
-          <span style={{ color: '#B45309', fontSize: 11 }}>— use "Sugestão automática" ou clique em <Link size={11} style={{ display: 'inline' }} /> em cada conta</span>
+          <span style={{ color: 'var(--demo-fc)', fontSize: 11 }}>— use "Sugestão automática" ou clique em <Link size={11} style={{ display: 'inline' }} /> em cada conta</span>
         </div>
       )}
 
