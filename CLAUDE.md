@@ -328,6 +328,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-28 (sessão 2)
+**O que foi feito:** 6 correções e melhorias no Plano Referencial — v2.6.0j (PR #40). Bug #1: `criar_vinculo` tornou-se upsert — deleta vínculo não-herdado anterior do mesmo demonstrativo antes de inserir; SQL de cleanup no startup PostgreSQL remove duplicatas já existentes. Bug #2: `PainelVincular` inicializa na primeira tab sem vínculo direto; se todos os 3 demonstrativos vinculados, exibe mensagem com instrução de usar × para remover. Ponto 5: lista de agrupamentos usa `<input type="radio">` + `<label>` clicável. Ponto 6: botões "Nível 1|2|3|Todos|Colapsar" acima da tabela; `ContaRow` sincroniza via `expandKey`/`expandTarget` em `useEffect`. 52 testes passaram no CI, PR mergeado, deploy automático.
+**Decisões tomadas:** `criar_vinculo` é agora upsert por (conta_id, demonstrativo) — uma conta só pode ter um vínculo direto por demonstrativo; o cleanup SQL via `MIN(id) PARTITION BY` garante idempotência; `expandTarget = -1` para "Colapsar tudo" (nivel < -1 sempre false).
+**Próximo passo:** confirmar no Electron após deploy (Ctrl+Shift+R). REL-1 (relatório PDF) permanece na fila.
+
 ### 2026-06-28
 **O que foi feito:** DEMO-2 — módulo de vínculos de agrupamento no Plano Referencial. `ContaAgrupamento` (tabela `ref_conta_agrupamento`) adicionada a `models.py`. `ref_plano.py` reescrito: `_fmt_conta/_fmt_vinculo/_build_tree` com vínculos embutidos, endpoints GET/POST/DELETE `/contas/{id}/agrupamentos`, sugestão individual (rapidfuzz), sugestão automática em lote (≥80% → vínculo, <80% → pendente), propagação para filhas. `PlanoReferencial.jsx` ganhou `BadgeVinculo`, `PainelVincular` inline, badge de pendências no topo e `RelatorioModal` com contadores + lista dos 10 menores scoress. Build do dist, 52 testes passaram no CI, PR #37 mergeado, v2.6.0h confirmado no servidor (ngrok respondeu com versão correta).
 **Decisões tomadas:** auto-sugestão vincula no demonstrativo `fluxo_caixa` por padrão (usuário pode alterar no `PainelVincular`); `_build_tree` agora retorna dicts (não SQLAlchemy objects) para incluir `vinculos` serializados; `agrupamentos` no frontend carregados via `fluxoCaixaAPI.agrupadores()` que já usa a tabela `agrupamentos` correta.
