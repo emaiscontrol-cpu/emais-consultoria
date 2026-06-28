@@ -531,7 +531,22 @@ class ContaReferencial(Base):
                                back_populates="filhos", foreign_keys="ContaReferencial.pai_id")
     filhos      = relationship("ContaReferencial", back_populates="pai",
                                foreign_keys="ContaReferencial.pai_id")
+    vinculos    = relationship("ContaAgrupamento", back_populates="conta", lazy="select")
     __table_args__ = (UniqueConstraint("plano_id", "codigo"),)
+
+
+class ContaAgrupamento(Base):
+    """Vínculo entre uma conta referencial e um agrupamento (DRE, FC ou Orçamento)."""
+    __tablename__ = "ref_conta_agrupamento"
+    id                   = Column(Integer, primary_key=True, index=True)
+    conta_referencial_id = Column(Integer, ForeignKey("ref_contas.id"), nullable=False)
+    agrupamento_id       = Column(Integer, ForeignKey("agrupamentos.id"), nullable=False)
+    demonstrativo        = Column(String(30), nullable=False)   # 'fluxo_caixa' | 'dre' | 'orcamento'
+    herdado              = Column(Boolean, nullable=False, default=False)
+    criado_em            = Column(DateTime(timezone=True), server_default=func.now())
+    conta       = relationship("ContaReferencial", back_populates="vinculos")
+    agrupamento = relationship("Agrupamento")
+    __table_args__ = (UniqueConstraint("conta_referencial_id", "agrupamento_id", "demonstrativo"),)
 
 
 class ContaClienteRef(Base):
