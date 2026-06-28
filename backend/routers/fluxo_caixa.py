@@ -5,6 +5,7 @@ from models import Agrupamento
 from auth import get_usuario_atual
 from schemas import UsuarioOut
 from pydantic import BaseModel
+import json
 
 router = APIRouter()
 
@@ -28,8 +29,15 @@ class AgrupamentoIn(BaseModel):
 def listar_agrupadores(db: Session = Depends(get_db),
                        u: UsuarioOut = Depends(get_usuario_atual)):
     check(u)
-    return [{"id": a.id, "nome": a.nome, "padrao": a.padrao}
-            for a in db.query(Agrupamento).filter(Agrupamento.ativo == True).order_by(Agrupamento.nome).all()]
+    return [
+        {
+            "id": a.id,
+            "nome": a.nome,
+            "padrao": a.padrao,
+            "demonstrativos": json.loads(a.demonstrativos or '["fluxo_caixa"]'),
+        }
+        for a in db.query(Agrupamento).filter(Agrupamento.ativo == True).order_by(Agrupamento.nome).all()
+    ]
 
 @router.post("/agrupadores", status_code=201)
 def criar_agrupador(data: AgrupamentoIn, db: Session = Depends(get_db),

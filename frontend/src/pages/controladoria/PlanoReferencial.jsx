@@ -1,38 +1,46 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 import { ChevronRight, ChevronDown, Plus, Pencil, Trash2, GitBranch, X, CornerDownRight, Zap, Link } from 'lucide-react'
 import { refPlanoAPI, fluxoCaixaAPI } from '../../services/api'
 import { Modal } from '../../components/shared'
 import toast from 'react-hot-toast'
 
 const TIPO_LABEL = { sintetica: 'Sintética', analitica: 'Analítica' }
-const NAT_LABEL  = { soma: 'Soma (+)', subtrai: 'Subtrai (−)' }
-const DEMO_LABEL = { fluxo_caixa: 'FC', dre: 'DRE', orcamento: 'Orç' }
+const DEMO_LABEL = { fluxo_caixa: 'FC', dre: 'DRE', orcamento: 'ORC' }
 const DEMO_COR   = {
   fluxo_caixa: { bg: '#FEF3C7', text: '#B45309' },
   dre:         { bg: '#EDE9FE', text: '#6D28D9' },
   orcamento:   { bg: '#DBEAFE', text: '#1D4ED8' },
 }
+const DEMOS = [
+  { value: 'fluxo_caixa', label: 'FC' },
+  { value: 'dre',         label: 'DRE' },
+  { value: 'orcamento',   label: 'ORC' },
+]
 
 // ── Badge de vínculo ──────────────────────────────────────────────────────────
 function BadgeVinculo({ v, onRemover }) {
   const cor = DEMO_COR[v.demonstrativo] || { bg: 'var(--surface-hover)', text: 'var(--text-muted)' }
   const estilo = v.herdado
-    ? { background: 'var(--surface-hover)', color: 'var(--text-muted)', opacity: 0.8 }
+    ? { background: 'var(--surface-hover)', color: 'var(--text-muted)', opacity: 0.7 }
     : { background: cor.bg, color: cor.text }
 
   return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 3,
-      borderRadius: 4, padding: '2px 5px', fontSize: 10, fontWeight: 500,
-      ...estilo,
-    }}>
-      {v.herdado && <CornerDownRight size={9} />}
-      {v.agrupamento_nome}
-      <span style={{ opacity: 0.7 }}>· {DEMO_LABEL[v.demonstrativo] || v.demonstrativo}</span>
+    <span
+      title={v.agrupamento_nome}
+      style={{
+        display: 'inline-flex', alignItems: 'center', gap: 2,
+        borderRadius: 4, padding: '2px 6px', fontSize: 10, fontWeight: 700,
+        cursor: 'default', ...estilo,
+      }}
+    >
+      {v.herdado && <CornerDownRight size={8} />}
+      {DEMO_LABEL[v.demonstrativo] || v.demonstrativo}
       {!v.herdado && onRemover && (
-        <button onClick={e => { e.stopPropagation(); onRemover(v.id) }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', padding: 0, marginLeft: 1 }}>
-          <X size={9} />
+        <button
+          onClick={e => { e.stopPropagation(); onRemover(v.id) }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'inherit', display: 'flex', padding: 0, marginLeft: 1 }}
+        >
+          <X size={8} />
         </button>
       )}
     </span>
@@ -40,30 +48,50 @@ function BadgeVinculo({ v, onRemover }) {
 }
 
 // ── Painel inline de vinculação ───────────────────────────────────────────────
-function PainelVincular({ conta, nivel, agrupamentos, onSalvo, onFechar }) {
-  const [form, setForm] = useState({ agrupamento_id: '', demonstrativo: 'fluxo_caixa', propagar: false })
-  const [sugestoes, setSugestoes] = useState([])
-  const [salvando, setSalvando] = useState(false)
+function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFechar }) {
+  const [demo, setDemo]                   = useState('fluxo_caixa')
+  const [busca, setBusca]                 = useState('')
+  const [agrupamentoId, setAgrupamentoId] = useState('')
+  const [propagar, setPropagar]           = useState(false)
+  const [salvando, setSalvando]           = useState(false)
+
+  // Vínculo direto (não-herdado) para o demonstrativo selecionado
+  const vinculoAtual = vinculos.find(v => v.demonstrativo === demo && !v.herdado) || null
 
   useEffect(() => {
-    refPlanoAPI.sugerirAgrupamento(conta.id)
-      .then(r => setSugestoes(r.data))
-      .catch(() => {})
-  }, [conta.id])
+    setAgrupamentoId('')
+    setBusca('')
+  }, [demo])
+
+  // Filtra agrupamentos por demo; fallback para todos se nenhum configurado
+  const porDemo = agrupamentos.filter(a =>
+    Array.isArray(a.demonstrativos) && a.demonstrativos.includes(demo)
+  )
+  const fonte = porDemo.length > 0 ? porDemo : agrupamentos
+  const filtrados = fonte
+    .filter(a => busca === '' || a.nome.toLowerCase().includes(busca.toLowerCase()))
+    .slice(0, 25)
 
   const salvar = async () => {
-    if (!form.agrupamento_id) { toast.error('Selecione um agrupamento'); return }
     setSalvando(true)
     try {
-      await refPlanoAPI.vincularAgrupamento(conta.id, {
-        agrupamento_id: Number(form.agrupamento_id),
-        demonstrativo: form.demonstrativo,
-        propagar: form.propagar,
-      })
-      toast.success('Vínculo criado' + (form.propagar ? ' e propagado para filhas' : ''))
+      if (agrupamentoId === '__nenhum__') {
+        if (vinculoAtual) {
+          await refPlanoAPI.removerVinculo(conta.id, vinculoAtual.id)
+          toast.success('Vínculo removido')
+        }
+      } else {
+        if (!agrupamentoId) { toast.error('Selecione um agrupamento'); setSalvando(false); return }
+        await refPlanoAPI.vincularAgrupamento(conta.id, {
+          agrupamento_id: Number(agrupamentoId),
+          demonstrativo: demo,
+          propagar,
+        })
+        toast.success('Vínculo criado' + (propagar ? ' e propagado para filhas' : ''))
+      }
       onSalvo()
     } catch (e) {
-      toast.error(e.response?.data?.detail || 'Erro ao criar vínculo')
+      toast.error(e.response?.data?.detail || 'Erro ao salvar')
     } finally {
       setSalvando(false)
     }
@@ -71,52 +99,97 @@ function PainelVincular({ conta, nivel, agrupamentos, onSalvo, onFechar }) {
 
   return (
     <tr>
-      <td colSpan={5} style={{ padding: '8px 12px 12px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
-        <div style={{ paddingLeft: nivel * 20 + 20, display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {sugestoes.length > 0 && (
-            <div style={{ display: 'flex', gap: 4, alignItems: 'center', flexWrap: 'wrap' }}>
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Sugestões:</span>
-              {sugestoes.map(s => (
-                <button key={s.id} onClick={() => setForm(f => ({ ...f, agrupamento_id: String(s.id) }))}
-                  style={{
-                    background: form.agrupamento_id === String(s.id) ? 'var(--brand)' : 'var(--surface-hover)',
-                    color: form.agrupamento_id === String(s.id) ? '#fff' : 'var(--text)',
-                    border: 'none', borderRadius: 4, padding: '2px 8px', fontSize: 11, cursor: 'pointer',
-                  }}>
-                  {s.nome} <span style={{ opacity: 0.7 }}>{Math.round(s.confianca * 100)}%</span>
+      <td colSpan={4} style={{ padding: '8px 12px 14px', background: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ paddingLeft: nivel * 20 + 20, display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 500 }}>
+
+          {/* Tabs de demonstrativo */}
+          <div style={{ display: 'flex', gap: 4 }}>
+            {DEMOS.map(d => {
+              const temVinculo = vinculos.some(v => v.demonstrativo === d.value && !v.herdado)
+              const ativo = demo === d.value
+              const cor = DEMO_COR[d.value]
+              return (
+                <button key={d.value} onClick={() => setDemo(d.value)} style={{
+                  padding: '4px 14px', borderRadius: 4, fontSize: 12, fontWeight: 700, cursor: 'pointer',
+                  border: ativo ? 'none' : '1px solid var(--border)',
+                  background: ativo ? cor.bg : 'transparent',
+                  color: ativo ? cor.text : 'var(--text-muted)',
+                  outline: temVinculo ? `2px solid ${cor.text}` : 'none',
+                  outlineOffset: 1,
+                }}>
+                  {d.label}{temVinculo ? ' ✓' : ''}
                 </button>
-              ))}
+              )
+            })}
+          </div>
+
+          {/* Vínculo atual para este demonstrativo */}
+          {vinculoAtual && (
+            <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+              Atual: <strong style={{ color: 'var(--text)' }}>{vinculoAtual.agrupamento_nome}</strong>
             </div>
           )}
-          <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end', flexWrap: 'wrap' }}>
-            <div className="form-group" style={{ minWidth: 240, margin: 0 }}>
-              <label style={{ fontSize: 11 }}>Agrupamento</label>
-              <select value={form.agrupamento_id} onChange={e => setForm(f => ({ ...f, agrupamento_id: e.target.value }))}>
-                <option value="">Selecione...</option>
-                {agrupamentos.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
-              </select>
+
+          {/* Autocomplete */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+            <input
+              placeholder="Buscar agrupamento..."
+              value={busca}
+              onChange={e => { setBusca(e.target.value); setAgrupamentoId('') }}
+              style={{
+                padding: '6px 8px', fontSize: 12,
+                border: '1px solid var(--border)', borderBottom: 'none',
+                borderRadius: '4px 4px 0 0',
+                background: 'var(--surface)', color: 'var(--text)',
+                outline: 'none',
+              }}
+            />
+            <div style={{ border: '1px solid var(--border)', borderRadius: '0 0 4px 4px', maxHeight: 168, overflowY: 'auto' }}>
+              {/* Opção Nenhum */}
+              <div
+                onClick={() => { setAgrupamentoId('__nenhum__'); setBusca('') }}
+                style={{
+                  padding: '6px 10px', fontSize: 12, cursor: 'pointer', fontStyle: 'italic',
+                  borderBottom: '1px solid var(--border)',
+                  background: agrupamentoId === '__nenhum__' ? '#FEE2E2' : 'transparent',
+                  color: agrupamentoId === '__nenhum__' ? '#DC2626' : 'var(--text-muted)',
+                }}
+              >
+                — Nenhum (remover vínculo)
+              </div>
+              {filtrados.map(a => (
+                <div key={a.id}
+                  onClick={() => { setAgrupamentoId(String(a.id)); setBusca(a.nome) }}
+                  style={{
+                    padding: '6px 10px', fontSize: 12, cursor: 'pointer',
+                    background: agrupamentoId === String(a.id) ? 'var(--brand-light)' : 'transparent',
+                    color: agrupamentoId === String(a.id) ? 'var(--brand)' : 'var(--text)',
+                  }}
+                >
+                  {a.nome}
+                </div>
+              ))}
+              {filtrados.length === 0 && (
+                <div style={{ padding: '8px 10px', fontSize: 11, color: 'var(--text-muted)', textAlign: 'center' }}>
+                  Nenhum resultado
+                </div>
+              )}
             </div>
-            <div className="form-group" style={{ minWidth: 140, margin: 0 }}>
-              <label style={{ fontSize: 11 }}>Demonstrativo</label>
-              <select value={form.demonstrativo} onChange={e => setForm(f => ({ ...f, demonstrativo: e.target.value }))}>
-                <option value="fluxo_caixa">Fluxo de Caixa</option>
-                <option value="dre">DRE</option>
-                <option value="orcamento">Orçamento</option>
-              </select>
-            </div>
-            {conta.tipo === 'sintetica' && conta.filhos?.length > 0 && (
-              <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, marginBottom: 2, cursor: 'pointer' }}>
-                <input type="checkbox" checked={form.propagar}
-                  onChange={e => setForm(f => ({ ...f, propagar: e.target.checked }))} />
-                Propagar para filhas diretas
-              </label>
-            )}
-            <button className="btn btn-primary" style={{ height: 32, fontSize: 12 }} onClick={salvar} disabled={salvando}>
-              Salvar
+          </div>
+
+          {/* Propagar — apenas para contas sintéticas com filhos */}
+          {conta.tipo === 'sintetica' && conta.filhos?.length > 0 && (
+            <label style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 12, cursor: 'pointer' }}>
+              <input type="checkbox" checked={propagar} onChange={e => setPropagar(e.target.checked)} />
+              Propagar para filhas diretas
+            </label>
+          )}
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <button className="btn btn-primary" style={{ height: 30, fontSize: 12 }} onClick={salvar} disabled={salvando}>
+              {salvando ? 'Salvando...' : 'Salvar'}
             </button>
-            <button className="btn" style={{ height: 32, fontSize: 12 }} onClick={onFechar}>
-              Cancelar
-            </button>
+            <button className="btn" style={{ height: 30, fontSize: 12 }} onClick={onFechar}>Cancelar</button>
           </div>
         </div>
       </td>
@@ -126,19 +199,15 @@ function PainelVincular({ conta, nivel, agrupamentos, onSalvo, onFechar }) {
 
 // ── Linha de conta ────────────────────────────────────────────────────────────
 function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh }) {
-  const [aberto, setAberto]       = useState(false)
-  const [editando, setEditando]   = useState(false)
+  const [aberto, setAberto]         = useState(false)
+  const [editando, setEditando]     = useState(false)
   const [criandoSub, setCriandoSub] = useState(false)
   const [vinculando, setVinculando] = useState(false)
-  const [form, setForm]           = useState({})
+  const [form, setForm]             = useState({})
   const temFilhos = conta.filhos?.length > 0
 
   const abrirEdicao = () => {
-    setForm({
-      codigo: conta.codigo, descricao: conta.descricao,
-      tipo: conta.tipo, natureza: conta.natureza || '',
-      agrupamento: conta.agrupamento || '',
-    })
+    setForm({ codigo: conta.codigo, descricao: conta.descricao, tipo: conta.tipo, agrupamento: conta.agrupamento || '' })
     setEditando(true)
   }
 
@@ -210,20 +279,15 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh }) {
           </span>
         </td>
 
-        {/* Natureza */}
-        <td style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-muted)' }}>
-          {conta.tipo === 'analitica' ? (NAT_LABEL[conta.natureza] || '—') : '—'}
-        </td>
-
-        {/* Agrupamento — nova coluna de vínculos */}
+        {/* Demonstrativo */}
         <td style={{ paddingLeft: 8, paddingRight: 8 }}>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 3, alignItems: 'center', minHeight: 24 }}>
-            {vinculos.length === 0 && (
-              <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>
-            )}
-            {vinculos.map(v => (
-              <BadgeVinculo key={v.id} v={v} onRemover={!v.herdado ? removerVinculo : null} />
-            ))}
+            {vinculos.length === 0
+              ? <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>
+              : vinculos.map(v => (
+                  <BadgeVinculo key={v.id} v={v} onRemover={!v.herdado ? removerVinculo : null} />
+                ))
+            }
             <button
               title="Vincular agrupamento"
               onClick={() => setVinculando(v => !v)}
@@ -232,7 +296,8 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh }) {
                 color: vinculando ? '#fff' : 'var(--text-muted)',
                 border: '1px solid var(--border)', borderRadius: 4,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', padding: '1px 4px',
-              }}>
+              }}
+            >
               <Link size={10} />
             </button>
           </div>
@@ -263,6 +328,7 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh }) {
           conta={conta}
           nivel={nivel}
           agrupamentos={agrupamentos}
+          vinculos={vinculos}
           onSalvo={() => { setVinculando(false); onRefresh() }}
           onFechar={() => setVinculando(false)}
         />
@@ -287,7 +353,7 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh }) {
       {criandoSub && (
         <FormContaModal
           titulo={`Nova sub-conta de: ${conta.codigo}`}
-          inicial={{ codigo: '', descricao: '', tipo: 'analitica', natureza: 'soma', agrupamento: '' }}
+          inicial={{ codigo: '', descricao: '', tipo: 'analitica', agrupamento: '' }}
           onSalvar={salvarSub}
           onFechar={() => setCriandoSub(false)}
         />
@@ -324,20 +390,11 @@ function FormContaModal({ titulo, inicial, onSalvar, onFechar, onChange }) {
           </select>
         </div>
         {form.tipo === 'analitica' && (
-          <>
-            <div className="form-group">
-              <label>Natureza</label>
-              <select value={form.natureza || ''} onChange={e => update('natureza', e.target.value)}>
-                <option value="soma">Soma (+)</option>
-                <option value="subtrai">Subtrai (−)</option>
-              </select>
-            </div>
-            <div className="form-group">
-              <label>Código fórmula <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>(para templates)</span></label>
-              <input value={form.agrupamento || ''} onChange={e => update('agrupamento', e.target.value)}
-                placeholder="ex: receita_bruta" style={{ fontFamily: 'monospace' }} />
-            </div>
-          </>
+          <div className="form-group">
+            <label>Código fórmula <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>(para templates)</span></label>
+            <input value={form.agrupamento || ''} onChange={e => update('agrupamento', e.target.value)}
+              placeholder="ex: receita_bruta" style={{ fontFamily: 'monospace' }} />
+          </div>
         )}
         <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 8 }}>
           <button className="btn" onClick={onFechar}>Cancelar</button>
@@ -354,7 +411,6 @@ function RelatorioModal({ dados, onFechar }) {
   return (
     <Modal titulo="Relatório — Sugestão Automática de Agrupamento" onClose={onFechar}>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Contadores */}
         <div style={{ display: 'flex', gap: 12 }}>
           <div style={{ flex: 1, background: 'var(--surface)', border: '1px solid var(--border)', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
             <div style={{ fontSize: 28, fontWeight: 700, color: 'var(--text)' }}>{total_sem_vinculo}</div>
@@ -366,11 +422,10 @@ function RelatorioModal({ dados, onFechar }) {
           </div>
           <div style={{ flex: 1, background: '#FEF3C7', border: '1px solid #FCD34D', borderRadius: 8, padding: '12px 16px', textAlign: 'center' }}>
             <div style={{ fontSize: 28, fontWeight: 700, color: '#B45309' }}>{pendentes}</div>
-            <div style={{ fontSize: 11, color: '#92400E', marginTop: 2 }}>pendentes ({"<"} 80%)</div>
+            <div style={{ fontSize: 11, color: '#92400E', marginTop: 2 }}>pendentes ({'<'} 80%)</div>
           </div>
         </div>
 
-        {/* Lista de pendentes com menor confiança */}
         {top_menor_confianca?.length > 0 && (
           <div>
             <p style={{ fontSize: 12, fontWeight: 600, color: 'var(--text-muted)', margin: '0 0 8px' }}>
@@ -380,16 +435,14 @@ function RelatorioModal({ dados, onFechar }) {
               {top_menor_confianca.map(item => (
                 <div key={item.conta_id} style={{
                   display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
-                  background: 'var(--surface)', borderRadius: 6, border: '1px solid var(--border)',
-                  fontSize: 12,
+                  background: 'var(--surface)', borderRadius: 6, border: '1px solid var(--border)', fontSize: 12,
                 }}>
                   <span style={{ fontFamily: 'monospace', color: 'var(--text-muted)', minWidth: 60 }}>{item.codigo}</span>
                   <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.descricao}</span>
                   <span style={{ color: 'var(--text-muted)', fontSize: 11 }}>→ {item.melhor_agrupamento}</span>
-                  <span style={{
-                    minWidth: 40, textAlign: 'right', fontWeight: 600,
-                    color: item.confianca >= 0.6 ? '#B45309' : 'var(--red)',
-                  }}>{Math.round(item.confianca * 100)}%</span>
+                  <span style={{ minWidth: 40, textAlign: 'right', fontWeight: 600, color: item.confianca >= 0.6 ? '#B45309' : 'var(--red)' }}>
+                    {Math.round(item.confianca * 100)}%
+                  </span>
                 </div>
               ))}
             </div>
@@ -469,9 +522,8 @@ export default function PlanoReferencial() {
     setAutoSugerindo(true)
     try {
       const r = await refPlanoAPI.autoSugerirAgrupamentos(planoId)
-      const d = r.data
-      setRelatorio(d)
-      toast.success(`${d.vinculados} vinculados — ${d.pendentes} pendentes de revisão`)
+      setRelatorio(r.data)
+      toast.success(`${r.data.vinculados} vinculados — ${r.data.pendentes} pendentes de revisão`)
       carregar()
     } catch (e) {
       toast.error(e.response?.data?.detail || 'Erro na sugestão automática')
@@ -514,9 +566,9 @@ export default function PlanoReferencial() {
         }}>
           <span style={{ fontWeight: 600, color: '#B45309' }}>{pendentes}</span>
           <span style={{ color: '#78350F' }}>
-            conta{pendentes !== 1 ? 's' : ''} analítica{pendentes !== 1 ? 's' : ''} sem vínculo de agrupamento
+            conta{pendentes !== 1 ? 's' : ''} analítica{pendentes !== 1 ? 's' : ''} sem vínculo de demonstrativo
           </span>
-          <span style={{ color: '#B45309', fontSize: 11 }}>— use o botão "Sugestão automática" ou clique em <Link size={11} style={{ display: 'inline' }} /> em cada conta</span>
+          <span style={{ color: '#B45309', fontSize: 11 }}>— use "Sugestão automática" ou clique em <Link size={11} style={{ display: 'inline' }} /> em cada conta</span>
         </div>
       )}
 
@@ -529,8 +581,7 @@ export default function PlanoReferencial() {
               <tr style={{ borderBottom: '2px solid var(--border)' }}>
                 <th style={{ textAlign: 'left', padding: '8px 12px', fontWeight: 600 }}>Conta / Descrição</th>
                 <th style={{ textAlign: 'center', padding: '8px 12px', fontWeight: 600 }}>Tipo</th>
-                <th style={{ textAlign: 'center', padding: '8px 12px', fontWeight: 600 }}>Natureza</th>
-                <th style={{ textAlign: 'left', padding: '8px 8px', fontWeight: 600 }}>Agrupamento</th>
+                <th style={{ textAlign: 'left', padding: '8px 8px', fontWeight: 600 }}>Demonstrativo</th>
                 <th style={{ textAlign: 'right', padding: '8px 12px', fontWeight: 600 }}>Ações</th>
               </tr>
             </thead>
@@ -541,7 +592,7 @@ export default function PlanoReferencial() {
               ))}
               {contas.length === 0 && (
                 <tr>
-                  <td colSpan={5} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
+                  <td colSpan={4} style={{ textAlign: 'center', padding: 32, color: 'var(--text-muted)' }}>
                     Nenhuma conta cadastrada. Clique em "Nova Conta" para começar.
                   </td>
                 </tr>
@@ -554,7 +605,7 @@ export default function PlanoReferencial() {
       {criando && (
         <FormContaModal
           titulo="Nova Conta Raiz"
-          inicial={{ codigo: '', descricao: '', tipo: 'analitica', natureza: 'soma', agrupamento: '' }}
+          inicial={{ codigo: '', descricao: '', tipo: 'analitica', agrupamento: '' }}
           onSalvar={criarConta}
           onFechar={() => setCriando(false)}
         />
