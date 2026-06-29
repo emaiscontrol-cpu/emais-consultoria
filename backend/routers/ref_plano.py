@@ -183,14 +183,14 @@ def criar_vinculo(id: int, data: VinculoIn, db: Session = Depends(get_db),
     if not agrup:
         raise HTTPException(404, "Agrupamento não encontrado")
 
-    # Upsert: só um vínculo direto por demonstrativo — substitui o anterior
-    existente_demo = db.query(models.ContaAgrupamento).filter(
+    # Upsert: remove TODOS os vínculos existentes (herdado ou não) para este conta+demo
+    existentes = db.query(models.ContaAgrupamento).filter(
         models.ContaAgrupamento.conta_referencial_id == id,
         models.ContaAgrupamento.demonstrativo == data.demonstrativo,
-        models.ContaAgrupamento.herdado == False,
-    ).first()
-    if existente_demo:
-        db.delete(existente_demo)
+    ).all()
+    for e in existentes:
+        db.delete(e)
+    if existentes:
         db.flush()
 
     v = models.ContaAgrupamento(
