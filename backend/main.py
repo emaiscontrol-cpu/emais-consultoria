@@ -155,6 +155,9 @@ with engine.connect() as conn:
             lida BOOLEAN DEFAULT 0,
             criado_em DATETIME DEFAULT (datetime('now'))
         )""",
+        # v2.6.0v: DEMO-3 — template FC e lançamentos FC
+        "ALTER TABLE ref_template_linhas ADD COLUMN tipo VARCHAR(20) DEFAULT 'agrupamento'",
+        "ALTER TABLE ref_template_linhas ADD COLUMN agrupamento_slug VARCHAR(200)",
         # DROP tabelas do plano de contas antigo (migração definitiva)
         "DROP TABLE IF EXISTS template_formulas",
         "DROP TABLE IF EXISTS conta_de_para",
@@ -269,6 +272,11 @@ AND EXISTS (
             # v2.6.0r: código de acesso de 3 dígitos para login simplificado
             "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_acesso VARCHAR(3)",
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_codigo_acesso ON usuarios(codigo_acesso) WHERE codigo_acesso IS NOT NULL",
+            # v2.6.0v: DEMO-3 — colunas novas em ref_template_linhas; segmento_id nullable em ref_templates
+            # fc_lancamentos é tabela nova — criada pelo create_all acima
+            "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) DEFAULT 'agrupamento'",
+            "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS agrupamento_slug VARCHAR(200)",
+            "ALTER TABLE ref_templates ALTER COLUMN segmento_id DROP NOT NULL",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
@@ -364,7 +372,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0u"
+app.version = "2.6.0v"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
