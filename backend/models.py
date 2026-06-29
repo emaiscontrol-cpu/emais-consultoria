@@ -641,6 +641,18 @@ class LancamentoFC(Base):
     __table_args__ = (UniqueConstraint("cliente_id", "agrupamento_slug", "conta_origem", "ano", "mes", "fonte"),)
 
 
+class FcSlugDepara(Base):
+    """De-Para entre slug do extrato do cliente e agrupamento padrão do sistema."""
+    __tablename__ = "fc_slug_depara"
+    id               = Column(Integer, primary_key=True, index=True)
+    cliente_id       = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    slug_extrato     = Column(String(100), nullable=False)   # slug usado no arquivo Excel do cliente
+    agrupamento_id   = Column(Integer, ForeignKey("agrupamentos.id"), nullable=False)
+    cliente          = relationship("Cliente")
+    agrupamento      = relationship("Agrupamento")
+    __table_args__ = (UniqueConstraint("cliente_id", "slug_extrato"),)
+
+
 class PeriodoFechado(Base):
     """Competência fechada: bloqueia nova importação de lançamentos para cliente/mês."""
     __tablename__ = "ref_periodos_fechados"
