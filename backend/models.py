@@ -600,7 +600,7 @@ class TemplateRef(Base):
     __tablename__ = "ref_templates"
     id          = Column(Integer, primary_key=True, index=True)
     tipo        = Column(String(20), nullable=False)   # 'dre' | 'fluxo_caixa' | 'orcamento'
-    segmento_id = Column(Integer, ForeignKey("ref_segmentos.id"), nullable=False)
+    segmento_id = Column(Integer, ForeignKey("ref_segmentos.id"), nullable=True)  # NULL = universal
     nome        = Column(String(200), nullable=False)
     ativo       = Column(Boolean, default=True)
     criado_em   = Column(DateTime(timezone=True), server_default=func.now())
@@ -617,9 +617,28 @@ class TemplateLinhaRef(Base):
     rotulo               = Column(String(300), nullable=False)
     ordem                = Column(Integer, nullable=False, default=0)
     negrito_totalizador  = Column(Boolean, default=False)
+    tipo                 = Column(String(20), nullable=True, default="agrupamento")  # 'agrupamento' | 'totalizador' | 'titulo'
+    agrupamento_slug     = Column(String(200), nullable=True)   # slug(s) do Excel (ex: "Vda_Din" ou "Vda_Che-Vda_Che_S")
     # ex: '( {agrupamento:receita_bruta} - {agrupamento:cmv} ) / {agrupamento:receita_bruta} * 100'
     formula_texto        = Column(Text, nullable=True)
     template             = relationship("TemplateRef", back_populates="linhas")
+
+
+class LancamentoFC(Base):
+    """Lançamento real de Fluxo de Caixa importado do extrato/despesa do cliente."""
+    __tablename__ = "fc_lancamentos"
+    id               = Column(Integer, primary_key=True, index=True)
+    cliente_id       = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    agrupamento_slug = Column(String(100), nullable=False)   # slug original do Excel (ex: "Vda_Din")
+    conta_origem     = Column(String(60), nullable=True)     # código da conta no ERP do cliente
+    descricao        = Column(String(300), nullable=True)    # descrição da conta/contrapartida
+    ano              = Column(Integer, nullable=False)
+    mes              = Column(Integer, nullable=False)        # 1–12
+    valor            = Column(Float, nullable=False, default=0.0)
+    fonte            = Column(String(20), nullable=False, default="extrato")  # 'extrato' | 'despesa'
+    importado_em     = Column(DateTime(timezone=True), server_default=func.now())
+    cliente          = relationship("Cliente")
+    __table_args__ = (UniqueConstraint("cliente_id", "agrupamento_slug", "conta_origem", "ano", "mes", "fonte"),)
 
 
 class PeriodoFechado(Base):
