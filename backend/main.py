@@ -282,7 +282,12 @@ AND EXISTS (
                 conn.execute(text(stmt))
                 conn.commit()
             except Exception:
-                pass
+                # Rollback obrigatório — sem isso, PostgreSQL mantém a conexão em
+                # InFailedSqlTransaction e todos os statements seguintes falham silenciosamente
+                try:
+                    conn.rollback()
+                except Exception:
+                    pass
 
 # Seed dados padrão (executa apenas uma vez)
 from database import SessionLocal
@@ -355,7 +360,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0p"
+app.version = "2.6.0q"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
