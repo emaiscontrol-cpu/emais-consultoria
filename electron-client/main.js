@@ -1,9 +1,27 @@
-const { app, BrowserWindow, session, globalShortcut } = require('electron')
+const { app, BrowserWindow, session, globalShortcut, ipcMain } = require('electron')
 const path = require('path')
+const fs   = require('fs')
 
 const SERVER_URL = 'https://earlobe-feeble-aground.ngrok-free.dev'
 
 let mainWindow = null
+
+// ── Credenciais salvas (arquivo JSON no userData) ──────────────────────────────
+function getCredsPath() {
+  return path.join(app.getPath('userData'), 'saved-credentials.json')
+}
+
+ipcMain.handle('credentials:get', () => {
+  try { return JSON.parse(fs.readFileSync(getCredsPath(), 'utf8')) } catch { return null }
+})
+
+ipcMain.handle('credentials:set', (_, creds) => {
+  fs.writeFileSync(getCredsPath(), JSON.stringify(creds), 'utf8')
+})
+
+ipcMain.handle('credentials:clear', () => {
+  try { fs.unlinkSync(getCredsPath()) } catch {}
+})
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -16,6 +34,7 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
+      preload: path.join(__dirname, 'preload.js'),
     },
     show: false,
     backgroundColor: '#ffffff',

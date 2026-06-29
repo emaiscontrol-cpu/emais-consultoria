@@ -29,6 +29,7 @@ with engine.connect() as conn:
         "ALTER TABLE usuarios ADD COLUMN ia_gemini BOOLEAN NOT NULL DEFAULT 0",
         "ALTER TABLE usuarios ADD COLUMN ia_openrouter BOOLEAN NOT NULL DEFAULT 0",
         "ALTER TABLE usuarios ADD COLUMN foto TEXT",
+        "ALTER TABLE usuarios ADD COLUMN codigo_acesso VARCHAR(3)",
         "UPDATE usuarios SET perfil='analista' WHERE perfil='cliente'",
         """CREATE TABLE IF NOT EXISTS bandeiras (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -265,6 +266,9 @@ AND EXISTS (
             "UPDATE agrupamentos SET nome='Aplicações'                                   WHERE slug='aplicacoes'",
             "UPDATE agrupamentos SET nome='( - ) Sócios'                                WHERE slug='socios'",
             "UPDATE agrupamentos SET nome='(+/-) Mvto Transitório'                      WHERE slug='mvto_transitorio'",
+            # v2.6.0r: código de acesso de 3 dígitos para login simplificado
+            "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_acesso VARCHAR(3)",
+            "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_codigo_acesso ON usuarios(codigo_acesso) WHERE codigo_acesso IS NOT NULL",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
@@ -360,7 +364,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0q"
+app.version = "2.6.0r"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():

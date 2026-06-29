@@ -63,8 +63,8 @@ export function AuthProvider({ children }) {
     return () => { if (refreshTimer.current) clearTimeout(refreshTimer.current) }
   }, [])
 
-  const login = async (email, senha) => {
-    const { data } = await authAPI.login(email, senha)
+  const login = async (payload) => {
+    const { data } = await authAPI.login(payload)
     localStorage.setItem('token', data.access_token)
     localStorage.setItem('usuario', JSON.stringify(data.usuario))
     localStorage.setItem('modulos', JSON.stringify(data.modulos ?? null))

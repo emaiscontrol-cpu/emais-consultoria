@@ -49,9 +49,16 @@ def login(req: schemas.LoginRequest, request: Request, db: Session = Depends(get
     ip = _get_ip(request)
     _checar_rate_limit(ip)
     from sqlalchemy import func
-    usuario = db.query(models.Usuario).filter(func.lower(models.Usuario.email) == req.email.lower()).first()
+    if req.codigo:
+        usuario = db.query(models.Usuario).filter(models.Usuario.codigo_acesso == req.codigo).first()
+        msg_erro = "Código ou senha inválidos"
+    else:
+        if not req.email:
+            raise HTTPException(status_code=400, detail="Informe email ou código de acesso")
+        usuario = db.query(models.Usuario).filter(func.lower(models.Usuario.email) == req.email.lower()).first()
+        msg_erro = "Email ou senha inválidos"
     if not usuario or not verificar_senha(req.senha, usuario.senha_hash):
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Email ou senha inválidos")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg_erro)
     if not usuario.ativo:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Conta desativada. Entre em contato com o administrador.")
     token = criar_token({"sub": usuario.email, "perfil": usuario.perfil})
