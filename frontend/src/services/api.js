@@ -124,6 +124,10 @@ export const fluxoCaixaAPI = {
   deletarAgrupador: id          => api.delete(`/fluxo/agrupadores/${id}`),
 }
 
+export const demonstrativoFcAPI = {
+  carregar: (params) => api.get('/demonstrativos/fluxo-caixa', { params }),
+}
+
 export const controladoriaAPI = {
   resumo:              (mes, ano)  => api.get('/controladoria/resumo', { params: { mes, ano } }),
   categorias:          ()          => api.get('/controladoria/categorias'),
