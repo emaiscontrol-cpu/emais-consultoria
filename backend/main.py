@@ -280,6 +280,15 @@ AND EXISTS (
             "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS agrupamento_slug VARCHAR(200)",
             "ALTER TABLE ref_templates ALTER COLUMN segmento_id DROP NOT NULL",
             # v2.6.0w: DEMO-4 — fc_slug_depara é tabela nova, criada pelo create_all acima
+            # v2.6.0x: DEMO-4 — 8 novos agrupamentos (Rio das Pedras + recuperação pessoal)
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('Vendas - Cheques Saída','vendas_cheques_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('Vendas - Extra Caixa Saída','vendas_extra_caixa_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( + ) Outras Entradas Operacionais','outras_entradas_operacionais','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Outras Saídas Operacionais','outras_saidas_operacionais','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Acordos Comerciais Saída','acordos_comerciais_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( + ) Terceiros - Recarga Entrada','terceiros_recarga_entrada','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Terceiros - Recarga Saída','terceiros_recarga_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( + ) Recuperação de Pessoal','recuperacao_pessoal','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
@@ -375,7 +384,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0w"
+app.version = "2.6.0x"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
