@@ -35,7 +35,6 @@ export default function Login() {
   const [form, setForm]               = useState({ codigo: '', senha: '' })
   const [remember, setRemember]       = useState(true)
   const [loading, setLoading]         = useState(false)
-  const [autoLogging, setAutoLogging] = useState(false)
   const [temCredSalva, setTemCredSalva] = useState(false)
   const [versao, setVersao]           = useState('')
 
@@ -45,39 +44,42 @@ export default function Login() {
   }, [])
 
   useEffect(() => {
-    if (!isElectron) return
-    window.electronAPI.getCredentials().then(creds => {
-      if (creds?.codigo && creds?.senha) {
+    const savedRemember = localStorage.getItem('remember_credentials')
+    if (savedRemember === 'true') {
+      const savedCodigo = localStorage.getItem('saved_codigo') || ''
+      const savedSenha  = localStorage.getItem('saved_senha')  || ''
+      if (savedCodigo) {
+        setForm(f => ({ ...f, codigo: savedCodigo, senha: savedSenha }))
+        setRemember(true)
         setTemCredSalva(true)
-        setAutoLogging(true)
-        doLogin({ codigo: creds.codigo, senha: creds.senha }, true)
       }
-    }).catch(() => {})
+    }
   }, [])
 
-  const doLogin = async (payload, isAuto = false) => {
+  const doLogin = async (payload) => {
     setLoading(true)
     try {
       await login(payload)
-      if (isElectron && !isAuto && remember && payload.codigo) {
-        window.electronAPI.setCredentials({ codigo: payload.codigo, senha: payload.senha }).catch(() => {})
+      if (remember && payload.codigo) {
+        localStorage.setItem('saved_codigo', payload.codigo)
+        localStorage.setItem('saved_senha', payload.senha)
+        localStorage.setItem('remember_credentials', 'true')
+        window.electronAPI?.setCredentials({ codigo: payload.codigo, senha: payload.senha }).catch(() => {})
+      } else {
+        localStorage.removeItem('saved_codigo')
+        localStorage.removeItem('saved_senha')
+        localStorage.removeItem('remember_credentials')
+        window.electronAPI?.clearCredentials().catch(() => {})
       }
       navigate('/')
     } catch (err) {
-      if (isAuto) {
-        window.electronAPI?.clearCredentials().catch(() => {})
-        setTemCredSalva(false)
-        setAutoLogging(false)
+      if (!err.response) {
+        toast.error('Servidor indisponível. Aguarde e tente novamente.')
       } else {
-        if (!err.response) {
-          toast.error('Servidor indisponível. Aguarde e tente novamente.')
-        } else {
-          toast.error(err.response.data?.detail || 'Código ou senha inválidos')
-        }
+        toast.error(err.response.data?.detail || 'Código ou senha inválidos')
       }
     } finally {
       setLoading(false)
-      if (isAuto) setAutoLogging(false)
     }
   }
 
@@ -90,8 +92,12 @@ export default function Login() {
   }
 
   const handleTrocarUsuario = () => {
+    localStorage.removeItem('saved_codigo')
+    localStorage.removeItem('saved_senha')
+    localStorage.removeItem('remember_credentials')
     window.electronAPI?.clearCredentials().catch(() => {})
     setTemCredSalva(false)
+    setRemember(true)
     setForm({ codigo: '', senha: '' })
     setTimeout(() => codeRef.current?.focus(), 50)
   }
@@ -144,17 +150,7 @@ export default function Login() {
       {/* ── Painel direito (formulário) ── */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#F4F6F9', padding: '48px 40px' }}>
 
-        {autoLogging ? (
-          <div style={CARD_STYLE}>
-            <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Entrando automaticamente...</div>
-              <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--brand)', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto' }} />
-            </div>
-            <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
-          </div>
-
-        ) : (
-          <div style={CARD_STYLE}>
+        <div style={CARD_STYLE}>
 
             {/* ── Logo ── */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
@@ -230,7 +226,7 @@ export default function Login() {
 
             {/* Rodapé */}
             <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              {isElectron && temCredSalva && (
+              {temCredSalva && (
                 <button onClick={handleTrocarUsuario}
                   style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', padding: 0 }}>
                   Trocar usuário
@@ -244,7 +240,6 @@ export default function Login() {
               )}
             </div>
           </div>
-        )}
       </div>
     </div>
   )
