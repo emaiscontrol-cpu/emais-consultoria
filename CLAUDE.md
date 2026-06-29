@@ -246,6 +246,7 @@ emals_consultoria/
 │       ├── orcamento.py         # Orçamento (todos os endpoints retornam 410 — módulo substituído)
 │       ├── balancete.py         # Balancete
 │       ├── ref.py               # Plano de Contas Referencial (/api/ref/...)
+│       ├── fc_exec.py           # Demonstrativo FC Executivo (/api/demonstrativos/fluxo-caixa)
 │       ├── ia.py                # IA (Claude)
 │       ├── gemini.py            # IA (Gemini)
 │       ├── openrouter.py        # IA (OpenRouter)
@@ -328,6 +329,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-29 (sessão 3)
+**O que foi feito:** DEMO-4 finalizado: tabela `fc_slug_depara` (De-Para slug extrato → agrupamento_id), 85 mapeamentos para Rio das Pedras (id=10), 8 novos agrupamentos, versões v2.6.0w (PR #57) e v2.6.0x (PR #58). DEMO-5: novo router `fc_exec.py` (`GET /api/demonstrativos/fluxo-caixa`) com motor de cálculo em 2 fases (agrupamentos → totalizadores com forward refs via multi-pass até 10x); `FluxoCaixa.jsx` completamente reescrito como demonstrativo read-only com seletor cliente/ano/mês, segmented control Mensal/Acumulado/Todos, tabela com linhas titulo/agrupamento/totalizador e coluna %Vendas; PR #59 (v2.6.0y) mergeado e em produção.
+**Decisões tomadas:** Forward refs em fórmulas FC (ex: linha 61 usa D62-D63) resolvidos por multi-pass convergente (máx 10 iterações, converge em 3); De-Para usa `.lower()` nos slugs do extrato para tratar variações de case sem duplicar entradas; agrupamentos compostos (`slug1+slug2-slug3`) deduplica por `agrupamento_id` evitando double-counting.
+**Próximo passo:** Testar no Electron com Rio das Pedras Jan/2025 (Ctrl+Shift+R). Próximas: outros clientes com De-Para, DEMO-6 (orçado no demonstrativo), REL-1 (PDF) na fila.
+
 ### 2026-06-29 (sessão 2)
 **O que foi feito:** Login.jsx (v2.6.0t PR #53): ícone `eIcon` real no card, checkbox "Lembrar" sem wrapper `isElectron`, Enter avança código→senha→submit via `useRef`. Credenciais via localStorage (v2.6.0u PR #54): `saved_codigo`/`saved_senha`/`remember_credentials` persistidos no login; restaurados no mount; "Trocar usuário" limpa tudo — substitui IPC `window.electronAPI` que não funcionava sem restart do Electron. DEMO-3 (v2.6.0v PR #55): modelo `LancamentoFC` (`fc_lancamentos`), `TemplateRef.segmento_id` nullable (templates universais), `TemplateLinhaRef` + colunas `tipo`/`agrupamento_slug`; migrações PostgreSQL/SQLite aplicadas. Carga de dados no Supabase (script `importar_fc_supabase.py`): Prátiko Supermercados criado (id=9), 1 template "Fluxo de Caixa" (79 linhas: 57 agrupamentos, 17 totalizadores, 5 títulos), 810 lançamentos Jan–Mai/2025, 0 erros.
 **Decisões tomadas:** localStorage é o mecanismo primário de credenciais (funciona em Electron e browser); `window.electronAPI?.setCredentials()` é chamado como bonus com `.catch(()=>{})`. `UniqueConstraint` em `fc_lancamentos` inclui `conta_origem` nullable — PostgreSQL trata NULL != NULL, sem violação com múltiplos NULLs. Carga de dados de produção via script one-off (não via release, não commitado no git).
@@ -377,8 +383,3 @@ Regras:
 **O que foi feito:** módulos contratados por cliente (`modulo_projetos`, `modulo_inteligencia_mercado`, `modulo_analises_gerenciais`) — colunas no banco (SQLite + PostgreSQL), schemas, auth (`ModulosCliente` no Token, `_modulos_do_cliente` no login/refresh), AuthContext (`modulos` + `temModulo`), sidebar reorganizada (Projetos em destaque, Dashboards colapsável, círculo "E"), visibilidade de seções por módulo, toggle UI em Clientes.jsx, dica discreta no rodapé para usuários com módulos parciais. PRs #12–14 consolidados em `release/v2.5.0u` (PR #15) + bump `v2.5.0v` (PR #16), ambos mergeados e em produção. Branch protection confirmada ativa — push direto na `main` rejeitado pelo GitHub (INF-2b concluído).
 **Decisões tomadas:** migração PostgreSQL adicionada com `ADD COLUMN IF NOT EXISTS` em bloco separado (`if not _is_sqlite`) — `create_all` não altera tabelas existentes no Supabase; footer hint usa `temModulo` (não localStorage) pois AuthContext já tem o helper; `release.ps1` não funciona quando main tem proteção + commits à frente — usar sempre o fluxo PR.
 **Próximo passo:** REL-1 — relatório de projeto em PDF com `weasyprint`.
-
-### 2026-06-19
-**O que foi feito:** revisão do ROADMAP e plano de ação; tela de Backup corrigida para PostgreSQL/Supabase — textos, `accept` do input e descrição adaptados dinamicamente via campo `postgres` da API (PR #10); discutido e descartado Supabase DEV separado (custo sem benefício para 1 dev); sequência de próximas features definida: REL-1 (PDF), NOTIF-1/2 (email), IA-1 (balancete PDF).
-**Decisões tomadas:** ROADMAP revisado — próximas prioridades são REL-1 (relatório PDF), depois NOTIF-1/2 (requer SMTP), depois IA-1 (maior diferencial); INF-2b (branch protection manual no GitHub) ainda pendente de ação manual.
-**Próximo passo:** implementar REL-1 — relatório de projeto em PDF com `weasyprint`.
