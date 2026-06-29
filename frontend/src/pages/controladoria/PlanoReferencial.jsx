@@ -49,6 +49,12 @@ const DEMO_VAR = {
   dre:         'var(--demo-dre)',
   orcamento:   'var(--demo-orc)',
 }
+// Versão suave do bg (40% opacidade) para highlight discreto da tab ativa
+const DEMO_BG_SOFT = {
+  fluxo_caixa: 'rgba(250,238,218,0.45)',
+  dre:         'rgba(238,237,254,0.45)',
+  orcamento:   'rgba(227,240,251,0.45)',
+}
 
 function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFechar }) {
   const temVinculo = (d) => vinculos.some(v => v.demonstrativo === d && !v.herdado)
@@ -131,10 +137,10 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
                     style={{
                       display: 'flex', alignItems: 'center', gap: 5, width: '100%',
                       padding: '8px 10px', border: 'none', cursor: 'pointer', textAlign: 'left',
-                      fontSize: 11, fontWeight: ativo ? 700 : 500,
-                      background: ativo ? corTab.bg : 'transparent',
+                      fontSize: 11, fontWeight: ativo ? 600 : 400,
+                      background: ativo ? DEMO_BG_SOFT[d.value] : 'transparent',
                       color: ativo ? corTab.text : (vinculado ? 'var(--text-2)' : 'var(--text-muted)'),
-                      opacity: vinculado && !ativo ? 0.65 : 1,
+                      opacity: vinculado && !ativo ? 0.6 : 1,
                       borderLeft: ativo ? `2px solid ${DEMO_VAR[d.value]}` : '2px solid transparent',
                       transition: 'all .1s',
                     }}

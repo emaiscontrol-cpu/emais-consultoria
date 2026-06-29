@@ -230,6 +230,32 @@ AND id NOT IN (
     WHERE herdado = false
     GROUP BY conta_referencial_id, demonstrativo
 )""",
+            # v2.6.0o: corrige nomes de agrupamentos importados sem acento
+            "UPDATE agrupamentos SET nome='Vendas - Crédito'                             WHERE slug='vendas_credito'",
+            "UPDATE agrupamentos SET nome='Vendas - Débito'                              WHERE slug='vendas_debito'",
+            "UPDATE agrupamentos SET nome='( - ) Devolução de Vendas'                   WHERE slug='devolucao_de_vendas'",
+            "UPDATE agrupamentos SET nome='( + ) Créditos Operacionais'                 WHERE slug='creditos_operacionais'",
+            "UPDATE agrupamentos SET nome='( + ) Devoluções'                            WHERE slug='devolucoes'",
+            "UPDATE agrupamentos SET nome='( - ) Pessoal - Salário'                     WHERE slug='pessoal_salario'",
+            "UPDATE agrupamentos SET nome='( - ) Pessoal - Férias'                      WHERE slug='pessoal_ferias'",
+            "UPDATE agrupamentos SET nome='( - ) Pessoal - Rescisões'                   WHERE slug='pessoal_rescisoes'",
+            "UPDATE agrupamentos SET nome='( - ) Pessoal - Benefícios'                  WHERE slug='pessoal_beneficios'",
+            "UPDATE agrupamentos SET nome='( - ) Tributária'                             WHERE slug='tributaria'",
+            "UPDATE agrupamentos SET nome='( - ) Energia Elétrica'                      WHERE slug='energia_eletrica'",
+            "UPDATE agrupamentos SET nome='( - ) Utilidades e Serviços'                 WHERE slug='utilidades_e_servicos'",
+            "UPDATE agrupamentos SET nome='( - ) Manutenções'                           WHERE slug='manutencoes'",
+            "UPDATE agrupamentos SET nome='( - ) Veículos'                              WHERE slug='veiculos'",
+            "UPDATE agrupamentos SET nome='( - ) Manutenção Imóveis'                    WHERE slug='manutencao_imoveis'",
+            "UPDATE agrupamentos SET nome='( - ) Informática'                            WHERE slug='informatica'",
+            "UPDATE agrupamentos SET nome='( - ) Prestadores de Serviços Operacionais'  WHERE slug='prestadores_de_servicos_operacionais'",
+            "UPDATE agrupamentos SET nome='( - ) Indedutíveis'                          WHERE slug='indedutiveis'",
+            "UPDATE agrupamentos SET nome='( - ) Taxas Adm de Cartões'                  WHERE slug='taxas_adm_de_cartoes'",
+            "UPDATE agrupamentos SET nome='( - ) Empréstimos'                            WHERE slug='emprestimos_saida'",
+            "UPDATE agrupamentos SET nome='( - ) Juros/IOF S/ Empréstimos'              WHERE slug='juros_iof_s_emprestimos'",
+            "UPDATE agrupamentos SET nome='Empréstimos'                                  WHERE slug='emprestimos'",
+            "UPDATE agrupamentos SET nome='Aplicações'                                   WHERE slug='aplicacoes'",
+            "UPDATE agrupamentos SET nome='( - ) Sócios'                                WHERE slug='socios'",
+            "UPDATE agrupamentos SET nome='(+/-) Mvto Transitório'                      WHERE slug='mvto_transitorio'",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
@@ -320,7 +346,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0n"
+app.version = "2.6.0o"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
