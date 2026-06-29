@@ -2,7 +2,6 @@ import logo from '../assets/logo.jpeg'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
-import { authAPI } from '../services/api'
 import toast from 'react-hot-toast'
 
 const isElectron = typeof window !== 'undefined' && typeof window.electronAPI !== 'undefined'
@@ -15,18 +14,12 @@ const CARD_STYLE = {
   boxShadow: '0 4px 24px rgba(0,0,0,.10)',
 }
 
-const CODE_INPUT_STYLE = {
-  width: '100%', padding: '12px 0', border: 'none', borderBottom: '2.5px solid #D1D5DB',
-  borderRadius: 0, fontSize: 22, fontWeight: 600, textAlign: 'center',
-  letterSpacing: 12, fontFamily: 'inherit', color: '#111827',
-  background: 'transparent', outline: 'none', transition: 'border-color .15s',
-  boxSizing: 'border-box',
-}
-
-const PASS_INPUT_STYLE = {
-  width: '100%', padding: '10px 12px', border: '1.5px solid #D1D5DB',
-  borderRadius: 8, fontSize: 13, fontFamily: 'inherit', color: '#111827',
-  background: '#fff', outline: 'none', transition: 'border-color .15s, box-shadow .15s',
+const INPUT_BASE = {
+  width: '100%', padding: '10px 12px',
+  border: '0.5px solid var(--border)', borderRadius: 8,
+  fontFamily: 'inherit', color: 'var(--text)',
+  background: '#fff', outline: 'none',
+  transition: 'border-color .15s, box-shadow .15s',
   boxSizing: 'border-box',
 }
 
@@ -36,14 +29,11 @@ export default function Login() {
   const codeRef    = useRef(null)
 
   const [form, setForm]               = useState({ codigo: '', senha: '' })
+  const [lembrar, setLembrar]         = useState(false)
   const [loading, setLoading]         = useState(false)
   const [autoLogging, setAutoLogging] = useState(false)
   const [temCredSalva, setTemCredSalva] = useState(false)
   const [versao, setVersao]           = useState('')
-  const [telaReset, setTelaReset]     = useState(false)
-  const [emailReset, setEmailReset]   = useState('')
-  const [enviando, setEnviando]       = useState(false)
-  const [enviado, setEnviado]         = useState(false)
 
   useEffect(() => {
     fetch('/api/version', { headers: { 'ngrok-skip-browser-warning': '1' } })
@@ -65,7 +55,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login(payload)
-      if (isElectron && !isAuto && payload.codigo) {
+      if (isElectron && !isAuto && lembrar && payload.codigo) {
         window.electronAPI.setCredentials({ codigo: payload.codigo, senha: payload.senha }).catch(() => {})
       }
       navigate('/')
@@ -100,21 +90,8 @@ export default function Login() {
     setTimeout(() => codeRef.current?.focus(), 50)
   }
 
-  const handleEnviarReset = async e => {
-    e.preventDefault()
-    setEnviando(true)
-    try {
-      await authAPI.esqueciSenha(emailReset)
-      setEnviado(true)
-    } catch {
-      toast.error('Erro ao enviar solicitação.')
-    } finally { setEnviando(false) }
-  }
-
-  const onCodeFocus = e => { e.target.style.borderBottomColor = '#0096CF' }
-  const onCodeBlur  = e => { e.target.style.borderBottomColor = '#D1D5DB' }
-  const onPassFocus = e => { e.target.style.borderColor = '#0096CF'; e.target.style.boxShadow = '0 0 0 3px rgba(0,150,207,.12)' }
-  const onPassBlur  = e => { e.target.style.borderColor = '#D1D5DB'; e.target.style.boxShadow = 'none' }
+  const onFocus = e => { e.target.style.borderColor = 'var(--module-projetos)'; e.target.style.boxShadow = '0 0 0 3px rgba(93,202,165,.15)' }
+  const onBlur  = e => { e.target.style.borderColor = 'var(--border)'; e.target.style.boxShadow = 'none' }
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: '-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif' }}>
@@ -155,7 +132,6 @@ export default function Login() {
         </div>
         <div style={{ position: 'absolute', bottom: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           <div style={{ color: 'rgba(255,255,255,.18)', fontSize: 11 }}>E Mais Consultoria © {new Date().getFullYear()}</div>
-          {versao && <div style={{ color: 'rgba(255,255,255,.25)', fontSize: 10, fontWeight: 600, letterSpacing: '.05em' }}>v{versao}</div>}
         </div>
       </div>
 
@@ -165,52 +141,31 @@ export default function Login() {
         {autoLogging ? (
           <div style={CARD_STYLE}>
             <div style={{ textAlign: 'center', padding: '16px 0' }}>
-              <div style={{ fontSize: 14, color: '#6B7280', marginBottom: 16 }}>Entrando automaticamente...</div>
-              <div style={{ width: 32, height: 32, border: '3px solid #E5E7EB', borderTopColor: '#0096CF', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto' }} />
+              <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 16 }}>Entrando automaticamente...</div>
+              <div style={{ width: 32, height: 32, border: '3px solid var(--border)', borderTopColor: 'var(--brand)', borderRadius: '50%', animation: 'spin .8s linear infinite', margin: '0 auto' }} />
             </div>
             <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
           </div>
 
-        ) : telaReset ? (
-          <div style={CARD_STYLE}>
-            <div style={{ marginBottom: 24 }}>
-              <div style={{ fontSize: 18, fontWeight: 800, color: '#0A1C4E', marginBottom: 6, letterSpacing: '-.4px' }}>Esqueci minha senha</div>
-              <div style={{ fontSize: 13, color: '#6B7280', lineHeight: 1.5 }}>
-                {enviado ? 'Solicitação enviada! O administrador foi notificado.' : 'Informe seu e-mail e o administrador será avisado.'}
-              </div>
-            </div>
-            {!enviado && (
-              <form onSubmit={handleEnviarReset}>
-                <div style={{ marginBottom: 16 }}>
-                  <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>E-mail</label>
-                  <input type="email" placeholder="seu@email.com.br" value={emailReset} required
-                    onChange={e => setEmailReset(e.target.value)} onFocus={onPassFocus} onBlur={onPassBlur} style={PASS_INPUT_STYLE} />
-                </div>
-                <button type="submit" disabled={enviando} style={{
-                  width: '100%', padding: '11px', border: 'none', borderRadius: 8,
-                  background: enviando ? '#7CBFDA' : '#0096CF', color: '#fff', fontSize: 14, fontWeight: 700,
-                  cursor: enviando ? 'default' : 'pointer', transition: 'background .15s',
-                }}>
-                  {enviando ? 'Enviando...' : 'Solicitar redefinição'}
-                </button>
-              </form>
-            )}
-            <button onClick={() => { setTelaReset(false); setEnviado(false); setEmailReset('') }}
-              style={{ marginTop: 16, background: 'none', border: 'none', color: '#0096CF', fontSize: 13, cursor: 'pointer', padding: 0 }}>
-              ← Voltar ao login
-            </button>
-          </div>
-
         ) : (
           <div style={CARD_STYLE}>
-            <div style={{ marginBottom: 28 }}>
-              <div style={{ fontSize: 22, fontWeight: 800, color: '#0A1C4E', marginBottom: 4, letterSpacing: '-.4px' }}>Bem-vindo</div>
-              <div style={{ fontSize: 13, color: '#9CA3AF' }}>Acesse sua conta para continuar</div>
+
+            {/* ── Logo ── */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
+              <div style={{
+                width: 52, height: 52, borderRadius: 14, background: '#0b1e30',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
+              }}>
+                <span style={{ fontSize: 22, fontWeight: 700, color: '#5DCAA5', lineHeight: 1 }}>E</span>
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#0A1C4E', marginBottom: 2 }}>E Mais Consultoria</div>
+              <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Sistema de Gestão</div>
             </div>
 
             <form onSubmit={handleSubmit}>
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 10, letterSpacing: '.03em' }}>
+              {/* Código */}
+              <div style={{ marginBottom: 14 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6, letterSpacing: '.03em' }}>
                   Código de acesso
                 </label>
                 <input
@@ -218,33 +173,51 @@ export default function Login() {
                   type="text"
                   inputMode="numeric"
                   maxLength={3}
-                  placeholder="···"
+                  placeholder="000"
                   value={form.codigo}
                   onChange={e => setForm(f => ({ ...f, codigo: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
-                  onFocus={onCodeFocus}
-                  onBlur={onCodeBlur}
-                  style={CODE_INPUT_STYLE}
+                  onFocus={onFocus}
+                  onBlur={onBlur}
+                  style={{ ...INPUT_BASE, fontSize: 22, fontWeight: 600, textAlign: 'center', letterSpacing: 12 }}
                   autoFocus
                   autoComplete="off"
                 />
               </div>
 
-              <div style={{ marginBottom: 24 }}>
-                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#374151', marginBottom: 5 }}>Senha</label>
-                <input type="password" placeholder="••••••••" value={form.senha}
+              {/* Senha */}
+              <div style={{ marginBottom: isElectron ? 12 : 20 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Senha</label>
+                <input
+                  type="password" placeholder="••••••••" value={form.senha}
                   onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
-                  onFocus={onPassFocus} onBlur={onPassBlur}
-                  style={PASS_INPUT_STYLE} autoComplete="current-password" />
+                  onFocus={onFocus} onBlur={onBlur}
+                  style={{ ...INPUT_BASE, fontSize: 13 }}
+                  autoComplete="current-password"
+                />
               </div>
+
+              {/* Checkbox lembrar — só no Electron */}
+              {isElectron && (
+                <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <input
+                    type="checkbox"
+                    id="lembrar"
+                    checked={lembrar}
+                    onChange={e => setLembrar(e.target.checked)}
+                    style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--brand)', flexShrink: 0 }}
+                  />
+                  <label htmlFor="lembrar" style={{ fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', fontWeight: 400, margin: 0 }}>
+                    Lembrar minhas credenciais neste computador
+                  </label>
+                </div>
+              )}
 
               <button
                 type="submit"
                 disabled={loading || !form.codigo || !form.senha}
-                onMouseEnter={e => { if (!loading && form.codigo && form.senha) e.currentTarget.style.background = '#007BAD' }}
-                onMouseLeave={e => { if (!loading && form.codigo && form.senha) e.currentTarget.style.background = '#0096CF' }}
                 style={{
                   width: '100%', padding: '11px', border: 'none', borderRadius: 8,
-                  background: (loading || !form.codigo || !form.senha) ? '#7CBFDA' : '#0096CF',
+                  background: (loading || !form.codigo || !form.senha) ? 'rgba(0,150,207,.45)' : 'var(--brand)',
                   color: '#fff', fontSize: 14, fontWeight: 700,
                   cursor: (loading || !form.codigo || !form.senha) ? 'default' : 'pointer',
                   transition: 'background .15s', letterSpacing: '.01em',
@@ -254,17 +227,20 @@ export default function Login() {
               </button>
             </form>
 
-            <div style={{ marginTop: 16, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            {/* Rodapé */}
+            <div style={{ marginTop: 20, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
               {isElectron && temCredSalva && (
                 <button onClick={handleTrocarUsuario}
-                  style={{ background: 'none', border: 'none', color: '#9CA3AF', fontSize: 12, cursor: 'pointer', padding: 0 }}>
+                  style={{ background: 'none', border: 'none', color: 'var(--text-muted)', fontSize: 12, cursor: 'pointer', padding: 0 }}>
                   Trocar usuário
                 </button>
               )}
-              <button onClick={() => setTelaReset(true)}
-                style={{ background: 'none', border: 'none', color: '#0096CF', fontSize: 12, cursor: 'pointer', padding: 0 }}>
-                Esqueci minha senha
-              </button>
+              <p style={{ fontSize: 11, color: 'var(--text-muted)', textAlign: 'center', margin: 0, lineHeight: 1.5 }}>
+                Esqueceu seu código ou senha? Fale com o administrador.
+              </p>
+              {versao && (
+                <span style={{ fontSize: 10, color: 'var(--text-muted)', opacity: .5 }}>v{versao}</span>
+              )}
             </div>
           </div>
         )}
