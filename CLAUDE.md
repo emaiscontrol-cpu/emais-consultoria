@@ -328,6 +328,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-29
+**O que foi feito:** Login por código de 3 dígitos — v2.6.0r (PR #50). `codigo_acesso` (VARCHAR 3, unique, nullable) adicionado ao modelo `Usuario` + migrações SQLite/PostgreSQL. `LoginRequest` aceita `{codigo,senha}` OU `{email,senha}` — backend detecta automaticamente. `Login.jsx` redesenhado: card 320px com campo único "Código de acesso" (22px, centrado, letter-spacing 12px, aceita só dígitos). Electron: `preload.js` expõe `window.electronAPI` via `contextBridge`; `main.js` tem handlers IPC que salvam JSON em `app.getPath('userData')`; auto-login na abertura, botão "Trocar usuário" limpa credenciais. `Usuarios.jsx`: coluna "Código" na tabela, campo no modal com validação inline de unicidade. 52 testes passaram no CI, deploy confirmado (ngrok respondeu v2.6.0r).
+**Decisões tomadas:** Credenciais salvas via filesystem (Node.js `fs` + `userData`), sem electron-store como dependência adicional. Login web (sem Electron) aceita email normalmente — a UI de código é específica do Electron/web com código atribuído. Usuários sem código cadastrado não conseguem logar pela nova tela (precisam de acesso direto ao endereço com email).
+**Próximo passo:** Atribuir códigos aos usuários no painel de Usuários. Fazer Ctrl+Shift+R no Electron para carregar a nova versão.
+
 ### 2026-06-28 (sessão 2)
 **O que foi feito:** 6 correções e melhorias no Plano Referencial — v2.6.0j (PR #40). Bug #1: `criar_vinculo` tornou-se upsert — deleta vínculo não-herdado anterior do mesmo demonstrativo antes de inserir; SQL de cleanup no startup PostgreSQL remove duplicatas já existentes. Bug #2: `PainelVincular` inicializa na primeira tab sem vínculo direto; se todos os 3 demonstrativos vinculados, exibe mensagem com instrução de usar × para remover. Ponto 5: lista de agrupamentos usa `<input type="radio">` + `<label>` clicável. Ponto 6: botões "Nível 1|2|3|Todos|Colapsar" acima da tabela; `ContaRow` sincroniza via `expandKey`/`expandTarget` em `useEffect`. 52 testes passaram no CI, PR mergeado, deploy automático.
 **Decisões tomadas:** `criar_vinculo` é agora upsert por (conta_id, demonstrativo) — uma conta só pode ter um vínculo direto por demonstrativo; o cleanup SQL via `MIN(id) PARTITION BY` garante idempotência; `expandTarget = -1` para "Colapsar tudo" (nivel < -1 sempre false).
