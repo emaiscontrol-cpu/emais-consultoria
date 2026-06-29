@@ -49,6 +49,7 @@ class Usuario(Base):
     ia_gemini     = Column(Boolean, default=False)
     ia_openrouter = Column(Boolean, default=False)
     foto          = Column(Text, nullable=True)
+    codigo_acesso = Column(String(3), unique=True, nullable=True)
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     # se for cliente, vincula a um cliente
     cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=True)

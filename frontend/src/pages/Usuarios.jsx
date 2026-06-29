@@ -7,7 +7,7 @@ import toast from 'react-hot-toast'
 
 const PERFIS = { admin:'Administrador', consultor:'Consultor', ger_projeto:'Ger. Projeto', analista:'Analista', ti:'T.I' }
 const CORES  = { admin:'blue', consultor:'teal', ger_projeto:'amber', analista:'purple', ti:'green' }
-const FORM_VAZIO = { nome:'', email:'', senha:'', perfil:'consultor', cliente_id:'', ia_claude: false, ia_gemini: false, ia_openrouter: false }
+const FORM_VAZIO = { nome:'', email:'', senha:'', perfil:'consultor', cliente_id:'', ia_claude: false, ia_gemini: false, ia_openrouter: false, codigo_acesso: '' }
 
 export default function Usuarios() {
   const { usuario: eu } = useAuth()
@@ -48,7 +48,7 @@ export default function Usuarios() {
 
   function abrirEditar(u) {
     setEditando(u)
-    setForm({ nome: u.nome, email: u.email, senha: '', perfil: u.perfil, cliente_id: u.cliente_id || '', ia_claude: u.ia_claude ?? false, ia_gemini: u.ia_gemini ?? false, ia_openrouter: u.ia_openrouter ?? false })
+    setForm({ nome: u.nome, email: u.email, senha: '', perfil: u.perfil, cliente_id: u.cliente_id || '', ia_claude: u.ia_claude ?? false, ia_gemini: u.ia_gemini ?? false, ia_openrouter: u.ia_openrouter ?? false, codigo_acesso: u.codigo_acesso || '' })
     setShowModal(true)
   }
 
@@ -61,6 +61,12 @@ export default function Usuarios() {
     setSaving(true)
     try {
       const clienteId = form.cliente_id ? parseInt(form.cliente_id) : null
+      // Verifica unicidade do código localmente
+      const codigoLimpo = form.codigo_acesso.replace(/\D/g, '').slice(0, 3) || null
+      if (codigoLimpo) {
+        const codigoJaUsado = usuarios.some(u => u.codigo_acesso === codigoLimpo && (!editando || u.id !== editando.id))
+        if (codigoJaUsado) { toast.error('Código de acesso já utilizado por outro usuário'); setSaving(false); return }
+      }
       if (editando) {
         const payload = { nome: form.nome, email: form.email, perfil: form.perfil }
         if (form.senha) payload.senha = form.senha
@@ -71,10 +77,12 @@ export default function Usuarios() {
           payload.ia_gemini     = form.ia_gemini
           payload.ia_openrouter = form.ia_openrouter
         }
+        if (codigoLimpo) payload.codigo_acesso = codigoLimpo
+        else if (editando.codigo_acesso) payload.remover_codigo = true
         await usuariosAPI.atualizar(editando.id, payload)
         toast.success('Usuário atualizado!')
       } else {
-        await usuariosAPI.criar({ ...form, cliente_id: clienteId })
+        await usuariosAPI.criar({ ...form, cliente_id: clienteId, codigo_acesso: codigoLimpo })
         toast.success('Usuário criado!')
       }
       setShowModal(false)
@@ -165,7 +173,7 @@ export default function Usuarios() {
         <div className="table-wrap">
           <table>
             <thead>
-              <tr><th>Nome</th><th>Email</th><th>Perfil</th><th>Cliente vinculado</th><th></th></tr>
+              <tr><th>Nome</th><th>Código</th><th>Perfil</th><th>Cliente vinculado</th><th></th></tr>
             </thead>
             <tbody>
               {usuarios.map(u => {
@@ -185,7 +193,11 @@ export default function Usuarios() {
                         )}
                       </div>
                     </td>
-                    <td className="text-muted">{u.email}</td>
+                    <td>
+                      {u.codigo_acesso
+                        ? <span style={{ fontFamily:'monospace', fontWeight:700, fontSize:15, letterSpacing:4, color:'#0A1C4E' }}>{u.codigo_acesso}</span>
+                        : <span className="text-muted">—</span>}
+                    </td>
                     <td><span className={`badge badge-${CORES[u.perfil] || 'gray'}`}>{PERFIS[u.perfil]}</span></td>
                     <td className="text-muted">{cliente?.razao_social || '—'}</td>
                     <td>
@@ -230,6 +242,26 @@ export default function Usuarios() {
                 <input type="email" value={form.email} onChange={e => setForm(f => ({...f, email: e.target.value}))} required />
               </div>
               <div className="form-group">
+                <label>Código de acesso</label>
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={3}
+                  placeholder="000"
+                  value={form.codigo_acesso}
+                  onChange={e => setForm(f => ({...f, codigo_acesso: e.target.value.replace(/\D/g, '').slice(0, 3)}))}
+                  style={{ textAlign:'center', letterSpacing:6, fontWeight:700, fontSize:16 }}
+                />
+                {form.codigo_acesso.length > 0 && form.codigo_acesso.length < 3 && (
+                  <div style={{ fontSize:11, color:'var(--red)', marginTop:3 }}>Deve ter 3 dígitos</div>
+                )}
+                {form.codigo_acesso.length === 3 && usuarios.some(u => u.codigo_acesso === form.codigo_acesso && (!editando || u.id !== editando.id)) && (
+                  <div style={{ fontSize:11, color:'var(--red)', marginTop:3 }}>Código já utilizado</div>
+                )}
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group" style={{ flex:1 }}>
                 <label>{editando ? 'Nova senha (opcional)' : 'Senha *'}</label>
                 <input type="password" value={form.senha}
                   onChange={e => setForm(f => ({...f, senha: e.target.value}))}

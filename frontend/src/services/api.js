@@ -22,7 +22,7 @@ api.interceptors.response.use(
 )
 
 export const authAPI = {
-  login:          (email, senha)            => api.post('/auth/login', { email, senha }),
+  login:          (payload)                 => api.post('/auth/login', payload),
   me:             ()                        => api.get('/auth/me'),
   alterarSenha:   (senha_atual, nova_senha) => api.put('/auth/senha', { senha_atual, nova_senha }),
   atualizarFoto:  (foto)                    => api.put('/auth/foto', { foto }),

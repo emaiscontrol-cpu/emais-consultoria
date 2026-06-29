@@ -6,7 +6,8 @@ from models import PerfilEnum, StatusTarefa, StatusFase, StatusProjeto, StatusSu
 
 # ── AUTH ──────────────────────────────────────────────
 class LoginRequest(BaseModel):
-    email: str
+    email: Optional[str] = None
+    codigo: Optional[str] = None
     senha: str
 
 # ── USUARIO ───────────────────────────────────────────
@@ -16,6 +17,7 @@ class UsuarioCreate(BaseModel):
     senha: str
     perfil: PerfilEnum = PerfilEnum.consultor
     cliente_id: Optional[int] = None
+    codigo_acesso: Optional[str] = None
 
 class UsuarioOut(BaseModel):
     id: int
@@ -28,6 +30,7 @@ class UsuarioOut(BaseModel):
     ia_openrouter: bool = False
     cliente_id: Optional[int]
     foto: Optional[str] = None
+    codigo_acesso: Optional[str] = None
     class Config:
         from_attributes = True
 
@@ -41,7 +44,9 @@ class UsuarioUpdate(BaseModel):
     ia_openrouter: Optional[bool] = None
     senha: Optional[str] = None
     cliente_id: Optional[int] = None
-    remover_cliente: Optional[bool] = None  # True = desvincula o cliente
+    remover_cliente: Optional[bool] = None
+    codigo_acesso: Optional[str] = None
+    remover_codigo: Optional[bool] = None
 
 # ── CLIENTE ───────────────────────────────────────────
 class ClienteCreate(BaseModel):
