@@ -230,6 +230,15 @@ AND id NOT IN (
     WHERE herdado = false
     GROUP BY conta_referencial_id, demonstrativo
 )""",
+            # v2.6.0p: remove herdado=True redundantes onde já existe herdado=False para o mesmo conta+demo
+            """DELETE FROM ref_conta_agrupamento
+WHERE herdado = true
+AND EXISTS (
+    SELECT 1 FROM ref_conta_agrupamento AS b
+    WHERE b.conta_referencial_id = ref_conta_agrupamento.conta_referencial_id
+    AND b.demonstrativo = ref_conta_agrupamento.demonstrativo
+    AND b.herdado = false
+)""",
             # v2.6.0o: corrige nomes de agrupamentos importados sem acento
             "UPDATE agrupamentos SET nome='Vendas - Crédito'                             WHERE slug='vendas_credito'",
             "UPDATE agrupamentos SET nome='Vendas - Débito'                              WHERE slug='vendas_debito'",
@@ -346,7 +355,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.0o"
+app.version = "2.6.0p"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():

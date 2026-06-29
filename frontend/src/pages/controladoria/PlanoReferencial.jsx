@@ -57,7 +57,8 @@ const DEMO_BG_SOFT = {
 }
 
 function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFechar }) {
-  const temVinculo = (d) => vinculos.some(v => v.demonstrativo === d && !v.herdado)
+  // Considera qualquer vínculo (herdado ou não) — herdado=True pode ser removido/substituído pelo usuário
+  const temVinculo = (d) => vinculos.some(v => v.demonstrativo === d)
   const primeiroSemVinculo = DEMOS.find(d => !temVinculo(d.value))
 
   const [demo, setDemo]                   = useState(() => (primeiroSemVinculo || DEMOS[0]).value)
@@ -66,7 +67,8 @@ function PainelVincular({ conta, nivel, agrupamentos, vinculos, onSalvo, onFecha
   const [propagar, setPropagar]           = useState(false)
   const [salvando, setSalvando]           = useState(false)
 
-  const vinculoAtual = vinculos.find(v => v.demonstrativo === demo && !v.herdado) || null
+  // Inclui herdado=True: usuário pode sobrescrever qualquer vínculo
+  const vinculoAtual = vinculos.find(v => v.demonstrativo === demo) || null
   const cor          = DEMO_COR[demo] || { bg: 'var(--surface-hover)', text: 'var(--text-muted)' }
 
   useEffect(() => {
@@ -343,7 +345,7 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh, expandKey, e
             {vinculos.length === 0
               ? <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>—</span>
               : vinculos.map(v => (
-                  <BadgeVinculo key={v.id} v={v} onRemover={!v.herdado ? removerVinculo : null} />
+                  <BadgeVinculo key={v.id} v={v} onRemover={removerVinculo} />
                 ))
             }
             <button
