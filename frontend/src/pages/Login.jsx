@@ -1,4 +1,7 @@
+// PADRÃO DO SISTEMA: Em formulários com múltiplos campos, Enter avança para o próximo campo.
+// No último campo, Enter submete. Usar onKeyDown + useRef. Ver DESIGN_SYSTEM.md.
 import logo from '../assets/logo.jpeg'
+import eIcon from '../assets/icon.png'
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
@@ -27,9 +30,10 @@ export default function Login() {
   const { login } = useAuth()
   const navigate   = useNavigate()
   const codeRef    = useRef(null)
+  const senhaRef   = useRef(null)
 
   const [form, setForm]               = useState({ codigo: '', senha: '' })
-  const [lembrar, setLembrar]         = useState(false)
+  const [remember, setRemember]       = useState(true)
   const [loading, setLoading]         = useState(false)
   const [autoLogging, setAutoLogging] = useState(false)
   const [temCredSalva, setTemCredSalva] = useState(false)
@@ -55,7 +59,7 @@ export default function Login() {
     setLoading(true)
     try {
       await login(payload)
-      if (isElectron && !isAuto && lembrar && payload.codigo) {
+      if (isElectron && !isAuto && remember && payload.codigo) {
         window.electronAPI.setCredentials({ codigo: payload.codigo, senha: payload.senha }).catch(() => {})
       }
       navigate('/')
@@ -76,6 +80,8 @@ export default function Login() {
       if (isAuto) setAutoLogging(false)
     }
   }
+
+  const handleLogin = () => handleSubmit()
 
   const handleSubmit = async e => {
     e?.preventDefault()
@@ -152,12 +158,7 @@ export default function Login() {
 
             {/* ── Logo ── */}
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', marginBottom: 28 }}>
-              <div style={{
-                width: 52, height: 52, borderRadius: 14, background: '#0b1e30',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 12,
-              }}>
-                <span style={{ fontSize: 22, fontWeight: 700, color: '#5DCAA5', lineHeight: 1 }}>E</span>
-              </div>
+              <img src={eIcon} style={{ width: 52, height: 52, borderRadius: 14, marginBottom: 12 }} alt="E Mais" />
               <div style={{ fontSize: 16, fontWeight: 600, color: '#0A1C4E', marginBottom: 2 }}>E Mais Consultoria</div>
               <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Sistema de Gestão</div>
             </div>
@@ -176,6 +177,7 @@ export default function Login() {
                   placeholder="000"
                   value={form.codigo}
                   onChange={e => setForm(f => ({ ...f, codigo: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
+                  onKeyDown={e => e.key === 'Enter' && senhaRef.current?.focus()}
                   onFocus={onFocus}
                   onBlur={onBlur}
                   style={{ ...INPUT_BASE, fontSize: 22, fontWeight: 600, textAlign: 'center', letterSpacing: 12 }}
@@ -185,32 +187,31 @@ export default function Login() {
               </div>
 
               {/* Senha */}
-              <div style={{ marginBottom: isElectron ? 12 : 20 }}>
+              <div style={{ marginBottom: 12 }}>
                 <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--text-2)', marginBottom: 6 }}>Senha</label>
                 <input
+                  ref={senhaRef}
                   type="password" placeholder="••••••••" value={form.senha}
                   onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
+                  onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   onFocus={onFocus} onBlur={onBlur}
                   style={{ ...INPUT_BASE, fontSize: 13 }}
                   autoComplete="current-password"
                 />
               </div>
 
-              {/* Checkbox lembrar — só no Electron */}
-              {isElectron && (
-                <div style={{ marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <input
-                    type="checkbox"
-                    id="lembrar"
-                    checked={lembrar}
-                    onChange={e => setLembrar(e.target.checked)}
-                    style={{ width: 14, height: 14, cursor: 'pointer', accentColor: 'var(--brand)', flexShrink: 0 }}
-                  />
-                  <label htmlFor="lembrar" style={{ fontSize: 12, color: 'var(--text-2)', cursor: 'pointer', fontWeight: 400, margin: 0 }}>
-                    Lembrar minhas credenciais neste computador
-                  </label>
-                </div>
-              )}
+              {/* Checkbox */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, margin: '4px 0' }}>
+                <input
+                  type="checkbox"
+                  id="remember"
+                  checked={remember}
+                  onChange={e => setRemember(e.target.checked)}
+                />
+                <label htmlFor="remember" style={{ fontSize: 12, color: 'var(--text-2)', cursor: 'pointer' }}>
+                  Lembrar minhas credenciais neste computador
+                </label>
+              </div>
 
               <button
                 type="submit"
