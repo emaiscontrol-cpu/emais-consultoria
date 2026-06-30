@@ -105,40 +105,48 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
     if not rows:
         return []
 
-    # 2. fc_lancamentos aggregados por LOWER(agrupamento_slug)
-    #    Soma todas as fontes (extrato + despesa) sem passar por fc_slug_depara.
+    # 2. fc_lancamentos aggregados por LOWER(agrupamento_slug).
+    #    Para mensal/acumulado: COUNT(DISTINCT conta_origem) na mesma query.
+    #    Para todos: query separada de counts (agrupada por mes+slug não serve).
     if modo == "todos":
         fc_raw = db.execute(text(
             "SELECT LOWER(agrupamento_slug) as slug, mes, COALESCE(SUM(valor),0) as total "
             "FROM fc_lancamentos WHERE cliente_id=:cid AND ano=:ano "
             "GROUP BY LOWER(agrupamento_slug), mes"
         ), {"cid": cliente_id, "ano": ano}).fetchall()
-        # lower_slug → {mes → total}
         by_mes: dict[str, dict[int, float]] = defaultdict(lambda: defaultdict(float))
         for r in fc_raw:
             by_mes[r.slug][r.mes] += float(r.total)
+
+        cnt_raw = db.execute(text(
+            "SELECT LOWER(agrupamento_slug) as slug, COUNT(DISTINCT conta_origem) as cnt "
+            "FROM fc_lancamentos WHERE cliente_id=:cid AND ano=:ano "
+            "GROUP BY LOWER(agrupamento_slug)"
+        ), {"cid": cliente_id, "ano": ano}).fetchall()
+        slug_counts: dict[str, int] = {r.slug: int(r.cnt) for r in cnt_raw}
     else:
         if modo == "mensal" and mes:
             fc_raw = db.execute(text(
-                "SELECT LOWER(agrupamento_slug) as slug, COALESCE(SUM(valor),0) as total "
+                "SELECT LOWER(agrupamento_slug) as slug, COALESCE(SUM(valor),0) as total, "
+                "COUNT(DISTINCT conta_origem) as cnt "
                 "FROM fc_lancamentos WHERE cliente_id=:cid AND ano=:ano AND mes=:mes "
                 "GROUP BY LOWER(agrupamento_slug)"
             ), {"cid": cliente_id, "ano": ano, "mes": mes}).fetchall()
         else:
             mes_max = mes if mes else 12
             fc_raw = db.execute(text(
-                "SELECT LOWER(agrupamento_slug) as slug, COALESCE(SUM(valor),0) as total "
+                "SELECT LOWER(agrupamento_slug) as slug, COALESCE(SUM(valor),0) as total, "
+                "COUNT(DISTINCT conta_origem) as cnt "
                 "FROM fc_lancamentos WHERE cliente_id=:cid AND ano=:ano AND mes<=:mx "
                 "GROUP BY LOWER(agrupamento_slug)"
             ), {"cid": cliente_id, "ano": ano, "mx": mes_max}).fetchall()
-        # lower_slug → total
         slug_totals: dict[str, float] = {}
+        slug_counts = {}
         for r in fc_raw:
             slug_totals[r.slug] = float(r.total)
+            slug_counts[r.slug] = int(r.cnt)
 
-    # 3. Helper: valor de uma linha de agrupamento do template.
-    #    Compound slugs (ex: "COMPRAS+Compras", "Trib+Trib") são parseados e
-    #    deduplica-se por slug em lowercase para evitar double-counting.
+    # 3. Helpers para valores e contagem de contas
     def agrup_val(slug_str: Optional[str]) -> float | dict:
         components = _parse_compound_slug(slug_str)
         if modo == "todos":
@@ -162,7 +170,20 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
                 total += sign * slug_totals.get(key, 0.0)
             return total
 
-    # 5. Phase 1 — compute agrupamentos; titulos → 0
+    def get_conta_count(slug_str: Optional[str]) -> int:
+        """Soma COUNT(DISTINCT conta_origem) por componente do slug composto (dedup by lowercase)."""
+        components = _parse_compound_slug(slug_str)
+        seen: set[str] = set()
+        total = 0
+        for slug_comp, _ in components:
+            key = slug_comp.lower()
+            if key in seen:
+                continue
+            seen.add(key)
+            total += slug_counts.get(key, 0)
+        return total
+
+    # 4. Phase 1 — compute agrupamentos
     row_vals: dict[int, object] = {}
     linhas_out = []
     for r in rows:
@@ -174,10 +195,14 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
             "realizado": None,
             "pct_realizado": None,
             "valores_mensais": None,
+            "conta_count": 0,
+            "agrupamento_slug": None,
         }
         if r.tipo == "agrupamento":
             val = agrup_val(r.agrupamento_slug)
             row_vals[r.ordem] = val
+            entry["conta_count"] = get_conta_count(r.agrupamento_slug)
+            entry["agrupamento_slug"] = r.agrupamento_slug
             if modo == "todos":
                 entry["valores_mensais"] = val
                 entry["realizado"] = round(sum(val.values()), 2) if val else 0.0
@@ -187,7 +212,7 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
             row_vals[r.ordem] = {} if modo == "todos" else 0.0
         linhas_out.append(entry)
 
-    # 6. Phase 2 — compute totalizadores (multi-pass for forward refs)
+    # 5. Phase 2 — compute totalizadores (multi-pass for forward refs)
     formula_map = {r.ordem: r.formula_texto for r in rows if r.tipo == "totalizador"}
     for _ in range(10):
         changed = False
@@ -220,7 +245,7 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
         if not changed:
             break
 
-    # 7. %Realizado vs Vendas Totais (ordem 12)
+    # 6. %Realizado vs Vendas Totais (ordem 12)
     ref = row_vals.get(12, 0.0)
     ref_f = sum(ref.values()) if isinstance(ref, dict) else float(ref)
     if ref_f:
@@ -232,7 +257,7 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
     return linhas_out
 
 
-# ── Endpoint ──────────────────────────────────────────────────────────────────
+# ── Endpoints ─────────────────────────────────────────────────────────────────
 
 @router.get("/fluxo-caixa")
 def demonstrativo_fluxo_caixa(
@@ -263,3 +288,64 @@ def demonstrativo_fluxo_caixa(
         "modo": modo,
         "linhas": linhas,
     }
+
+
+@router.get("/fluxo-caixa/detalhe")
+def detalhe_agrupamento(
+    cliente_id: int = Query(...),
+    ano: int = Query(...),
+    mes: Optional[int] = Query(None, ge=1, le=12),
+    agrupamento_slug: str = Query(...),
+    modo: str = Query("mensal", regex="^(mensal|acumulado|todos)$"),
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    """Lançamentos por conta_origem de um agrupamento no período informado."""
+    cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
+    if not cliente:
+        raise HTTPException(404, "Cliente não encontrado")
+    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id != cliente_id:
+        raise HTTPException(403, "Acesso negado")
+
+    components = _parse_compound_slug(agrupamento_slug)
+    slugs = list({s.lower() for s, _ in components})
+    if not slugs:
+        return []
+
+    # Placeholders parametrizados para o IN clause (slug_ph = ':s0,:s1,...')
+    slug_params = {f's{i}': s for i, s in enumerate(slugs)}
+    slug_ph = ','.join(f':s{i}' for i in range(len(slugs)))
+
+    if modo == "mensal":
+        if not mes:
+            raise HTTPException(422, "mes obrigatório no modo mensal")
+        where_date = "AND mes = :mes"
+        date_params: dict = {"mes": mes}
+    elif modo == "acumulado":
+        where_date = "AND mes <= :mx"
+        date_params = {"mx": mes or 12}
+    else:  # todos
+        where_date = ""
+        date_params = {}
+
+    rows = db.execute(
+        text(f"""
+            SELECT conta_origem, MAX(descricao) as descricao,
+                   COALESCE(SUM(valor), 0) as valor
+            FROM fc_lancamentos
+            WHERE cliente_id=:cid AND ano=:ano {where_date}
+              AND LOWER(agrupamento_slug) IN ({slug_ph})
+            GROUP BY conta_origem
+            ORDER BY COALESCE(SUM(valor), 0) DESC
+        """),
+        {"cid": cliente_id, "ano": ano, **date_params, **slug_params}
+    ).fetchall()
+
+    return [
+        {
+            "conta_origem": r.conta_origem or "—",
+            "descricao": r.descricao,
+            "valor": float(r.valor),
+        }
+        for r in rows
+    ]
