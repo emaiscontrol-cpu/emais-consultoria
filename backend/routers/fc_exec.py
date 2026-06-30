@@ -295,12 +295,18 @@ def detalhe_agrupamento(
     cliente_id: int = Query(...),
     ano: int = Query(...),
     mes: Optional[int] = Query(None, ge=1, le=12),
+    mes_fim: Optional[int] = Query(None, ge=1, le=12),
     agrupamento_slug: str = Query(...),
     modo: str = Query("mensal", regex="^(mensal|acumulado|todos)$"),
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
-    """Lançamentos por conta_origem de um agrupamento no período informado."""
+    """Lançamentos por conta_origem de um agrupamento no período informado.
+
+    Modo mensal  → mes obrigatório, filtra pelo mês exato.
+    Modo acumulado → mes (início, default 1) e mes_fim (fim, default mes); soma o intervalo.
+    Modo todos   → se mes fornecido filtra pelo mês; senão retorna o ano inteiro.
+    """
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(404, "Cliente não encontrado")
@@ -322,11 +328,17 @@ def detalhe_agrupamento(
         where_date = "AND mes = :mes"
         date_params: dict = {"mes": mes}
     elif modo == "acumulado":
-        where_date = "AND mes <= :mx"
-        date_params = {"mx": mes or 12}
+        mes_ini = mes or 1
+        mes_end = mes_fim if mes_fim is not None else (mes or 12)
+        where_date = "AND mes >= :mes_ini AND mes <= :mes_end"
+        date_params = {"mes_ini": mes_ini, "mes_end": mes_end}
     else:  # todos
-        where_date = ""
-        date_params = {}
+        if mes:
+            where_date = "AND mes = :mes"
+            date_params = {"mes": mes}
+        else:
+            where_date = ""
+            date_params = {}
 
     rows = db.execute(
         text(f"""

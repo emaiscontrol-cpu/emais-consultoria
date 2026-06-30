@@ -3,9 +3,11 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import { demonstrativoFcAPI, clientesAPI } from '../../services/api'
 import { LoadingPage } from '../../components/shared'
 
-const MESES   = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
-const ANOS    = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 2 + i)
-const MESES_N = Array.from({ length: 12 }, (_, i) => i + 1)
+const MESES      = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                    'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+const ANOS       = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 2 + i)
+const MESES_N    = Array.from({ length: 12 }, (_, i) => i + 1)
 
 const fmt = v =>
   v == null ? '—' :
@@ -20,10 +22,10 @@ function corValor(v) {
   return v < 0 ? 'var(--red, #EF4444)' : 'inherit'
 }
 
-// Para cada agrupamento: qual totalizador "fecha" sua seção (para collapse e para %)
+// Para cada agrupamento: qual totalizador fecha sua seção (collapse e % de participação)
 function buildGroupings(linhas) {
-  const parentOf        = {}  // agrup.ordem → totalizador.ordem (collapse)
-  const sectionRefOrdem = {}  // agrup.ordem → totalizador.ordem (% de participação)
+  const parentOf        = {}
+  const sectionRefOrdem = {}
   let pending = []
   for (const l of linhas) {
     if (l.tipo === 'titulo') {
@@ -70,16 +72,16 @@ export default function FluxoCaixa() {
   const [loading,     setLoading]     = useState(false)
   const [erro,        setErro]        = useState('')
 
-  // Melhoria 1 — expand/collapse de totalizadores
+  // Melhoria 1 — expand/collapse de seções por totalizador
   const [collapsedTotais, setCollapsedTotais] = useState(new Set())
 
-  // Melhoria 2 — % de participação (só no modo "todos")
+  // Melhoria 2 — % de participação (modo "todos")
   const [showPct, setShowPct] = useState(false)
 
-  // Melhoria 3 — detalhe por conta_origem
-  const [detailOpen,   setDetailOpen]   = useState({})
-  const [detalheCache, setDetalheCache] = useState({})
-  const [detalheLoad,  setDetalheLoad]  = useState({})
+  // Melhoria 3 — painel de detalhe por célula de valor
+  const [activeDetail,  setActiveDetail]  = useState(null)  // { ordem, cacheKey, label }
+  const [detalheCache,  setDetalheCache]  = useState({})
+  const [detalheLoading, setDetalheLoading] = useState(false)
 
   useEffect(() => {
     clientesAPI.listar().then(r => setClientes(r.data)).catch(() => {})
@@ -90,7 +92,7 @@ export default function FluxoCaixa() {
     setLoading(true)
     setErro('')
     setDados(null)
-    setDetailOpen({})
+    setActiveDetail(null)
     setCollapsedTotais(new Set())
     const params = { cliente_id: clienteId, ano, modo }
     if (modo !== 'todos') params.mes = mes
@@ -121,38 +123,38 @@ export default function FluxoCaixa() {
     })
   }
 
-  const toggleDetail = async (linha) => {
-    const { ordem, agrupamento_slug } = linha
-    const cacheKey = `${clienteId}:${ano}:${modo === 'todos' ? 'all' : mes}:${modo}:${agrupamento_slug}`
+  // Abre/fecha painel de detalhe ao clicar numa célula de valor
+  const handleCellClick = async (linha, cacheKey, apiParams, label) => {
+    const { ordem } = linha
 
-    if (detailOpen[ordem]) {
-      setDetailOpen(p => ({ ...p, [ordem]: false }))
+    // Mesma célula → fecha
+    if (activeDetail?.cacheKey === cacheKey && activeDetail?.ordem === ordem) {
+      setActiveDetail(null)
       return
     }
 
-    setDetailOpen(p => ({ ...p, [ordem]: true }))
-    if (detalheCache[cacheKey] !== undefined) return
+    // Nova célula (ou outra célula do mesmo row) → substitui
+    setActiveDetail({ ordem, cacheKey, label })
 
-    setDetalheLoad(p => ({ ...p, [ordem]: true }))
+    if (detalheCache[cacheKey] !== undefined) return  // já em cache
+
+    setDetalheLoading(true)
     try {
-      const params = { cliente_id: clienteId, ano, agrupamento_slug, modo }
-      if (modo !== 'todos') params.mes = mes
-      const r = await demonstrativoFcAPI.detalhe(params)
+      const r = await demonstrativoFcAPI.detalhe(apiParams)
       setDetalheCache(p => ({ ...p, [cacheKey]: r.data }))
     } catch {
       setDetalheCache(p => ({ ...p, [cacheKey]: [] }))
     } finally {
-      setDetalheLoad(p => ({ ...p, [ordem]: false }))
+      setDetalheLoading(false)
     }
   }
 
-  // % relativo ao totalizador que fecha a seção da linha
+  // % relativo ao totalizador que fecha a seção do agrupamento
   const getPct = (linha, mes_i) => {
     const refOrdem = sectionRefOrdem[linha.ordem]
     if (!refOrdem) return null
     const refLinha = totalizadorMap[refOrdem]
     if (!refLinha) return null
-
     let refVal, lineVal
     if (modo === 'todos') {
       if (mes_i !== null) {
@@ -196,19 +198,19 @@ export default function FluxoCaixa() {
         conta_count, agrupamento_slug,
       } = linha
 
-      // Agrupamentos cujo totalizador pai está colapsado ficam ocultos
+      // Agrupamentos sob totalizador colapsado ficam ocultos
       if (tipo === 'agrupamento') {
         const parent = parentOf[ordem]
         if (parent !== undefined && collapsedTotais.has(parent)) continue
       }
 
-      const isTotalizador  = tipo === 'totalizador'
-      const bold           = negrito_totalizador || isTotalizador
-      const bgRow          = negrito_totalizador ? 'var(--surface)' : 'transparent'
-      const isExpanded     = !collapsedTotais.has(ordem)
-      const showDetailIcon = tipo === 'agrupamento' && (conta_count ?? 0) > 1
-      const isDetailOpen   = !!detailOpen[ordem]
-      const cacheKey       = `${clienteId}:${ano}:${modo === 'todos' ? 'all' : mes}:${modo}:${agrupamento_slug}`
+      const isTotalizador = tipo === 'totalizador'
+      const bold          = negrito_totalizador || isTotalizador
+      const bgRow         = negrito_totalizador ? 'var(--surface)' : 'transparent'
+      const isExpanded    = !collapsedTotais.has(ordem)
+
+      // Células de valor clicáveis apenas em agrupamentos com múltiplas contas
+      const isClickable = tipo === 'agrupamento' && (conta_count ?? 0) > 1
 
       const tdBase = {
         padding: '5px 12px', fontSize: 12, fontWeight: bold ? 700 : 400,
@@ -230,19 +232,42 @@ export default function FluxoCaixa() {
         continue
       }
 
-      const Chevron = isExpanded || isDetailOpen ? ChevronDown : ChevronRight
+      // Rótulo: só totalizadores têm chevron (para expand/collapse)
       const rotuloContent = (
         <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {(isTotalizador || showDetailIcon)
-            ? <Chevron size={12} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+          {isTotalizador
+            ? (isExpanded
+                ? <ChevronDown  size={12} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
+                : <ChevronRight size={12} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />)
             : <span style={{ width: 16, flexShrink: 0 }} />}
           {rotulo}
         </span>
       )
 
-      const onClickRotulo = isTotalizador
-        ? () => toggleTotalizador(ordem)
-        : showDetailIcon ? () => toggleDetail(linha) : undefined
+      // Helper: monta uma célula de valor clicável
+      const makeValueCell = (key, v, extraStyle, cacheKey, apiParams, label, pctNode) => {
+        const isThisActive = isClickable && activeDetail?.cacheKey === cacheKey && activeDetail?.ordem === ordem
+        return (
+          <td key={key}
+            style={{
+              ...tdBase, ...extraStyle,
+              cursor: isClickable ? 'pointer' : 'default',
+            }}
+            onClick={isClickable ? () => handleCellClick(linha, cacheKey, apiParams, label) : undefined}
+          >
+            <span style={{
+              color: corValor(v),
+              textDecoration: isClickable ? 'underline dotted' : 'none',
+              textDecorationColor: 'var(--text-muted)',
+              textUnderlineOffset: '3px',
+              fontWeight: isThisActive ? 700 : (bold ? 700 : 400),
+            }}>
+              {v === 0 && !bold ? '—' : fmt(v)}
+            </span>
+            {pctNode}
+          </td>
+        )
+      }
 
       if (modo === 'todos') {
         const totalRow = valores_mensais
@@ -252,28 +277,34 @@ export default function FluxoCaixa() {
 
         result.push(
           <tr key={ordem} style={{ background: bgRow }}>
+            {/* Coluna rótulo — sticky */}
             <td
               style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow,
                 borderRight: '0.5px solid var(--border)', minWidth: 200, maxWidth: 260,
-                whiteSpace: 'normal', cursor: onClickRotulo ? 'pointer' : 'default' }}
-              onClick={onClickRotulo}
+                whiteSpace: 'normal', cursor: isTotalizador ? 'pointer' : 'default' }}
+              onClick={isTotalizador ? () => toggleTotalizador(ordem) : undefined}
             >
               {rotuloContent}
             </td>
+
+            {/* 12 colunas de mês */}
             {MESES_N.map(m => {
               const v   = valores_mensais ? (valores_mensais[m] ?? 0) : 0
               const pct = showPct && tipo === 'agrupamento' ? getPct(linha, m) : null
-              return (
-                <td key={m} style={{ ...tdBase, textAlign: 'right', whiteSpace: 'nowrap' }}>
-                  <span style={{ color: corValor(v) }}>{fmt(v)}</span>
-                  {pct != null && (
-                    <span style={{ color: 'var(--text-muted)', fontSize: 10, marginLeft: 4 }}>
-                      {fmtPct(pct)}
-                    </span>
-                  )}
-                </td>
-              )
+              const pctNode = pct != null
+                ? <span style={{ color: 'var(--text-muted)', fontSize: 10, marginLeft: 4 }}>{fmtPct(pct)}</span>
+                : null
+              const ck = isClickable
+                ? `${clienteId}:${ano}:m:${m}:${agrupamento_slug}`
+                : null
+              const ap = isClickable
+                ? { cliente_id: clienteId, ano, agrupamento_slug, modo: 'mensal', mes: m }
+                : null
+              const lb = isClickable ? `Detalhamento — ${MESES_FULL[m - 1]}` : null
+              return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, ap, lb, pctNode)
             })}
+
+            {/* Coluna Total — não clicável */}
             <td style={{ ...tdBase, textAlign: 'right', fontWeight: 700,
               borderLeft: '0.5px solid var(--border)', whiteSpace: 'nowrap' }}>
               <span style={{ color: corValor(totalRow) }}>{fmt(totalRow)}</span>
@@ -286,19 +317,33 @@ export default function FluxoCaixa() {
           </tr>
         )
       } else {
+        // Modo mensal / acumulado
         const val = realizado ?? 0
+        const ck = isClickable
+          ? `${clienteId}:${ano}:${modo === 'mensal' ? 'm' : 'a'}:${mes}:${agrupamento_slug}`
+          : null
+        const ap = isClickable
+          ? modo === 'mensal'
+            ? { cliente_id: clienteId, ano, agrupamento_slug, modo: 'mensal', mes }
+            : { cliente_id: clienteId, ano, agrupamento_slug, modo: 'acumulado', mes: 1, mes_fim: mes }
+          : null
+        const lb = isClickable
+          ? modo === 'mensal'
+            ? `Detalhamento — ${MESES_FULL[mes - 1]}`
+            : `Detalhamento — Acumulado Jan a ${MESES[mes - 1]}`
+          : null
+
         result.push(
           <tr key={ordem} style={{ background: bgRow }}>
             <td
-              style={{ ...tdBase, minWidth: 220,
-                cursor: onClickRotulo ? 'pointer' : 'default' }}
-              onClick={onClickRotulo}
+              style={{ ...tdBase, minWidth: 220, cursor: isTotalizador ? 'pointer' : 'default' }}
+              onClick={isTotalizador ? () => toggleTotalizador(ordem) : undefined}
             >
               {rotuloContent}
             </td>
-            <td style={{ ...tdBase, textAlign: 'right', whiteSpace: 'nowrap' }}>
-              <span style={{ color: corValor(val) }}>{val === 0 ? '—' : fmt(val)}</span>
-            </td>
+
+            {makeValueCell('val', val, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, ap, lb, null)}
+
             <td style={{ ...tdBase, textAlign: 'right', color: 'var(--text-muted)', fontSize: 11 }}>
               {fmtPct(pct_realizado)}
             </td>
@@ -306,60 +351,69 @@ export default function FluxoCaixa() {
         )
       }
 
-      // Painel de detalhe inline (Melhoria 3)
-      if (tipo === 'agrupamento' && isDetailOpen) {
-        const detalhe  = detalheCache[cacheKey]
-        const isLoading = detalheLoad[ordem]
+      // Painel de detalhe — aparece logo abaixo da linha quando esta linha tem o activeDetail
+      if (activeDetail?.ordem === ordem) {
+        const detalhe  = detalheCache[activeDetail.cacheKey]
+        const isLoading = detalheLoading && !detalhe
 
         result.push(
-          <tr key={`d-${ordem}`}>
+          <tr key={`detail-${ordem}`}>
             <td colSpan={colSpanAll} style={{ padding: 0 }}>
               <div style={{
-                background: 'var(--surface)', borderBottom: '0.5px solid var(--border)',
-                padding: '8px 12px 10px 32px',
+                background: 'var(--surface-hover, var(--surface))',
+                borderBottom: '0.5px solid var(--border)',
+                padding: '10px 16px 12px 32px',
               }}>
+                {/* Cabeçalho do painel */}
+                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)',
+                  marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                  {activeDetail.label}
+                </div>
+
                 {isLoading ? (
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Carregando...</span>
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Carregando...</span>
                 ) : detalhe && detalhe.length > 0 ? (
-                  <div style={detalhe.length > 6
-                    ? { maxHeight: 200, overflowY: 'auto' }
-                    : {}}>
-                    <table style={{ width: '100%', maxWidth: 560, borderCollapse: 'collapse', fontSize: 11 }}>
+                  <div style={detalhe.length > 6 ? { maxHeight: 220, overflowY: 'auto' } : {}}>
+                    <table style={{ width: '100%', maxWidth: 560, borderCollapse: 'collapse' }}>
                       <thead>
                         <tr>
                           <th style={{
                             textAlign: 'left', color: 'var(--text-muted)', fontWeight: 600,
-                            padding: '2px 8px 4px 0', borderBottom: '0.5px solid var(--border)',
+                            padding: '0 8px 6px 0', borderBottom: '0.5px solid var(--border)',
                             fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.04em',
                           }}>
                             Conta de origem
                           </th>
                           <th style={{
                             textAlign: 'right', color: 'var(--text-muted)', fontWeight: 600,
-                            padding: '2px 0 4px 8px', borderBottom: '0.5px solid var(--border)',
+                            padding: '0 0 6px 8px', borderBottom: '0.5px solid var(--border)',
                             whiteSpace: 'nowrap', fontSize: '10.5px', textTransform: 'uppercase',
                             letterSpacing: '0.04em',
                           }}>
-                            {modo === 'todos' ? 'Total Ano' : 'Valor'}
+                            Valor
                           </th>
                         </tr>
                       </thead>
                       <tbody>
                         {detalhe.map((d, i) => (
                           <tr key={i}>
-                            <td style={{ padding: '4px 8px 4px 0',
-                              borderBottom: '0.5px solid var(--border)', color: 'var(--text)' }}>
+                            <td style={{
+                              padding: '5px 8px 5px 0',
+                              borderBottom: '0.5px solid var(--border)',
+                              fontSize: 13, fontWeight: 500, color: 'var(--text)',
+                            }}>
                               {d.conta_origem}
                               {d.descricao && (
-                                <span style={{ color: 'var(--text-muted)', marginLeft: 6 }}>
+                                <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
                                   — {d.descricao}
                                 </span>
                               )}
                             </td>
                             <td style={{
-                              textAlign: 'right', padding: '4px 0 4px 8px',
+                              textAlign: 'right', padding: '5px 0 5px 8px',
                               borderBottom: '0.5px solid var(--border)',
-                              whiteSpace: 'nowrap', fontWeight: 500, color: corValor(d.valor),
+                              whiteSpace: 'nowrap', fontSize: 13, fontWeight: 500,
+                              color: corValor(d.valor),
                             }}>
                               {fmt(d.valor)}
                             </td>
@@ -369,8 +423,8 @@ export default function FluxoCaixa() {
                     </table>
                   </div>
                 ) : (
-                  <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-                    Nenhum lançamento detalhado encontrado.
+                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
+                    Nenhum lançamento encontrado.
                   </span>
                 )}
               </div>
@@ -440,7 +494,7 @@ export default function FluxoCaixa() {
 
       {!loading && dados && (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          {/* Barra de controles do demonstrativo */}
+          {/* Controles do demonstrativo */}
           <div style={{ padding: '10px 16px', borderBottom: '0.5px solid var(--border)',
             display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontWeight: 700, fontSize: 14 }}>{dados.cliente_nome}</span>
@@ -464,15 +518,11 @@ export default function FluxoCaixa() {
                   % participação
                 </button>
               )}
-              <button
-                className="btn-secondary"
-                onClick={() => setCollapsedTotais(new Set())}
+              <button className="btn-secondary" onClick={() => setCollapsedTotais(new Set())}
                 style={{ padding: '4px 10px', fontSize: 11 }}>
                 Expandir tudo
               </button>
-              <button
-                className="btn-secondary"
-                onClick={() => setCollapsedTotais(new Set(allTotalizadores))}
+              <button className="btn-secondary" onClick={() => setCollapsedTotais(new Set(allTotalizadores))}
                 style={{ padding: '4px 10px', fontSize: 11 }}>
                 Colapsar tudo
               </button>
