@@ -5,7 +5,7 @@ import {
   History, BarChart2, BookOpen, List, FileSpreadsheet, NotebookPen,
   ChevronDown, ChevronUp, Layers, ListTodo, AlignLeft, DatabaseBackup,
   Camera, Copy, Search, Globe, FolderOpen, Target, Download, Lock,
-  TrendingUp, LineChart,
+  TrendingUp, LineChart, Bot,
 } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import { Avatar } from './shared'
@@ -369,7 +369,8 @@ function AnalisesSection({ bloqueado }) {
 function AssistenteIASection({ podeClaudeBtn, podeGemini, podeOR, activePanel, onOpenIA }) {
   if (!podeClaudeBtn && !podeGemini && !podeOR) return null
 
-  const [open, setOpen] = useState(true)
+  const [open, setOpen]       = useState(true)
+  const [hovered, setHovered] = useState(null)
 
   const items = [
     podeClaudeBtn && { key: 'claude',     label: 'Claude',     accent: '#7c3aed', Logo: LogoClaude },
@@ -381,23 +382,49 @@ function AssistenteIASection({ podeClaudeBtn, podeGemini, podeOR, activePanel, o
 
   return (
     <div>
-      <SectionBtn emoji="🤖" label="Assistente IA" open={open} isActive={isAnyActive} onClick={() => setOpen(v => !v)} />
+      {/* Cabeçalho — mesmo visual austero de SectionBtn mas com ícone Lucide */}
+      <button onClick={() => setOpen(v => !v)} style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        width: '100%', padding: '6px 14px', border: 'none', outline: 'none',
+        cursor: 'pointer', background: 'transparent', marginTop: 4,
+      }}>
+        <span style={{
+          fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
+          color: isAnyActive ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.45)',
+          display: 'flex', alignItems: 'center', gap: 5,
+          transition: 'color .15s',
+        }}>
+          <Bot size={13} color={isAnyActive ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.45)'} />
+          Assistente IA
+        </span>
+        {open
+          ? <ChevronUp   size={11} color={isAnyActive ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.35)'} />
+          : <ChevronDown size={11} color={isAnyActive ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.35)'} />
+        }
+      </button>
+
       {open && (
         <div style={{ paddingLeft: 10, marginTop: 2 }}>
           {items.map(({ key, label, accent, Logo }) => {
             const isActive = activePanel === key
+            const isHov    = hovered === key
             return (
               <button
                 key={key}
                 onClick={() => onOpenIA(isActive ? null : key)}
-                className="nav-item"
+                onMouseEnter={() => setHovered(key)}
+                onMouseLeave={() => setHovered(null)}
                 style={{
-                  border: 'none', width: '100%', textAlign: 'left',
-                  fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7,
-                  ...(isActive ? { background: `${accent}28`, color: '#fff', fontWeight: 600 } : {}),
+                  display: 'flex', alignItems: 'center', gap: 9,
+                  width: '100%', padding: '8px 14px',
+                  border: 'none', outline: 'none', cursor: 'pointer',
+                  textAlign: 'left', fontSize: 13, fontWeight: isActive ? 600 : 400,
+                  background: isActive ? `${accent}28` : (isHov ? 'rgba(255,255,255,.08)' : 'transparent'),
+                  color: isActive ? '#fff' : 'rgba(255,255,255,.62)',
+                  transition: 'background .15s',
                 }}
               >
-                <Logo size={14} color={isActive ? '#fff' : accent} />
+                <Logo size={18} color={isActive ? '#fff' : accent} />
                 {label}
               </button>
             )
