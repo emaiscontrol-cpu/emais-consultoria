@@ -105,28 +105,18 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
     if not rows:
         return []
 
-    # 2. De-Para: slug_extrato.lower() → agrupamento_id
-    depara = {
-        r.slug: r.agrupamento_id
-        for r in db.execute(text(
-            "SELECT LOWER(slug_extrato) as slug, agrupamento_id "
-            "FROM fc_slug_depara WHERE cliente_id = :cid"
-        ), {"cid": cliente_id}).fetchall()
-    }
-
-    # 3. fc_lancamentos aggregation
+    # 2. fc_lancamentos aggregados por LOWER(agrupamento_slug)
+    #    Soma todas as fontes (extrato + despesa) sem passar por fc_slug_depara.
     if modo == "todos":
         fc_raw = db.execute(text(
             "SELECT LOWER(agrupamento_slug) as slug, mes, COALESCE(SUM(valor),0) as total "
             "FROM fc_lancamentos WHERE cliente_id=:cid AND ano=:ano "
             "GROUP BY LOWER(agrupamento_slug), mes"
         ), {"cid": cliente_id, "ano": ano}).fetchall()
-        # agrupamento_id → {mes → total}
-        by_mes: dict[int, dict[int, float]] = defaultdict(lambda: defaultdict(float))
+        # lower_slug → {mes → total}
+        by_mes: dict[str, dict[int, float]] = defaultdict(lambda: defaultdict(float))
         for r in fc_raw:
-            aid = depara.get(r.slug)
-            if aid:
-                by_mes[aid][r.mes] += float(r.total)
+            by_mes[r.slug][r.mes] += float(r.total)
     else:
         if modo == "mensal" and mes:
             fc_raw = db.execute(text(
@@ -141,34 +131,35 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
                 "FROM fc_lancamentos WHERE cliente_id=:cid AND ano=:ano AND mes<=:mx "
                 "GROUP BY LOWER(agrupamento_slug)"
             ), {"cid": cliente_id, "ano": ano, "mx": mes_max}).fetchall()
-        agrup_totals: dict[int, float] = defaultdict(float)
+        # lower_slug → total
+        slug_totals: dict[str, float] = {}
         for r in fc_raw:
-            aid = depara.get(r.slug)
-            if aid:
-                agrup_totals[aid] += float(r.total)
+            slug_totals[r.slug] = float(r.total)
 
-    # 4. Helper: value for one agrupamento line
+    # 3. Helper: valor de uma linha de agrupamento do template.
+    #    Compound slugs (ex: "COMPRAS+Compras", "Trib+Trib") são parseados e
+    #    deduplica-se por slug em lowercase para evitar double-counting.
     def agrup_val(slug_str: Optional[str]) -> float | dict:
         components = _parse_compound_slug(slug_str)
         if modo == "todos":
             result: dict[int, float] = defaultdict(float)
-            seen: set[int] = set()
+            seen: set[str] = set()
             for slug_comp, sign in components:
-                aid = depara.get(slug_comp.lower())
-                if aid is None or aid in seen:
+                key = slug_comp.lower()
+                if key in seen:
                     continue
-                seen.add(aid)
+                seen.add(key)
                 for m in range(1, 13):
-                    result[m] += sign * by_mes[aid].get(m, 0.0)
+                    result[m] += sign * by_mes[key].get(m, 0.0)
             return dict(result)
         else:
             total, seen = 0.0, set()
             for slug_comp, sign in components:
-                aid = depara.get(slug_comp.lower())
-                if aid is None or aid in seen:
+                key = slug_comp.lower()
+                if key in seen:
                     continue
-                seen.add(aid)
-                total += sign * agrup_totals.get(aid, 0.0)
+                seen.add(key)
+                total += sign * slug_totals.get(key, 0.0)
             return total
 
     # 5. Phase 1 — compute agrupamentos; titulos → 0
