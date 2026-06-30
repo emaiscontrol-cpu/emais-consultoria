@@ -12,6 +12,7 @@ import { Avatar } from './shared'
 import { authAPI, notificacoesAPI } from '../services/api'
 import { useState, useEffect } from 'react'
 import toast from 'react-hot-toast'
+import { LogoClaude, LogoGemini, LogoOpenRouter } from './FloatingAI'
 
 const DIM = 'rgba(255,255,255,.25)'
 const COL_PROJETOS     = '#5DCAA5'
@@ -364,6 +365,49 @@ function AnalisesSection({ bloqueado }) {
   )
 }
 
+// ── ASSISTENTE IA ─────────────────────────────────────────────────────────────
+function AssistenteIASection({ podeClaudeBtn, podeGemini, podeOR, activePanel, onOpenIA }) {
+  if (!podeClaudeBtn && !podeGemini && !podeOR) return null
+
+  const [open, setOpen] = useState(true)
+
+  const items = [
+    podeClaudeBtn && { key: 'claude',     label: 'Claude',     accent: '#7c3aed', Logo: LogoClaude },
+    podeGemini    && { key: 'gemini',     label: 'Gemini',     accent: '#1A73E8', Logo: LogoGemini },
+    podeOR        && { key: 'openrouter', label: 'OpenRouter', accent: '#f59e0b', Logo: LogoOpenRouter },
+  ].filter(Boolean)
+
+  const isAnyActive = items.some(i => i.key === activePanel)
+
+  return (
+    <div>
+      <SectionBtn emoji="🤖" label="Assistente IA" open={open} isActive={isAnyActive} onClick={() => setOpen(v => !v)} />
+      {open && (
+        <div style={{ paddingLeft: 10, marginTop: 2 }}>
+          {items.map(({ key, label, accent, Logo }) => {
+            const isActive = activePanel === key
+            return (
+              <button
+                key={key}
+                onClick={() => onOpenIA(isActive ? null : key)}
+                className="nav-item"
+                style={{
+                  border: 'none', width: '100%', textAlign: 'left',
+                  fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7,
+                  ...(isActive ? { background: `${accent}28`, color: '#fff', fontWeight: 600 } : {}),
+                }}
+              >
+                <Logo size={14} color={isActive ? '#fff' : accent} />
+                {label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── INTERNO 1: ADMINISTRAÇÃO ──────────────────────────────────────────────────
 function AdminSection() {
   const location = useLocation()
@@ -441,7 +485,7 @@ function ProcSection() {
 }
 
 // ── Sidebar principal ─────────────────────────────────────────────────────────
-export default function Sidebar({ onBusca }) {
+export default function Sidebar({ onBusca, onOpenIA, aiPanel }) {
   const { usuario, logout, atualizarUsuario, temModulo } = useAuth()
   const navigate = useNavigate()
   const [showSenha, setShowSenha] = useState(false)
@@ -481,6 +525,10 @@ export default function Sidebar({ onBusca }) {
   const bloqueadoProjetos     = isCliente && !temModulo('projetos')
   const bloqueadoInteligencia = isCliente && !temModulo('inteligencia_mercado')
   const bloqueadoAnalises     = isCliente && !temModulo('analises_gerenciais')
+
+  const podeClaudeBtn = isAdmin || usuario?.ia_claude     === true
+  const podeGemini    = isAdmin || usuario?.ia_gemini     === true
+  const podeOR        = isAdmin || usuario?.ia_openrouter === true
 
   return (
     <>
@@ -532,6 +580,14 @@ export default function Sidebar({ onBusca }) {
           />
           <InteligenciaSection bloqueado={bloqueadoInteligencia} />
           <AnalisesSection     bloqueado={bloqueadoAnalises} />
+
+          <AssistenteIASection
+            podeClaudeBtn={podeClaudeBtn}
+            podeGemini={podeGemini}
+            podeOR={podeOR}
+            activePanel={aiPanel}
+            onOpenIA={onOpenIA}
+          />
 
           {/* ── GRUPO 2: Internos (admin/consultor apenas) ── */}
           {isAdminConsultor && (

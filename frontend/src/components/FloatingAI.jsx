@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { X, Send, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { iaAPI, geminiAPI, openrouterAPI } from '../services/api'
 import { getAIContext } from '../utils/aiContext'
-import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 const PANEL_W = 420
@@ -196,7 +195,7 @@ function AIPanel({ zIndex, title, subtitle, accent, logo, callFn, onClose, model
 
 // ── Logos SVG oficiais ────────────────────────────────────────────────────────
 // Anthropic — Simple Icons
-function LogoClaude({ size = 22, color = '#7c3aed' }) {
+export function LogoClaude({ size = 22, color = '#7c3aed' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
       <path d="M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z"/>
@@ -205,7 +204,7 @@ function LogoClaude({ size = 22, color = '#7c3aed' }) {
 }
 
 // Google Gemini — Simple Icons
-function LogoGemini({ size = 22, color = '#1A73E8' }) {
+export function LogoGemini({ size = 22, color = '#1A73E8' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
       <path d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/>
@@ -214,7 +213,7 @@ function LogoGemini({ size = 22, color = '#1A73E8' }) {
 }
 
 // OpenRouter — Simple Icons
-function LogoOpenRouter({ size = 22, color = '#f59e0b' }) {
+export function LogoOpenRouter({ size = 22, color = '#f59e0b' }) {
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
       <path d="M16.778 1.844v1.919q-.569-.026-1.138-.032-.708-.008-1.415.037c-1.93.126-4.023.728-6.149 2.237-2.911 2.066-2.731 1.95-4.14 2.75-.396.223-1.342.574-2.185.798-.841.225-1.753.333-1.751.333v4.229s.768.108 1.61.333c.842.224 1.789.575 2.185.799 1.41.798 1.228.683 4.14 2.75 2.126 1.509 4.22 2.11 6.148 2.236.88.058 1.716.041 2.555.005v1.918l7.222-4.168-7.222-4.17v2.176c-.86.038-1.611.065-2.278.021-1.364-.09-2.417-.357-3.979-1.465-2.244-1.593-2.866-2.027-3.68-2.508.889-.518 1.449-.906 3.822-2.59 1.56-1.109 2.614-1.377 3.978-1.466.667-.044 1.418-.017 2.278.02v2.176L24 6.014Z"/>
@@ -222,55 +221,8 @@ function LogoOpenRouter({ size = 22, color = '#f59e0b' }) {
   )
 }
 
-// ── Botão flutuante discreto ──────────────────────────────────────────────────
-function FloatBtn({ bottom, logo, title, accent, onClick, active }) {
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      className={`float-ai-btn${active ? ' float-ai-active' : ''}`}
-      style={{
-        position:'fixed', bottom, right:20, zIndex:1050,
-        width:38, height:38, borderRadius:'50%',
-        border:`1.5px solid ${active ? accent : accent+'55'}`,
-        cursor:'pointer',
-        background: active ? accent : 'var(--surface)',
-        display:'flex', alignItems:'center', justifyContent:'center',
-        boxShadow: active ? `0 2px 12px ${accent}55` : '0 1px 4px rgba(0,0,0,.1)',
-        transition:'all .2s',
-      }}
-    >
-      {logo}
-    </button>
-  )
-}
-
 // ── Componente principal ──────────────────────────────────────────────────────
-export default function FloatingAI() {
-  const { usuario } = useAuth()
-  const [activePanel, setActivePanel] = useState(null)
-
-  const isAdmin = usuario?.perfil === 'admin'
-
-  // Permissões individuais (admin sempre tem acesso)
-  const podeClaudeBtn = isAdmin || usuario?.ia_claude      === true
-  const podeGemini    = isAdmin || usuario?.ia_gemini      === true
-  const podeOR        = isAdmin || usuario?.ia_openrouter  === true
-
-  const toggle = (name) => setActivePanel(p => p === name ? null : name)
-
-  // Monta a lista de botões visíveis para calcular posições dinamicamente
-  const btns = [
-    podeClaudeBtn && 'claude',
-    podeGemini    && 'gemini',
-    podeOR        && 'openrouter',
-  ].filter(Boolean)
-
-  if (btns.length === 0) return null
-
-  const BTN_H = 38, GAP = 10, BASE = 24
-  const bottomOf = (key) => BASE + btns.indexOf(key) * (BTN_H + GAP)
-
+export default function FloatingAI({ activePanel, setActivePanel }) {
   return (
     <>
       {/* Overlay */}
@@ -279,35 +231,6 @@ export default function FloatingAI() {
           position:'fixed', inset:0, background:'rgba(0,0,0,.25)',
           zIndex:1099, backdropFilter:'blur(1px)',
         }}/>
-      )}
-
-      {/* Botões */}
-      {podeClaudeBtn && (
-        <FloatBtn
-          bottom={bottomOf('claude')}
-          title="Claude (Anthropic)" accent="#7c3aed"
-          active={activePanel === 'claude'}
-          onClick={() => toggle('claude')}
-          logo={<LogoClaude size={20} color={activePanel === 'claude' ? '#fff' : '#7c3aed'} />}
-        />
-      )}
-      {podeGemini && (
-        <FloatBtn
-          bottom={bottomOf('gemini')}
-          title="Gemini (Google)" accent="#1A73E8"
-          active={activePanel === 'gemini'}
-          onClick={() => toggle('gemini')}
-          logo={<LogoGemini size={20} color={activePanel === 'gemini' ? '#fff' : '#1A73E8'} />}
-        />
-      )}
-      {podeOR && (
-        <FloatBtn
-          bottom={bottomOf('openrouter')}
-          title="OpenRouter" accent="#f59e0b"
-          active={activePanel === 'openrouter'}
-          onClick={() => toggle('openrouter')}
-          logo={<LogoOpenRouter size={20} color={activePanel === 'openrouter' ? '#fff' : '#f59e0b'} />}
-        />
       )}
 
       {/* Painéis */}
@@ -340,8 +263,6 @@ export default function FloatingAI() {
       <style>{`
         @keyframes ai-spin { from { transform:rotate(0deg) } to { transform:rotate(360deg) } }
         .ai-spin { animation: ai-spin 1s linear infinite }
-        .float-ai-btn { opacity: 0.5; }
-        .float-ai-btn:hover, .float-ai-active { opacity: 1 !important; }
       `}</style>
     </>
   )

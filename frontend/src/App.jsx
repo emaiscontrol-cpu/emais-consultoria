@@ -90,6 +90,7 @@ function AvisoNovaVersao() {
 function ProtectedLayout() {
   const { usuario, loading } = useAuth()
   const [showBusca, setShowBusca] = useState(false)
+  const [aiPanel, setAiPanel] = useState(null)
 
   useEffect(() => {
     const handler = (e) => {
@@ -107,7 +108,7 @@ function ProtectedLayout() {
   return (
     <div className="app-shell">
       <AvisoNovaVersao />
-      <Sidebar onBusca={() => setShowBusca(true)} />
+      <Sidebar onBusca={() => setShowBusca(true)} onOpenIA={setAiPanel} aiPanel={aiPanel} />
       <div className="main-area">
         <Routes>
           <Route path="/"             element={<Dashboard />} />
@@ -147,7 +148,7 @@ function ProtectedLayout() {
         </Routes>
       </div>
       {showBusca && <BuscaGlobal onClose={() => setShowBusca(false)} />}
-      <FloatingAI />
+      <FloatingAI activePanel={aiPanel} setActivePanel={setAiPanel} />
     </div>
   )
 }
