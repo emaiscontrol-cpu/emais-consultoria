@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → uvicorn recarrega
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.6.1g` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.6.1h` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -203,7 +203,8 @@ Para **toda nova implementação** (feature, fix, refactor):
 4. **Foto em base64:** armazenada como TEXT no banco — sem validação de tamanho ainda (limite recomendado: 500KB)
 5. **Backup automático:** usa `threading.Timer` global — cuidado com múltiplas instâncias
 6. **ngrok pooling:** ao testar localmente, parar o serviço `EmaisBackend` local antes de chamar endpoints que dependem do banco do servidor
-7. **Nunca hard-delete em `Tarefa`, `Fase` ou `Projeto`:** todos têm coluna `ativo` — exclusão é sempre `t.ativo = False; db.commit()`. `log_tarefas`, `comentarios`, `subtarefas` e `responsaveis_tarefa` referenciam `tarefas.id` sem `ON DELETE CASCADE`; um `db.delete()` direto quebra com FK violation no Postgres de produção (SQLite local não pega, pois não valida FK por padrão — testar sempre pensando em Postgres). Toda query de listagem desses registros deve filtrar `ativo == True` explicitamente (a relationship do SQLAlchemy carrega tudo, inclusive inativos).
+7. **Geração de PDF usa `reportlab`, não `weasyprint`:** weasyprint precisa de bibliotecas nativas GTK/Pango que não existem no Windows (dev nem produção) nem no runner do CI — falha no import mesmo após `pip install` bem-sucedido (erro `cannot load library 'libgobject-2.0-0'`). `backend/services/pdf_service.py` usa reportlab (puro Python, sem dependência nativa). Não tentar trocar para weasyprint sem antes instalar o runtime GTK3 em todas as máquinas envolvidas.
+8. **Nunca hard-delete em `Tarefa`, `Fase` ou `Projeto`:** todos têm coluna `ativo` — exclusão é sempre `t.ativo = False; db.commit()`. `log_tarefas`, `comentarios`, `subtarefas` e `responsaveis_tarefa` referenciam `tarefas.id` sem `ON DELETE CASCADE`; um `db.delete()` direto quebra com FK violation no Postgres de produção (SQLite local não pega, pois não valida FK por padrão — testar sempre pensando em Postgres). Toda query de listagem desses registros deve filtrar `ativo == True` explicitamente (a relationship do SQLAlchemy carrega tudo, inclusive inativos).
 
 ---
 
@@ -223,6 +224,8 @@ emals_consultoria/
 │   ├── ref_formula_engine.py    # Motor de fórmulas do Plano Referencial (topological sort + AST eval)
 │   ├── depara_service.py        # Sugestão de De-Para via rapidfuzz WRatio
 │   ├── migrar_para_supabase.py  # Script de migração SQLite → Supabase (já executado)
+│   ├── services/
+│   │   └── pdf_service.py       # Geração genérica de PDF (reportlab) — usada por qualquer demonstrativo
 │   └── routers/                 # Um arquivo por domínio:
 │       ├── auth.py              # Login, token JWT
 │       ├── usuarios.py          # CRUD de usuários
@@ -251,6 +254,7 @@ emals_consultoria/
 │       ├── ia.py                # IA (Claude)
 │       ├── gemini.py            # IA (Gemini)
 │       ├── openrouter.py        # IA (OpenRouter)
+│       ├── pdf.py               # POST /api/pdf/demonstrativo — exportação PDF genérica
 │       └── admin.py             # Backup e administração
 ├── frontend/
 │   ├── src/
@@ -259,7 +263,8 @@ emals_consultoria/
 │   │   │   ├── Sidebar.jsx      # Navegação principal
 │   │   │   ├── shared.jsx       # Modal, Avatar, Badge, Progress, LoadingPage
 │   │   │   ├── BuscaGlobal.jsx  # Busca global (Ctrl+K)
-│   │   │   └── FloatingAI.jsx   # Widget de IA flutuante (Claude/Gemini/OpenRouter)
+│   │   │   ├── FloatingAI.jsx   # Widget de IA flutuante (Claude/Gemini/OpenRouter)
+│   │   │   └── BotaoExportarPDF.jsx  # Botão genérico de exportação PDF (POST /api/pdf/demonstrativo)
 │   │   ├── contexts/
 │   │   │   └── AuthContext.jsx
 │   │   ├── pages/
@@ -330,6 +335,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-30 (sessão 4)
+**O que foi feito:** Exportação em PDF como padrão global do sistema — v2.6.1h. `backend/services/pdf_service.py` (novo, `gerar_pdf_demonstrativo()`) gera PDF paisagem A4 com cabeçalho (logo + título + cliente/período), tabela com linhas titulo/agrupamento/totalizador (zebra, negativos em vermelho) e rodapé com "Página X de Y" em todas as páginas. Endpoint genérico `POST /api/pdf/demonstrativo` (`backend/routers/pdf.py`) recebe `{titulo, cliente_nome, periodo, colunas, linhas}` já calculados pela tela e devolve o PDF via `StreamingResponse` (mesmo padrão do Excel em `relatorios.py`). Componente `frontend/src/components/BotaoExportarPDF.jsx` (genérico, reutilizável) integrado no cabeçalho de `FluxoCaixa.jsx` — primeiro uso; DRE/Orçamento/Balancete reutilizam sem alteração no componente.
+**Decisões tomadas:** weasyprint foi avaliado e descartado — exige GTK3/Pango nativo, ausente no Windows (dev e produção) e no CI; **reportlab é o padrão do projeto para PDF** (ver `Pontos de Atenção #7`). `_NumberedCanvas` (subclasse de `reportlab.pdfgen.canvas.Canvas`) faz duas passadas para numerar página X de Y. Logo resolvido internamente pelo `pdf_service.py` via path relativo (`frontend/src/assets/icon.png`) — endpoint não recebe `logo_path` do frontend. `FluxoCaixa.jsx` monta `dadosExportacao` (colunas/linhas no formato genérico) via `useMemo` dependente de `modo` — nos modos mensal/acumulado exporta `[Realizado, %Vendas]`; no modo "todos", 12 meses + Total.
+**Próximo passo:** Testar exportação no Electron com Rio das Pedras/Janeiro-2026 (Ctrl+Shift+R). Reutilizar `BotaoExportarPDF` em DRE/Orçamento/Balancete quando essas telas forem trabalhadas. REL-1 (PDF de projeto) e DEMO-6 (orçado no demonstrativo) permanecem na fila.
+
 ### 2026-06-30 (sessão 3)
 **O que foi feito:** Ícones reais de IA na sidebar "Assistente IA" e no seletor de modelos do OpenRouter (Claude/Gemini/ChatGPT/DeepSeek/Llama/Nemotron), v2.6.1d (PR #69) e v2.6.1e (PR #70, troca de arquivos + badge branco arredondado no ícone do OpenRouter para contrastar com o fundo escuro da sidebar). Bug fix: exclusão de tarefa retornava "Erro ao excluir tarefa" mesmo sem subtarefas — v2.6.1f (PR #71). Causa: `DELETE /api/tarefas/{id}` fazia hard delete, mas `log_tarefas` (histórico gerado a cada edição de campo), `comentarios`, `subtarefas` e `responsaveis_tarefa` referenciam `tarefas.id` sem CASCADE; no Postgres de produção isso violava FK (SQLite local não detecta, não valida FK por padrão). `Tarefa` já tinha coluna `ativo` (mesmo padrão de `Fase`/`Projeto`) e `recalcular_fase`/`reordenar`/`busca` já respeitavam o filtro — só o endpoint de exclusão ficou para trás. Corrigido para soft delete, preservando histórico/comentários. Dois ajustes visuais na sidebar — v2.6.1g: badge "Trabalho" restaurado ao lado do hero item "Projetos"; rótulo "MÓDULO" (9px, `var(--text-3)`) adicionado dentro do `ModuleHeader` (aparece só nos 3 módulos comerciais, pois é o único ponto onde esse componente é usado).
 **Decisões tomadas:** soft delete de `Tarefa` é agora documentado como regra permanente (`Pontos de Atenção #7`) para não regredir; filtro `ativo == True` adicionado em `listar_por_fase` e no resumo do dashboard; `ProjetoDetalhe.jsx` ganhou filtro client-side `t.ativo !== false` na lista principal de tarefas (mesmo padrão já usado em `DashboardTarefas`/`DashboardFases`); novo teste `test_deletar_tarefa_e_soft_delete_preserva_historico` cobre o cenário. Rótulo "MÓDULO" embutido no `ModuleHeader` (não replicado manualmente em cada seção) — garante que nunca apareça em Administração/Procedimentos/Assistente IA sem precisar de flag extra.
@@ -373,15 +383,5 @@ Regras:
 ### 2026-06-23 (sessão 2)
 **O que foi feito:** fix de sequences dessincronizadas no Supabase — erro "UniqueViolation na PK" ao adicionar tarefa. Substituído o setval pontual de `arquivos_id_seq` por um bloco `DO $$` dinâmico que itera sobre todas as sequences do schema `public` via `pg_class`/`pg_depend`, compara com `MAX(id)` de cada tabela e executa `setval` automaticamente a cada startup. Release v2.6.0c — adição de tarefa confirmada funcionando no Electron.
 **Decisões tomadas:** fix de sequences roda no bloco PostgreSQL do startup (`if not _is_sqlite`) — garante proteção permanente contra regressão após qualquer import com IDs explícitos. Porta 5432 do Supabase bloqueada na máquina local — conexão direta via psycopg2 não funciona no dev; fixes de banco devem ir via código + release.
-**Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
-
-### 2026-06-23
-**O que foi feito:** deploy do módulo de Storage para arquivos. PR #27 (fix: `tipo_mime`/`enviado_por_id` no bloco PostgreSQL de `main.py`) confirmado no banco via REST API — colunas já existiam. PR #28 (feat: `arquivos.py` reescrito para Supabase Storage): upload via `POST /storage/v1/object`, download via URL assinada 1h, delete via Storage API; `_is_storage()` garante retrocompatibilidade com arquivos locais legados; `Arquivos.jsx` abre URL diretamente em nova aba; `api.js` limpo (removidas `planosAPI` e endpoints FC extintos) junto com `Planos.jsx`, `DRE.jsx`, `Importacoes.jsx`, `ImportacaoRealizado.jsx`, `ModuloBase.jsx` e `App.jsx` (remoção de referências). CI: 57 testes passaram. Deploy em produção confirmado; upload, URL assinada e delete testados direto no bucket.
-**Decisões tomadas:** arquivos legados (nome_arquivo sem prefixo `clientes/`) ficam com `disponivel: false` e botão desabilitado na UI — não são excluídos; `SUPABASE_URL` é auto-derivada do `DATABASE_URL` se não estiver no `.env`; `SUPABASE_SERVICE_KEY` obrigatória no `.env` do servidor.
-**Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
-
-### 2026-06-22
-**O que foi feito:** reorganização final da sidebar em dois grupos visuais distintos. Grupo 1 (módulos comerciais): novo componente `ModuleHeader` com ícone colorido + fundo translúcido + título colorido, idêntico para os 3 módulos (Projetos teal, Inteligência roxo, Análises âmbar). Notificações, Anotações e Arquivos movidos para dentro de Projetos. Benchmark Segmento movido de Procedimentos para Análises Gerenciais. Badge "trabalho" removido. Grupo 2 (internos): Administração e Procedimentos mantidos com visual austero, separados por `borderTop`. `SectionBtn` simplificado (removido suporte a `bloqueado` que não era mais usado). Release v2.5.0z mergeado e em produção (57 testes passaram).
-**Decisões tomadas:** `ModuleHeader` é o único ponto de entrada click para expand/collapse ou navegação para saiba-mais (quando bloqueado); `LockedItem` dentro de Projetos mostrado apenas para os itens universais (Projetos hero, Dashboards, Notificações) — Anotações e Arquivos simplesmente não aparecem quando o módulo está bloqueado, pois são ferramentas internas; Benchmark abre para clientes com módulo contratado (antes era admin-only em Procedimentos).
-**Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
+**Próximo passo:** REL-1 (relatório PDF de projeto).
 

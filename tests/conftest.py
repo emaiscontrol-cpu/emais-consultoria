@@ -41,6 +41,7 @@ from routers import (  # noqa: E402
     dashboard,
     anotacoes,
     subtarefas,
+    pdf,
 )
 
 
@@ -79,6 +80,7 @@ def _montar_app() -> FastAPI:
     app.include_router(dashboard.router,   prefix="/api/dashboard")
     app.include_router(anotacoes.router,   prefix="/api/anotacoes")
     app.include_router(subtarefas.router,  prefix="/api/subtarefas")
+    app.include_router(pdf.router,         prefix="/api/pdf")
     return app
 
 

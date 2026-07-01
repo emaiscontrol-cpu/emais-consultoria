@@ -363,3 +363,33 @@ class TestSubtarefas:
         )
         assert r.status_code == 200
         assert r.json()["status"] == "concluida"
+
+
+# ── EXPORTAÇÃO PDF (genérica, reutilizável por qualquer demonstrativo) ──────
+
+class TestPdf:
+    def test_gerar_demonstrativo_pdf(self, client, admin_headers):
+        payload = {
+            "titulo": "Fluxo de Caixa Executivo",
+            "cliente_nome": "Rio das Pedras",
+            "periodo": "Janeiro/2026",
+            "colunas": ["Realizado", "% Vendas"],
+            "linhas": [
+                {"rotulo": "ENTRADAS", "tipo": "titulo", "valores": []},
+                {"rotulo": "Vendas - Dinheiro", "tipo": "agrupamento", "valores": [4546013, 18.2]},
+                {"rotulo": "Vendas - Cartão", "tipo": "agrupamento", "valores": [-12000, -0.5]},
+                {"rotulo": "Vendas - Totais", "tipo": "totalizador", "valores": [25031110, 100.0]},
+            ],
+        }
+        r = client.post("/api/pdf/demonstrativo", json=payload, headers=admin_headers)
+        assert r.status_code == 200
+        assert r.headers["content-type"] == "application/pdf"
+        assert "attachment" in r.headers["content-disposition"]
+        assert r.content[:4] == b"%PDF"
+        assert len(r.content) > 500
+
+    def test_gerar_pdf_requer_autenticacao(self, client):
+        r = client.post("/api/pdf/demonstrativo", json={
+            "titulo": "X", "cliente_nome": "Y", "periodo": "Z", "colunas": [], "linhas": [],
+        })
+        assert r.status_code == 401

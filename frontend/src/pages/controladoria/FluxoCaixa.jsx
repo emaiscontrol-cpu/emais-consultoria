@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { demonstrativoFcAPI, clientesAPI } from '../../services/api'
 import { LoadingPage } from '../../components/shared'
+import BotaoExportarPDF from '../../components/BotaoExportarPDF'
 
 const MESES      = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -114,6 +115,27 @@ export default function FluxoCaixa() {
     return { parentOf, sectionRefOrdem, totalizadorMap, allTotalizadores }
   }, [dados])
 
+  // Dados no formato genérico aceito por POST /api/pdf/demonstrativo
+  const dadosExportacao = useMemo(() => {
+    if (!dados) return { colunas: [], linhas: [] }
+    if (modo === 'todos') {
+      const colunas = [...MESES, 'Total']
+      const linhas = dados.linhas.map(l => {
+        if (l.tipo === 'titulo') return { rotulo: l.rotulo, tipo: 'titulo', valores: [] }
+        const valoresMeses = MESES_N.map(m => l.valores_mensais ? (l.valores_mensais[m] ?? 0) : 0)
+        const total = valoresMeses.reduce((s, v) => s + (v ?? 0), 0)
+        return { rotulo: l.rotulo, tipo: l.tipo, valores: [...valoresMeses, total] }
+      })
+      return { colunas, linhas }
+    }
+    const colunas = ['Realizado', '% Vendas']
+    const linhas = dados.linhas.map(l => {
+      if (l.tipo === 'titulo') return { rotulo: l.rotulo, tipo: 'titulo', valores: [] }
+      return { rotulo: l.rotulo, tipo: l.tipo, valores: [l.realizado ?? 0, l.pct_realizado ?? null] }
+    })
+    return { colunas, linhas }
+  }, [dados, modo])
+
   const toggleTotalizador = (ordem) => {
     setCollapsedTotais(prev => {
       const next = new Set(prev)
@@ -177,6 +199,14 @@ export default function FluxoCaixa() {
     { value: 'acumulado', label: 'Acumulado' },
     { value: 'todos',     label: 'Todos os meses' },
   ]
+
+  const periodoLabel = dados
+    ? (modo === 'todos'
+        ? `Ano ${dados.ano} — todos os meses`
+        : modo === 'acumulado'
+          ? `Jan–${MESES[(dados.mes ?? 1) - 1]}/${dados.ano}`
+          : `${MESES[(dados.mes ?? 1) - 1]}/${dados.ano}`)
+    : ''
 
   const thBase = {
     background: 'var(--brand)', color: '#fff', fontSize: '10.5px', fontWeight: 600,
@@ -499,13 +529,16 @@ export default function FluxoCaixa() {
             display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
             <span style={{ fontWeight: 700, fontSize: 14 }}>{dados.cliente_nome}</span>
             <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
-              {modo === 'todos'
-                ? `Ano ${dados.ano} — todos os meses`
-                : modo === 'acumulado'
-                  ? `Jan–${MESES[(dados.mes ?? 1) - 1]}/${dados.ano}`
-                  : `${MESES[(dados.mes ?? 1) - 1]}/${dados.ano}`}
+              {periodoLabel}
             </span>
             <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <BotaoExportarPDF
+                titulo="Fluxo de Caixa Executivo"
+                clienteNome={dados.cliente_nome}
+                periodo={periodoLabel}
+                colunas={dadosExportacao.colunas}
+                linhas={dadosExportacao.linhas}
+              />
               {modo === 'todos' && (
                 <button
                   onClick={() => setShowPct(p => !p)}

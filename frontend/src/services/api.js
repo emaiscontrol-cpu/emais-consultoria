@@ -96,6 +96,10 @@ export const relatoriosAPI = {
   graficos:  id  => api.get(`/relatorios/graficos/${id}`),
 }
 
+export const pdfAPI = {
+  demonstrativo: payload => api.post('/pdf/demonstrativo', payload, { responseType: 'blob' }),
+}
+
 export const historicoAPI = {
   listar:    (projetoId) => api.get('/historico/', { params: projetoId ? { projeto_id: projetoId } : {} }),
   porTarefa: (tarefaId)  => api.get(`/historico/tarefa/${tarefaId}`),
