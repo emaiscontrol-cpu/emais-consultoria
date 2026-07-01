@@ -3,16 +3,23 @@ import { X, Send, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { iaAPI, geminiAPI, openrouterAPI } from '../services/api'
 import { getAIContext } from '../utils/aiContext'
 import toast from 'react-hot-toast'
+import iconClaude from '../assets/claude.jpg'
+import iconGemini from '../assets/GeminiFlash.jpg'
+import iconOpenRouter from '../assets/Open Router.jpg'
+import iconChatGPT from '../assets/ChatGPT.jpg'
+import iconDeepSeek from '../assets/DeepSeek.jpg'
+import iconLlama from '../assets/Llama.jpg'
+import iconNemotron from '../assets/Nemotron.jpg'
 
 const PANEL_W = 420
 
 const OR_MODELS = [
-  { id: 'openai/gpt-4o',                          label: 'GPT-4o',        tag: null   },
-  { id: 'anthropic/claude-sonnet-4-5',             label: 'Claude 4.5',    tag: null   },
-  { id: 'google/gemini-2.0-flash-001',             label: 'Gemini Flash',  tag: null   },
-  { id: 'meta-llama/llama-3.3-70b-instruct',       label: 'Llama 3.3',     tag: null   },
-  { id: 'deepseek/deepseek-chat',                  label: 'DeepSeek',      tag: null   },
-  { id: 'nvidia/llama-3.1-nemotron-70b-instruct',  label: 'Nemotron 70B',  tag: 'free' },
+  { id: 'openai/gpt-4o',                          label: 'GPT-4o',        tag: null,   icon: iconChatGPT    },
+  { id: 'anthropic/claude-sonnet-4-5',             label: 'Claude 4.5',    tag: null,   icon: iconClaude     },
+  { id: 'google/gemini-2.0-flash-001',             label: 'Gemini Flash',  tag: null,   icon: iconGemini     },
+  { id: 'meta-llama/llama-3.3-70b-instruct',       label: 'Llama 3.3',     tag: null,   icon: iconLlama      },
+  { id: 'deepseek/deepseek-chat',                  label: 'DeepSeek',      tag: null,   icon: iconDeepSeek   },
+  { id: 'nvidia/llama-3.1-nemotron-70b-instruct',  label: 'Nemotron 70B',  tag: 'free', icon: iconNemotron   },
 ]
 
 // ── Renderizador de markdown simples ─────────────────────────────────────────
@@ -111,6 +118,7 @@ function AIPanel({ zIndex, title, subtitle, accent, logo, callFn, onClose, model
                   color: selModel === m.id ? accent : 'var(--text-muted)',
                   fontWeight: selModel === m.id ? 600 : 400,
                 }}>
+                  <img src={m.icon} alt="" width={14} height={14} style={{ objectFit:'contain', verticalAlign:'middle' }} />
                   {m.label}
                   {m.tag === 'free' && (
                     <span style={{ fontSize:9, background:'#16a34a22', color:'#16a34a', padding:'1px 5px', borderRadius:4 }}>free</span>
@@ -193,32 +201,17 @@ function AIPanel({ zIndex, title, subtitle, accent, logo, callFn, onClose, model
   )
 }
 
-// ── Logos SVG oficiais ────────────────────────────────────────────────────────
-// Anthropic — Simple Icons
-export function LogoClaude({ size = 22, color = '#7c3aed' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <path d="M17.3041 3.541h-3.6718l6.696 16.918H24Zm-10.6082 0L0 20.459h3.7442l1.3693-3.5527h7.0052l1.3693 3.5528h3.7442L10.5363 3.5409Zm-.3712 10.2232 2.2914-5.9456 2.2914 5.9456Z"/>
-    </svg>
-  )
+// ── Logos oficiais (ícones reais em assets) ─────────────────────────────────────
+export function LogoClaude({ size = 22 }) {
+  return <img src={iconClaude} alt="Claude" width={size} height={size} style={{ objectFit:'contain' }} />
 }
 
-// Google Gemini — Simple Icons
-export function LogoGemini({ size = 22, color = '#1A73E8' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <path d="M11.04 19.32Q12 21.51 12 24q0-2.49.93-4.68.96-2.19 2.58-3.81t3.81-2.55Q21.51 12 24 12q-2.49 0-4.68-.93a12.3 12.3 0 0 1-3.81-2.58 12.3 12.3 0 0 1-2.58-3.81Q12 2.49 12 0q0 2.49-.96 4.68-.93 2.19-2.55 3.81a12.3 12.3 0 0 1-3.81 2.58Q2.49 12 0 12q2.49 0 4.68.96 2.19.93 3.81 2.55t2.55 3.81"/>
-    </svg>
-  )
+export function LogoGemini({ size = 22 }) {
+  return <img src={iconGemini} alt="Gemini" width={size} height={size} style={{ objectFit:'contain' }} />
 }
 
-// OpenRouter — Simple Icons
-export function LogoOpenRouter({ size = 22, color = '#f59e0b' }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 24 24" fill={color}>
-      <path d="M16.778 1.844v1.919q-.569-.026-1.138-.032-.708-.008-1.415.037c-1.93.126-4.023.728-6.149 2.237-2.911 2.066-2.731 1.95-4.14 2.75-.396.223-1.342.574-2.185.798-.841.225-1.753.333-1.751.333v4.229s.768.108 1.61.333c.842.224 1.789.575 2.185.799 1.41.798 1.228.683 4.14 2.75 2.126 1.509 4.22 2.11 6.148 2.236.88.058 1.716.041 2.555.005v1.918l7.222-4.168-7.222-4.17v2.176c-.86.038-1.611.065-2.278.021-1.364-.09-2.417-.357-3.979-1.465-2.244-1.593-2.866-2.027-3.68-2.508.889-.518 1.449-.906 3.822-2.59 1.56-1.109 2.614-1.377 3.978-1.466.667-.044 1.418-.017 2.278.02v2.176L24 6.014Z"/>
-    </svg>
-  )
+export function LogoOpenRouter({ size = 22 }) {
+  return <img src={iconOpenRouter} alt="OpenRouter" width={size} height={size} style={{ objectFit:'contain' }} />
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
