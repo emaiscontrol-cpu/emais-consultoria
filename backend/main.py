@@ -7,6 +7,7 @@ from database import engine, Base
 from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import
 from routers import ref_segmentos, ref_plano, ref_lancamentos, ref_depara, ref_templates, ref_demonstrativos, ref_benchmark
 from routers import fc_exec
+from routers import pdf
 
 try:
     Base.metadata.create_all(bind=engine)
@@ -376,6 +377,7 @@ app.include_router(ref_templates.router,       prefix="/api/ref/templates",    t
 app.include_router(ref_demonstrativos.router,  prefix="/api/ref/demonstrativos", tags=["Ref: Demonstrativos"])
 app.include_router(ref_benchmark.router,       prefix="/api/ref/benchmark",    tags=["Ref: Benchmark"])
 app.include_router(fc_exec.router,             tags=["Demonstrativos FC"])
+app.include_router(pdf.router,                 prefix="/api/pdf",             tags=["PDF"])
 
 # Cria diretório de uploads se não existir
 from pathlib import Path as _Path
@@ -386,7 +388,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.1g"
+app.version = "2.6.1h"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
