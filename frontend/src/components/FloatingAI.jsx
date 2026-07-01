@@ -3,9 +3,10 @@ import { X, Send, Loader2, ChevronDown, ChevronUp } from 'lucide-react'
 import { iaAPI, geminiAPI, openrouterAPI } from '../services/api'
 import { getAIContext } from '../utils/aiContext'
 import toast from 'react-hot-toast'
-import iconClaude from '../assets/claude.jpg'
-import iconGemini from '../assets/GeminiFlash.jpg'
-import iconOpenRouter from '../assets/Open Router.jpg'
+import iconClaude from '../assets/Claude.png'
+import iconGemini from '../assets/Gemini.png'
+import iconOpenRouter from '../assets/OpenRouter.png'
+import iconGeminiFlash from '../assets/GeminiFlash.jpg'
 import iconChatGPT from '../assets/ChatGPT.jpg'
 import iconDeepSeek from '../assets/DeepSeek.jpg'
 import iconLlama from '../assets/Llama.jpg'
@@ -16,7 +17,7 @@ const PANEL_W = 420
 const OR_MODELS = [
   { id: 'openai/gpt-4o',                          label: 'GPT-4o',        tag: null,   icon: iconChatGPT    },
   { id: 'anthropic/claude-sonnet-4-5',             label: 'Claude 4.5',    tag: null,   icon: iconClaude     },
-  { id: 'google/gemini-2.0-flash-001',             label: 'Gemini Flash',  tag: null,   icon: iconGemini     },
+  { id: 'google/gemini-2.0-flash-001',             label: 'Gemini Flash',  tag: null,   icon: iconGeminiFlash },
   { id: 'meta-llama/llama-3.3-70b-instruct',       label: 'Llama 3.3',     tag: null,   icon: iconLlama      },
   { id: 'deepseek/deepseek-chat',                  label: 'DeepSeek',      tag: null,   icon: iconDeepSeek   },
   { id: 'nvidia/llama-3.1-nemotron-70b-instruct',  label: 'Nemotron 70B',  tag: 'free', icon: iconNemotron   },
@@ -211,7 +212,15 @@ export function LogoGemini({ size = 22 }) {
 }
 
 export function LogoOpenRouter({ size = 22 }) {
-  return <img src={iconOpenRouter} alt="OpenRouter" width={size} height={size} style={{ objectFit:'contain' }} />
+  return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+      width: size + 6, height: size + 6, borderRadius: 6, flexShrink: 0,
+      background: '#fff',
+    }}>
+      <img src={iconOpenRouter} alt="OpenRouter" width={size - 4} height={size - 4} style={{ objectFit:'contain' }} />
+    </span>
+  )
 }
 
 // ── Componente principal ──────────────────────────────────────────────────────
