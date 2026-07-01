@@ -3,6 +3,7 @@ import { ChevronDown, ChevronRight } from 'lucide-react'
 import { demonstrativoFcAPI, clientesAPI } from '../../services/api'
 import { LoadingPage } from '../../components/shared'
 import BotaoExportarPDF from '../../components/BotaoExportarPDF'
+import PainelDetalheAgrupamento from '../../components/PainelDetalheAgrupamento'
 
 const MESES      = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -80,9 +81,8 @@ export default function FluxoCaixa() {
   const [showPct, setShowPct] = useState(false)
 
   // Melhoria 3 — painel de detalhe por célula de valor
-  const [activeDetail,  setActiveDetail]  = useState(null)  // { ordem, cacheKey, label }
-  const [detalheCache,  setDetalheCache]  = useState({})
-  const [detalheLoading, setDetalheLoading] = useState(false)
+  // { ordem, cacheKey, agrupamentoNome, periodo, clienteId, ano, mes, mesFim, modo, totalAgrupamento }
+  const [activeDetail, setActiveDetail] = useState(null)
 
   useEffect(() => {
     clientesAPI.listar().then(r => setClientes(r.data)).catch(() => {})
@@ -146,29 +146,14 @@ export default function FluxoCaixa() {
   }
 
   // Abre/fecha painel de detalhe ao clicar numa célula de valor
-  const handleCellClick = async (linha, cacheKey, apiParams, label) => {
-    const { ordem } = linha
-
+  const handleCellClick = (ordem, cacheKey, detail) => {
     // Mesma célula → fecha
     if (activeDetail?.cacheKey === cacheKey && activeDetail?.ordem === ordem) {
       setActiveDetail(null)
       return
     }
-
-    // Nova célula (ou outra célula do mesmo row) → substitui
-    setActiveDetail({ ordem, cacheKey, label })
-
-    if (detalheCache[cacheKey] !== undefined) return  // já em cache
-
-    setDetalheLoading(true)
-    try {
-      const r = await demonstrativoFcAPI.detalhe(apiParams)
-      setDetalheCache(p => ({ ...p, [cacheKey]: r.data }))
-    } catch {
-      setDetalheCache(p => ({ ...p, [cacheKey]: [] }))
-    } finally {
-      setDetalheLoading(false)
-    }
+    // Nova célula (ou outra célula do mesmo row) → substitui e reabre (reanima)
+    setActiveDetail({ ordem, cacheKey, ...detail })
   }
 
   // % relativo ao totalizador que fecha a seção do agrupamento
@@ -239,8 +224,8 @@ export default function FluxoCaixa() {
       const bgRow         = negrito_totalizador ? 'var(--surface)' : 'transparent'
       const isExpanded    = !collapsedTotais.has(ordem)
 
-      // Células de valor clicáveis apenas em agrupamentos com múltiplas contas
-      const isClickable = tipo === 'agrupamento' && (conta_count ?? 0) > 1
+      // Células de valor clicáveis em qualquer agrupamento com ao menos 1 lançamento
+      const isClickable = tipo === 'agrupamento' && (conta_count ?? 0) > 0
 
       const tdBase = {
         padding: '5px 12px', fontSize: 12, fontWeight: bold ? 700 : 400,
@@ -275,7 +260,7 @@ export default function FluxoCaixa() {
       )
 
       // Helper: monta uma célula de valor clicável
-      const makeValueCell = (key, v, extraStyle, cacheKey, apiParams, label, pctNode) => {
+      const makeValueCell = (key, v, extraStyle, cacheKey, detail, pctNode) => {
         const isThisActive = isClickable && activeDetail?.cacheKey === cacheKey && activeDetail?.ordem === ordem
         return (
           <td key={key}
@@ -283,7 +268,7 @@ export default function FluxoCaixa() {
               ...tdBase, ...extraStyle,
               cursor: isClickable ? 'pointer' : 'default',
             }}
-            onClick={isClickable ? () => handleCellClick(linha, cacheKey, apiParams, label) : undefined}
+            onClick={isClickable ? () => handleCellClick(ordem, cacheKey, detail) : undefined}
           >
             <span style={{
               color: corValor(v),
@@ -327,11 +312,14 @@ export default function FluxoCaixa() {
               const ck = isClickable
                 ? `${clienteId}:${ano}:m:${m}:${agrupamento_slug}`
                 : null
-              const ap = isClickable
-                ? { cliente_id: clienteId, ano, agrupamento_slug, modo: 'mensal', mes: m }
+              const detail = isClickable
+                ? {
+                    agrupamentoSlug: agrupamento_slug, agrupamentoNome: rotulo,
+                    periodo: MESES_FULL[m - 1], clienteId, ano, mes: m, mesFim: null,
+                    modo: 'mensal', totalAgrupamento: v,
+                  }
                 : null
-              const lb = isClickable ? `Detalhamento — ${MESES_FULL[m - 1]}` : null
-              return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, ap, lb, pctNode)
+              return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, pctNode)
             })}
 
             {/* Coluna Total — não clicável */}
@@ -352,15 +340,18 @@ export default function FluxoCaixa() {
         const ck = isClickable
           ? `${clienteId}:${ano}:${modo === 'mensal' ? 'm' : 'a'}:${mes}:${agrupamento_slug}`
           : null
-        const ap = isClickable
+        const detail = isClickable
           ? modo === 'mensal'
-            ? { cliente_id: clienteId, ano, agrupamento_slug, modo: 'mensal', mes }
-            : { cliente_id: clienteId, ano, agrupamento_slug, modo: 'acumulado', mes: 1, mes_fim: mes }
-          : null
-        const lb = isClickable
-          ? modo === 'mensal'
-            ? `Detalhamento — ${MESES_FULL[mes - 1]}`
-            : `Detalhamento — Acumulado Jan a ${MESES[mes - 1]}`
+            ? {
+                agrupamentoSlug: agrupamento_slug, agrupamentoNome: rotulo,
+                periodo: MESES_FULL[mes - 1], clienteId, ano, mes, mesFim: null,
+                modo: 'mensal', totalAgrupamento: val,
+              }
+            : {
+                agrupamentoSlug: agrupamento_slug, agrupamentoNome: rotulo,
+                periodo: `Acumulado Jan a ${MESES[mes - 1]}`, clienteId, ano, mes: 1, mesFim: mes,
+                modo: 'acumulado', totalAgrupamento: val,
+              }
           : null
 
         result.push(
@@ -372,7 +363,7 @@ export default function FluxoCaixa() {
               {rotuloContent}
             </td>
 
-            {makeValueCell('val', val, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, ap, lb, null)}
+            {makeValueCell('val', val, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, null)}
 
             <td style={{ ...tdBase, textAlign: 'right', color: 'var(--text-muted)', fontSize: 11 }}>
               {fmtPct(pct_realizado)}
@@ -381,83 +372,24 @@ export default function FluxoCaixa() {
         )
       }
 
-      // Painel de detalhe — aparece logo abaixo da linha quando esta linha tem o activeDetail
+      // Painel de detalhe — aparece logo abaixo da linha quando esta linha tem o activeDetail.
+      // key=cacheKey força remount (e reanimação) sempre que uma célula diferente é aberta.
       if (activeDetail?.ordem === ordem) {
-        const detalhe  = detalheCache[activeDetail.cacheKey]
-        const isLoading = detalheLoading && !detalhe
-
         result.push(
           <tr key={`detail-${ordem}`}>
             <td colSpan={colSpanAll} style={{ padding: 0 }}>
-              <div style={{
-                background: 'var(--surface-hover, var(--surface))',
-                borderBottom: '0.5px solid var(--border)',
-                padding: '10px 16px 12px 32px',
-              }}>
-                {/* Cabeçalho do painel */}
-                <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-muted)',
-                  marginBottom: 8, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                  {activeDetail.label}
-                </div>
-
-                {isLoading ? (
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>Carregando...</span>
-                ) : detalhe && detalhe.length > 0 ? (
-                  <div style={detalhe.length > 6 ? { maxHeight: 220, overflowY: 'auto' } : {}}>
-                    <table style={{ width: '100%', maxWidth: 560, borderCollapse: 'collapse' }}>
-                      <thead>
-                        <tr>
-                          <th style={{
-                            textAlign: 'left', color: 'var(--text-muted)', fontWeight: 600,
-                            padding: '0 8px 6px 0', borderBottom: '0.5px solid var(--border)',
-                            fontSize: '10.5px', textTransform: 'uppercase', letterSpacing: '0.04em',
-                          }}>
-                            Conta de origem
-                          </th>
-                          <th style={{
-                            textAlign: 'right', color: 'var(--text-muted)', fontWeight: 600,
-                            padding: '0 0 6px 8px', borderBottom: '0.5px solid var(--border)',
-                            whiteSpace: 'nowrap', fontSize: '10.5px', textTransform: 'uppercase',
-                            letterSpacing: '0.04em',
-                          }}>
-                            Valor
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {detalhe.map((d, i) => (
-                          <tr key={i}>
-                            <td style={{
-                              padding: '5px 8px 5px 0',
-                              borderBottom: '0.5px solid var(--border)',
-                              fontSize: 13, fontWeight: 500, color: 'var(--text)',
-                            }}>
-                              {d.conta_origem}
-                              {d.descricao && (
-                                <span style={{ color: 'var(--text-muted)', fontWeight: 400, marginLeft: 6 }}>
-                                  — {d.descricao}
-                                </span>
-                              )}
-                            </td>
-                            <td style={{
-                              textAlign: 'right', padding: '5px 0 5px 8px',
-                              borderBottom: '0.5px solid var(--border)',
-                              whiteSpace: 'nowrap', fontSize: 13, fontWeight: 500,
-                              color: corValor(d.valor),
-                            }}>
-                              {fmt(d.valor)}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                ) : (
-                  <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>
-                    Nenhum lançamento encontrado.
-                  </span>
-                )}
-              </div>
+              <PainelDetalheAgrupamento
+                key={activeDetail.cacheKey}
+                agrupamentoSlug={activeDetail.agrupamentoSlug}
+                agrupamentoNome={activeDetail.agrupamentoNome}
+                periodo={activeDetail.periodo}
+                clienteId={activeDetail.clienteId}
+                ano={activeDetail.ano}
+                mes={activeDetail.mes}
+                mesFim={activeDetail.mesFim}
+                modo={activeDetail.modo}
+                totalAgrupamento={activeDetail.totalAgrupamento}
+              />
             </td>
           </tr>
         )

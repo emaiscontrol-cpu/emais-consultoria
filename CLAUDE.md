@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → `.github/workflows/deploy.yml` (self-hosted, no próprio servidor) para o serviço, roda `pip install -r requirements.txt` no venv de produção e reinicia o `EmaisBackend`
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.6.1i` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.6.1j` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -266,7 +266,8 @@ emals_consultoria/
 │   │   │   ├── shared.jsx       # Modal, Avatar, Badge, Progress, LoadingPage
 │   │   │   ├── BuscaGlobal.jsx  # Busca global (Ctrl+K)
 │   │   │   ├── FloatingAI.jsx   # Widget de IA flutuante (Claude/Gemini/OpenRouter)
-│   │   │   └── BotaoExportarPDF.jsx  # Botão genérico de exportação PDF (POST /api/pdf/demonstrativo)
+│   │   │   ├── BotaoExportarPDF.jsx  # Botão genérico de exportação PDF (POST /api/pdf/demonstrativo)
+│   │   │   └── PainelDetalheAgrupamento.jsx  # Painel de detalhe (lista + rosca animada) por agrupamento — genérico
 │   │   ├── contexts/
 │   │   │   └── AuthContext.jsx
 │   │   ├── pages/
@@ -337,6 +338,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-30 (sessão 7)
+**O que foi feito:** Painel de detalhamento sofisticado ao expandir lançamentos por agrupamento — v2.6.1j. Novo componente genérico `frontend/src/components/PainelDetalheAgrupamento.jsx`: coluna esquerda com lista de contas (bolinha colorida + nome + barra de progresso animada + % + valor) e coluna direita com rosca SVG animada em cascata (stroke-dasharray por fatia, delay de 150ms entre arcos) + legenda; header com nome do agrupamento/período e total/contagem. Paleta de 5 cores fixas por posição (`#0F6E56` → `#C8E8DE`), ordenado por magnitude decrescente. Linhas com 1 lançamento mostram só a lista (sem rosca); com 0, painel não renderiza. `FluxoCaixa.jsx` foi simplificado: removida a tabela de detalhe inline e o cache manual (`detalheCache`/`detalheLoading`) — o novo componente busca seus próprios dados via `useEffect` e anima via `key={cacheKey}` no componente pai, que força remount (e reanimação) toda vez que uma célula diferente é clicada. Gate `isClickable` mudou de `conta_count > 1` para `conta_count > 0`, habilitando o painel simples em agrupamentos de conta única.
+**Decisões tomadas:** Animação em duas fases (`requestAnimationFrame` duplo) para garantir que o navegador pinte o estado inicial em 0 antes de disparar a transição CSS para os valores reais — sem isso a barra/rosca já nasceriam preenchidas. Rosca usa a técnica de dasharray fixo por fatia + `stroke-dashoffset` negativo acumulado (não anima o offset, anima o próprio dasharray de `0 CIRC` até `fatia (CIRC-fatia)`) para crescer a partir de um ponto fixo, com `rotate(-90 50 50)` no grupo pra começar às 12h. **Achado durante a validação:** o backend local (`backend/.env`) está com `DATABASE_URL` apontando direto para o Supabase de produção (não para o SQLite local) — qualquer teste via `localhost:8000` mexe em dados reais; por isso a validação interativa (login + clique no painel) ficou para o usuário confirmar manualmente no Electron, não foi possível testar localmente de forma seguramente isolada.
+**Próximo passo:** Confirmar no Electron, expandindo "Pessoal - Salário" de Rio das Pedras/Janeiro-2026 (Ctrl+Shift+R). Investigar por que `backend/.env` local aponta para produção em vez de ficar sem `DATABASE_URL` (SQLite) — decidir se isso é intencional ou desalinhamento a corrigir. Reutilizar `PainelDetalheAgrupamento` em DRE/Orçamento/Balancete quando esses demonstrativos ganharem endpoint `/detalhe` próprio.
+
 ### 2026-06-30 (sessão 6)
 **O que foi feito:** Incidente de produção — Electron mostrando tela de erro ("não foi possível conectar ao servidor") após o deploy do PR #73. Diagnóstico via `curl` na URL ngrok: HTTP 502, `ERR_NGROK_8012` ("conexão recusada" em `localhost:8000`) — o backend não estava de pé, não era problema de frontend/dist como se suspeitava inicialmente. Causa raiz: `backend/requirements.txt` ganhou `reportlab` no PR #73, mas `.github/workflows/deploy.yml` (self-hosted, roda no servidor) sempre fez só `git pull` + restart do serviço, **nunca `pip install`**. Como `main.py` importa todos os routers incondicionalmente no startup, a dependência faltante derrubou o `uvicorn` inteiro (WinSW tentou reiniciar 3x e desistiu). Corrigido via PR #75 (hotfix, mergeado com urgência): novo passo `pip install -r requirements.txt` no venv de produção (`C:\emals-app\backend\venv\Scripts\pip.exe`) entre parar e iniciar o serviço. Log do deploy confirmou que **`rapidfuzz` também estava faltando** (de uma feature anterior, v2.5.0w) — o gap existia havia tempo, silenciosamente, porque nenhum router que o usa direto no import quebrou o startup até agora. Produção confirmada restaurada: `/api/version` voltou a responder (200), e o Electron foi aberto de fato (via driver Playwright `_electron`, screenshot conferido) mostrando a tela de login normalmente.
 **Decisões tomadas:** `deploy.yml` agora tem 4 passos: atualizar código → parar backend → instalar dependências → iniciar backend (antes eram 2: atualizar + reiniciar). Documentado como Ponto de Atenção #9 — toda dependência nova em `requirements.txt` é candidata a derrubar produção se esse passo for removido ou o venv for recriado sem essa etapa. Confirmação de "app funciona" feita executando o Electron de verdade (não só checando a API) — instalado `playwright-core` temporariamente em `electron-client/node_modules` (`npm install --no-save`, não fica no git) para o driver `_electron.launch()`; screenshot conferido visualmente antes de prosseguir com qualquer merge.
@@ -382,8 +388,4 @@ Regras:
 **Decisões tomadas:** Credenciais salvas via filesystem (Node.js `fs` + `userData`), sem electron-store como dependência adicional. Login web (sem Electron) aceita email normalmente — a UI de código é específica do Electron/web com código atribuído. Usuários sem código cadastrado não conseguem logar pela nova tela (precisam de acesso direto ao endereço com email).
 **Próximo passo:** Atribuir códigos aos usuários no painel de Usuários. Fazer Ctrl+Shift+R no Electron para carregar a nova versão.
 
-### 2026-06-28 (sessão 2)
-**O que foi feito:** 6 correções e melhorias no Plano Referencial — v2.6.0j (PR #40). Bug #1: `criar_vinculo` tornou-se upsert — deleta vínculo não-herdado anterior do mesmo demonstrativo antes de inserir; SQL de cleanup no startup PostgreSQL remove duplicatas já existentes. Bug #2: `PainelVincular` inicializa na primeira tab sem vínculo direto; se todos os 3 demonstrativos vinculados, exibe mensagem com instrução de usar × para remover. Ponto 5: lista de agrupamentos usa `<input type="radio">` + `<label>` clicável. Ponto 6: botões "Nível 1|2|3|Todos|Colapsar" acima da tabela; `ContaRow` sincroniza via `expandKey`/`expandTarget` em `useEffect`. 52 testes passaram no CI, PR mergeado, deploy automático.
-**Decisões tomadas:** `criar_vinculo` é agora upsert por (conta_id, demonstrativo) — uma conta só pode ter um vínculo direto por demonstrativo; o cleanup SQL via `MIN(id) PARTITION BY` garante idempotência; `expandTarget = -1` para "Colapsar tudo" (nivel < -1 sempre false).
-**Próximo passo:** confirmar no Electron após deploy (Ctrl+Shift+R). REL-1 (relatório PDF) permanece na fila.
 
