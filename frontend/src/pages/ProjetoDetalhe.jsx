@@ -1034,11 +1034,11 @@ function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, 
             <div className="section-title" style={{ margin:0 }}>Status</div>
           </div>
 
-          {fase.tarefas?.length === 0 && (
+          {fase.tarefas?.filter(t => t.ativo !== false).length === 0 && (
             <div className="text-sm text-muted" style={{ padding:'12px 4px' }}>Nenhuma tarefa nesta fase.</div>
           )}
 
-          {fase.tarefas?.map(t => (
+          {fase.tarefas?.filter(t => t.ativo !== false).map(t => (
             <TarefaRow key={t.id} tarefa={t} usuarios={usuarios} onUpdate={onRefresh} perfil={perfil} podeAddAtividade={podeAddTarefa}
               onMover={isConsultor ? async (tid, dir) => { await tarefasAPI.reordenar(tid, dir); onRefresh() } : null} />
           ))}

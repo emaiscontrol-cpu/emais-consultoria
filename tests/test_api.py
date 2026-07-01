@@ -225,6 +225,29 @@ class TestFasesTarefas:
         assert r.status_code == 200
         assert r.json()["texto"] == "Comentário de teste"
 
+    def test_deletar_tarefa_e_soft_delete_preserva_historico(self, client, admin_headers, fase_teste, tarefa_teste, db_session):
+        # gera histórico (log_tarefas) e um comentário antes de excluir
+        client.put(f"/api/tarefas/{tarefa_teste.id}", json={"status": "em_andamento"}, headers=admin_headers)
+        client.post(
+            f"/api/tarefas/{tarefa_teste.id}/comentarios",
+            json={"tarefa_id": tarefa_teste.id, "texto": "Comentário antes de excluir"},
+            headers=admin_headers,
+        )
+
+        r = client.delete(f"/api/tarefas/{tarefa_teste.id}", headers=admin_headers)
+        assert r.status_code == 200
+
+        db_session.expire_all()
+        atualizada = db_session.query(models.Tarefa).get(tarefa_teste.id)
+        assert atualizada is not None  # registro continua no banco, só fica oculto
+        assert atualizada.ativo is False
+
+        assert db_session.query(models.LogTarefa).filter_by(tarefa_id=tarefa_teste.id).count() > 0
+        assert db_session.query(models.Comentario).filter_by(tarefa_id=tarefa_teste.id).count() > 0
+
+        r = client.get(f"/api/tarefas/fase/{fase_teste.id}", headers=admin_headers)
+        assert tarefa_teste.id not in [t["id"] for t in r.json()]
+
 
 # ── USUÁRIOS ─────────────────────────────────────────────────────────────
 

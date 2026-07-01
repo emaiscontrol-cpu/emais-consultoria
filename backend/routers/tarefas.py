@@ -41,7 +41,7 @@ def _registrar_historico(db, tarefa, usuario_id: int, update: dict):
 @router.get("/fase/{fase_id}", response_model=List[schemas.TarefaOut])
 def listar_por_fase(fase_id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
     return db.query(models.Tarefa).filter(
-        models.Tarefa.fase_id == fase_id
+        models.Tarefa.fase_id == fase_id, models.Tarefa.ativo == True
     ).order_by(models.Tarefa.ordem).all()
 
 @router.get("/{id}", response_model=schemas.TarefaOut)
@@ -123,7 +123,8 @@ def deletar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("adm
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     fase = t.fase
-    db.delete(t); db.commit()
+    t.ativo = False
+    db.commit()
     recalcular_fase(fase, db)
     return {"ok": True}
 

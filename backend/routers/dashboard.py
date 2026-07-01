@@ -11,7 +11,7 @@ router = APIRouter()
 @router.get("/resumo", response_model=schemas.DashboardResumo)
 def resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
     q_proj = db.query(models.Projeto).filter(models.Projeto.ativo == True)
-    q_tar  = db.query(models.Tarefa)
+    q_tar  = db.query(models.Tarefa).filter(models.Tarefa.ativo == True)
 
     if usuario.perfil == "analista":
         q_proj = q_proj.filter(models.Projeto.cliente_id == usuario.cliente_id)
