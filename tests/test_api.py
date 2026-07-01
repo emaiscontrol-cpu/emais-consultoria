@@ -6,6 +6,8 @@ auth, clientes, projetos, fases, tarefas, usuários, dashboard, anotações
 e subtarefas. Roda inteiramente contra o banco SQLite isolado de
 tests/conftest.py — nunca toca no Supabase de produção.
 """
+import pytest
+
 import models
 
 
@@ -289,6 +291,38 @@ class TestUsuarios:
     def test_excluir_proprio_usuario_proibido(self, client, admin_headers, admin_user):
         r = client.delete(f"/api/usuarios/{admin_user.id}", headers=admin_headers)
         assert r.status_code == 400
+
+    def test_admin_nao_pode_alterar_proprio_perfil(self, client, admin_headers, admin_user):
+        r = client.put(f"/api/usuarios/{admin_user.id}", json={"perfil": "consultor"}, headers=admin_headers)
+        assert r.status_code == 400
+
+    def test_admin_pode_alterar_outro_campo_de_si_mesmo(self, client, admin_headers, admin_user):
+        r = client.put(f"/api/usuarios/{admin_user.id}", json={"nome": "Renomeado"}, headers=admin_headers)
+        assert r.status_code == 200
+        assert r.json()["nome"] == "Renomeado"
+
+    def test_pode_rebaixar_admin_quando_ha_outro_admin_ativo(self, client, outro_admin_headers, admin_user):
+        r = client.put(f"/api/usuarios/{admin_user.id}", json={"perfil": "consultor"}, headers=outro_admin_headers)
+        assert r.status_code == 200
+        assert r.json()["perfil"] == "consultor"
+
+    def test_nao_pode_rebaixar_unico_admin_ativo(self, db_session, admin_user, outro_admin):
+        # Via HTTP isso é inalcançável (o ator precisaria ser um admin ativo
+        # diferente do alvo, o que já elevaria a contagem para >= 2), então o
+        # guard é exercitado chamando o router diretamente, com o ator
+        # simulado como um admin já inativo.
+        import schemas
+        from fastapi import HTTPException
+        from routers.usuarios import atualizar
+
+        outro_admin.ativo = False
+        db_session.commit()
+
+        with pytest.raises(HTTPException) as exc_info:
+            atualizar(admin_user.id, schemas.UsuarioUpdate(perfil="consultor"),
+                      db=db_session, atual=outro_admin, _=None)
+        assert exc_info.value.status_code == 400
+        assert "único administrador" in exc_info.value.detail
 
 
 # ── DASHBOARD ────────────────────────────────────────────────────────────

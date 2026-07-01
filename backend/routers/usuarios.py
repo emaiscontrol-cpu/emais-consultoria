@@ -28,11 +28,24 @@ def criar(data: schemas.UsuarioCreate, db: Session = Depends(get_db), _=Depends(
     return usuario
 
 @router.put("/{id}", response_model=schemas.UsuarioOut)
-def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin"))):
+def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db),
+              atual=Depends(get_usuario_atual), _=Depends(requer_perfil("admin"))):
     u = db.query(models.Usuario).get(id)
     if not u:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     payload = data.model_dump(exclude_none=True)
+
+    if "perfil" in payload and payload["perfil"] != u.perfil:
+        if atual.id == id:
+            raise HTTPException(status_code=400, detail="Não é possível alterar o próprio perfil")
+        if u.perfil == models.PerfilEnum.admin:
+            total_admins = db.query(models.Usuario).filter(
+                models.Usuario.perfil == models.PerfilEnum.admin,
+                models.Usuario.ativo == True,
+            ).count()
+            if total_admins <= 1:
+                raise HTTPException(status_code=400, detail="Não é possível remover o único administrador do sistema")
+
     if payload.pop("remover_cliente", False):
         u.cliente_id = None
     if payload.pop("remover_codigo", False):
