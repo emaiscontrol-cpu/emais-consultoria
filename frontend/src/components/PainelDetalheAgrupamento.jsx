@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
 import { demonstrativoFcAPI } from '../services/api'
 
-const CORES = ['#0F6E56', '#1D9E75', '#5DCAA5', '#9BD5C0', '#C8E8DE']
+const CORES = ['#1D9E75', '#2DB88A', '#5DCAA5', '#8EDCC0', '#B8ECD8']
 const corPorIndice = i => CORES[i] ?? CORES[CORES.length - 1]
+const COR_TRACK = '#D8D6CF'
 
 const fmt = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
@@ -62,7 +63,9 @@ export default function PainelDetalheAgrupamento({
     return null
   }
 
-  const total = totalAgrupamento || itens.reduce((s, i) => s + (i.valor ?? 0), 0)
+  const total = totalAgrupamento != null && totalAgrupamento !== 0
+    ? totalAgrupamento
+    : itens.reduce((s, i) => s + (i.valor ?? 0), 0)
   const linhas = itens
     .slice()
     .sort((a, b) => Math.abs(b.valor ?? 0) - Math.abs(a.valor ?? 0))
@@ -80,6 +83,10 @@ export default function PainelDetalheAgrupamento({
       border: '0.5px solid var(--border)',
       borderRadius: 8,
       margin: '0 10px 8px',
+      // maxWidth evita que o painel se estique até a largura total da <td colSpan>
+      // (que no modo "todos" cobre as 12 colunas de mês) — sem isso a rosca
+      // ficava posicionada fora da área visível sem rolagem horizontal.
+      maxWidth: 640,
       overflow: 'hidden',
     }}>
       <div style={{
@@ -164,7 +171,7 @@ function Rosca({ linhas, animar }) {
   return (
     <div style={{ position: 'relative', width: 100, height: 100 }}>
       <svg width={100} height={100} viewBox="0 0 100 100">
-        <circle cx={50} cy={50} r={R} fill="none" stroke="#E0DED8" strokeWidth={12} />
+        <circle cx={50} cy={50} r={R} fill="none" stroke={COR_TRACK} strokeWidth={12} />
         <g transform="rotate(-90 50 50)">
           {arcos.map((a, i) => (
             <circle
