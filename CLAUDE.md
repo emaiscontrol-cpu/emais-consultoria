@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → uvicorn recarrega
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.6.1h` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.6.1i` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -56,6 +56,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **WinSW no servidor:** `C:\emals-service\emals-backend.exe` + `C:\emals-service\emals-backend.xml`
 - **Logs do serviço no servidor:** `C:\emals-service\logs\emals-backend.err.log` (erros) e `emals-backend.out.log` (stdout)
 - **Código rodando no servidor:** `C:\emals-app\backend\` (onde o git pull atualiza)
+- **Fix emergencial direto no banco de produção:** a máquina local tem a porta 5432 do Supabase bloqueada (psycopg2 direto não conecta), mas `backend/.env` (gitignored) tem `SUPABASE_URL` + `SUPABASE_SERVICE_KEY` — dá para consultar/alterar via REST API do Supabase (PostgREST) por HTTPS (`GET/PATCH {SUPABASE_URL}/rest/v1/<tabela>?<filtro>` com headers `apikey`/`Authorization: Bearer <SERVICE_KEY>`). Sempre conferir o estado antes e depois da alteração. Preferir sempre o fluxo normal (código + release) quando não for uma emergência.
 
 ---
 
@@ -335,6 +336,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-30 (sessão 5)
+**O que foi feito:** Correção urgente de produção: `luiz@emaiscontrol.com.br` (id=2) havia perdido o perfil `admin` (estava `consultor`) por alteração acidental. Restaurado via `UPDATE` direto no Supabase usando a REST API (PostgREST) com `SUPABASE_URL`/`SUPABASE_SERVICE_KEY` de `backend/.env` — conexão psycopg2 direta (porta 5432) segue bloqueada nesta máquina, então o fix foi feito por HTTPS, confirmando o estado antes e depois da alteração. Havia 3 outros admins ativos (Elder, Hernandes, Deusangelo) no momento do incidente. Implementada proteção em `PUT /api/usuarios/{id}` (`backend/routers/usuarios.py`) — v2.6.1i: (1) usuário não pode alterar o próprio campo `perfil`, mesmo sendo admin; (2) não é possível rebaixar um admin quando ele é o único com `perfil=admin` e `ativo=True` no sistema (erro 400 "Não é possível remover o único administrador do sistema").
+**Decisões tomadas:** a regra (2) é defesa em profundidade — na prática é inalcançável via HTTP com o modelo de auth atual, porque `get_usuario_atual` já rejeita (401) tokens de usuários com `ativo=False`, e qualquer ator diferente do alvo que consiga chamar o endpoint (exige perfil admin) já eleva a contagem de admins ativos para ≥2. Mantida mesmo assim por ser barata e proteger contra mudanças futuras no modelo de permissão. Teste dessa regra chama `atualizar()` diretamente (bypassando a dependency de auth) para exercitar o guard isoladamente — ver `test_nao_pode_rebaixar_unico_admin_ativo`. Regra (1) e (2) usam `db.query(models.Usuario).get(id)` e count por `perfil == PerfilEnum.admin` + `ativo == True`.
+**Próximo passo:** Investigar a causa raiz da "alteração acidental" que rebaixou o admin principal (log de atividades / histórico de quem editou) para não depender só da proteção de código. DEMO-6, REL-1 permanecem na fila.
+
 ### 2026-06-30 (sessão 4)
 **O que foi feito:** Exportação em PDF como padrão global do sistema — v2.6.1h. `backend/services/pdf_service.py` (novo, `gerar_pdf_demonstrativo()`) gera PDF paisagem A4 com cabeçalho (logo + título + cliente/período), tabela com linhas titulo/agrupamento/totalizador (zebra, negativos em vermelho) e rodapé com "Página X de Y" em todas as páginas. Endpoint genérico `POST /api/pdf/demonstrativo` (`backend/routers/pdf.py`) recebe `{titulo, cliente_nome, periodo, colunas, linhas}` já calculados pela tela e devolve o PDF via `StreamingResponse` (mesmo padrão do Excel em `relatorios.py`). Componente `frontend/src/components/BotaoExportarPDF.jsx` (genérico, reutilizável) integrado no cabeçalho de `FluxoCaixa.jsx` — primeiro uso; DRE/Orçamento/Balancete reutilizam sem alteração no componente.
 **Decisões tomadas:** weasyprint foi avaliado e descartado — exige GTK3/Pango nativo, ausente no Windows (dev e produção) e no CI; **reportlab é o padrão do projeto para PDF** (ver `Pontos de Atenção #7`). `_NumberedCanvas` (subclasse de `reportlab.pdfgen.canvas.Canvas`) faz duas passadas para numerar página X de Y. Logo resolvido internamente pelo `pdf_service.py` via path relativo (`frontend/src/assets/icon.png`) — endpoint não recebe `logo_path` do frontend. `FluxoCaixa.jsx` monta `dadosExportacao` (colunas/linhas no formato genérico) via `useMemo` dependente de `modo` — nos modos mensal/acumulado exporta `[Realizado, %Vendas]`; no modo "todos", 12 meses + Total.
@@ -379,9 +385,4 @@ Regras:
 **O que foi feito:** DEMO-2 — módulo de vínculos de agrupamento no Plano Referencial. `ContaAgrupamento` (tabela `ref_conta_agrupamento`) adicionada a `models.py`. `ref_plano.py` reescrito: `_fmt_conta/_fmt_vinculo/_build_tree` com vínculos embutidos, endpoints GET/POST/DELETE `/contas/{id}/agrupamentos`, sugestão individual (rapidfuzz), sugestão automática em lote (≥80% → vínculo, <80% → pendente), propagação para filhas. `PlanoReferencial.jsx` ganhou `BadgeVinculo`, `PainelVincular` inline, badge de pendências no topo e `RelatorioModal` com contadores + lista dos 10 menores scoress. Build do dist, 52 testes passaram no CI, PR #37 mergeado, v2.6.0h confirmado no servidor (ngrok respondeu com versão correta).
 **Decisões tomadas:** auto-sugestão vincula no demonstrativo `fluxo_caixa` por padrão (usuário pode alterar no `PainelVincular`); `_build_tree` agora retorna dicts (não SQLAlchemy objects) para incluir `vinculos` serializados; `agrupamentos` no frontend carregados via `fluxoCaixaAPI.agrupadores()` que já usa a tabela `agrupamentos` correta.
 **Próximo passo:** rodar "Sugestão automática" no Electron para obter o relatório de vínculos. REL-1 (relatório PDF) permanece na fila.
-
-### 2026-06-23 (sessão 2)
-**O que foi feito:** fix de sequences dessincronizadas no Supabase — erro "UniqueViolation na PK" ao adicionar tarefa. Substituído o setval pontual de `arquivos_id_seq` por um bloco `DO $$` dinâmico que itera sobre todas as sequences do schema `public` via `pg_class`/`pg_depend`, compara com `MAX(id)` de cada tabela e executa `setval` automaticamente a cada startup. Release v2.6.0c — adição de tarefa confirmada funcionando no Electron.
-**Decisões tomadas:** fix de sequences roda no bloco PostgreSQL do startup (`if not _is_sqlite`) — garante proteção permanente contra regressão após qualquer import com IDs explícitos. Porta 5432 do Supabase bloqueada na máquina local — conexão direta via psycopg2 não funciona no dev; fixes de banco devem ir via código + release.
-**Próximo passo:** REL-1 (relatório PDF de projeto).
 

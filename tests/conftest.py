@@ -139,6 +139,12 @@ def consultor_user(db_session):
 
 
 @pytest.fixture
+def outro_admin(db_session):
+    return _criar_usuario(db_session, "Outro Admin", "outro.admin.teste@emals.com",
+                           "senha123", models.PerfilEnum.admin)
+
+
+@pytest.fixture
 def analista_user(db_session, cliente_teste):
     return _criar_usuario(db_session, "Analista Teste", "analista.teste@emals.com",
                            "senha123", models.PerfilEnum.analista, cliente_id=cliente_teste.id)
@@ -163,6 +169,11 @@ def admin_headers(admin_user):
 @pytest.fixture
 def consultor_headers(consultor_user):
     return auth_headers(consultor_user)
+
+
+@pytest.fixture
+def outro_admin_headers(outro_admin):
+    return auth_headers(outro_admin)
 
 
 @pytest.fixture
