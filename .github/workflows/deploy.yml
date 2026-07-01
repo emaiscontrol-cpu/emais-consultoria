@@ -15,7 +15,7 @@ jobs:
         working-directory: C:\emals-app
         run: git pull origin main
 
-      - name: Reiniciar backend
+      - name: Parar backend
         run: |
           Stop-Service EmaisBackend -Force -ErrorAction SilentlyContinue
           # Aguarda a porta 8000 ficar livre (máx 30s)
@@ -33,6 +33,14 @@ jobs:
             if ($pidPorta) { Stop-Process -Id $pidPorta -Force -ErrorAction SilentlyContinue }
             Start-Sleep -Seconds 2
           }
-          Start-Service EmaisBackend
-          Write-Host "Backend reiniciado. Porta liberada em $aguardado segundos."
+          Write-Host "Porta liberada em $aguardado segundos."
+        shell: powershell
+
+      - name: Instalar dependências do backend
+        working-directory: C:\emals-app\backend
+        run: .\venv\Scripts\pip.exe install -r requirements.txt
+        shell: powershell
+
+      - name: Iniciar backend
+        run: Start-Service EmaisBackend
         shell: powershell
