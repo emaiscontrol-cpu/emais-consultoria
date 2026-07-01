@@ -44,38 +44,46 @@ function LockedItem({ icon: Icon, emoji, label, target }) {
 // ── Cabeçalho de módulo comercial (colorido) ──────────────────────────────────
 function ModuleHeader({ color, bg, icon: Icon, label, open, onClick, bloqueado }) {
   return (
-    <button onClick={onClick} style={{
-      display: 'flex', alignItems: 'center', gap: 9,
-      width: '100%', padding: '7px 14px', border: 'none',
-      cursor: 'pointer', background: 'transparent', marginTop: 6,
-    }}>
+    <div>
       <div style={{
-        width: 26, height: 26, borderRadius: 6, flexShrink: 0,
-        background: bloqueado ? 'rgba(255,255,255,.07)' : (bg || `${color}26`),
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        transition: 'background .15s',
+        fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase',
+        color: 'var(--text-3)', marginTop: 16, padding: '0 14px',
       }}>
-        {bloqueado
-          ? <Lock size={12} color="rgba(255,255,255,.22)" />
-          : <Icon size={14} color={color} />
-        }
+        MÓDULO
       </div>
-      <span style={{
-        flex: 1, textAlign: 'left',
-        fontSize: 12, fontWeight: 700, letterSpacing: '.04em',
-        color: bloqueado ? 'rgba(255,255,255,.28)' : color,
-        transition: 'color .15s',
+      <button onClick={onClick} style={{
+        display: 'flex', alignItems: 'center', gap: 9,
+        width: '100%', padding: '7px 14px', border: 'none',
+        cursor: 'pointer', background: 'transparent', marginTop: 2,
       }}>
-        {label}
-      </span>
-      {bloqueado
-        ? <Lock size={11} color="rgba(255,255,255,.18)" />
-        : (open
-            ? <ChevronUp   size={11} color={`${color}99`} />
-            : <ChevronDown size={11} color={`${color}99`} />
-          )
-      }
-    </button>
+        <div style={{
+          width: 26, height: 26, borderRadius: 6, flexShrink: 0,
+          background: bloqueado ? 'rgba(255,255,255,.07)' : (bg || `${color}26`),
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          transition: 'background .15s',
+        }}>
+          {bloqueado
+            ? <Lock size={12} color="rgba(255,255,255,.22)" />
+            : <Icon size={14} color={color} />
+          }
+        </div>
+        <span style={{
+          flex: 1, textAlign: 'left',
+          fontSize: 12, fontWeight: 700, letterSpacing: '.04em',
+          color: bloqueado ? 'rgba(255,255,255,.28)' : color,
+          transition: 'color .15s',
+        }}>
+          {label}
+        </span>
+        {bloqueado
+          ? <Lock size={11} color="rgba(255,255,255,.18)" />
+          : (open
+              ? <ChevronUp   size={11} color={`${color}99`} />
+              : <ChevronDown size={11} color={`${color}99`} />
+            )
+        }
+      </button>
+    </div>
   )
 }
 
@@ -170,6 +178,14 @@ function ProjetosSection({ isAdminConsultor, isConsultor, bloqueado, qtdAlertas 
               })}
             >
               <FolderKanban size={14} color={COL_PROJETOS} /> Projetos
+              <span style={{
+                marginLeft: 'auto',
+                fontSize: 9, fontWeight: 600, textTransform: 'uppercase',
+                background: 'var(--module-projetos-bg)', color: 'var(--module-projetos)',
+                borderRadius: 4, padding: '1px 6px',
+              }}>
+                Trabalho
+              </span>
             </NavLink>
           )}
 

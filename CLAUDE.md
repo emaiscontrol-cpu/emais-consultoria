@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → uvicorn recarrega
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.5.0z` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.6.1g` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -203,6 +203,7 @@ Para **toda nova implementação** (feature, fix, refactor):
 4. **Foto em base64:** armazenada como TEXT no banco — sem validação de tamanho ainda (limite recomendado: 500KB)
 5. **Backup automático:** usa `threading.Timer` global — cuidado com múltiplas instâncias
 6. **ngrok pooling:** ao testar localmente, parar o serviço `EmaisBackend` local antes de chamar endpoints que dependem do banco do servidor
+7. **Nunca hard-delete em `Tarefa`, `Fase` ou `Projeto`:** todos têm coluna `ativo` — exclusão é sempre `t.ativo = False; db.commit()`. `log_tarefas`, `comentarios`, `subtarefas` e `responsaveis_tarefa` referenciam `tarefas.id` sem `ON DELETE CASCADE`; um `db.delete()` direto quebra com FK violation no Postgres de produção (SQLite local não pega, pois não valida FK por padrão — testar sempre pensando em Postgres). Toda query de listagem desses registros deve filtrar `ativo == True` explicitamente (a relationship do SQLAlchemy carrega tudo, inclusive inativos).
 
 ---
 
@@ -329,6 +330,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-06-30 (sessão 3)
+**O que foi feito:** Ícones reais de IA na sidebar "Assistente IA" e no seletor de modelos do OpenRouter (Claude/Gemini/ChatGPT/DeepSeek/Llama/Nemotron), v2.6.1d (PR #69) e v2.6.1e (PR #70, troca de arquivos + badge branco arredondado no ícone do OpenRouter para contrastar com o fundo escuro da sidebar). Bug fix: exclusão de tarefa retornava "Erro ao excluir tarefa" mesmo sem subtarefas — v2.6.1f (PR #71). Causa: `DELETE /api/tarefas/{id}` fazia hard delete, mas `log_tarefas` (histórico gerado a cada edição de campo), `comentarios`, `subtarefas` e `responsaveis_tarefa` referenciam `tarefas.id` sem CASCADE; no Postgres de produção isso violava FK (SQLite local não detecta, não valida FK por padrão). `Tarefa` já tinha coluna `ativo` (mesmo padrão de `Fase`/`Projeto`) e `recalcular_fase`/`reordenar`/`busca` já respeitavam o filtro — só o endpoint de exclusão ficou para trás. Corrigido para soft delete, preservando histórico/comentários. Dois ajustes visuais na sidebar — v2.6.1g: badge "Trabalho" restaurado ao lado do hero item "Projetos"; rótulo "MÓDULO" (9px, `var(--text-3)`) adicionado dentro do `ModuleHeader` (aparece só nos 3 módulos comerciais, pois é o único ponto onde esse componente é usado).
+**Decisões tomadas:** soft delete de `Tarefa` é agora documentado como regra permanente (`Pontos de Atenção #7`) para não regredir; filtro `ativo == True` adicionado em `listar_por_fase` e no resumo do dashboard; `ProjetoDetalhe.jsx` ganhou filtro client-side `t.ativo !== false` na lista principal de tarefas (mesmo padrão já usado em `DashboardTarefas`/`DashboardFases`); novo teste `test_deletar_tarefa_e_soft_delete_preserva_historico` cobre o cenário. Rótulo "MÓDULO" embutido no `ModuleHeader` (não replicado manualmente em cada seção) — garante que nunca apareça em Administração/Procedimentos/Assistente IA sem precisar de flag extra.
+**Próximo passo:** DEMO-6 (coluna orçado no demonstrativo), REL-1 (PDF de projeto) permanecem na fila.
+
 ### 2026-06-30 (sessão 2)
 **O que foi feito:** Clique em célula de valor para detalhar lançamentos — v2.6.1b (PR #64). Mensal: célula única clicável, abre painel do mês selecionado. Acumulado: célula única clicável, abre painel Jan a mês selecionado (`mes=1&mes_fim=X` no backend). Todos os meses: cada coluna de mês clicável, abre painel só daquele mês. Cabeçalho do painel identifica o período ("Detalhamento — Acumulado Jan a Mai"). Texto das contas: 13px/weight 500 em `var(--text)`. Cursor pointer + sublinhado pontilhado em células clicáveis; nenhum indicador em células não clicáveis. Painel fecha ao clicar na mesma célula; clicar em outra substitui o painel (só um por vez). Backend: `/detalhe` ganhou `mes_fim` para range acumulado e filtragem por mês no modo todos. Chevron de detalhe removido do rótulo — agora só totalizadores têm chevron (expand/collapse seção).
 **Decisões tomadas:** `activeDetail = { ordem, cacheKey, label }` (estado único para o painel ativo, substitui `detailOpen` por row); no modo "todos" ao clicar coluna M, o frontend chama `modo='mensal'&mes=M` reutilizando o filtro existente do backend sem código extra; `makeValueCell` helper extrai a lógica repetida das células clicáveis em todos/mensal/acumulado; `detalheLoading` é booleano global (uma chamada por vez).
@@ -377,10 +383,5 @@ Regras:
 ### 2026-06-22
 **O que foi feito:** reorganização final da sidebar em dois grupos visuais distintos. Grupo 1 (módulos comerciais): novo componente `ModuleHeader` com ícone colorido + fundo translúcido + título colorido, idêntico para os 3 módulos (Projetos teal, Inteligência roxo, Análises âmbar). Notificações, Anotações e Arquivos movidos para dentro de Projetos. Benchmark Segmento movido de Procedimentos para Análises Gerenciais. Badge "trabalho" removido. Grupo 2 (internos): Administração e Procedimentos mantidos com visual austero, separados por `borderTop`. `SectionBtn` simplificado (removido suporte a `bloqueado` que não era mais usado). Release v2.5.0z mergeado e em produção (57 testes passaram).
 **Decisões tomadas:** `ModuleHeader` é o único ponto de entrada click para expand/collapse ou navegação para saiba-mais (quando bloqueado); `LockedItem` dentro de Projetos mostrado apenas para os itens universais (Projetos hero, Dashboards, Notificações) — Anotações e Arquivos simplesmente não aparecem quando o módulo está bloqueado, pois são ferramentas internas; Benchmark abre para clientes com módulo contratado (antes era admin-only em Procedimentos).
-**Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
-
-### 2026-06-21 (sessão 2)
-**O que foi feito:** remoção completa e definitiva do sistema antigo "Modelos & Contas" — deletados 11 arquivos backend (planos.py, plano_import.py, dre_engine.py, importacao_service.py, formula_generator.py, agrupamento_suggester.py, plano_parser.py, plano_import_service.py, seed_orcamento.py, seed_dre.py, Planos.jsx), removidos 9 modelos SQLAlchemy (PlanoContas, ContaFC, ValorMensalFC, SaldoInicialFC, OrcamentoValor, OrcamentoUnidadeValor, Plano, PlanoItem, ClientePlano + TemplateFormula + ContaDePara), DROPs via CASCADE no startup (SQLite e PostgreSQL), endpoints de orçamento stubados com 410 Gone, limpeza em fluxo_caixa.py/dre_import.py/frontend (DRE.jsx, Importacoes.jsx, ImportacaoRealizado.jsx, ModuloBase.jsx, App.jsx, Sidebar.jsx, api.js, Manual.jsx). CI: 53 testes passaram. Release v2.5.0y mergeado e em produção.
-**Decisões tomadas:** `AgrupadorFC` mantido (usado pelo fluxo de caixa); `orcamento.py` mantido como stub 410 (não deletado para não quebrar o import do router); `TemplateFormula` e `ContaDePara` removidos dos modelos (suas tabelas são dropadas no startup); `clientePlanoId` states nos componentes de importação mantidos como `null` permanente (harmless); `release.ps1` corrigido para aguardar 30s antes de checar CI (resolvia falha "no checks reported").
 **Próximo passo:** REL-1 (relatório PDF de projeto com weasyprint).
 
