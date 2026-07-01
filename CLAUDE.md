@@ -43,7 +43,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 
 ### Deploy
 - **Script:** `.\release.ps1` na raiz do projeto
-- **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → uvicorn recarrega
+- **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → `.github/workflows/deploy.yml` (self-hosted, no próprio servidor) para o serviço, roda `pip install -r requirements.txt` no venv de produção e reinicia o `EmaisBackend`
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
 - **Versão atual:** `2.6.1h` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
@@ -205,6 +205,7 @@ Para **toda nova implementação** (feature, fix, refactor):
 6. **ngrok pooling:** ao testar localmente, parar o serviço `EmaisBackend` local antes de chamar endpoints que dependem do banco do servidor
 7. **Geração de PDF usa `reportlab`, não `weasyprint`:** weasyprint precisa de bibliotecas nativas GTK/Pango que não existem no Windows (dev nem produção) nem no runner do CI — falha no import mesmo após `pip install` bem-sucedido (erro `cannot load library 'libgobject-2.0-0'`). `backend/services/pdf_service.py` usa reportlab (puro Python, sem dependência nativa). Não tentar trocar para weasyprint sem antes instalar o runtime GTK3 em todas as máquinas envolvidas.
 8. **Nunca hard-delete em `Tarefa`, `Fase` ou `Projeto`:** todos têm coluna `ativo` — exclusão é sempre `t.ativo = False; db.commit()`. `log_tarefas`, `comentarios`, `subtarefas` e `responsaveis_tarefa` referenciam `tarefas.id` sem `ON DELETE CASCADE`; um `db.delete()` direto quebra com FK violation no Postgres de produção (SQLite local não pega, pois não valida FK por padrão — testar sempre pensando em Postgres). Toda query de listagem desses registros deve filtrar `ativo == True` explicitamente (a relationship do SQLAlchemy carrega tudo, inclusive inativos).
+9. **Nova dependência em `backend/requirements.txt` = risco de derrubar produção:** `main.py` importa todos os routers incondicionalmente na inicialização — se um router novo importar um pacote que não está instalado no venv de produção, o `uvicorn` falha ao subir e o `EmaisBackend` fica down (WinSW tenta reiniciar 3x e desiste). Isso já aconteceu (reportlab, v2.6.1h) porque `deploy.yml` só fazia `git pull` + restart, sem `pip install`. Corrigido: `deploy.yml` agora roda `pip install -r requirements.txt` no venv de produção antes de reiniciar o serviço — mas se o nome do pacote mudar ou o venv for recriado, confirmar que esse passo continua funcionando.
 
 ---
 
