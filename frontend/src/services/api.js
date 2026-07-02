@@ -131,6 +131,7 @@ export const fluxoCaixaAPI = {
 export const demonstrativoFcAPI = {
   carregar: (params) => api.get('/demonstrativos/fluxo-caixa', { params }),
   detalhe:  (params) => api.get('/demonstrativos/fluxo-caixa/detalhe', { params }),
+  detalheComparativo: (params) => api.get('/demonstrativos/fluxo-caixa/detalhe-comparativo', { params }),
 }
 
 export const controladoriaAPI = {
