@@ -337,10 +337,9 @@ def detalhe_comparativo(
 ):
     """Contas do período atual + período anterior (comparativo) de um agrupamento.
 
-    Regra do período anterior:
-    - mensal:    mês-1 (janeiro → dezembro do ano anterior)
-    - acumulado: mesmo intervalo de meses, ano-1
-    - todos:     mesmo mês, ano-1
+    Regra do período anterior — única para os 3 modos: sempre o mês
+    imediatamente anterior ao mês de referência (o mês exibido/clicado;
+    no modo acumulado, o mês final do intervalo). Nunca ano anterior.
     """
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
@@ -354,23 +353,19 @@ def detalhe_comparativo(
     if modo == "acumulado":
         mes_ini_atual = mes or 1
         mes_fim_atual = mes_fim if mes_fim is not None else (mes or 12)
-        ano_atual = ano
-        mes_ini_ant, mes_fim_ant, ano_ant = mes_ini_atual, mes_fim_atual, ano - 1
     else:
         if not mes:
             raise HTTPException(422, "Parâmetro 'mes' obrigatório neste modo")
         mes_ini_atual = mes_fim_atual = mes
-        ano_atual = ano
-        if modo == "todos":
-            mes_ini_ant = mes_fim_ant = mes
-            ano_ant = ano - 1
-        else:  # mensal
-            if mes == 1:
-                mes_ini_ant = mes_fim_ant = 12
-                ano_ant = ano - 1
-            else:
-                mes_ini_ant = mes_fim_ant = mes - 1
-                ano_ant = ano
+    ano_atual = ano
+
+    mes_ref = mes_fim_atual
+    if mes_ref == 1:
+        mes_ini_ant = mes_fim_ant = 12
+        ano_ant = ano - 1
+    else:
+        mes_ini_ant = mes_fim_ant = mes_ref - 1
+        ano_ant = ano
 
     atual = _query_contas_periodo(db, cliente_id, ano_atual, mes_ini_atual, mes_fim_atual, slugs)
     anterior = _query_contas_periodo(db, cliente_id, ano_ant, mes_ini_ant, mes_fim_ant, slugs)
