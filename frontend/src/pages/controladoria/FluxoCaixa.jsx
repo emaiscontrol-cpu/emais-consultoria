@@ -315,8 +315,8 @@ export default function FluxoCaixa() {
               const detail = isClickable
                 ? {
                     agrupamentoSlug: agrupamento_slug, agrupamentoNome: rotulo,
-                    periodo: MESES_FULL[m - 1], clienteId, ano, mes: m, mesFim: null,
-                    modo: 'mensal', totalAgrupamento: v,
+                    periodo: `${MESES_FULL[m - 1]}/${ano}`, clienteId, ano, mes: m, mesFim: null,
+                    modo: 'todos', totalAgrupamento: v,
                   }
                 : null
               return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, pctNode)

@@ -290,6 +290,99 @@ def demonstrativo_fluxo_caixa(
     }
 
 
+MESES_FULL_PT = ['Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+                 'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro']
+
+
+def _rotulo_periodo(mes_ini: int, mes_fim: int, ano: int) -> str:
+    if mes_ini == mes_fim:
+        return f"{MESES_FULL_PT[mes_ini - 1]}/{ano}"
+    return f"{MESES_FULL_PT[mes_ini - 1]} a {MESES_FULL_PT[mes_fim - 1]}/{ano}"
+
+
+def _query_contas_periodo(db: Session, cliente_id: int, ano: int, mes_ini: int, mes_fim: int,
+                           slugs: list[str]) -> list[dict]:
+    if not slugs:
+        return []
+    slug_params = {f's{i}': s for i, s in enumerate(slugs)}
+    slug_ph = ','.join(f':s{i}' for i in range(len(slugs)))
+    rows = db.execute(
+        text(f"""
+            SELECT conta_origem, MAX(descricao) as descricao,
+                   COALESCE(SUM(valor), 0) as valor
+            FROM fc_lancamentos
+            WHERE cliente_id=:cid AND ano=:ano AND mes >= :mi AND mes <= :mf
+              AND LOWER(agrupamento_slug) IN ({slug_ph})
+            GROUP BY conta_origem
+            ORDER BY COALESCE(SUM(valor), 0) DESC
+        """),
+        {"cid": cliente_id, "ano": ano, "mi": mes_ini, "mf": mes_fim, **slug_params}
+    ).fetchall()
+    return [
+        {"conta_origem": r.conta_origem or "—", "descricao": r.descricao, "valor": float(r.valor)}
+        for r in rows
+    ]
+
+
+@router.get("/fluxo-caixa/detalhe-comparativo")
+def detalhe_comparativo(
+    cliente_id: int = Query(...),
+    agrupamento_slug: str = Query(...),
+    ano: int = Query(...),
+    mes: Optional[int] = Query(None, ge=1, le=12),
+    mes_fim: Optional[int] = Query(None, ge=1, le=12),
+    modo: str = Query("mensal", regex="^(mensal|acumulado|todos)$"),
+    db: Session = Depends(get_db),
+    usuario=Depends(get_usuario_atual),
+):
+    """Contas do período atual + período anterior (comparativo) de um agrupamento.
+
+    Regra do período anterior:
+    - mensal:    mês-1 (janeiro → dezembro do ano anterior)
+    - acumulado: mesmo intervalo de meses, ano-1
+    - todos:     mesmo mês, ano-1
+    """
+    cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
+    if not cliente:
+        raise HTTPException(404, "Cliente não encontrado")
+    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id != cliente_id:
+        raise HTTPException(403, "Acesso negado")
+
+    components = _parse_compound_slug(agrupamento_slug)
+    slugs = list({s.lower() for s, _ in components})
+
+    if modo == "acumulado":
+        mes_ini_atual = mes or 1
+        mes_fim_atual = mes_fim if mes_fim is not None else (mes or 12)
+        ano_atual = ano
+        mes_ini_ant, mes_fim_ant, ano_ant = mes_ini_atual, mes_fim_atual, ano - 1
+    else:
+        if not mes:
+            raise HTTPException(422, "Parâmetro 'mes' obrigatório neste modo")
+        mes_ini_atual = mes_fim_atual = mes
+        ano_atual = ano
+        if modo == "todos":
+            mes_ini_ant = mes_fim_ant = mes
+            ano_ant = ano - 1
+        else:  # mensal
+            if mes == 1:
+                mes_ini_ant = mes_fim_ant = 12
+                ano_ant = ano - 1
+            else:
+                mes_ini_ant = mes_fim_ant = mes - 1
+                ano_ant = ano
+
+    atual = _query_contas_periodo(db, cliente_id, ano_atual, mes_ini_atual, mes_fim_atual, slugs)
+    anterior = _query_contas_periodo(db, cliente_id, ano_ant, mes_ini_ant, mes_fim_ant, slugs)
+
+    return {
+        "atual": atual,
+        "anterior": anterior,
+        "periodo_atual": _rotulo_periodo(mes_ini_atual, mes_fim_atual, ano_atual),
+        "periodo_anterior": _rotulo_periodo(mes_ini_ant, mes_fim_ant, ano_ant),
+    }
+
+
 @router.get("/fluxo-caixa/detalhe")
 def detalhe_agrupamento(
     cliente_id: int = Query(...),
