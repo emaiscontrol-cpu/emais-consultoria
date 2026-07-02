@@ -145,11 +145,15 @@ export default function PainelDetalheAgrupamento({
         </span>
       </div>
 
-      <div style={{ display: 'flex' }}>
+      <div style={{ display: 'flex', alignItems: 'stretch' }}>
         {/* Coluna 1 — lista de contas */}
-        <div style={{ flex: 1, minWidth: 0, borderRight: '0.5px solid var(--border)' }}>
+        <div style={{
+          flex: 1, minWidth: 0, borderRight: '0.5px solid var(--border)',
+          alignSelf: 'stretch', display: 'flex', flexDirection: 'column',
+          justifyContent: linhas.length < 5 ? 'space-evenly' : 'flex-start',
+        }}>
           {linhas.map((it, i) => (
-            <div key={i} style={{ padding: '6px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
+            <div key={i} style={{ padding: '6px 14px', minHeight: 36, display: 'flex', gap: 8, alignItems: 'center' }}>
               <BadgeABC classe={it.classe} cor={it.cor} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
