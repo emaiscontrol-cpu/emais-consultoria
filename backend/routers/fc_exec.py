@@ -370,11 +370,31 @@ def detalhe_comparativo(
     atual = _query_contas_periodo(db, cliente_id, ano_atual, mes_ini_atual, mes_fim_atual, slugs)
     anterior = _query_contas_periodo(db, cliente_id, ano_ant, mes_ini_ant, mes_fim_ant, slugs)
 
+    trend = []
+    if slugs:
+        slug_params = {f's{i}': s for i, s in enumerate(slugs)}
+        slug_ph = ','.join(f':s{i}' for i in range(len(slugs)))
+        trend_raw = db.execute(
+            text(f"""
+                SELECT mes, COALESCE(SUM(valor), 0) as valor
+                FROM fc_lancamentos
+                WHERE cliente_id=:cid AND ano=:ano
+                  AND LOWER(agrupamento_slug) IN ({slug_ph})
+                GROUP BY mes
+                ORDER BY mes
+            """),
+            {"cid": cliente_id, "ano": ano_atual, **slug_params}
+        ).fetchall()
+        trend_dict = {r.mes: float(r.valor) for r in trend_raw}
+        MESES_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+        trend = [{"mes": MESES_ABR[m - 1], "valor": trend_dict.get(m, 0.0)} for m in range(1, 13)]
+
     return {
         "atual": atual,
         "anterior": anterior,
         "periodo_atual": _rotulo_periodo(mes_ini_atual, mes_fim_atual, ano_atual),
         "periodo_anterior": _rotulo_periodo(mes_ini_ant, mes_fim_ant, ano_ant),
+        "trend": trend,
     }
 
 

@@ -1,5 +1,54 @@
 import { useState, useEffect } from 'react'
 import { demonstrativoFcAPI } from '../services/api'
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from 'recharts'
+
+const CustomTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const formatValue = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return (
+      <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', padding: '6px 10px', borderRadius: 4, boxShadow: 'var(--shadow)' }}>
+        <p style={{ margin: 0, fontSize: 10, color: 'var(--text-muted)' }}>{payload[0].payload.mes}</p>
+        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#534AB7' }}>
+          R$ {formatValue(payload[0].value)}
+        </p>
+      </div>
+    )
+  }
+  return null
+}
+
+
+const CustomTooltipBars = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    const formatValue = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    return (
+      <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', padding: '8px 12px', borderRadius: 4, boxShadow: 'var(--shadow)', maxWidth: 220 }}>
+        <p style={{ margin: '0 0 4px 0', fontSize: 10, fontWeight: 700, color: 'var(--text)', whiteSpace: 'normal', wordBreak: 'break-all' }}>
+          {payload[0].payload.conta}
+        </p>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10.5 }}>
+          <span style={{ color: '#534AB7', fontWeight: 600 }}>Atual:</span>
+          <span style={{ fontWeight: 700 }}>R$ {formatValue(payload[0].value)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10.5, marginTop: 2 }}>
+          <span style={{ color: '#9B9A94', fontWeight: 600 }}>Anterior:</span>
+          <span style={{ fontWeight: 700 }}>R$ {formatValue(payload[1]?.value)}</span>
+        </div>
+        {payload[0].value != null && payload[1]?.value != null ? (
+          <div style={{
+            marginTop: 4, paddingTop: 4, borderTop: '0.5px solid var(--border)',
+            fontSize: 10, fontWeight: 700,
+            color: payload[0].value > payload[1].value ? '#C0392B' : '#1E8449',
+            textAlign: 'right'
+          }}>
+            Variação: {payload[0].value > payload[1].value ? '+' : ''}{((payload[0].value - payload[1].value) / Math.abs(payload[1].value) * 100).toFixed(0)}%
+          </div>
+        ) : null}
+      </div>
+    )
+  }
+  return null
+}
 
 const fmt = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
@@ -7,20 +56,22 @@ const R = 44
 const CIRC = 2 * Math.PI * R
 
 const CORES_ABC = {
-  A: ['#A89EF0', '#7B6FE8', '#5244CC'],
-  B: ['#EF9F27', '#D4880F'],
-  C: ['#9B9A94', '#6B6A65'],
+  A: ['#534AB7'], // Roxo sólido
+  B: ['#8F85F0'], // Lilás/Periwinkle sólido
+  C: ['#C5C2EC'], // Lavanda claro sólido
 }
+
 const corPorClasse = (classe, posClasse) => {
   const arr = CORES_ABC[classe]
   return arr[Math.min(posClasse - 1, arr.length - 1)]
 }
 
 const LEGENDA_ABC = [
-  { classe: 'A', bg: '#EEEDFE', cor: '#2E2398', desc: 'Até 70% do total' },
-  { classe: 'B', bg: '#FAEEDA', cor: '#633806', desc: '70% a 90%' },
-  { classe: 'C', bg: '#EBEBEB', cor: '#3C3A36', desc: '90% a 100%' },
+  { classe: 'A', bg: '#534AB7', cor: '#534AB7', desc: 'Até 70% do total' },
+  { classe: 'B', bg: '#8F85F0', cor: '#8F85F0', desc: '70% a 90%' },
+  { classe: 'C', bg: '#C5C2EC', cor: '#C5C2EC', desc: '90% a 100%' },
 ]
+
 
 const nomeConta = it => `${it.conta_origem}${it.descricao ? ` · ${it.descricao}` : ''}`
 const nomeCurto = it => {
@@ -122,79 +173,147 @@ export default function PainelDetalheAgrupamento({
   return (
     <div style={{
       background: 'var(--surface-hover)',
-      border: '0.5px solid var(--border)',
-      borderRadius: 8,
-      margin: '0 10px 8px',
-      minWidth: 500,
-      maxWidth: 780,
+      borderTop: '0.5px solid var(--border)',
+      borderBottom: '0.5px solid var(--border)',
+      borderLeft: 'none',
+      borderRight: 'none',
+      margin: '0',
+      width: '100%',
+      maxWidth: '100%',
       overflow: 'hidden',
+      boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.03), inset 0 -3px 6px rgba(0,0,0,0.03)',
     }}>
+      {/* Estilo CSS injetado localmente para hover e efeitos modernos */}
+      <style>{`
+        .detail-row-item {
+          transition: all 0.15s ease;
+        }
+        .detail-row-item:hover {
+          background-color: rgba(0, 0, 0, 0.02) !important;
+        }
+      `}</style>
       <div style={{
-        background: 'var(--bg)', padding: '6px 14px',
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        borderBottom: '0.5px solid var(--border)', gap: 12,
+        background: 'var(--bg)', padding: '8px 20px',
+        display: 'flex', alignItems: 'center', gap: 24,
+        borderBottom: '0.5px solid var(--border)',
       }}>
         <span style={{
-          fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.04em',
-          fontWeight: 600, color: 'var(--text-muted)',
+          fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em',
+          fontWeight: 700, color: 'var(--brand)',
         }}>
           Detalhamento · {agrupamentoNome} · {periodo}
         </span>
-        <span style={{ fontSize: 11, color: 'var(--text-muted)', whiteSpace: 'nowrap' }}>
-          Total: R$ {fmt(total)} · {linhas.length} {linhas.length === 1 ? 'conta' : 'contas'}
+        <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-2)' }}>
+          Total: <span style={{ color: 'var(--brand-dark)', fontWeight: 800 }}>R$ {fmt(total)}</span> · <span style={{ color: 'var(--text-muted)' }}>{linhas.length} {linhas.length === 1 ? 'conta' : 'contas'}</span>
         </span>
       </div>
 
-      <div style={{ display: 'flex', alignItems: 'stretch' }}>
+      <div style={{ display: 'flex', alignItems: 'stretch', width: '100%' }}>
         {/* Coluna 1 — lista de contas */}
         <div style={{
-          flex: 1, minWidth: 0, borderRight: '0.5px solid var(--border)',
+          flex: 1.2, minWidth: 320, borderRight: '1px solid rgba(0,0,0,0.06)',
           alignSelf: 'stretch', display: 'flex', flexDirection: 'column',
           justifyContent: linhas.length < 5 ? 'space-evenly' : 'flex-start',
+          maxHeight: 250,
+          overflowY: 'auto',
         }}>
           {linhas.map((it, i) => (
-            <div key={i} style={{ padding: '6px 14px', minHeight: 36, display: 'flex', gap: 8, alignItems: 'center' }}>
-              <BadgeABC classe={it.classe} cor={it.cor} />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{
-                  fontSize: 11.5, fontWeight: 500, color: 'var(--text)',
-                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                }}>
+            <div key={i} className="detail-row-item" style={{
+              padding: '10px 20px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 4,
+              borderBottom: i === linhas.length - 1 ? 'none' : '0.5px solid rgba(0,0,0,0.03)',
+              cursor: 'pointer',
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <BadgeABC classe={it.classe} cor={it.cor} />
+                <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-2)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {nomeConta(it)}
-                </div>
-                <div style={{ height: 3, borderRadius: 2, background: '#D8D6CF', marginTop: 3, overflow: 'hidden' }}>
-                  <div style={{
-                    height: '100%', borderRadius: 2, background: it.cor,
-                    width: animar ? `${Math.min(Math.abs(it.pct), 100)}%` : '0%',
-                    transition: 'width 1s cubic-bezier(.4,0,.2,1)',
-                    transitionDelay: `${i * 40}ms`,
-                  }} />
-                </div>
+                </span>
               </div>
-              <span style={{ fontSize: 11, fontWeight: 700, color: it.cor, minWidth: 38, textAlign: 'right', flexShrink: 0 }}>
-                {it.pct.toFixed(1)}%
-              </span>
-              <span style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--text)', minWidth: 80, textAlign: 'right', flexShrink: 0 }}>
-                {fmt(it.valor)}
-              </span>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
+                  R$ {fmt(it.valor)}
+                </span>
+                <span style={{ fontSize: 11, fontWeight: 700, color: it.cor }}>
+                  {it.pct.toFixed(1)}%
+                </span>
+              </div>
+              <div style={{ height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.05)', overflow: 'hidden', marginTop: 2 }}>
+                <div style={{
+                  height: '100%',
+                  borderRadius: 3,
+                  background: it.cor,
+                  width: animar ? `${Math.min(Math.abs(it.pct), 100)}%` : '0%',
+                  transition: 'width 1.2s cubic-bezier(.4,0,.2,1)',
+                  transitionDelay: `${i * 30}ms`,
+                }} />
+              </div>
             </div>
           ))}
         </div>
 
         {/* Coluna 2 — rosca analítica */}
         <div style={{
-          width: 175, flexShrink: 0, borderRight: '0.5px solid var(--border)',
+          width: 200, flexShrink: 0, borderRight: '1px solid rgba(0,0,0,0.06)',
           padding: '14px 12px', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', gap: 10,
+          alignItems: 'center', justifyContent: 'center',
         }}>
-          <Rosca linhas={linhas} animar={animar} maior={maior} />
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
+          <div style={{
+            fontSize: 9, fontWeight: 700, color: 'var(--text)',
+            textTransform: 'uppercase', letterSpacing: '.03em',
+            width: '100%', marginBottom: 5
+          }}>
+            Distribuição ABC
+          </div>
+          <div style={{ position: 'relative', width: 140, height: 140 }}>
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Classe A', value: pctPorClasse.A },
+                    { name: 'Classe B', value: pctPorClasse.B },
+                    { name: 'Classe C', value: pctPorClasse.C },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={36}
+                  outerRadius={55}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  <Cell fill="#534AB7" />
+                  <Cell fill="#8F85F0" />
+                  <Cell fill="#C5C2EC" />
+                </Pie>
+              </PieChart>
+            </ResponsiveContainer>
+            <div style={{
+              position: 'absolute',
+              top: '47%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              pointerEvents: 'none',
+            }}>
+              <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                {maior ? `${Math.abs(maior.pct).toFixed(0)}%` : '—'}
+              </span>
+              <span style={{ fontSize: 9.5, color: 'var(--brand)', fontWeight: 700, letterSpacing: '0.02em', marginTop: 3 }}>
+                {maior ? maior.conta_origem : ''}
+              </span>
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 10px', justifyContent: 'center', marginTop: 8, width: '100%' }}>
             {LEGENDA_ABC.map(l => (
-              <div key={l.classe} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <span style={{ width: 10, height: 10, borderRadius: 3, background: l.bg, flexShrink: 0 }} />
-                <span style={{ fontSize: 11, fontWeight: 700, color: l.cor, width: 10, flexShrink: 0 }}>{l.classe}</span>
-                <span style={{ flex: 1, minWidth: 0, fontSize: 8, color: 'var(--text-muted)' }}>{l.desc}</span>
-                <span style={{ fontSize: 10, fontWeight: 700, color: l.cor, flexShrink: 0 }}>
+              <div key={l.classe} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: l.bg, flexShrink: 0 }} />
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: l.cor }}>{l.classe}</span>
+                <span style={{ fontSize: 9.5, color: 'var(--text-3)' }}>
                   {Math.round(pctPorClasse[l.classe] ?? 0)}%
                 </span>
               </div>
@@ -203,44 +322,101 @@ export default function PainelDetalheAgrupamento({
         </div>
 
         {/* Coluna 3 — comparativo com período anterior */}
-        <div style={{ width: 230, flexShrink: 0, padding: '10px 14px', display: 'flex', flexDirection: 'column' }}>
+        <div style={{ width: 260, flexShrink: 0, padding: '10px 14px', display: 'flex', flexDirection: 'column', borderRight: '1px solid rgba(0,0,0,0.06)' }}>
           <div style={{ marginBottom: 10 }}>
             <div style={{
               fontSize: 9, fontWeight: 700, color: 'var(--text)',
               textTransform: 'uppercase', letterSpacing: '.03em',
             }}>
-              Comparativo
-            </div>
-            <div style={{ display: 'flex', gap: 10, marginTop: 5, fontSize: 9, color: 'var(--text-muted)' }}>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: '#534AB7', flexShrink: 0 }} />
-                {dados.periodo_atual ?? periodo}
-              </span>
-              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 8, height: 8, borderRadius: 2, background: '#C5C2EC', flexShrink: 0 }} />
-                {dados.periodo_anterior ?? '—'}
-              </span>
+              Análise Comparativa
             </div>
           </div>
 
           {semAnterior ? (
             <div style={{
-              textAlign: 'center', padding: '16px 10px',
+              textAlign: 'center', padding: '30px 10px',
               fontSize: 10, fontStyle: 'italic', color: 'var(--text-muted)',
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center'
             }}>
               Sem dados anteriores
             </div>
           ) : (
-            top6.map((it, i) => (
-              <LinhaComparativa
-                key={i}
-                it={it}
-                anteriorVal={anteriorMap.get(it.conta_origem) ?? null}
-                maxComp={maxComp}
-                animar={animar}
-                delay={i * 60}
-              />
-            ))
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+              <ResponsiveContainer width="100%" height={140}>
+                <BarChart data={top6.map(it => ({
+                  name: nomeCurto(it),
+                  Atual: it.valor,
+                  Anterior: anteriorMap.get(it.conta_origem) ?? 0,
+                  conta: nomeConta(it),
+                }))} margin={{ top: 5, right: 5, left: -22, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
+                  <XAxis dataKey="name" tickLine={false} axisLine={false} style={{ fontSize: 8, fill: 'var(--text-muted)' }} />
+                  <YAxis tickLine={false} axisLine={false} style={{ fontSize: 8.5, fill: 'var(--text-muted)' }} tickFormatter={v => {
+                    const abs = Math.abs(v)
+                    if (abs >= 1000000) return `${(v/1000000).toFixed(1)}M`
+                    if (abs >= 1000) return `${(v/1000).toFixed(0)}K`
+                    return v
+                  }} />
+                  <Tooltip content={<CustomTooltipBars />} />
+                  <Bar dataKey="Atual" fill="#534AB7" radius={[2, 2, 0, 0]} barSize={8} />
+                  <Bar dataKey="Anterior" fill="#C5C2EC" radius={[2, 2, 0, 0]} barSize={8} />
+                </BarChart>
+              </ResponsiveContainer>
+              <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-3)' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: '#534AB7' }} />
+                  Atual ({dados.periodo_atual ?? periodo})
+                </span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-3)' }}>
+                  <span style={{ width: 8, height: 8, borderRadius: 2, background: '#C5C2EC' }} />
+                  Anterior ({dados.periodo_anterior ?? '—'})
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Coluna 4 — evolução/tendência anual */}
+        <div style={{ flex: 1.5, minWidth: 350, padding: '10px 20px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ marginBottom: 10 }}>
+            <div style={{
+              fontSize: 9, fontWeight: 700, color: 'var(--text)',
+              textTransform: 'uppercase', letterSpacing: '.03em',
+            }}>
+              Evolução Mensal (Ano Corrente)
+            </div>
+          </div>
+          {dados.trend && dados.trend.length > 0 ? (
+            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 5 }}>
+              <ResponsiveContainer width="100%" height={150}>
+                <AreaChart data={dados.trend} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                  <defs>
+                    <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#534AB7" stopOpacity={0.25}/>
+                      <stop offset="95%" stopColor="#534AB7" stopOpacity={0.00}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
+                  <XAxis dataKey="mes" tickLine={false} axisLine={false} style={{ fontSize: 9, fill: 'var(--text-muted)' }} />
+                  <YAxis tickLine={false} axisLine={false} style={{ fontSize: 9, fill: 'var(--text-muted)' }} tickFormatter={v => {
+                    const abs = Math.abs(v)
+                    if (abs >= 1000000) return `${(v/1000000).toFixed(1)}M`
+                    if (abs >= 1000) return `${(v/1000).toFixed(0)}K`
+                    return v
+                  }} />
+                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(83, 74, 183, 0.2)', strokeWidth: 1 }} />
+                  <Area type="monotone" dataKey="valor" stroke="#534AB7" strokeWidth={2} fillOpacity={1} fill="url(#colorTrend)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+          ) : (
+            <div style={{
+              textAlign: 'center', padding: '30px 10px',
+              fontSize: 10, fontStyle: 'italic', color: 'var(--text-muted)',
+              flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center'
+            }}>
+              Sem dados de evolução
+            </div>
           )}
         </div>
       </div>
