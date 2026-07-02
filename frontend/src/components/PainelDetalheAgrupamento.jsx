@@ -122,7 +122,8 @@ export default function PainelDetalheAgrupamento({
       border: '0.5px solid var(--border)',
       borderRadius: 8,
       margin: '0 10px 8px',
-      maxWidth: 760,
+      minWidth: 500,
+      maxWidth: 780,
       overflow: 'hidden',
     }}>
       <div style={{
@@ -143,12 +144,9 @@ export default function PainelDetalheAgrupamento({
 
       <div style={{ display: 'flex' }}>
         {/* Coluna 1 — lista de contas */}
-        <div style={{
-          flex: 1, minWidth: 260, borderRight: '0.5px solid var(--border)',
-          padding: '14px 16px', display: 'flex', flexDirection: 'column', gap: 10,
-        }}>
+        <div style={{ flex: 1, minWidth: 0, borderRight: '0.5px solid var(--border)' }}>
           {linhas.map((it, i) => (
-            <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div key={i} style={{ padding: '6px 14px', display: 'flex', gap: 8, alignItems: 'center' }}>
               <BadgeABC classe={it.classe} cor={it.cor} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
@@ -166,10 +164,10 @@ export default function PainelDetalheAgrupamento({
                   }} />
                 </div>
               </div>
-              <span style={{ fontSize: 11.5, fontWeight: 700, color: it.cor, minWidth: 44, textAlign: 'right', flexShrink: 0 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, color: it.cor, minWidth: 38, textAlign: 'right', flexShrink: 0 }}>
                 {it.pct.toFixed(1)}%
               </span>
-              <span style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--text)', minWidth: 90, textAlign: 'right', flexShrink: 0 }}>
+              <span style={{ fontSize: 11.5, fontWeight: 500, color: 'var(--text)', minWidth: 80, textAlign: 'right', flexShrink: 0 }}>
                 {fmt(it.valor)}
               </span>
             </div>
@@ -179,7 +177,8 @@ export default function PainelDetalheAgrupamento({
         {/* Coluna 2 — rosca analítica */}
         <div style={{
           width: 175, flexShrink: 0, borderRight: '0.5px solid var(--border)',
-          padding: '14px 12px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          padding: '14px 12px', display: 'flex', flexDirection: 'column',
+          alignItems: 'center', justifyContent: 'center', gap: 10,
         }}>
           <Rosca linhas={linhas} animar={animar} maior={maior} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, width: '100%' }}>
@@ -197,10 +196,10 @@ export default function PainelDetalheAgrupamento({
         </div>
 
         {/* Coluna 3 — comparativo com período anterior */}
-        <div style={{ width: 230, flexShrink: 0, padding: '14px 16px' }}>
-          <div style={{ marginBottom: 12 }}>
+        <div style={{ width: 230, flexShrink: 0, padding: '10px 14px', display: 'flex', flexDirection: 'column' }}>
+          <div style={{ marginBottom: 10 }}>
             <div style={{
-              fontSize: 10, fontWeight: 700, color: 'var(--text)',
+              fontSize: 9, fontWeight: 700, color: 'var(--text)',
               textTransform: 'uppercase', letterSpacing: '.03em',
             }}>
               Comparativo
@@ -219,10 +218,10 @@ export default function PainelDetalheAgrupamento({
 
           {semAnterior ? (
             <div style={{
-              display: 'flex', alignItems: 'center', justifyContent: 'center', height: 120,
-              fontSize: 10, fontStyle: 'italic', color: 'var(--text-muted)', textAlign: 'center', padding: '0 10px',
+              textAlign: 'center', padding: '16px 10px',
+              fontSize: 10, fontStyle: 'italic', color: 'var(--text-muted)',
             }}>
-              Sem dados anteriores para comparação
+              Sem dados anteriores
             </div>
           ) : (
             top6.map((it, i) => (
@@ -260,7 +259,7 @@ function LinhaComparativa({ it, anteriorVal, maxComp, animar, delay }) {
   const widthAnterior = animar ? `${Math.min(Math.abs(anteriorVal ?? 0) / maxComp * 100, 100)}%` : '0%'
 
   return (
-    <div style={{ marginBottom: 12 }}>
+    <div style={{ marginBottom: 10 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 4 }}>
         <BadgeABC classe={it.classe} cor={it.cor} size={13} />
         <span style={{
@@ -286,7 +285,7 @@ function LinhaComparativa({ it, anteriorVal, maxComp, animar, delay }) {
             transition: 'width 1s cubic-bezier(.4,0,.2,1)', transitionDelay: `${delay}ms`,
           }} />
         </div>
-        <span style={{ fontSize: 10, fontWeight: 700, color: '#534AB7', minWidth: 56, textAlign: 'right', flexShrink: 0 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, color: '#534AB7', minWidth: 50, textAlign: 'right', flexShrink: 0 }}>
           {fmt(it.valor)}
         </span>
       </div>
@@ -297,7 +296,7 @@ function LinhaComparativa({ it, anteriorVal, maxComp, animar, delay }) {
             transition: 'width 1s cubic-bezier(.4,0,.2,1)', transitionDelay: `${delay}ms`,
           }} />
         </div>
-        <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 56, textAlign: 'right', flexShrink: 0 }}>
+        <span style={{ fontSize: 10, color: 'var(--text-muted)', minWidth: 50, textAlign: 'right', flexShrink: 0 }}>
           {anteriorVal != null ? fmt(anteriorVal) : '—'}
         </span>
       </div>
