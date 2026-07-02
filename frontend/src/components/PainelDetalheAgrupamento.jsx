@@ -233,7 +233,7 @@ export default function PainelDetalheAgrupamento({
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>
+                <span style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)', fontVariantNumeric: 'tabular-nums' }}>
                   R$ {fmt(it.valor)}
                 </span>
                 <span style={{ fontSize: 11, fontWeight: 700, color: it.cor }}>

@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback, useMemo } from 'react'
-import { ChevronDown, ChevronRight } from 'lucide-react'
+import { ChevronDown, ChevronRight, Percent, ChevronsDown, ChevronsUp, LayoutDashboard, Download, LogOut } from 'lucide-react'
 import { demonstrativoFcAPI, clientesAPI } from '../../services/api'
 import { LoadingPage } from '../../components/shared'
+
 import BotaoExportarPDF from '../../components/BotaoExportarPDF'
 import PainelDetalheAgrupamento from '../../components/PainelDetalheAgrupamento'
 
@@ -21,8 +22,9 @@ const fmtPct = v => v == null ? '' : `${v.toFixed(1)}%`
 
 function corValor(v) {
   if (v == null || v === 0) return 'var(--text-muted)'
-  return v < 0 ? 'var(--red, #EF4444)' : 'inherit'
+  return v < 0 ? '#D25656' : 'var(--text)'
 }
+
 
 // Para cada agrupamento: qual totalizador fecha sua seção (collapse e % de participação)
 function buildGroupings(linhas) {
@@ -80,9 +82,13 @@ export default function FluxoCaixa() {
   // Melhoria 2 — % de participação (modo "todos")
   const [showPct, setShowPct] = useState(false)
 
+  // Toggle do mini-dashboard de resumo
+  const [showDashboard, setShowDashboard] = useState(false)
+
   // Melhoria 3 — painel de detalhe por célula de valor
   // { ordem, cacheKey, agrupamentoNome, periodo, clienteId, ano, mes, mesFim, modo, totalAgrupamento }
   const [activeDetail, setActiveDetail] = useState(null)
+
 
   useEffect(() => {
     clientesAPI.listar().then(r => setClientes(r.data)).catch(() => {})
@@ -104,6 +110,22 @@ export default function FluxoCaixa() {
   }, [clienteId, ano, mes, modo])
 
   useEffect(() => { carregar() }, [carregar])
+
+  // Controla exibição da sidebar global do sistema
+  useEffect(() => {
+    const shell = document.querySelector('.app-shell')
+    if (shell) {
+      if (clienteId) {
+        shell.classList.add('hide-sidebar')
+      } else {
+        shell.classList.remove('hide-sidebar')
+      }
+    }
+    return () => {
+      if (shell) shell.classList.remove('hide-sidebar')
+    }
+  }, [clienteId])
+
 
   const { parentOf, sectionRefOrdem, totalizadorMap, allTotalizadores } = useMemo(() => {
     if (!dados) return { parentOf: {}, sectionRefOrdem: {}, totalizadorMap: {}, allTotalizadores: new Set() }
@@ -135,6 +157,29 @@ export default function FluxoCaixa() {
     })
     return { colunas, linhas }
   }, [dados, modo])
+
+  // Estatísticas/KPIs do demonstrativo para o painel resumo (dashboard)
+  const kpis = useMemo(() => {
+    if (!dados) return null
+    const vendasTotais = dados.linhas.find(l => l.rotulo.toLowerCase().includes('vendas - totais'))
+    const margem1 = dados.linhas.find(l => l.rotulo.toLowerCase().includes('margem de venda 1'))
+    const margem2 = dados.linhas.find(l => l.rotulo.toLowerCase().includes('margem de venda 2'))
+
+    const getVal = (linha) => {
+      if (!linha) return 0
+      if (modo === 'todos') {
+        return Object.values(linha.valores_mensais ?? {}).reduce((s, v) => s + (v ?? 0), 0)
+      }
+      return linha.realizado ?? 0
+    }
+
+    return {
+      receita: getVal(vendasTotais),
+      margem1: getVal(margem1),
+      saldo: getVal(margem2),
+    }
+  }, [dados, modo])
+
 
   const toggleTotalizador = (ordem) => {
     setCollapsedTotais(prev => {
@@ -194,10 +239,11 @@ export default function FluxoCaixa() {
     : ''
 
   const thBase = {
-    background: 'var(--brand)', color: '#fff', fontSize: '10.5px', fontWeight: 600,
-    padding: '8px 12px', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 2,
-    borderBottom: '0.5px solid rgba(255,255,255,.2)',
-    textTransform: 'uppercase', letterSpacing: '0.04em',
+    background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '10px', fontWeight: 700,
+    padding: '12px 14px', whiteSpace: 'nowrap', position: 'sticky', top: 0, zIndex: 2,
+    borderBottom: '1.5px solid var(--border)',
+    borderTop: '0.5px solid var(--border)',
+    textTransform: 'uppercase', letterSpacing: '0.06em',
   }
 
   const colSpanAll = modo === 'todos' ? 14 : 3
@@ -221,16 +267,18 @@ export default function FluxoCaixa() {
 
       const isTotalizador = tipo === 'totalizador'
       const bold          = negrito_totalizador || isTotalizador
-      const bgRow         = negrito_totalizador ? 'var(--surface)' : 'transparent'
+      const bgRow         = negrito_totalizador ? 'rgba(83, 74, 183, 0.03)' : 'transparent'
       const isExpanded    = !collapsedTotais.has(ordem)
 
       // Células de valor clicáveis em qualquer agrupamento com ao menos 1 lançamento
       const isClickable = tipo === 'agrupamento' && (conta_count ?? 0) > 0
 
       const tdBase = {
-        padding: '5px 12px', fontSize: 12, fontWeight: bold ? 700 : 400,
+        padding: '10px 14px', fontSize: 12, fontWeight: bold ? 700 : 400,
         borderBottom: '0.5px solid var(--border)', background: bgRow,
+        transition: 'all 0.15s ease',
       }
+
 
       if (tipo === 'titulo') {
         result.push(
@@ -247,25 +295,45 @@ export default function FluxoCaixa() {
         continue
       }
 
-      // Rótulo: só totalizadores têm chevron (para expand/collapse)
+      // Rótulo: totalizadores têm chevron, filhos têm conector visual tracejado
       const rotuloContent = (
-        <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-          {isTotalizador
-            ? (isExpanded
-                ? <ChevronDown  size={12} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />
-                : <ChevronRight size={12} style={{ flexShrink: 0, color: 'var(--text-muted)' }} />)
-            : <span style={{ width: 16, flexShrink: 0 }} />}
-          {rotulo}
+        <span style={{ display: 'flex', alignItems: 'center', gap: 6, paddingLeft: isTotalizador ? 0 : 8 }}>
+          {isTotalizador ? (
+            isExpanded ? (
+              <ChevronDown size={13} style={{ flexShrink: 0, color: 'var(--brand)', transition: 'transform 0.2s' }} />
+            ) : (
+              <ChevronRight size={13} style={{ flexShrink: 0, color: 'var(--text-muted)', transition: 'transform 0.2s' }} />
+            )
+          ) : (
+            <span style={{
+              width: 12,
+              height: 12,
+              borderLeft: '1.5px dashed var(--border)',
+              borderBottom: '1.5px dashed var(--border)',
+              marginRight: 4,
+              marginTop: -6,
+              flexShrink: 0
+            }} />
+          )}
+          <span style={{
+            color: bold ? 'var(--text)' : 'var(--text-2)',
+            fontSize: bold ? '12.5px' : '12px'
+          }}>
+            {rotulo}
+          </span>
         </span>
       )
+
 
       // Helper: monta uma célula de valor clicável
       const makeValueCell = (key, v, extraStyle, cacheKey, detail, pctNode) => {
         const isThisActive = isClickable && activeDetail?.cacheKey === cacheKey && activeDetail?.ordem === ordem
         return (
           <td key={key}
+            className="fc-cell-val"
             style={{
               ...tdBase, ...extraStyle,
+              fontVariantNumeric: 'tabular-nums',
               cursor: isClickable ? 'pointer' : 'default',
             }}
             onClick={isClickable ? () => handleCellClick(ordem, cacheKey, detail) : undefined}
@@ -284,6 +352,7 @@ export default function FluxoCaixa() {
         )
       }
 
+
       if (modo === 'todos') {
         const totalRow = valores_mensais
           ? Object.values(valores_mensais).reduce((s, v) => s + (v ?? 0), 0)
@@ -291,7 +360,7 @@ export default function FluxoCaixa() {
         const pctTotal = showPct && tipo === 'agrupamento' ? getPct(linha, null) : null
 
         result.push(
-          <tr key={ordem} style={{ background: bgRow }}>
+          <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
             {/* Coluna rótulo — sticky */}
             <td
               style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow,
@@ -355,7 +424,7 @@ export default function FluxoCaixa() {
           : null
 
         result.push(
-          <tr key={ordem} style={{ background: bgRow }}>
+          <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
             <td
               style={{ ...tdBase, minWidth: 220, cursor: isTotalizador ? 'pointer' : 'default' }}
               onClick={isTotalizador ? () => toggleTotalizador(ordem) : undefined}
@@ -401,6 +470,26 @@ export default function FluxoCaixa() {
 
   return (
     <div className="page">
+      <style>{`
+        .fc-row {
+          transition: background-color 0.12s ease;
+        }
+        .fc-row:hover {
+          background-color: rgba(83, 74, 183, 0.025) !important;
+        }
+        .fc-row:hover td {
+          background-color: rgba(83, 74, 183, 0.025) !important;
+        }
+        .app-shell.hide-sidebar .sidebar {
+          display: none !important;
+        }
+        .app-shell.hide-sidebar .main-area {
+          margin-left: 0 !important;
+          padding-left: 0 !important;
+          width: 100vw !important;
+          max-width: 100vw !important;
+        }
+      `}</style>
       <div className="page-header">
         <div>
           <div className="page-title">Fluxo de Caixa Executivo</div>
@@ -456,68 +545,166 @@ export default function FluxoCaixa() {
 
       {!loading && dados && (
         <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
-          {/* Controles do demonstrativo */}
-          <div style={{ padding: '10px 16px', borderBottom: '0.5px solid var(--border)',
-            display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-            <span style={{ fontWeight: 700, fontSize: 14 }}>{dados.cliente_nome}</span>
-            <span style={{ fontSize: 13, color: 'var(--text-muted)' }}>
+          {/* Cabeçalho do demonstrativo */}
+          <div style={{ padding: '14px 20px', borderBottom: '0.5px solid var(--border)',
+            display: 'flex', gap: 12, alignItems: 'center', background: 'var(--bg)' }}>
+            <span style={{ fontWeight: 800, fontSize: 15, color: 'var(--text)' }}>{dados.cliente_nome}</span>
+            <span style={{ fontSize: 12, fontWeight: 500, color: 'var(--text-muted)', background: 'var(--surface)', padding: '3px 10px', borderRadius: 12 }}>
               {periodoLabel}
             </span>
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          </div>
+
+          {/* Painel de KPI Dashboard */}
+          {showDashboard && kpis && (
+            <div style={{
+              display: 'flex', gap: 16, padding: '16px 20px',
+              borderBottom: '0.5px solid var(--border)', background: 'rgba(83, 74, 183, 0.015)',
+              flexWrap: 'wrap'
+            }}>
+              <div style={{ flex: 1, minWidth: 200, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 4, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 8 }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Entradas de Vendas</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--brand)' }}>R$ {fmt(kpis.receita)}</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 200, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 4, background: 'var(--bg)', border: '0.5px solid var(--border)', borderRadius: 8 }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Margem de Venda 1</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)' }}>R$ {fmt(kpis.margem1)}</span>
+              </div>
+              <div style={{ flex: 1, minWidth: 200, padding: '12px 16px', display: 'flex', flexDirection: 'column', gap: 4, background: kpis.saldo >= 0 ? 'rgba(34, 197, 94, 0.04)' : 'rgba(239, 68, 68, 0.04)', border: kpis.saldo >= 0 ? '0.5px solid rgba(34, 197, 94, 0.2)' : '0.5px solid rgba(239, 68, 68, 0.2)', borderRadius: 8 }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, color: kpis.saldo >= 0 ? '#166534' : '#991B1B', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Fluxo de Caixa Líquido</span>
+                <span style={{ fontSize: 18, fontWeight: 800, color: kpis.saldo >= 0 ? '#15803D' : '#B91C1C' }}>R$ {fmt(kpis.saldo)}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Área principal: Sidebar de Ações à esquerda, Tabela à direita */}
+          <div style={{ display: 'flex', alignItems: 'stretch', width: '100%' }}>
+            {/* Sidebar Lateral de Ações (Toolbar) à esquerda */}
+            <div style={{
+              width: 46, flexShrink: 0, borderRight: '1.5px solid var(--border)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              padding: '12px 6px', gap: 10, background: '#EAEAE6'
+            }}>
+              {/* Estilo CSS injetado localmente para hover e efeitos modernos da sidebar */}
+              <style>{`
+                .fc-sidebar-btn {
+                  transition: all 0.15s ease;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  width: 32px;
+                  height: 32px;
+                  border-radius: 6px;
+                  cursor: pointer;
+                  border: 0.5px solid var(--border);
+                  background: transparent;
+                  color: var(--text-muted);
+                }
+                .fc-sidebar-btn:hover {
+                  background-color: rgba(0, 0, 0, 0.05) !important;
+                  color: var(--text) !important;
+                  transform: scale(1.05);
+                }
+              `}</style>
+              
+              {/* Dashboard / Dash Toggle */}
+              <button
+                onClick={() => setShowDashboard(d => !d)}
+                title={showDashboard ? "Ocultar Painel Resumo" : "Exibir Painel Resumo"}
+                className="fc-sidebar-btn"
+                style={{
+                  background: showDashboard ? 'var(--brand)' : 'transparent',
+                  color: showDashboard ? '#fff' : 'var(--text-muted)',
+                }}
+              >
+                <LayoutDashboard size={16} />
+              </button>
+
+              {/* PDF Export */}
               <BotaoExportarPDF
                 titulo="Fluxo de Caixa Executivo"
                 clienteNome={dados.cliente_nome}
                 periodo={periodoLabel}
                 colunas={dadosExportacao.colunas}
                 linhas={dadosExportacao.linhas}
+                iconOnly={true}
               />
+
+              {/* % participação (se modo todos) */}
               {modo === 'todos' && (
                 <button
                   onClick={() => setShowPct(p => !p)}
+                  title="% de Participação"
+                  className="fc-sidebar-btn"
                   style={{
-                    padding: '4px 10px', fontSize: 11, borderRadius: 5, cursor: 'pointer',
-                    border: '0.5px solid var(--border)', transition: 'all .15s',
                     background: showPct ? 'var(--brand)' : 'transparent',
                     color: showPct ? '#fff' : 'var(--text-muted)',
-                  }}>
-                  % participação
+                  }}
+                >
+                  <Percent size={15} />
                 </button>
               )}
-              <button className="btn-secondary" onClick={() => setCollapsedTotais(new Set())}
-                style={{ padding: '4px 10px', fontSize: 11 }}>
-                Expandir tudo
+
+              {/* Expandir tudo */}
+              <button
+                onClick={() => setCollapsedTotais(new Set())}
+                title="Expandir Todas as Seções"
+                className="fc-sidebar-btn"
+              >
+                <ChevronsDown size={16} />
               </button>
-              <button className="btn-secondary" onClick={() => setCollapsedTotais(new Set(allTotalizadores))}
-                style={{ padding: '4px 10px', fontSize: 11 }}>
-                Colapsar tudo
+
+              {/* Colapsar tudo */}
+              <button
+                onClick={() => setCollapsedTotais(new Set(allTotalizadores))}
+                title="Colapsar Todas as Seções"
+                className="fc-sidebar-btn"
+              >
+                <ChevronsUp size={16} />
+              </button>
+
+              {/* Separador */}
+              <div style={{ width: '60%', height: 1, background: 'rgba(0,0,0,0.1)', margin: '8px 0' }} />
+
+              {/* Sair do Relatório (Voltar) */}
+              <button
+                onClick={() => setClienteId('')}
+                title="Sair do Relatório (Voltar)"
+                className="fc-sidebar-btn"
+                style={{
+                  color: '#D25656',
+                  borderColor: 'rgba(210, 86, 86, 0.2)'
+                }}
+              >
+                <LogOut size={16} />
               </button>
             </div>
-          </div>
 
-          <div style={{ overflowX: 'auto' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse',
-              minWidth: modo === 'todos' ? 1400 : 520 }}>
-              <thead>
-                {modo === 'todos' ? (
-                  <tr>
-                    <th style={{ ...thBase, textAlign: 'left', position: 'sticky', left: 0, zIndex: 3,
-                      minWidth: 200, maxWidth: 260 }}>Conta</th>
-                    {MESES.map(m => <th key={m} style={{ ...thBase, textAlign: 'right' }}>{m}</th>)}
-                    <th style={{ ...thBase, textAlign: 'right',
-                      borderLeft: '0.5px solid rgba(255,255,255,.3)' }}>Total</th>
-                  </tr>
-                ) : (
-                  <tr>
-                    <th style={{ ...thBase, textAlign: 'left', minWidth: 220 }}>Conta</th>
-                    <th style={{ ...thBase, textAlign: 'right', minWidth: 120 }}>Realizado</th>
-                    <th style={{ ...thBase, textAlign: 'right', minWidth: 80 }}>% Vendas</th>
-                  </tr>
-                )}
-              </thead>
-              <tbody>
-                {renderRows()}
-              </tbody>
-            </table>
+            {/* Tabela */}
+            <div style={{ flex: 1, overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse',
+                minWidth: modo === 'todos' ? 1400 : 520 }}>
+                <thead>
+                  {modo === 'todos' ? (
+                    <tr>
+                      <th style={{ ...thBase, textAlign: 'left', position: 'sticky', left: 0, zIndex: 3,
+                        minWidth: 200, maxWidth: 260 }}>Conta</th>
+                      {MESES.map(m => <th key={m} style={{ ...thBase, textAlign: 'right' }}>{m}</th>)}
+                      <th style={{ ...thBase, textAlign: 'right',
+                        borderLeft: '0.5px solid var(--border)' }}>Total</th>
+                    </tr>
+                  ) : (
+                    <tr>
+                      <th style={{ ...thBase, textAlign: 'left', minWidth: 220 }}>Conta</th>
+                      <th style={{ ...thBase, textAlign: 'right', minWidth: 120 }}>Realizado</th>
+                      <th style={{ ...thBase, textAlign: 'right', minWidth: 80 }}>% Vendas</th>
+                    </tr>
+                  )}
+                </thead>
+                <tbody>
+                  {renderRows()}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}
