@@ -38,8 +38,11 @@ function classificarABC(itens, total) {
   const posPorClasse = { A: 0, B: 0, C: 0 }
   return ordenados.map(it => {
     const pct = total ? (it.valor / total) * 100 : 0
+    // Classifica pelo acumulado ANTES de somar esta conta: a conta que cruza o
+    // limiar ainda pertence à classe que está sendo alcançada (ex.: uma única
+    // conta com 85% do total é A, não B — o acumulado prévio era 0%, < 70%).
+    const classe = acumulado < 70 ? 'A' : acumulado < 90 ? 'B' : 'C'
     acumulado += Math.abs(pct)
-    const classe = acumulado <= 70 ? 'A' : acumulado <= 90 ? 'B' : 'C'
     posPorClasse[classe] += 1
     return { ...it, pct, classe, posClasse: posPorClasse[classe], cor: corPorClasse(classe, posPorClasse[classe]) }
   })
