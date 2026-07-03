@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { dreMotorAPI, clientesAPI } from '../../services/api'
+import { dreMotorAPI, clientesAPI, orcamentoAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import api from '../../services/api'
@@ -665,6 +665,102 @@ function ImportarRealizado() {
   return null
 }
 
+function ImportarOrcamento() {
+  const [clientes, setClientes] = useState([])
+  const [form, setForm] = useState({
+    cliente_id: '',
+    ano: ANO_ATUAL,
+    versao: 'Original',
+    arquivo: null,
+  })
+  const [importando, setImportando] = useState(false)
+  const [resultado, setResultado] = useState(null)
+
+  useEffect(() => {
+    clientesAPI.listar({ modulo_analises_gerenciais: true }).then(r => setClientes(r.data || []))
+  }, [])
+
+  const set = (k, v) => setForm(p => ({ ...p, [k]: v }))
+  const pode = form.cliente_id && form.arquivo && form.ano
+
+  const importar = async () => {
+    if (!pode) return
+    setImportando(true)
+    try {
+      const r = await orcamentoAPI.importar(form.cliente_id, form.ano, form.arquivo, form.versao)
+      setResultado(r.data)
+      toast.success('Importação de orçamento concluída!')
+    } catch (e) {
+      toast.error(e?.response?.data?.detail || 'Erro na importação do orçamento')
+    } finally {
+      setImportando(false)
+    }
+  }
+
+  const reiniciar = () => {
+    setResultado(null)
+    setForm(p => ({ ...p, arquivo: null }))
+  }
+
+  if (importando) {
+    return <div style={{ padding: 20, textAlign: 'center', color: 'var(--brand)', fontWeight: 600 }}>Importando orçamento... aguarde</div>
+  }
+
+  if (resultado) {
+    return (
+      <div style={{ maxWidth: 560 }}>
+        <h4 style={{ fontWeight: 700, fontSize: 14, marginBottom: 16 }}>Resultado da Importação</h4>
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10, marginBottom: 20 }}>
+          <BadgeCount label="Status" val={resultado.success ? "Sucesso" : "Erro"} cor={resultado.success ? "green" : "red"} />
+          <BadgeCount label="Registros Inseridos" val={resultado.registros_inseridos || 0} cor="brand" />
+        </div>
+        <button onClick={reiniciar}
+          style={{ padding: '9px 18px', background: 'var(--brand)', color: '#fff', border: 'none', borderRadius: 7, cursor: 'pointer', fontSize: 13, fontWeight: 700 }}>
+          Nova importação
+        </button>
+      </div>
+    )
+  }
+
+  return (
+    <div style={{ maxWidth: 640 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div className="form-group">
+          <label>Cliente *</label>
+          <select value={form.cliente_id} onChange={e => set('cliente_id', e.target.value)}>
+            <option value="">Selecione...</option>
+            {clientes.map(c => <option key={c.id} value={c.id}>{c.razao_social}</option>)}
+          </select>
+        </div>
+        <div className="form-group">
+          <label>Versão *</label>
+          <select value={form.versao} onChange={e => set('versao', e.target.value)}>
+            <option value="Original">Original</option>
+            <option value="Rev.1">Rev.1</option>
+            <option value="Rev.2">Rev.2</option>
+          </select>
+        </div>
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>
+        <div className="form-group">
+          <label>Ano *</label>
+          <input type="number" value={form.ano} min={2020} max={2035} onChange={e => set('ano', parseInt(e.target.value))} />
+        </div>
+      </div>
+      <div className="form-group" style={{ marginBottom: 14 }}>
+        <label>Arquivo XLSX (Aba 'CLAUDE') *</label>
+        <UploadArea arquivo={form.arquivo} onChange={f => set('arquivo', f)} />
+      </div>
+      <button onClick={importar} disabled={!pode}
+        style={{ background: pode ? 'var(--brand)' : '#e5e7eb', color: pode ? '#fff' : '#9ca3af',
+          border: 'none', borderRadius: 7, padding: '10px 28px', fontSize: 14, fontWeight: 700,
+          cursor: pode ? 'pointer' : 'default' }}>
+        Importar Orçamento →
+      </button>
+    </div>
+  )
+}
+
 // ════════════════════════════════════════════════════════
 // PÁGINA PRINCIPAL COM ABAS
 // ════════════════════════════════════════════════════════
@@ -701,10 +797,14 @@ export default function ImportacoesPage() {
         <button style={tabStyle(aba === 'realizado')} onClick={() => setAba('realizado')}>
           Realizado (ERP)
         </button>
+        <button style={tabStyle(aba === 'orcamento')} onClick={() => setAba('orcamento')}>
+          Orçamento
+        </button>
       </div>
 
       {aba === 'plano' && <ImportarPlano />}
       {aba === 'realizado' && <ImportarRealizado />}
+      {aba === 'orcamento' && <ImportarOrcamento />}
     </div>
   )
 }
