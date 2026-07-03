@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → `.github/workflows/deploy.yml` (self-hosted, no próprio servidor) para o serviço, roda `pip install -r requirements.txt` no venv de produção e reinicia o `EmaisBackend`
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.6.1k` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.6.1t` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -338,6 +338,11 @@ Regras:
 
 ## Histórico de Sessões
 
+### 2026-07-03 (sessão 9)
+**O que foi feito:** Publicação da versão `v2.6.1t` com o Módulo de Controle Orçamentário (`DEMO-7` e `DEMO-8`), importador de planilha Excel de orçamento (`backend/importar_orcamento_planilha.py`), painel de detalhes trimestrais com gráficos do Recharts e velocímetro SVG de metas (`PainelDetalheOrcamento.jsx`), e refinamento da Sidebar (popover de usuário no footer).
+**Decisões tomadas:** Staging de todos os arquivos modificados/novos (incluindo testes e documentação) antes do release para garantir integridade do commit gerado pelo `release.ps1`.
+**Próximo passo:** Testar e validar o módulo de orçamento no Electron conectado ao servidor de produção (Ctrl+Shift+R).
+
 ### 2026-06-30 (sessão 8)
 **O que foi feito:** Dois ajustes no `PainelDetalheAgrupamento.jsx` (v2.6.1k). Bug: rosca não aparecia no modo "Todos os meses" ao clicar numa célula de mês. Causa raiz **não** era `mes` chegando null (confirmado via chamada direta da função `detalhe_agrupamento()` contra o Supabase de produção — mesmos parâmetros retornam os mesmos 6 itens em ambos os modos); era **layout**: `colSpanAll = 14` no modo "todos" faz a `<td>` do painel herdar a largura das 12 colunas de mês (~1400px); o container flex do painel (sem `maxWidth`) se esticava até essa largura total, empurrando a coluna fixa de 170px da rosca para fora da área visível sem rolagem horizontal — no modo Mensal/Acumulado (`colSpanAll = 3`, ~520px) isso nunca acontecia. Corrigido com `maxWidth: 640` no container externo do painel. Paleta de cores trocada para a escala baseada em `var(--module-projetos)` (`#1D9E75 → #2DB88A → #5DCAA5 → #8EDCC0 → #B8ECD8`), 1ª conta (maior valor, painel ordena por magnitude decrescente) sempre com o tom mais escuro; track da rosca e das barras alinhado em `#D8D6CF`. Corrigido de passagem: cálculo de `total` usava `totalAgrupamento || fallback` (bug latente — `||` trata `0` como falsy, disparando recálculo incorreto em meses com total zerado); trocado para checagem explícita `!= null && !== 0`.
 **Decisões tomadas:** Diagnóstico feito chamando a função do endpoint diretamente em Python (`from routers.fc_exec import detalhe_agrupamento`, sessão com `SessionLocal()` real) em vez de via HTTP — evita precisar de JWT e evita qualquer escrita, só leitura contra produção. Esse padrão (chamar router function direto com `db=SessionLocal(), usuario=FakeUser()`) é reaproveitável para futuros bugs "os dados parecem certos mas a tela não mostra".
@@ -383,7 +388,4 @@ Regras:
 **Decisões tomadas:** Forward refs em fórmulas FC (ex: linha 61 usa D62-D63) resolvidos por multi-pass convergente (máx 10 iterações, converge em 3); De-Para usa `.lower()` nos slugs do extrato para tratar variações de case sem duplicar entradas; agrupamentos compostos (`slug1+slug2-slug3`) deduplica por `agrupamento_id` evitando double-counting.
 **Próximo passo:** Testar no Electron com Rio das Pedras Jan/2025 (Ctrl+Shift+R). Próximas: outros clientes com De-Para, DEMO-6 (orçado no demonstrativo), REL-1 (PDF) na fila.
 
-### 2026-06-29 (sessão 2)
-**O que foi feito:** Login.jsx (v2.6.0t PR #53): ícone `eIcon` real no card, checkbox "Lembrar" sem wrapper `isElectron`, Enter avança código→senha→submit via `useRef`. Credenciais via localStorage (v2.6.0u PR #54): `saved_codigo`/`saved_senha`/`remember_credentials` persistidos no login; restaurados no mount; "Trocar usuário" limpa tudo — substitui IPC `window.electronAPI` que não funcionava sem restart do Electron. DEMO-3 (v2.6.0v PR #55): modelo `LancamentoFC` (`fc_lancamentos`), `TemplateRef.segmento_id` nullable (templates universais), `TemplateLinhaRef` + colunas `tipo`/`agrupamento_slug`; migrações PostgreSQL/SQLite aplicadas. Carga de dados no Supabase (script `importar_fc_supabase.py`): Prátiko Supermercados criado (id=9), 1 template "Fluxo de Caixa" (79 linhas: 57 agrupamentos, 17 totalizadores, 5 títulos), 810 lançamentos Jan–Mai/2025, 0 erros.
-**Decisões tomadas:** localStorage é o mecanismo primário de credenciais (funciona em Electron e browser); `window.electronAPI?.setCredentials()` é chamado como bonus com `.catch(()=>{})`. `UniqueConstraint` em `fc_lancamentos` inclui `conta_origem` nullable — PostgreSQL trata NULL != NULL, sem violação com múltiplos NULLs. Carga de dados de produção via script one-off (não via release, não commitado no git).
-**Próximo passo:** Construir página de Fluxo de Caixa que leia `fc_lancamentos` e `ref_template_linhas` para exibir o extrato real do Prátiko. REL-1 (PDF) permanece na fila.
+
