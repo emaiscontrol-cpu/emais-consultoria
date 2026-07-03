@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → `.github/workflows/deploy.yml` (self-hosted, no próprio servidor) para o serviço, roda `pip install -r requirements.txt` no venv de produção e reinicia o `EmaisBackend`
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.6.1u` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.6.1v` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -339,9 +339,9 @@ Regras:
 ## Histórico de Sessões
 
 ### 2026-07-03 (sessão 9)
-**O que foi feito:** Publicação da versão `v2.6.1t` com o Módulo de Controle Orçamentário (`DEMO-7`/`DEMO-8`), importador local (`backend/importar_orcamento_planilha.py`), painel com gráficos Recharts e velocímetro SVG (`PainelDetalheOrcamento.jsx`). Lançamento da `v2.6.1u` (hotfix): adicionada aba "Orçamento" na página de "Importações" para permitir o upload direto da planilha de orçamento (`FC - 2025 - ORÇAMENTO_A1.xlsx`) no servidor de produção (Supabase) via Electron.
-**Decisões tomadas:** Disponibilizar o importador no frontend na tela de Importações em vez de depender apenas do script Python local, garantindo que o usuário possa atualizar os dados de orçamento na nuvem (PostgreSQL/Supabase) de forma simples e independente.
-**Próximo passo:** Acessar o Electron em produção, ir na aba Importações > Orçamento, carregar o arquivo Excel e validar na tela de Controle Orçamentário.
+**O que foi feito:** Publicação da versão `v2.6.1t` com o Módulo de Controle Orçamentário (`DEMO-7`/`DEMO-8`), importador local (`backend/importar_orcamento_planilha.py`), painel com gráficos Recharts e velocímetro SVG (`PainelDetalheOrcamento.jsx`). Lançamento da `v2.6.1u`/`v2.6.1v` (hotfix): adicionada aba "Orçamento" na página de "Importações" para permitir o upload direto da planilha de orçamento (`FC - 2025 - ORÇAMENTO_A1.xlsx`) no servidor de produção (Supabase) via Electron, com correção na configuração de headers de multipart/form-data do Axios (removido header fixo de Content-Type que omitia a boundary). O orçamento de 2026 de Rio das Pedras (684 registros) foi importado com sucesso na produção via conexão pooler.
+**Decisões tomadas:** Executar carga inicial de produção diretamente via connection string do pooler de produção que é liberado localmente (ao contrário da porta psycopg2 direta), e corrigir o helper do Axios para garantir que futuras importações via UI também funcionem perfeitamente.
+**Próximo passo:** Acessar o Electron em produção e conferir os dados populados na tela de Controle Orçamentário de Rio das Pedras para 2026.
 
 ### 2026-06-30 (sessão 8)
 **O que foi feito:** Dois ajustes no `PainelDetalheAgrupamento.jsx` (v2.6.1k). Bug: rosca não aparecia no modo "Todos os meses" ao clicar numa célula de mês. Causa raiz **não** era `mes` chegando null (confirmado via chamada direta da função `detalhe_agrupamento()` contra o Supabase de produção — mesmos parâmetros retornam os mesmos 6 itens em ambos os modos); era **layout**: `colSpanAll = 14` no modo "todos" faz a `<td>` do painel herdar a largura das 12 colunas de mês (~1400px); o container flex do painel (sem `maxWidth`) se esticava até essa largura total, empurrando a coluna fixa de 170px da rosca para fora da área visível sem rolagem horizontal — no modo Mensal/Acumulado (`colSpanAll = 3`, ~520px) isso nunca acontecia. Corrigido com `maxWidth: 640` no container externo do painel. Paleta de cores trocada para a escala baseada em `var(--module-projetos)` (`#1D9E75 → #2DB88A → #5DCAA5 → #8EDCC0 → #B8ECD8`), 1ª conta (maior valor, painel ordena por magnitude decrescente) sempre com o tom mais escuro; track da rosca e das barras alinhado em `#D8D6CF`. Corrigido de passagem: cálculo de `total` usava `totalAgrupamento || fallback` (bug latente — `||` trata `0` como falsy, disparando recálculo incorreto em meses com total zerado); trocado para checagem explícita `!= null && !== 0`.
