@@ -176,9 +176,7 @@ export const orcamentoAPI = {
   importar: (clienteId, ano, file, versao = 'Original') => {
     const fd = new FormData()
     fd.append('file', file)
-    return api.post(`/orcamento/cliente/${clienteId}/ano/${ano}/importar?versao=${versao}`, fd, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    return api.post(`/orcamento/cliente/${clienteId}/ano/${ano}/importar?versao=${versao}`, fd)
   },
 }
 
