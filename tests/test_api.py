@@ -427,3 +427,97 @@ class TestPdf:
             "titulo": "X", "cliente_nome": "Y", "periodo": "Z", "colunas": [], "linhas": [],
         })
         assert r.status_code == 401
+
+
+# ── ORÇAMENTO REFERENCIAL ──────────────────────────────────────────────────
+
+class TestOrcamentoReferencial:
+    def test_obter_orcamento_vazio(self, client, admin_headers, cliente_teste):
+        r = client.get(f"/api/orcamento/cliente/{cliente_teste.id}/ano/2026", headers=admin_headers)
+        assert r.status_code == 200
+        assert r.json() == []
+
+    def test_importar_e_obter_orcamento(self, client, admin_headers, cliente_teste):
+        import io
+        import openpyxl
+
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "CLAUDE"
+        
+        # Headers
+        ws.append(["", "", ""])
+        ws.append(["", "", "CONTA", "Janeiro", "", "", "", "", "Fevereiro", "", "", "", "", "Março", "", "", "", "", "Abril", "", "", "", "", "Maio", "", "", "", "", "Junho", "", "", "", "", "Julho", "", "", "", "", "Agosto", "", "", "", "", "Setembro", "", "", "", "", "Outubro", "", "", "", "", "Novembro", "", "", "", "", "Dezembro"])
+        ws.append(["", "", "Receita", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF", "✅REALIZADO", "📐%REA", "🎯ORÇADO", "📊%ORC", "↔️DIF"])
+        
+        # Data row
+        row = ["Vda_Din", "", "Vendas - Dinheiro"]
+        for m in range(12):
+            row.extend([1000.0, 1.0, 1200.0, 1.0, -200.0])
+        ws.append(row)
+
+        file_bytes = io.BytesIO()
+        wb.save(file_bytes)
+        file_bytes.seek(0)
+
+        # Upload
+        files = {"file": ("orçamento.xlsx", file_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+        r = client.post(f"/api/orcamento/cliente/{cliente_teste.id}/ano/2026/importar?versao=Original", files=files, headers=admin_headers)
+        assert r.status_code == 200
+        assert r.json()["success"] is True
+        assert r.json()["registros_inseridos"] == 12
+
+        # Check obtido
+        r_get = client.get(f"/api/orcamento/cliente/{cliente_teste.id}/ano/2026?versao=Original", headers=admin_headers)
+        assert r_get.status_code == 200
+        body = r_get.json()
+        assert len(body) == 1
+        assert body[0]["agrupamento_slug"] == "Vda_Din"
+        assert body[0]["valores_mensais"] == [1200.0] * 12
+
+    def test_comparativo_real_vs_orcado(self, client, admin_headers, cliente_teste, db_session):
+        # Create template reference and template line to compute comparative successfully
+        import models
+        template = models.TemplateRef(tipo="fluxo_caixa", nome="FC Teste", ativo=True)
+        db_session.add(template)
+        db_session.commit()
+        db_session.refresh(template)
+
+        t_line = models.TemplateLinhaRef(
+            template_id=template.id,
+            rotulo="Vendas - Dinheiro",
+            ordem=4,
+            tipo="agrupamento",
+            agrupamento_slug="Vda_Din"
+        )
+        db_session.add(t_line)
+        
+        # Add budget value
+        for m in range(1, 13):
+            db_session.add(models.FCOrcamento(
+                cliente_id=cliente_teste.id,
+                agrupamento_slug="Vda_Din",
+                ano=2026,
+                mes=m,
+                valor=1000.0,
+                versao="Original"
+            ))
+            # Add realized value
+            db_session.add(models.LancamentoFC(
+                cliente_id=cliente_teste.id,
+                agrupamento_slug="Vda_Din",
+                ano=2026,
+                mes=m,
+                valor=1100.0,
+                fonte="extrato"
+            ))
+        db_session.commit()
+
+        r = client.get(f"/api/orcamento/cliente/{cliente_teste.id}/comparativo?ano=2026&versao=Original", headers=admin_headers)
+        assert r.status_code == 200
+        body = r.json()
+        assert len(body) == 1
+        assert body[0]["rotulo"] == "Vendas - Dinheiro"
+        assert body[0]["realizado"]["1"] == 1100.0
+        assert body[0]["orcado"]["1"] == 1000.0
+

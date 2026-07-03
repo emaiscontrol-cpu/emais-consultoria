@@ -43,7 +43,7 @@ function Passo1({ onAvancar }) {
   const fileRef = useRef()
 
   useEffect(() => {
-    clientesAPI.listar().then(r => setClientes(r.data || []))
+    clientesAPI.listar({ modulo_analises_gerenciais: true }).then(r => setClientes(r.data || []))
   }, [])
 
   useEffect(() => {

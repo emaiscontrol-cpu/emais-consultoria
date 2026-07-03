@@ -172,16 +172,16 @@ export default function PainelDetalheAgrupamento({
 
   return (
     <div style={{
-      background: 'var(--surface-hover)',
-      borderTop: '0.5px solid var(--border)',
-      borderBottom: '0.5px solid var(--border)',
+      background: '#EAEBE5',
+      borderTop: '3px solid #534AB7',
+      borderBottom: '1.5px solid #c7c7c2',
       borderLeft: 'none',
       borderRight: 'none',
       margin: '0',
       width: '100%',
       maxWidth: '100%',
       overflow: 'hidden',
-      boxShadow: 'inset 0 3px 6px rgba(0,0,0,0.03), inset 0 -3px 6px rgba(0,0,0,0.03)',
+      boxShadow: 'inset 0 4px 10px rgba(0,0,0,0.05), inset 0 -4px 10px rgba(0,0,0,0.05)',
     }}>
       {/* Estilo CSS injetado localmente para hover e efeitos modernos */}
       <style>{`
@@ -193,9 +193,9 @@ export default function PainelDetalheAgrupamento({
         }
       `}</style>
       <div style={{
-        background: 'var(--bg)', padding: '8px 20px',
+        background: 'rgba(0, 0, 0, 0.03)', padding: '8px 20px',
         display: 'flex', alignItems: 'center', gap: 24,
-        borderBottom: '0.5px solid var(--border)',
+        borderBottom: '1.5px solid #c7c7c2',
       }}>
         <span style={{
           fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em',

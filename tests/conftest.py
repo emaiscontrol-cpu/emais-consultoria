@@ -42,6 +42,7 @@ from routers import (  # noqa: E402
     anotacoes,
     subtarefas,
     pdf,
+    orcamento,
 )
 
 
@@ -81,6 +82,7 @@ def _montar_app() -> FastAPI:
     app.include_router(anotacoes.router,   prefix="/api/anotacoes")
     app.include_router(subtarefas.router,  prefix="/api/subtarefas")
     app.include_router(pdf.router,         prefix="/api/pdf")
+    app.include_router(orcamento.router,   prefix="/api/orcamento")
     return app
 
 

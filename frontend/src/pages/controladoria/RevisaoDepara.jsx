@@ -312,7 +312,7 @@ export default function RevisaoDepara() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    clientesAPI.listar().then(r => setClientes(r.data))
+    clientesAPI.listar({ modulo_analises_gerenciais: true }).then(r => setClientes(r.data))
   }, [])
 
   const carregar = async () => {

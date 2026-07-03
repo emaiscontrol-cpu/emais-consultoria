@@ -665,3 +665,18 @@ class PeriodoFechado(Base):
     cliente          = relationship("Cliente")
     usuario          = relationship("Usuario")
     __table_args__ = (UniqueConstraint("cliente_id", "ano", "mes"),)
+
+
+class FCOrcamento(Base):
+    """Orçamento planejado de fluxo de caixa referencial (consolidados por mês)."""
+    __tablename__ = "fc_orcamento"
+    id               = Column(Integer, primary_key=True, index=True)
+    cliente_id       = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    agrupamento_slug = Column(String(100), nullable=False)
+    ano              = Column(Integer, nullable=False)
+    mes              = Column(Integer, nullable=False)
+    valor            = Column(Float, nullable=False)
+    versao           = Column(String(50), nullable=False, default="Original") # Original, Rev.1, etc.
+    criado_em        = Column(DateTime(timezone=True), server_default=func.now())
+    cliente          = relationship("Cliente")
+    __table_args__ = (UniqueConstraint("cliente_id", "agrupamento_slug", "ano", "mes", "versao"),)
