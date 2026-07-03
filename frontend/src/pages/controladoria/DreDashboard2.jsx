@@ -250,7 +250,7 @@ export default function DreDashboard2() {
   /* load clients */
   useEffect(() => {
     if (isCliente) return
-    clientesAPI.listar()
+    clientesAPI.listar({ modulo_analises_gerenciais: true })
       .then(r => { setClientes(r.data||[]); if ((r.data||[]).length===1&&!clienteId) setClienteId(String(r.data[0].id)) })
       .catch(()=>{})
   }, [])

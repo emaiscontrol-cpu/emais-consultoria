@@ -2,9 +2,12 @@ import { useState, useEffect, useCallback, useMemo } from 'react'
 import { ChevronDown, ChevronRight, Percent, ChevronsDown, ChevronsUp, LayoutDashboard, Download, LogOut } from 'lucide-react'
 import { demonstrativoFcAPI, clientesAPI } from '../../services/api'
 import { LoadingPage } from '../../components/shared'
+import { useAuth } from '../../contexts/AuthContext'
+import toast from 'react-hot-toast'
 
 import BotaoExportarPDF from '../../components/BotaoExportarPDF'
 import PainelDetalheAgrupamento from '../../components/PainelDetalheAgrupamento'
+import { LogoClaude, LogoGemini, LogoOpenRouter } from '../../components/FloatingAI'
 
 const MESES      = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
@@ -65,8 +68,14 @@ function SegControl({ value, onChange, options }) {
   )
 }
 
-export default function FluxoCaixa() {
+export default function FluxoCaixa({ aiPanel, setAiPanel }) {
   const hoje = new Date()
+  const { usuario } = useAuth()
+  const isAdmin = usuario?.perfil === 'admin'
+  const podeClaude = isAdmin || usuario?.ia_claude === true
+  const podeGemini = isAdmin || usuario?.ia_gemini === true
+  const podeOR     = isAdmin || usuario?.ia_openrouter === true
+
   const [clientes,    setClientes]    = useState([])
   const [clienteId,   setClienteId]   = useState('')
   const [ano,         setAno]         = useState(hoje.getFullYear())
@@ -91,7 +100,7 @@ export default function FluxoCaixa() {
 
 
   useEffect(() => {
-    clientesAPI.listar().then(r => setClientes(r.data)).catch(() => {})
+    clientesAPI.listar({ modulo_analises_gerenciais: true }).then(r => setClientes(r.data)).catch(() => {})
   }, [])
 
   const carregar = useCallback(() => {
@@ -192,36 +201,60 @@ export default function FluxoCaixa() {
 
   // Abre/fecha painel de detalhe ao clicar numa célula de valor
   const handleCellClick = (ordem, cacheKey, detail) => {
+    let targetDetail = { ...detail }
+    const clickedLinha = dados?.linhas?.find(l => l.ordem === ordem)
+    if (clickedLinha && clickedLinha.tipo === 'titulo') {
+      const idx = dados.linhas.indexOf(clickedLinha)
+      if (idx !== -1) {
+        const nextClickable = dados.linhas.slice(idx + 1).find(l => l.tipo === 'totalizador' || l.tipo === 'agrupamento')
+        if (nextClickable) {
+          targetDetail.agrupamentoSlug = nextClickable.agrupamento_slug || null
+          targetDetail.totalAgrupamento = nextClickable.realizado ?? 0
+        }
+      }
+    }
+
     // Mesma célula → fecha
     if (activeDetail?.cacheKey === cacheKey && activeDetail?.ordem === ordem) {
       setActiveDetail(null)
       return
     }
-    // Nova célula (ou outra célula do mesmo row) → substitui e reabre (reanima)
-    setActiveDetail({ ordem, cacheKey, ...detail })
+    // Nova célula → reabre
+    setActiveDetail({ ordem, cacheKey, ...targetDetail })
   }
 
-  // % relativo ao totalizador que fecha a seção do agrupamento
+  // Helpers de participação baseada em Vendas Totais (até ordem 15) e Vendas Líquidas Recebidas (acima)
+  const getBaseRow = (linha) => {
+    if (!dados || !dados.linhas || !linha) return null
+    if (linha.ordem <= 15) {
+      return dados.linhas.find(l => l.ordem === 12 || l.rotulo.toLowerCase().includes('vendas - totais') || l.rotulo.toLowerCase().includes('vendas totais'))
+    }
+    return dados.linhas.find(l => {
+      const clean = l.rotulo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z]/g, '')
+      return clean.includes('vendasliquidasrecebidas') || clean.includes('vendasliquidas')
+    })
+  }
+
   const getPct = (linha, mes_i) => {
-    const refOrdem = sectionRefOrdem[linha.ordem]
-    if (!refOrdem) return null
-    const refLinha = totalizadorMap[refOrdem]
-    if (!refLinha) return null
+    if (linha.tipo === 'titulo') return null
+    const baseRow = getBaseRow(linha)
+    if (!baseRow) return null
+    
     let refVal, lineVal
     if (modo === 'todos') {
       if (mes_i !== null) {
-        refVal  = refLinha.valores_mensais?.[mes_i] ?? 0
+        refVal  = baseRow.valores_mensais?.[mes_i] ?? 0
         lineVal = linha.valores_mensais?.[mes_i] ?? 0
       } else {
-        refVal  = Object.values(refLinha.valores_mensais ?? {}).reduce((s, v) => s + (v ?? 0), 0)
+        refVal  = Object.values(baseRow.valores_mensais ?? {}).reduce((s, v) => s + (v ?? 0), 0)
         lineVal = Object.values(linha.valores_mensais  ?? {}).reduce((s, v) => s + (v ?? 0), 0)
       }
     } else {
-      refVal  = refLinha.realizado ?? 0
+      refVal  = baseRow.realizado ?? 0
       lineVal = linha.realizado    ?? 0
     }
     if (!refVal) return null
-    return lineVal / refVal * 100
+    return (lineVal / refVal) * 100
   }
 
   const modoOpts = [
@@ -270,8 +303,8 @@ export default function FluxoCaixa() {
       const bgRow         = negrito_totalizador ? 'rgba(83, 74, 183, 0.03)' : 'transparent'
       const isExpanded    = !collapsedTotais.has(ordem)
 
-      // Células de valor clicáveis em qualquer agrupamento com ao menos 1 lançamento
-      const isClickable = tipo === 'agrupamento' && (conta_count ?? 0) > 0
+      // Células clicáveis em qualquer tipo de linha (títulos, totalizadores ou agrupamentos)
+      const isClickable = tipo === 'agrupamento' || tipo === 'totalizador' || tipo === 'titulo'
 
       const tdBase = {
         padding: '10px 14px', fontSize: 12, fontWeight: bold ? 700 : 400,
@@ -279,10 +312,31 @@ export default function FluxoCaixa() {
         transition: 'all 0.15s ease',
       }
 
+      const isOutflow = (label) => {
+        const l = label.toLowerCase()
+        return l.includes('pessoal') || l.includes('serviço') || l.includes('imposto') || l.includes('despesa') || l.includes('custo') || l.includes('pagamento') || l.includes('saída')
+      }
 
       if (tipo === 'titulo') {
+        const cacheKey = `${clienteId}:${ano}:titulo-${ordem}:ano`
+        const detail = {
+          agrupamentoSlug: null,
+          agrupamentoNome: rotulo,
+          periodo: periodoLabel,
+          clienteId,
+          ano,
+          mes: dados.mes,
+          mesFim: dados.mes_fim,
+          modo,
+          totalAgrupamento: 0,
+          isOutflow: isOutflow(rotulo)
+        }
         result.push(
-          <tr key={ordem} style={{ background: 'var(--surface)' }}>
+          <tr 
+            key={ordem} 
+            style={{ background: 'var(--surface)', cursor: 'pointer' }}
+            onClick={() => handleCellClick(ordem, cacheKey, detail)}
+          >
             <td colSpan={colSpanAll} style={{
               padding: '8px 12px', fontSize: 11, fontWeight: 800,
               color: 'var(--text-muted)', letterSpacing: '.7px',
@@ -338,16 +392,18 @@ export default function FluxoCaixa() {
             }}
             onClick={isClickable ? () => handleCellClick(ordem, cacheKey, detail) : undefined}
           >
-            <span style={{
-              color: corValor(v),
-              textDecoration: isClickable ? 'underline dotted' : 'none',
-              textDecorationColor: 'var(--text-muted)',
-              textUnderlineOffset: '3px',
-              fontWeight: isThisActive ? 700 : (bold ? 700 : 400),
-            }}>
-              {v === 0 && !bold ? '—' : fmt(v)}
-            </span>
-            {pctNode}
+            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 6, width: '100%', whiteSpace: 'nowrap' }}>
+              <span style={{
+                color: corValor(v),
+                textDecoration: isClickable ? 'underline dotted' : 'none',
+                textDecorationColor: 'var(--text-muted)',
+                textUnderlineOffset: '3px',
+                fontWeight: isThisActive ? 700 : (bold ? 700 : 400),
+              }}>
+                {v === 0 && !bold ? '—' : fmt(v)}
+              </span>
+              {pctNode}
+            </div>
           </td>
         )
       }
@@ -363,10 +419,10 @@ export default function FluxoCaixa() {
           <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
             {/* Coluna rótulo — sticky */}
             <td
-              style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow,
+              style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : bgRow,
                 borderRight: '0.5px solid var(--border)', minWidth: 200, maxWidth: 260,
-                whiteSpace: 'normal', cursor: isTotalizador ? 'pointer' : 'default' }}
-              onClick={isTotalizador ? () => toggleTotalizador(ordem) : undefined}
+                whiteSpace: 'normal', cursor: isClickable ? 'pointer' : 'default', zIndex: 1 }}
+              onClick={isTotalizador ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined)}
             >
               {rotuloContent}
             </td>
@@ -376,30 +432,35 @@ export default function FluxoCaixa() {
               const v   = valores_mensais ? (valores_mensais[m] ?? 0) : 0
               const pct = showPct && tipo === 'agrupamento' ? getPct(linha, m) : null
               const pctNode = pct != null
-                ? <span style={{ color: 'var(--text-muted)', fontSize: 10, marginLeft: 4 }}>{fmtPct(pct)}</span>
+                ? <span style={{ color: '#534AB7', fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>{pct.toFixed(1)}%</span>
                 : null
               const ck = isClickable
-                ? `${clienteId}:${ano}:m:${m}:${agrupamento_slug}`
+                ? `${clienteId}:${ano}:m:${m}:${agrupamento_slug || 'total-' + ordem}`
                 : null
               const detail = isClickable
                 ? {
-                    agrupamentoSlug: agrupamento_slug, agrupamentoNome: rotulo,
+                    agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo,
                     periodo: `${MESES_FULL[m - 1]}/${ano}`, clienteId, ano, mes: m, mesFim: null,
-                    modo: 'todos', totalAgrupamento: v,
+                    modo: 'todos', totalAgrupamento: v, isOutflow: isOutflow(rotulo)
                   }
                 : null
               return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, pctNode)
             })}
 
-            {/* Coluna Total — não clicável */}
-            <td style={{ ...tdBase, textAlign: 'right', fontWeight: 700,
-              borderLeft: '0.5px solid var(--border)', whiteSpace: 'nowrap' }}>
-              <span style={{ color: corValor(totalRow) }}>{fmt(totalRow)}</span>
-              {pctTotal != null && (
-                <span style={{ color: 'var(--text-muted)', fontSize: 10, marginLeft: 4 }}>
-                  {fmtPct(pctTotal)}
-                </span>
-              )}
+            {/* Coluna Total */}
+            <td 
+              style={{ ...tdBase, textAlign: 'right', fontWeight: 700,
+                borderLeft: '0.5px solid var(--border)', whiteSpace: 'nowrap', cursor: isClickable ? 'pointer' : 'inherit' }}
+              onClick={isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined}
+            >
+              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 6, width: '100%', whiteSpace: 'nowrap' }}>
+                <span style={{ color: corValor(totalRow) }}>{fmt(totalRow)}</span>
+                {pctTotal != null && (
+                  <span style={{ color: '#534AB7', fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>
+                    {pctTotal.toFixed(1)}%
+                  </span>
+                )}
+              </div>
             </td>
           </tr>
         )
@@ -407,34 +468,34 @@ export default function FluxoCaixa() {
         // Modo mensal / acumulado
         const val = realizado ?? 0
         const ck = isClickable
-          ? `${clienteId}:${ano}:${modo === 'mensal' ? 'm' : 'a'}:${mes}:${agrupamento_slug}`
+          ? `${clienteId}:${ano}:${modo === 'mensal' ? 'm' : 'a'}:${mes}:${agrupamento_slug || 'total-' + ordem}`
           : null
         const detail = isClickable
           ? modo === 'mensal'
             ? {
-                agrupamentoSlug: agrupamento_slug, agrupamentoNome: rotulo,
+                agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo,
                 periodo: MESES_FULL[mes - 1], clienteId, ano, mes, mesFim: null,
-                modo: 'mensal', totalAgrupamento: val,
+                modo: 'mensal', totalAgrupamento: val, isOutflow: isOutflow(rotulo)
               }
             : {
-                agrupamentoSlug: agrupamento_slug, agrupamentoNome: rotulo,
+                agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo,
                 periodo: `Acumulado Jan a ${MESES[mes - 1]}`, clienteId, ano, mes: 1, mesFim: mes,
-                modo: 'acumulado', totalAgrupamento: val,
+                modo: 'acumulado', totalAgrupamento: val, isOutflow: isOutflow(rotulo)
               }
           : null
 
         result.push(
           <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
             <td
-              style={{ ...tdBase, minWidth: 220, cursor: isTotalizador ? 'pointer' : 'default' }}
-              onClick={isTotalizador ? () => toggleTotalizador(ordem) : undefined}
+              style={{ ...tdBase, minWidth: 220, cursor: isClickable ? 'pointer' : 'default' }}
+              onClick={isTotalizador ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, ck, detail); } : undefined)}
             >
               {rotuloContent}
             </td>
 
             {makeValueCell('val', val, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, null)}
 
-            <td style={{ ...tdBase, textAlign: 'right', color: 'var(--text-muted)', fontSize: 11 }}>
+            <td style={{ ...tdBase, textAlign: 'right', color: '#1e293b', fontWeight: 700, fontSize: 11.5 }}>
               {fmtPct(pct_realizado)}
             </td>
           </tr>
@@ -446,7 +507,7 @@ export default function FluxoCaixa() {
       if (activeDetail?.ordem === ordem) {
         result.push(
           <tr key={`detail-${ordem}`}>
-            <td colSpan={colSpanAll} style={{ padding: 0 }}>
+            <td colSpan={colSpanAll} style={{ padding: 0, position: 'sticky', left: 0, zIndex: 5, background: '#F4F4F0' }}>
               <PainelDetalheAgrupamento
                 key={activeDetail.cacheKey}
                 agrupamentoSlug={activeDetail.agrupamentoSlug}
@@ -458,6 +519,7 @@ export default function FluxoCaixa() {
                 mesFim={activeDetail.mesFim}
                 modo={activeDetail.modo}
                 totalAgrupamento={activeDetail.totalAgrupamento}
+                isOutflow={activeDetail.isOutflow}
               />
             </td>
           </tr>
@@ -587,22 +649,99 @@ export default function FluxoCaixa() {
               {/* Estilo CSS injetado localmente para hover e efeitos modernos da sidebar */}
               <style>{`
                 .fc-sidebar-btn {
-                  transition: all 0.15s ease;
+                  transition: all 0.18s cubic-bezier(0.4, 0, 0.2, 1);
                   display: flex;
                   align-items: center;
                   justify-content: center;
                   width: 32px;
                   height: 32px;
-                  border-radius: 6px;
+                  border-radius: 8px;
                   cursor: pointer;
-                  border: 0.5px solid var(--border);
-                  background: transparent;
-                  color: var(--text-muted);
+                  border: 1px solid transparent !important;
+                  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
                 }
                 .fc-sidebar-btn:hover {
-                  background-color: rgba(0, 0, 0, 0.05) !important;
-                  color: var(--text) !important;
-                  transform: scale(1.05);
+                  transform: scale(1.1);
+                  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
+                }
+                /* Dashboard Toggle: Amber/Orange */
+                .fc-sidebar-btn-dash {
+                  background: #fffbeb !important;
+                  color: #d97706 !important;
+                  border: 1px solid #fde68a !important;
+                }
+                .fc-sidebar-btn-dash.active {
+                  background: #d97706 !important;
+                  color: #fff !important;
+                  border-color: #d97706 !important;
+                }
+                /* Export PDF: Red/Coral */
+                .fc-sidebar-btn-pdf {
+                  background: #fef2f2 !important;
+                  color: #dc2626 !important;
+                  border: 1px solid #fecaca !important;
+                }
+                /* % Participation: Sky Blue */
+                .fc-sidebar-btn-pct {
+                  background: #f0f9ff !important;
+                  color: #0284c7 !important;
+                  border: 1px solid #bae6fd !important;
+                }
+                .fc-sidebar-btn-pct.active {
+                  background: #0284c7 !important;
+                  color: #fff !important;
+                  border-color: #0284c7 !important;
+                }
+                /* Expand: Emerald Green */
+                .fc-sidebar-btn-expand {
+                  background: #ecfdf5 !important;
+                  color: #059669 !important;
+                  border: 1px solid #a7f3d0 !important;
+                }
+                /* Collapse: Indigo/Purple */
+                .fc-sidebar-btn-collapse {
+                  background: #faf5ff !important;
+                  color: #7c3aed !important;
+                  border: 1px solid #e9d5ff !important;
+                }
+                /* Claude IA: Soft Orange/Peach */
+                .fc-sidebar-btn-claude {
+                  background: #fff7ed !important;
+                  color: #ea580c !important;
+                  border: 1px solid #ffedd5 !important;
+                }
+                .fc-sidebar-btn-claude.active {
+                  background: #ea580c !important;
+                  color: #fff !important;
+                  border-color: #ea580c !important;
+                }
+                /* Gemini IA: Light Blue/Google Blue */
+                .fc-sidebar-btn-gemini {
+                  background: #f0f4ff !important;
+                  color: #1a73e8 !important;
+                  border: 1px solid #d2e3fc !important;
+                }
+                .fc-sidebar-btn-gemini.active {
+                  background: #1a73e8 !important;
+                  color: #fff !important;
+                  border-color: #1a73e8 !important;
+                }
+                /* OpenRouter IA: Yellow/Gold */
+                .fc-sidebar-btn-or {
+                  background: #fffbeb !important;
+                  color: #ca8a04 !important;
+                  border: 1px solid #fef08a !important;
+                }
+                .fc-sidebar-btn-or.active {
+                  background: #ca8a04 !important;
+                  color: #fff !important;
+                  border-color: #ca8a04 !important;
+                }
+                /* Logout: Dark Red */
+                .fc-sidebar-btn-logout {
+                  background: #fff5f5 !important;
+                  color: #e53e3e !important;
+                  border: 1px solid #feb2b2 !important;
                 }
               `}</style>
               
@@ -610,11 +749,7 @@ export default function FluxoCaixa() {
               <button
                 onClick={() => setShowDashboard(d => !d)}
                 title={showDashboard ? "Ocultar Painel Resumo" : "Exibir Painel Resumo"}
-                className="fc-sidebar-btn"
-                style={{
-                  background: showDashboard ? 'var(--brand)' : 'transparent',
-                  color: showDashboard ? '#fff' : 'var(--text-muted)',
-                }}
+                className={`fc-sidebar-btn fc-sidebar-btn-dash ${showDashboard ? 'active' : ''}`}
               >
                 <LayoutDashboard size={16} />
               </button>
@@ -627,6 +762,7 @@ export default function FluxoCaixa() {
                 colunas={dadosExportacao.colunas}
                 linhas={dadosExportacao.linhas}
                 iconOnly={true}
+                className="fc-sidebar-btn fc-sidebar-btn-pdf"
               />
 
               {/* % participação (se modo todos) */}
@@ -634,11 +770,7 @@ export default function FluxoCaixa() {
                 <button
                   onClick={() => setShowPct(p => !p)}
                   title="% de Participação"
-                  className="fc-sidebar-btn"
-                  style={{
-                    background: showPct ? 'var(--brand)' : 'transparent',
-                    color: showPct ? '#fff' : 'var(--text-muted)',
-                  }}
+                  className={`fc-sidebar-btn fc-sidebar-btn-pct ${showPct ? 'active' : ''}`}
                 >
                   <Percent size={15} />
                 </button>
@@ -648,7 +780,7 @@ export default function FluxoCaixa() {
               <button
                 onClick={() => setCollapsedTotais(new Set())}
                 title="Expandir Todas as Seções"
-                className="fc-sidebar-btn"
+                className="fc-sidebar-btn fc-sidebar-btn-expand"
               >
                 <ChevronsDown size={16} />
               </button>
@@ -657,9 +789,52 @@ export default function FluxoCaixa() {
               <button
                 onClick={() => setCollapsedTotais(new Set(allTotalizadores))}
                 title="Colapsar Todas as Seções"
-                className="fc-sidebar-btn"
+                className="fc-sidebar-btn fc-sidebar-btn-collapse"
               >
                 <ChevronsUp size={16} />
+              </button>
+
+              {/* Separador */}
+              <div style={{ width: '60%', height: 1, background: 'rgba(0,0,0,0.1)', margin: '8px 0' }} />
+
+              {/* Assistentes de IA */}
+              <button
+                onClick={() => podeClaude ? setAiPanel(aiPanel === 'claude' ? null : 'claude') : toast.error('Claude não está liberado para o seu usuário. Solicite a liberação.')}
+                title="Assistente Claude"
+                className={`fc-sidebar-btn fc-sidebar-btn-claude ${aiPanel === 'claude' ? 'active' : ''}`}
+                style={{
+                  opacity: podeClaude ? 1 : 0.35,
+                  filter: podeClaude ? 'none' : 'grayscale(100%)',
+                  cursor: podeClaude ? 'pointer' : 'not-allowed',
+                }}
+              >
+                <LogoClaude size={16} />
+              </button>
+
+              <button
+                onClick={() => podeGemini ? setAiPanel(aiPanel === 'gemini' ? null : 'gemini') : toast.error('Gemini não está liberado para o seu usuário. Solicite a liberação.')}
+                title="Assistente Gemini"
+                className={`fc-sidebar-btn fc-sidebar-btn-gemini ${aiPanel === 'gemini' ? 'active' : ''}`}
+                style={{
+                  opacity: podeGemini ? 1 : 0.35,
+                  filter: podeGemini ? 'none' : 'grayscale(100%)',
+                  cursor: podeGemini ? 'pointer' : 'not-allowed',
+                }}
+              >
+                <LogoGemini size={16} />
+              </button>
+
+              <button
+                onClick={() => podeOR ? setAiPanel(aiPanel === 'openrouter' ? null : 'openrouter') : toast.error('OpenRouter não está liberado para o seu usuário. Solicite a liberação.')}
+                title="Assistente OpenRouter"
+                className={`fc-sidebar-btn fc-sidebar-btn-or ${aiPanel === 'openrouter' ? 'active' : ''}`}
+                style={{
+                  opacity: podeOR ? 1 : 0.35,
+                  filter: podeOR ? 'none' : 'grayscale(100%)',
+                  cursor: podeOR ? 'pointer' : 'not-allowed',
+                }}
+              >
+                <LogoOpenRouter size={12} />
               </button>
 
               {/* Separador */}
@@ -669,11 +844,7 @@ export default function FluxoCaixa() {
               <button
                 onClick={() => setClienteId('')}
                 title="Sair do Relatório (Voltar)"
-                className="fc-sidebar-btn"
-                style={{
-                  color: '#D25656',
-                  borderColor: 'rgba(210, 86, 86, 0.2)'
-                }}
+                className="fc-sidebar-btn fc-sidebar-btn-logout"
               >
                 <LogOut size={16} />
               </button>

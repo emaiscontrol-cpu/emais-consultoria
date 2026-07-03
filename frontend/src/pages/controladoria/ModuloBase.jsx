@@ -39,7 +39,7 @@ export default function ModuloBase({ modulo, titulo, descricao, children }) {
   const fileRef = useRef()
 
   useEffect(() => {
-    clientesAPI.listar().then(r => setClientes(r.data)).catch(() => {})
+    clientesAPI.listar({ modulo_analises_gerenciais: true }).then(r => setClientes(r.data)).catch(() => {})
   }, [])
 
   useEffect(() => {

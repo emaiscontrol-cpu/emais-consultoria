@@ -144,7 +144,7 @@ function ImportarPlano() {
   const [resultado, setResultado] = useState(null)
 
   useEffect(() => {
-    clientesAPI.listar().then(r => setClientes(r.data || []))
+    clientesAPI.listar({ modulo_analises_gerenciais: true }).then(r => setClientes(r.data || []))
   }, [])
 
   useEffect(() => {
@@ -396,7 +396,7 @@ function Passo1Realizado({ onAvancar }) {
     ano: ANO_ATUAL, mes: '', reprocessar: false, arquivo: null,
   })
 
-  useEffect(() => { clientesAPI.listar().then(r => setClientes(r.data || [])) }, [])
+  useEffect(() => { clientesAPI.listar({ modulo_analises_gerenciais: true }).then(r => setClientes(r.data || [])) }, [])
 
   useEffect(() => {
     if (form.cliente_id) dreMotorAPI.listarLayouts(form.cliente_id).then(r => setLayouts(r.data || []))

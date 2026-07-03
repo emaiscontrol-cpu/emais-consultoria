@@ -121,11 +121,11 @@ function ProtectedLayout() {
           <Route path="/relatorios"     element={<Relatorios />} />
           <Route path="/manual"                        element={<Manual />} />
           <Route path="/controladoria"                 element={<ControladoriaIndex />} />
-          <Route path="/controladoria/fluxo-de-caixa" element={<FluxoCaixa />} />
+          <Route path="/controladoria/fluxo-de-caixa" element={<FluxoCaixa aiPanel={aiPanel} setAiPanel={setAiPanel} />} />
           <Route path="/controladoria/dre"             element={<DRE />} />
           <Route path="/controladoria/dre-dashboard"  element={<DreDashboard2 />} />
           <Route path="/controladoria/dre-dashboard2" element={<DreDashboard2 />} />
-          <Route path="/controladoria/orcamento"       element={<Orcamento />} />
+          <Route path="/controladoria/orcamento"       element={<Orcamento aiPanel={aiPanel} setAiPanel={setAiPanel} />} />
           <Route path="/controladoria/balancetes"  element={<Balancetes />} />
           <Route path="/controladoria/importacao-realizado" element={<Navigate to="/importacoes?aba=realizado" replace />} />
           <Route path="/importacoes" element={<Importacoes />} />

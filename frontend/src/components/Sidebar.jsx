@@ -43,19 +43,22 @@ function LockedItem({ icon: Icon, emoji, label, target }) {
 
 // ── Cabeçalho de módulo comercial (colorido) ──────────────────────────────────
 function ModuleHeader({ color, bg, icon: Icon, label, open, onClick, bloqueado }) {
+  const [hovered, setHovered] = useState(false)
   return (
     <div>
-      <div style={{
-        fontSize: 9, fontWeight: 600, letterSpacing: '.08em', textTransform: 'uppercase',
-        color: 'var(--text-3)', marginTop: 16, padding: '0 14px',
-      }}>
-        MÓDULO
-      </div>
-      <button onClick={onClick} style={{
-        display: 'flex', alignItems: 'center', gap: 9,
-        width: '100%', padding: '7px 14px', border: 'none',
-        cursor: 'pointer', background: 'transparent', marginTop: 2,
-      }}>
+      <div style={{ margin: '12px 14px 4px', borderTop: '1px solid rgba(255, 255, 255, 0.05)' }} />
+      <button
+        onClick={onClick}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        style={{
+          display: 'flex', alignItems: 'center', gap: 9,
+          width: '100%', padding: '7px 14px', border: 'none',
+          cursor: 'pointer', background: 'transparent', marginTop: 2,
+          opacity: (open || hovered) ? 1 : 0.62,
+          transition: 'opacity .15s, background .15s',
+        }}
+      >
         <div style={{
           width: 26, height: 26, borderRadius: 6, flexShrink: 0,
           background: bloqueado ? 'rgba(255,255,255,.07)' : (bg || `${color}26`),
@@ -381,75 +384,7 @@ function AnalisesSection({ bloqueado }) {
   )
 }
 
-// ── ASSISTENTE IA ─────────────────────────────────────────────────────────────
-function AssistenteIASection({ podeClaudeBtn, podeGemini, podeOR, activePanel, onOpenIA }) {
-  if (!podeClaudeBtn && !podeGemini && !podeOR) return null
 
-  const [open, setOpen]       = useState(true)
-  const [hovered, setHovered] = useState(null)
-
-  const items = [
-    podeClaudeBtn && { key: 'claude',     label: 'Claude',     accent: '#7c3aed', Logo: LogoClaude },
-    podeGemini    && { key: 'gemini',     label: 'Gemini',     accent: '#1A73E8', Logo: LogoGemini },
-    podeOR        && { key: 'openrouter', label: 'OpenRouter', accent: '#f59e0b', Logo: LogoOpenRouter },
-  ].filter(Boolean)
-
-  const isAnyActive = items.some(i => i.key === activePanel)
-
-  return (
-    <div>
-      {/* Cabeçalho — mesmo visual austero de SectionBtn mas com ícone Lucide */}
-      <button onClick={() => setOpen(v => !v)} style={{
-        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        width: '100%', padding: '6px 14px', border: 'none', outline: 'none',
-        cursor: 'pointer', background: 'transparent', marginTop: 4,
-      }}>
-        <span style={{
-          fontSize: 11, fontWeight: 700, letterSpacing: '.08em', textTransform: 'uppercase',
-          color: isAnyActive ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.45)',
-          display: 'flex', alignItems: 'center', gap: 5,
-          transition: 'color .15s',
-        }}>
-          <Bot size={13} color={isAnyActive ? 'rgba(255,255,255,.82)' : 'rgba(255,255,255,.45)'} />
-          Assistente IA
-        </span>
-        {open
-          ? <ChevronUp   size={11} color={isAnyActive ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.35)'} />
-          : <ChevronDown size={11} color={isAnyActive ? 'rgba(255,255,255,.65)' : 'rgba(255,255,255,.35)'} />
-        }
-      </button>
-
-      {open && (
-        <div style={{ paddingLeft: 10, marginTop: 2 }}>
-          {items.map(({ key, label, accent, Logo }) => {
-            const isActive = activePanel === key
-            const isHov    = hovered === key
-            return (
-              <button
-                key={key}
-                onClick={() => onOpenIA(isActive ? null : key)}
-                onMouseEnter={() => setHovered(key)}
-                onMouseLeave={() => setHovered(null)}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 9,
-                  width: '100%', padding: '8px 14px',
-                  border: 'none', outline: 'none', cursor: 'pointer',
-                  textAlign: 'left', fontSize: 13, fontWeight: isActive ? 600 : 400,
-                  background: isActive ? `${accent}28` : (isHov ? 'rgba(255,255,255,.08)' : 'transparent'),
-                  color: isActive ? '#fff' : 'rgba(255,255,255,.62)',
-                  transition: 'background .15s',
-                }}
-              >
-                <Logo size={18} color={isActive ? '#fff' : accent} />
-                {label}
-              </button>
-            )
-          })}
-        </div>
-      )}
-    </div>
-  )
-}
 
 // ── INTERNO 1: ADMINISTRAÇÃO ──────────────────────────────────────────────────
 function AdminSection() {
@@ -536,6 +471,7 @@ export default function Sidebar({ onBusca, onOpenIA, aiPanel }) {
   const [salvando, setSalvando] = useState(false)
   const [qtdAlertas, setQtdAlertas] = useState(0)
   const [versao, setVersao] = useState('')
+  const [showUserMenu, setShowUserMenu] = useState(false)
 
   useEffect(() => {
     notificacoesAPI.listar().then(r => setQtdAlertas(r.data.length)).catch(() => {})
@@ -588,30 +524,18 @@ export default function Sidebar({ onBusca, onOpenIA, aiPanel }) {
         </div>
 
         <nav className="sidebar-nav">
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '2px 14px', marginBottom: 6 }}>
-            <div style={{
-              width: 22, height: 22, borderRadius: '50%', flexShrink: 0,
-              background: 'var(--brand)',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 900, fontSize: 12, color: '#fff', letterSpacing: '-.02em',
-            }}>E</div>
-            <span style={{
-              fontSize: 10, fontWeight: 700, letterSpacing: '.09em', textTransform: 'uppercase',
-              color: 'rgba(255,255,255,.38)',
-            }}>E Mais</span>
-          </div>
-
           <button onClick={onBusca} style={{
-            display: 'flex', alignItems: 'center', gap: 9, width: '100%',
-            padding: '9px 14px', borderRadius: 7, cursor: 'pointer', border: 'none',
-            background: 'transparent', color: 'rgba(255,255,255,.45)',
-            fontSize: 13, transition: 'background .15s, color .15s', marginBottom: 6,
+            display: 'flex', alignItems: 'center', gap: 9,
+            margin: '6px 8px 12px', padding: '7px 12px', borderRadius: 8, cursor: 'pointer',
+            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(0,0,0,0.18)', color: 'rgba(255,255,255,.45)',
+            fontSize: 13, transition: 'all 0.15s ease-in-out',
           }}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,.07)'; e.currentTarget.style.color = 'rgba(255,255,255,.8)' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,.45)' }}>
-            <Search size={15} />
+            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.28)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.15)'; e.currentTarget.style.color = 'rgba(255,255,255,.8)' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(0,0,0,0.18)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.08)'; e.currentTarget.style.color = 'rgba(255,255,255,.45)' }}>
+            <Search size={14} />
             <span style={{ flex: 1, textAlign: 'left' }}>Buscar...</span>
-            <span style={{ fontSize: 10, background: 'rgba(255,255,255,.12)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.02em' }}>Ctrl+K</span>
+            <span style={{ fontSize: 10, background: 'rgba(255,255,255,.1)', borderRadius: 4, padding: '1px 6px', letterSpacing: '.02em', color: 'rgba(255,255,255,0.35)' }}>Ctrl+K</span>
           </button>
 
           {/* ── GRUPO 1: Módulos comerciais ── */}
@@ -624,13 +548,7 @@ export default function Sidebar({ onBusca, onOpenIA, aiPanel }) {
           <InteligenciaSection bloqueado={bloqueadoInteligencia} />
           <AnalisesSection     bloqueado={bloqueadoAnalises} />
 
-          <AssistenteIASection
-            podeClaudeBtn={podeClaudeBtn}
-            podeGemini={podeGemini}
-            podeOR={podeOR}
-            activePanel={aiPanel}
-            onOpenIA={onOpenIA}
-          />
+
 
           {/* ── GRUPO 2: Internos (admin/consultor apenas) ── */}
           {isAdminConsultor && (
@@ -643,6 +561,37 @@ export default function Sidebar({ onBusca, onOpenIA, aiPanel }) {
         </nav>
 
         <div className="sidebar-footer">
+          {/* Menu Popover Flutuante */}
+          {showUserMenu && (
+            <div style={{
+              position: 'absolute',
+              bottom: 66,
+              left: 14,
+              right: 14,
+              background: '#091330',
+              border: '1px solid rgba(255,255,255,0.08)',
+              borderRadius: 8,
+              padding: 6,
+              boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+              zIndex: 100,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 2,
+            }}>
+              <NavLink to="/manual" onClick={() => setShowUserMenu(false)} className={({ isActive }) => `btn btn-ghost btn-sm${isActive ? ' active' : ''}`}
+                style={{ width: '100%', justifyContent: 'flex-start', border: 'none', background: 'transparent', textDecoration: 'none', color: 'rgba(255,255,255,0.7)' }}>
+                <BookOpen size={13} style={{ marginRight: 6 }} /> Manual
+              </NavLink>
+              <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start', border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.7)' }} onClick={() => { setShowUserMenu(false); setShowSenha(true); }}>
+                <KeyRound size={13} style={{ marginRight: 6 }} /> Alterar senha
+              </button>
+              <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '4px 0' }} />
+              <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start', border: 'none', background: 'transparent', color: '#D25656' }} onClick={handleLogout}>
+                <LogOut size={13} style={{ marginRight: 6 }} /> Sair
+              </button>
+            </div>
+          )}
+
           <input type="file" accept="image/*" id="foto-upload" style={{ display: 'none' }}
             onChange={async e => {
               const file = e.target.files?.[0]
@@ -659,10 +608,26 @@ export default function Sidebar({ onBusca, onOpenIA, aiPanel }) {
               e.target.value = ''
             }}
           />
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <div style={{ position: 'relative', cursor: 'pointer', flexShrink: 0 }}
+          <div
+            onClick={() => setShowUserMenu(v => !v)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              cursor: 'pointer',
+              padding: '6px 8px',
+              borderRadius: 8,
+              transition: 'background 0.2s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.05)'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <div style={{ position: 'relative', flexShrink: 0 }}
               title="Clique para alterar sua foto"
-              onClick={() => document.getElementById('foto-upload').click()}>
+              onClick={e => {
+                e.stopPropagation() // Prevent toggling the popover when uploading photo
+                document.getElementById('foto-upload').click()
+              }}>
               {usuario?.foto
                 ? <img src={usuario.foto} alt={usuario.nome}
                     style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', display: 'block' }} />
@@ -683,17 +648,11 @@ export default function Sidebar({ onBusca, onOpenIA, aiPanel }) {
                 {{ admin: 'Administrador', consultor: 'Consultor', ger_projeto: 'Ger. Projeto', analista: 'Analista', ti: 'T.I' }[usuario?.perfil]}
               </div>
             </div>
+            {/* Sutil Indicador Chevron */}
+            <div style={{ color: 'rgba(255,255,255,0.3)', display: 'flex', alignItems: 'center' }}>
+              {showUserMenu ? <ChevronDown size={14} /> : <ChevronUp size={14} />}
+            </div>
           </div>
-          <NavLink to="/manual" className={({ isActive }) => `btn btn-ghost btn-sm${isActive ? ' active' : ''}`}
-            style={{ width: '100%', justifyContent: 'flex-start', marginBottom: 4, textDecoration: 'none' }}>
-            <BookOpen size={13} /> Manual
-          </NavLink>
-          <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start', marginBottom: 4 }} onClick={() => setShowSenha(true)}>
-            <KeyRound size={13} /> Alterar senha
-          </button>
-          <button className="btn btn-ghost btn-sm" style={{ width: '100%', justifyContent: 'flex-start' }} onClick={handleLogout}>
-            <LogOut size={13} /> Sair
-          </button>
         </div>
       </aside>
 

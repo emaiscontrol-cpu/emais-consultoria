@@ -38,7 +38,7 @@ export const dashboardAPI = {
 }
 
 export const clientesAPI = {
-  listar: ()        => api.get('/clientes/'),
+  listar:  (params) => api.get('/clientes/', { params }),
   detalhe: id       => api.get(`/clientes/${id}`),
   criar:   data     => api.post('/clientes/', data),
   atualizar:(id,d)  => api.put(`/clientes/${id}`, d),
@@ -171,6 +171,15 @@ export const orcamentoAPI = {
   obterDre:         (clienteId, ano, unidade) => api.get(`/orcamento/cliente/${clienteId}/ano/${ano}/dre`, { params: { unidade } }),
   salvarDre:        (clienteId, ano, itemId, mes, valor, unidade) =>
     api.put(`/orcamento/dre/cliente/${clienteId}/ano/${ano}/item/${itemId}/mes/${mes}`, { valor, unidade }),
+  obterComparativo: (clienteId, ano, versao = 'Original') => 
+    api.get(`/orcamento/cliente/${clienteId}/comparativo`, { params: { ano, versao } }),
+  importar: (clienteId, ano, file, versao = 'Original') => {
+    const fd = new FormData()
+    fd.append('file', file)
+    return api.post(`/orcamento/cliente/${clienteId}/ano/${ano}/importar?versao=${versao}`, fd, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
+  },
 }
 
 export const anotacoesAPI = {

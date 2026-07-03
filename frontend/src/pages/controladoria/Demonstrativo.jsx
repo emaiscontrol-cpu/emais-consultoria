@@ -30,7 +30,7 @@ export default function Demonstrativo() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!isCliente) clientesAPI.listar().then(r => setClientes(r.data))
+    if (!isCliente) clientesAPI.listar({ modulo_analises_gerenciais: true }).then(r => setClientes(r.data))
     refTemplatesAPI.listar('dre', null).then(r => setTemplates(r.data))
     refTemplatesAPI.listar('orcamento', null).then(r => setTemplatesOrc(r.data))
   }, [])

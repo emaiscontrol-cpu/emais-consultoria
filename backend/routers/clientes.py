@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 from database import get_db
 from auth import get_usuario_atual, requer_perfil
 import models, schemas
@@ -8,8 +8,18 @@ import models, schemas
 router = APIRouter()
 
 @router.get("/", response_model=List[schemas.ClienteOut])
-def listar(db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
-    return db.query(models.Cliente).filter(models.Cliente.ativo == True).all()
+def listar(
+    modulo_analises_gerenciais: Optional[bool] = None,
+    modulo_projetos: Optional[bool] = None,
+    db: Session = Depends(get_db),
+    _=Depends(get_usuario_atual)
+):
+    q = db.query(models.Cliente).filter(models.Cliente.ativo == True)
+    if modulo_analises_gerenciais is not None:
+        q = q.filter(models.Cliente.modulo_analises_gerenciais == modulo_analises_gerenciais)
+    if modulo_projetos is not None:
+        q = q.filter(models.Cliente.modulo_projetos == modulo_projetos)
+    return q.all()
 
 @router.get("/{id}", response_model=schemas.ClienteOut)
 def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
