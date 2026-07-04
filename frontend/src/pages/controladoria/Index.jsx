@@ -3,7 +3,14 @@ import { useNavigate } from 'react-router-dom'
 import { TrendingUp, TrendingDown, DollarSign, BarChart3, Target, ArrowRight } from 'lucide-react'
 import { controladoriaAPI } from '../../services/api'
 
-const fmt = v => v.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+const fmt = v => {
+  if (v == null) return '—'
+  const val = Number(v)
+  const formatted = Math.abs(val) >= 1000 && val % 1 === 0
+    ? val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    : val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return `R$ ${formatted}`
+}
 
 const MODULOS = [
   {

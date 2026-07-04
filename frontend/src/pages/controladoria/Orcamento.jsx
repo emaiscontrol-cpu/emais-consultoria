@@ -1,5 +1,6 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
-import { ChevronDown, ChevronRight, Percent, ChevronsDown, ChevronsUp, LayoutDashboard, LogOut } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { ChevronDown, ChevronRight, Percent, ChevronsDown, ChevronsUp, LayoutDashboard, LogOut, Pencil } from 'lucide-react'
 import { orcamentoAPI, clientesAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -74,6 +75,7 @@ function SegControl({ value, onChange, options }) {
 }
 
 export default function Orcamento({ aiPanel, setAiPanel }) {
+  const navigate = useNavigate()
   const { usuario } = useAuth()
   const isCliente = usuario?.perfil === 'analista'
   const isAdmin = usuario?.perfil === 'admin'
@@ -150,7 +152,7 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
   // Formatação de valores
   const fmt = (v) => {
     if (v === 0 || v == null) return '—'
-    return Math.abs(v) >= 1000
+    return Math.abs(v) >= 1000 && v % 1 === 0
       ? v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
       : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
   }
@@ -878,6 +880,15 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
                 className={`fc-sidebar-btn fc-sidebar-btn-pct ${showPct ? 'active' : ''}`}
               >
                 <Percent size={15} />
+              </button>
+
+              {/* Editar Orçamento */}
+              <button
+                onClick={() => navigate(`/controladoria/orcamento/editar?cliente_id=${clienteId}&ano=${ano}&versao=${versao}`)}
+                title="Editar Orçamento"
+                className="fc-sidebar-btn"
+              >
+                <Pencil size={15} />
               </button>
 
               {/* Expandir tudo */}

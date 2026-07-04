@@ -178,6 +178,12 @@ export const orcamentoAPI = {
     fd.append('file', file)
     return api.post(`/orcamento/cliente/${clienteId}/ano/${ano}/importar?versao=${versao}`, fd)
   },
+  obterEditavel: (clienteId, ano, versao = 'Original', base = 'fluxo_caixa') => 
+    api.get(`/orcamento/cliente/${clienteId}/ano/${ano}/editavel`, { params: { versao, base } }),
+  salvarCelula: (clienteId, ano, mes, slug, valor, versao = 'Original') =>
+    api.put(`/orcamento/cliente/${clienteId}/ano/${ano}/mes/${mes}/conta/${slug}`, { valor, versao }),
+  sugerirIa: (clienteId, ano, agrupamento_slug, rotulo, cenario_usuario, valores_referencia) =>
+    api.post(`/orcamento/cliente/${clienteId}/ano/${ano}/sugerir-ia`, { agrupamento_slug, rotulo, cenario_usuario, valores_referencia }),
 }
 
 export const anotacoesAPI = {
