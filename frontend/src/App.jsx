@@ -20,6 +20,7 @@ import FluxoCaixa from './pages/controladoria/FluxoCaixa'
 import DRE from './pages/controladoria/DRE'
 import DreDashboard2 from './pages/controladoria/DreDashboard2'
 import Orcamento from './pages/controladoria/Orcamento'
+import EditarOrcamento from './pages/controladoria/EditarOrcamento'
 import ImportacaoRealizado from './pages/controladoria/ImportacaoRealizado'
 import Importacoes from './pages/controladoria/Importacoes'
 import Balancetes from './pages/controladoria/Balancetes'
@@ -126,6 +127,7 @@ function ProtectedLayout() {
           <Route path="/controladoria/dre-dashboard"  element={<DreDashboard2 />} />
           <Route path="/controladoria/dre-dashboard2" element={<DreDashboard2 />} />
           <Route path="/controladoria/orcamento"       element={<Orcamento aiPanel={aiPanel} setAiPanel={setAiPanel} />} />
+          <Route path="/controladoria/orcamento/editar" element={<EditarOrcamento />} />
           <Route path="/controladoria/balancetes"  element={<Balancetes />} />
           <Route path="/controladoria/importacao-realizado" element={<Navigate to="/importacoes?aba=realizado" replace />} />
           <Route path="/importacoes" element={<Importacoes />} />

@@ -8,7 +8,10 @@ const ANO_ATUAL = new Date().getFullYear()
 
 function fmtBRL(v) {
   if (v === null || v === undefined) return '—'
-  return Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  const val = Number(v)
+  return Math.abs(val) >= 1000 && val % 1 === 0
+    ? val.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
+    : val.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 }
 
 export default function Balancetes() {

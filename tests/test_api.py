@@ -7,6 +7,7 @@ e subtarefas. Roda inteiramente contra o banco SQLite isolado de
 tests/conftest.py — nunca toca no Supabase de produção.
 """
 import pytest
+from sqlalchemy import text
 
 import models
 
@@ -520,4 +521,89 @@ class TestOrcamentoReferencial:
         assert body[0]["rotulo"] == "Vendas - Dinheiro"
         assert body[0]["realizado"]["1"] == 1100.0
         assert body[0]["orcado"]["1"] == 1000.0
+
+    def test_obter_orcamento_editavel(self, client, admin_headers, cliente_teste, db_session):
+        import models
+        db_session.execute(text("DELETE FROM ref_template_linhas"))
+        db_session.execute(text("DELETE FROM ref_templates"))
+        db_session.commit()
+
+        template = models.TemplateRef(tipo="fluxo_caixa", nome="FC Teste", ativo=True)
+        db_session.add(template)
+        db_session.commit()
+        db_session.refresh(template)
+
+        t_line = models.TemplateLinhaRef(
+            template_id=template.id,
+            rotulo="Vendas - Dinheiro",
+            ordem=4,
+            tipo="agrupamento",
+            agrupamento_slug="Vda_Din"
+        )
+        db_session.add(t_line)
+
+        db_session.add(models.FCOrcamento(
+            cliente_id=cliente_teste.id,
+            agrupamento_slug="Vda_Din",
+            ano=2026,
+            mes=1,
+            valor=1000.0,
+            versao="Original"
+        ))
+        db_session.add(models.LancamentoFC(
+            cliente_id=cliente_teste.id,
+            agrupamento_slug="Vda_Din",
+            ano=2025,
+            mes=1,
+            valor=900.0,
+            fonte="extrato"
+        ))
+        db_session.commit()
+
+        r = client.get(f"/api/orcamento/cliente/{cliente_teste.id}/ano/2026/editavel?versao=Original", headers=admin_headers)
+        assert r.status_code == 200
+        body = r.json()
+        assert len(body) == 1
+        assert body[0]["rotulo"] == "Vendas - Dinheiro"
+        assert body[0]["valores"]["1"] == 1000.0
+        assert body[0]["realizado_ano_anterior"]["1"] == 900.0
+
+    def test_upsert_orcamento_sucesso_e_auditoria(self, client, admin_headers, cliente_teste, db_session):
+        import models
+        db_session.execute(text("DELETE FROM log_atividades"))
+        db_session.commit()
+
+        r = client.put(
+            f"/api/orcamento/cliente/{cliente_teste.id}/ano/2026/mes/3/conta/Vda_Din",
+            json={"valor": 1500.0, "versao": "Original"},
+            headers=admin_headers
+        )
+        assert r.status_code == 200
+        assert r.json()["success"] is True
+
+        item = db_session.query(models.FCOrcamento).filter(
+            models.FCOrcamento.cliente_id == cliente_teste.id,
+            models.FCOrcamento.agrupamento_slug == "Vda_Din",
+            models.FCOrcamento.ano == 2026,
+            models.FCOrcamento.mes == 3,
+            models.FCOrcamento.versao == "Original"
+        ).first()
+        assert item is not None
+        assert item.valor == 1500.0
+
+        log_entry = db_session.query(models.LogAtividade).filter(
+            models.LogAtividade.acao == "orcamento_editado"
+        ).first()
+        assert log_entry is not None
+        assert "de R$ 0.00 para R$ 1,500.00" in log_entry.descricao
+
+    def test_editar_orcamento_restricao_tenant(self, client, analista_headers, cliente_teste):
+        outro_id = cliente_teste.id + 1
+        r = client.put(
+            f"/api/orcamento/cliente/{outro_id}/ano/2026/mes/3/conta/Vda_Din",
+            json={"valor": 1500.0, "versao": "Original"},
+            headers=analista_headers
+        )
+        assert r.status_code == 403
+
 

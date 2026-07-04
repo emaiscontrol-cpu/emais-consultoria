@@ -17,7 +17,7 @@ const MESES_N    = Array.from({ length: 12 }, (_, i) => i + 1)
 
 const fmt = v =>
   v == null ? '—' :
-  Math.abs(v) >= 1000
+  Math.abs(v) >= 1000 && v % 1 === 0
     ? v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
     : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 

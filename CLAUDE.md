@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → `.github/workflows/deploy.yml` (self-hosted, no próprio servidor) para o serviço, roda `pip install -r requirements.txt` no venv de produção e reinicia o `EmaisBackend`
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.6.1v` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.6.2c` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -316,27 +316,12 @@ emals_consultoria/
 
 ---
 
-## Instrução para o Claude — Histórico de Sessões
-
-**Ao final de cada sessão de trabalho**, antes de encerrar, o Claude deve atualizar a seção `## Histórico de Sessões` abaixo com uma entrada no seguinte formato:
-
-```
-### YYYY-MM-DD
-**O que foi feito:** resumo objetivo do que foi implementado, corrigido ou decidido.
-**Decisões tomadas:** escolhas de arquitetura, convenção ou fluxo que impactam sessões futuras.
-**Próximo passo:** o que ficou pendente ou o que deve ser feito na próxima sessão.
-```
-
-Regras:
-- Entradas mais recentes ficam no **topo** da lista
-- Máximo de **10 entradas** — remover as mais antigas quando ultrapassar (janela deslizante)
-- **Decisões arquiteturais importantes não ficam só no histórico** — devem ser propagadas para a seção permanente correspondente (Arquitetura, Sidebar, Convenções, Pontos de Atenção, Estrutura de Arquivos). O histórico é para "o que mudou recentemente"; as seções permanentes são o contexto técnico duradouro.
-- Ser objetivo: 1–3 linhas por campo, sem repetir o que já está no `ROADMAP.md`
-- Commitar junto com as demais mudanças da sessão (não criar commit separado só para o histórico)
-
----
-
 ## Histórico de Sessões
+
+### 2026-07-04 (sessão 10)
+**O que foi feito:** Implementação da funcionalidade de Edição Manual de Orçamento (versão `2.6.2a`). Backend: novos endpoints GET `/editavel` (com histórico do ano anterior), PUT `/mes/{mes}/conta/{agrupamento_slug}` (com upsert, trava de tenant e auditoria via `LogAtividade`) e POST `/sugerir-ia` (copiloto de projeção por IA via Gemini/Claude/OpenRouter). Frontend: nova página `EditarOrcamento.jsx` (grade interativa, salvamento automático via blur/enter, tooltips de referência histórica e modal de preenchimento inteligente com reajuste de inflação, distribuição linear/sazonal e sugestões por IA). Atalho adicionado na barra lateral de `Orcamento.jsx` e rota mapeada no `App.jsx`.
+**Decisões tomadas:** Manter as edições de orçamento auditadas via `helpers.log` na tabela `LogAtividade` existente, aparecendo automaticamente no Histórico de Atividades global. Travar a edição de orçamento por `cliente_id` no backend para usuários restritos (tenant isolation), mesmo que o perfil tenha acesso à tela.
+**Próximo passo:** Realizar o deploy da versão `v2.6.2a` usando `release.ps1` e validar a nova interface diretamente no Electron.
 
 ### 2026-07-03 (sessão 9)
 **O que foi feito:** Publicação da versão `v2.6.1t` com o Módulo de Controle Orçamentário (`DEMO-7`/`DEMO-8`), importador local (`backend/importar_orcamento_planilha.py`), painel com gráficos Recharts e velocímetro SVG (`PainelDetalheOrcamento.jsx`). Lançamento da `v2.6.1u`/`v2.6.1v` (hotfix): adicionada aba "Orçamento" na página de "Importações" para permitir o upload direto da planilha de orçamento (`FC - 2025 - ORÇAMENTO_A1.xlsx`) no servidor de produção (Supabase) via Electron, com correção na configuração de headers de multipart/form-data do Axios (removido header fixo de Content-Type que omitia a boundary). O orçamento de 2026 de Rio das Pedras (684 registros) foi importado com sucesso na produção via conexão pooler.
@@ -366,26 +351,5 @@ Regras:
 ### 2026-06-30 (sessão 4)
 **O que foi feito:** Exportação em PDF como padrão global do sistema — v2.6.1h. `backend/services/pdf_service.py` (novo, `gerar_pdf_demonstrativo()`) gera PDF paisagem A4 com cabeçalho (logo + título + cliente/período), tabela com linhas titulo/agrupamento/totalizador (zebra, negativos em vermelho) e rodapé com "Página X de Y" em todas as páginas. Endpoint genérico `POST /api/pdf/demonstrativo` (`backend/routers/pdf.py`) recebe `{titulo, cliente_nome, periodo, colunas, linhas}` já calculados pela tela e devolve o PDF via `StreamingResponse` (mesmo padrão do Excel em `relatorios.py`). Componente `frontend/src/components/BotaoExportarPDF.jsx` (genérico, reutilizável) integrado no cabeçalho de `FluxoCaixa.jsx` — primeiro uso; DRE/Orçamento/Balancete reutilizam sem alteração no componente.
 **Decisões tomadas:** weasyprint foi avaliado e descartado — exige GTK3/Pango nativo, ausente no Windows (dev e produção) e no CI; **reportlab é o padrão do projeto para PDF** (ver `Pontos de Atenção #7`). `_NumberedCanvas` (subclasse de `reportlab.pdfgen.canvas.Canvas`) faz duas passadas para numerar página X de Y. Logo resolvido internamente pelo `pdf_service.py` via path relativo (`frontend/src/assets/icon.png`) — endpoint não recebe `logo_path` do frontend. `FluxoCaixa.jsx` monta `dadosExportacao` (colunas/linhas no formato genérico) via `useMemo` dependente de `modo` — nos modos mensal/acumulado exporta `[Realizado, %Vendas]`; no modo "todos", 12 meses + Total.
-**Próximo passo:** Testar exportação no Electron com Rio das Pedras/Janeiro-2026 (Ctrl+Shift+R). Reutilizar `BotaoExportarPDF` em DRE/Orçamento/Balancete quando essas telas forem trabalhadas. REL-1 (PDF de projeto) e DEMO-6 (orçado no demonstrativo) permanecem na fila.
-
-### 2026-06-30 (sessão 3)
-**O que foi feito:** Ícones reais de IA na sidebar "Assistente IA" e no seletor de modelos do OpenRouter (Claude/Gemini/ChatGPT/DeepSeek/Llama/Nemotron), v2.6.1d (PR #69) e v2.6.1e (PR #70, troca de arquivos + badge branco arredondado no ícone do OpenRouter para contrastar com o fundo escuro da sidebar). Bug fix: exclusão de tarefa retornava "Erro ao excluir tarefa" mesmo sem subtarefas — v2.6.1f (PR #71). Causa: `DELETE /api/tarefas/{id}` fazia hard delete, mas `log_tarefas` (histórico gerado a cada edição de campo), `comentarios`, `subtarefas` e `responsaveis_tarefa` referenciam `tarefas.id` sem CASCADE; no Postgres de produção isso violava FK (SQLite local não detecta, não valida FK por padrão). `Tarefa` já tinha coluna `ativo` (mesmo padrão de `Fase`/`Projeto`) e `recalcular_fase`/`reordenar`/`busca` já respeitavam o filtro — só o endpoint de exclusão ficou para trás. Corrigido para soft delete, preservando histórico/comentários. Dois ajustes visuais na sidebar — v2.6.1g: badge "Trabalho" restaurado ao lado do hero item "Projetos"; rótulo "MÓDULO" (9px, `var(--text-3)`) adicionado dentro do `ModuleHeader` (aparece só nos 3 módulos comerciais, pois é o único ponto onde esse componente é usado).
-**Decisões tomadas:** soft delete de `Tarefa` é agora documentado como regra permanente (`Pontos de Atenção #7`) para não regredir; filtro `ativo == True` adicionado em `listar_por_fase` e no resumo do dashboard; `ProjetoDetalhe.jsx` ganhou filtro client-side `t.ativo !== false` na lista principal de tarefas (mesmo padrão já usado em `DashboardTarefas`/`DashboardFases`); novo teste `test_deletar_tarefa_e_soft_delete_preserva_historico` cobre o cenário. Rótulo "MÓDULO" embutido no `ModuleHeader` (não replicado manualmente em cada seção) — garante que nunca apareça em Administração/Procedimentos/Assistente IA sem precisar de flag extra.
-**Próximo passo:** DEMO-6 (coluna orçado no demonstrativo), REL-1 (PDF de projeto) permanecem na fila.
-
-### 2026-06-30 (sessão 2)
-**O que foi feito:** Clique em célula de valor para detalhar lançamentos — v2.6.1b (PR #64). Mensal: célula única clicável, abre painel do mês selecionado. Acumulado: célula única clicável, abre painel Jan a mês selecionado (`mes=1&mes_fim=X` no backend). Todos os meses: cada coluna de mês clicável, abre painel só daquele mês. Cabeçalho do painel identifica o período ("Detalhamento — Acumulado Jan a Mai"). Texto das contas: 13px/weight 500 em `var(--text)`. Cursor pointer + sublinhado pontilhado em células clicáveis; nenhum indicador em células não clicáveis. Painel fecha ao clicar na mesma célula; clicar em outra substitui o painel (só um por vez). Backend: `/detalhe` ganhou `mes_fim` para range acumulado e filtragem por mês no modo todos. Chevron de detalhe removido do rótulo — agora só totalizadores têm chevron (expand/collapse seção).
-**Decisões tomadas:** `activeDetail = { ordem, cacheKey, label }` (estado único para o painel ativo, substitui `detailOpen` por row); no modo "todos" ao clicar coluna M, o frontend chama `modo='mensal'&mes=M` reutilizando o filtro existente do backend sem código extra; `makeValueCell` helper extrai a lógica repetida das células clicáveis em todos/mensal/acumulado; `detalheLoading` é booleano global (uma chamada por vez).
-**Próximo passo:** Testar no Electron com Rio das Pedras nos três modos (Ctrl+Shift+R ~30s). Próximas: DEMO-6 (coluna orçado no demonstrativo), REL-1 (PDF de projeto).
-
-### 2026-06-30
-**O que foi feito:** Três melhorias no demonstrativo de Fluxo de Caixa — v2.6.1a (PR #62). MELHORIA 1: totalizadores ganham chevron ChevronDown/ChevronRight para expand/collapse dos agrupamentos da seção; botões "Expandir tudo" / "Colapsar tudo" no cabeçalho; estado por `Set` de ordens colapsadas. MELHORIA 2: toggle "% participação" no modo "Todos os meses" — % inline ao lado do valor (font 10px, var(--text-muted)), relativo ao totalizador que fecha a seção do agrupamento. MELHORIA 3: linhas de agrupamento com `conta_count > 1` exibem chevron de detalhe; clique abre painel inline com tabela `conta_origem | valor` ordenada DESC, scroll quando > 6 itens; novo endpoint `GET /api/demonstrativos/fluxo-caixa/detalhe` suporta mensal/acumulado/todos. Design system aplicado: bordas 0.5px, fontes 10.5px/12px, Lucide React exclusivo.
-**Decisões tomadas:** `buildGroupings()` pré-computa `parentOf` (agrup → totalizador para collapse) e `sectionRefOrdem` (agrup → totalizador para %) em um único pass; `slug_counts` obtido com query separada para modo "todos" (agrupado por slug+mes inviabiliza COUNT DISTINCT) e embutido na query existente para mensal/acumulado; IN clause do endpoint `/detalhe` usa `slug_ph = ':s0,:s1,...'` + `slug_params` — safe string formatting, não SQL injection.
-**Próximo passo:** Testar no Electron com Rio das Pedras Todos/2026 (Ctrl+Shift+R ~30s). Próximas: DEMO-6 (coluna orçado no demonstrativo), REL-1 (PDF de projeto).
-
-### 2026-06-29 (sessão 3)
-**O que foi feito:** DEMO-4 finalizado: tabela `fc_slug_depara` (De-Para slug extrato → agrupamento_id), 85 mapeamentos para Rio das Pedras (id=10), 8 novos agrupamentos, versões v2.6.0w (PR #57) e v2.6.0x (PR #58). DEMO-5: novo router `fc_exec.py` (`GET /api/demonstrativos/fluxo-caixa`) com motor de cálculo em 2 fases (agrupamentos → totalizadores com forward refs via multi-pass até 10x); `FluxoCaixa.jsx` completamente reescrito como demonstrativo read-only com seletor cliente/ano/mês, segmented control Mensal/Acumulado/Todos, tabela com linhas titulo/agrupamento/totalizador e coluna %Vendas; PR #59 (v2.6.0y) mergeado e em produção.
-**Decisões tomadas:** Forward refs em fórmulas FC (ex: linha 61 usa D62-D63) resolvidos por multi-pass convergente (máx 10 iterações, converge em 3); De-Para usa `.lower()` nos slugs do extrato para tratar variações de case sem duplicar entradas; agrupamentos compostos (`slug1+slug2-slug3`) deduplica por `agrupamento_id` evitando double-counting.
-**Próximo passo:** Testar no Electron com Rio das Pedras Jan/2025 (Ctrl+Shift+R). Próximas: outros clientes com De-Para, DEMO-6 (orçado no demonstrativo), REL-1 (PDF) na fila.
 
 
