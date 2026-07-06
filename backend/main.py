@@ -14,7 +14,7 @@ try:
 except Exception as _ce:
     print(f"[warning] create_all: {_ce}")
 
-# Add missing columns to existing tables (SQLite only ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â Supabase starts fresh via create_all)
+# Add missing columns to existing tables (SQLite only ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â Supabase starts fresh via create_all)
 from sqlalchemy import text
 from database import _is_sqlite
 with engine.connect() as conn:
@@ -52,10 +52,10 @@ with engine.connect() as conn:
         # DB-1: FK autor em anotacoes
         "ALTER TABLE anotacoes ADD COLUMN usuario_id INTEGER REFERENCES usuarios(id)",
         "UPDATE anotacoes SET usuario_id = (SELECT id FROM usuarios WHERE lower(usuarios.nome) = lower(anotacoes.usuario)) WHERE usuario_id IS NULL",
-        # DB-4: ÃƒÆ’Ã‚Â­ndices para acelerar queries frequentes
+        # DB-4: ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­ndices para acelerar queries frequentes
         "CREATE INDEX IF NOT EXISTS ix_log_atividades_criado_em ON log_atividades(criado_em)",
         "CREATE INDEX IF NOT EXISTS ix_tarefas_data_prazo ON tarefas(data_prazo)",
-        # UX-7: histÃƒÆ’Ã‚Â³rico detalhado por tarefa
+        # UX-7: histÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico detalhado por tarefa
         """CREATE TABLE IF NOT EXISTS log_tarefas (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             tarefa_id INTEGER NOT NULL REFERENCES tarefas(id),
@@ -79,7 +79,7 @@ with engine.connect() as conn:
             usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
             criado_em DATETIME DEFAULT (datetime('now'))
         )""",
-        # MÃƒÆ’Ã‚Â³dulo de Arquivos por cliente
+        # MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³dulo de Arquivos por cliente
         """CREATE TABLE IF NOT EXISTS arquivos (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             cliente_id INTEGER NOT NULL REFERENCES clientes(id),
@@ -132,22 +132,22 @@ with engine.connect() as conn:
         )""",
         # Categoria de layout (REALIZADO | PLANO)
         "ALTER TABLE import_layouts ADD COLUMN categoria TEXT DEFAULT 'REALIZADO'",
-        # Categoria de arquivo (Contrato, RelatÃƒÆ’Ã‚Â³rio, Financeiro, JurÃƒÆ’Ã‚Â­dico, Outros)
+        # Categoria de arquivo (Contrato, RelatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio, Financeiro, JurÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­dico, Outros)
         "ALTER TABLE arquivos ADD COLUMN categoria TEXT NOT NULL DEFAULT 'Outros'",
-        # Agrupadores FC ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â colunas de metadados adicionadas na v2.6.0f
+        # Agrupadores FC ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â colunas de metadados adicionadas na v2.6.0f
         "ALTER TABLE agrupadores_fc ADD COLUMN natureza TEXT NOT NULL DEFAULT 'soma'",
         "ALTER TABLE agrupadores_fc ADD COLUMN slug TEXT",
         'ALTER TABLE agrupadores_fc ADD COLUMN demonstrativos TEXT DEFAULT \'["fluxo_caixa"]\'',
-        # v2.6.0g: natureza removido (sinal definido na fÃƒÆ’Ã‚Â³rmula); tabela renomeada para agrupamentos
+        # v2.6.0g: natureza removido (sinal definido na fÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rmula); tabela renomeada para agrupamentos
         "ALTER TABLE agrupadores_fc DROP COLUMN natureza",
         "ALTER TABLE agrupadores_fc RENAME TO agrupamentos",
-        # MÃƒÆ’Ã‚Â³dulos contratados por cliente
+        # MÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³dulos contratados por cliente
         "ALTER TABLE clientes ADD COLUMN modulo_projetos BOOLEAN NOT NULL DEFAULT 1",
         "ALTER TABLE clientes ADD COLUMN modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT 0",
         "ALTER TABLE clientes ADD COLUMN modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT 0",
         # Segmento do cliente (Plano Referencial)
         "ALTER TABLE clientes ADD COLUMN segmento_id INTEGER REFERENCES ref_segmentos(id)",
-        # UX-11: notificaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes de menÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o @usuario
+        # UX-11: notificaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes de menÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o @usuario
         """CREATE TABLE IF NOT EXISTS notificacoes_mencao (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             usuario_destino_id INTEGER NOT NULL REFERENCES usuarios(id),
@@ -157,12 +157,12 @@ with engine.connect() as conn:
             lida BOOLEAN DEFAULT 0,
             criado_em DATETIME DEFAULT (datetime('now'))
         )""",
-        # v2.6.0v: DEMO-3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â template FC e lanÃƒÆ’Ã‚Â§amentos FC
+        # v2.6.0v: DEMO-3 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â template FC e lanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amentos FC
         "ALTER TABLE ref_template_linhas ADD COLUMN tipo VARCHAR(20) DEFAULT 'agrupamento'",
         "ALTER TABLE ref_template_linhas ADD COLUMN agrupamento_slug VARCHAR(200)",
-        # v2.6.0w: DEMO-4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â tabela de De-Para de slugs do extrato por cliente
-        # fc_slug_depara ÃƒÆ’Ã‚Â© tabela nova ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â criada pelo create_all acima
-        # DROP tabelas do plano de contas antigo (migraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o definitiva)
+        # v2.6.0w: DEMO-4 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â tabela de De-Para de slugs do extrato por cliente
+        # fc_slug_depara ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© tabela nova ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â criada pelo create_all acima
+        # DROP tabelas do plano de contas antigo (migraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o definitiva)
         "DROP TABLE IF EXISTS template_formulas",
         "DROP TABLE IF EXISTS conta_de_para",
         "DROP TABLE IF EXISTS orcamento_valores",
@@ -182,7 +182,7 @@ with engine.connect() as conn:
         except Exception:
             pass  # column already exists
 
-# MigraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes para PostgreSQL (Supabase) ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â colunas novas em tabelas existentes
+# MigraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes para PostgreSQL (Supabase) ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â colunas novas em tabelas existentes
 # SQLite usa ALTER TABLE acima; PostgreSQL precisa de ADD COLUMN IF NOT EXISTS
 if not _is_sqlite:
     with engine.connect() as conn:
@@ -202,14 +202,14 @@ if not _is_sqlite:
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS enviado_por_id INTEGER REFERENCES usuarios(id)",
             # Categoria de arquivo adicionada na v2.6.0e
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS categoria VARCHAR(50) NOT NULL DEFAULT 'Outros'",
-            # Agrupadores FC ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â colunas de metadados adicionadas na v2.6.0f
+            # Agrupadores FC ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â colunas de metadados adicionadas na v2.6.0f
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS natureza VARCHAR(20) NOT NULL DEFAULT 'soma'",
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS slug VARCHAR(100)",
             'ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS demonstrativos TEXT DEFAULT \'["fluxo_caixa"]\'',
             # v2.6.0g: natureza removido; tabela renomeada para agrupamentos
             "ALTER TABLE agrupadores_fc DROP COLUMN IF EXISTS natureza",
             "ALTER TABLE agrupadores_fc RENAME TO agrupamentos",
-            # Corrige TODAS as sequences dessincronizadas (UniqueViolation na PK apÃƒÆ’Ã‚Â³s migraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o/import)
+            # Corrige TODAS as sequences dessincronizadas (UniqueViolation na PK apÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³s migraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o/import)
             """DO $$
 DECLARE
     r RECORD;
@@ -237,7 +237,7 @@ BEGIN
     END LOOP;
 END;
 $$""",
-            # v2.6.0j: remove vinculos duplicados (mesmo conta+demo, nÃƒÆ’Ã‚Â£o-herdado ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â mantÃƒÆ’Ã‚Â©m o mais recente)
+            # v2.6.0j: remove vinculos duplicados (mesmo conta+demo, nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o-herdado ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â mantÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©m o mais recente)
             """DELETE FROM ref_conta_agrupamento
 WHERE herdado = false
 AND id NOT IN (
@@ -245,7 +245,7 @@ AND id NOT IN (
     WHERE herdado = false
     GROUP BY conta_referencial_id, demonstrativo
 )""",
-            # v2.6.0p: remove herdado=True redundantes onde jÃƒÆ’Ã‚Â¡ existe herdado=False para o mesmo conta+demo
+            # v2.6.0p: remove herdado=True redundantes onde jÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ existe herdado=False para o mesmo conta+demo
             """DELETE FROM ref_conta_agrupamento
 WHERE herdado = true
 AND EXISTS (
@@ -255,49 +255,49 @@ AND EXISTS (
     AND b.herdado = false
 )""",
             # v2.6.0o: corrige nomes de agrupamentos importados sem acento
-            "UPDATE agrupamentos SET nome='Vendas - CrÃƒÆ’Ã‚Â©dito'                             WHERE slug='vendas_credito'",
-            "UPDATE agrupamentos SET nome='Vendas - DÃƒÆ’Ã‚Â©bito'                              WHERE slug='vendas_debito'",
-            "UPDATE agrupamentos SET nome='( - ) DevoluÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o de Vendas'                   WHERE slug='devolucao_de_vendas'",
-            "UPDATE agrupamentos SET nome='( + ) CrÃƒÆ’Ã‚Â©ditos Operacionais'                 WHERE slug='creditos_operacionais'",
-            "UPDATE agrupamentos SET nome='( + ) DevoluÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes'                            WHERE slug='devolucoes'",
-            "UPDATE agrupamentos SET nome='( - ) Pessoal - SalÃƒÆ’Ã‚Â¡rio'                     WHERE slug='pessoal_salario'",
-            "UPDATE agrupamentos SET nome='( - ) Pessoal - FÃƒÆ’Ã‚Â©rias'                      WHERE slug='pessoal_ferias'",
-            "UPDATE agrupamentos SET nome='( - ) Pessoal - RescisÃƒÆ’Ã‚Âµes'                   WHERE slug='pessoal_rescisoes'",
-            "UPDATE agrupamentos SET nome='( - ) Pessoal - BenefÃƒÆ’Ã‚Â­cios'                  WHERE slug='pessoal_beneficios'",
-            "UPDATE agrupamentos SET nome='( - ) TributÃƒÆ’Ã‚Â¡ria'                             WHERE slug='tributaria'",
-            "UPDATE agrupamentos SET nome='( - ) Energia ElÃƒÆ’Ã‚Â©trica'                      WHERE slug='energia_eletrica'",
-            "UPDATE agrupamentos SET nome='( - ) Utilidades e ServiÃƒÆ’Ã‚Â§os'                 WHERE slug='utilidades_e_servicos'",
-            "UPDATE agrupamentos SET nome='( - ) ManutenÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes'                           WHERE slug='manutencoes'",
-            "UPDATE agrupamentos SET nome='( - ) VeÃƒÆ’Ã‚Â­culos'                              WHERE slug='veiculos'",
-            "UPDATE agrupamentos SET nome='( - ) ManutenÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o ImÃƒÆ’Ã‚Â³veis'                    WHERE slug='manutencao_imoveis'",
-            "UPDATE agrupamentos SET nome='( - ) InformÃƒÆ’Ã‚Â¡tica'                            WHERE slug='informatica'",
-            "UPDATE agrupamentos SET nome='( - ) Prestadores de ServiÃƒÆ’Ã‚Â§os Operacionais'  WHERE slug='prestadores_de_servicos_operacionais'",
-            "UPDATE agrupamentos SET nome='( - ) IndedutÃƒÆ’Ã‚Â­veis'                          WHERE slug='indedutiveis'",
-            "UPDATE agrupamentos SET nome='( - ) Taxas Adm de CartÃƒÆ’Ã‚Âµes'                  WHERE slug='taxas_adm_de_cartoes'",
-            "UPDATE agrupamentos SET nome='( - ) EmprÃƒÆ’Ã‚Â©stimos'                            WHERE slug='emprestimos_saida'",
-            "UPDATE agrupamentos SET nome='( - ) Juros/IOF S/ EmprÃƒÆ’Ã‚Â©stimos'              WHERE slug='juros_iof_s_emprestimos'",
-            "UPDATE agrupamentos SET nome='EmprÃƒÆ’Ã‚Â©stimos'                                  WHERE slug='emprestimos'",
-            "UPDATE agrupamentos SET nome='AplicaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes'                                   WHERE slug='aplicacoes'",
-            "UPDATE agrupamentos SET nome='( - ) SÃƒÆ’Ã‚Â³cios'                                WHERE slug='socios'",
-            "UPDATE agrupamentos SET nome='(+/-) Mvto TransitÃƒÆ’Ã‚Â³rio'                      WHERE slug='mvto_transitorio'",
-            # v2.6.0r: cÃƒÆ’Ã‚Â³digo de acesso de 3 dÃƒÆ’Ã‚Â­gitos para login simplificado
+            "UPDATE agrupamentos SET nome='Vendas - CrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©dito'                             WHERE slug='vendas_credito'",
+            "UPDATE agrupamentos SET nome='Vendas - DÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©bito'                              WHERE slug='vendas_debito'",
+            "UPDATE agrupamentos SET nome='( - ) DevoluÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de Vendas'                   WHERE slug='devolucao_de_vendas'",
+            "UPDATE agrupamentos SET nome='( + ) CrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©ditos Operacionais'                 WHERE slug='creditos_operacionais'",
+            "UPDATE agrupamentos SET nome='( + ) DevoluÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes'                            WHERE slug='devolucoes'",
+            "UPDATE agrupamentos SET nome='( - ) Pessoal - SalÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio'                     WHERE slug='pessoal_salario'",
+            "UPDATE agrupamentos SET nome='( - ) Pessoal - FÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©rias'                      WHERE slug='pessoal_ferias'",
+            "UPDATE agrupamentos SET nome='( - ) Pessoal - RescisÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes'                   WHERE slug='pessoal_rescisoes'",
+            "UPDATE agrupamentos SET nome='( - ) Pessoal - BenefÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­cios'                  WHERE slug='pessoal_beneficios'",
+            "UPDATE agrupamentos SET nome='( - ) TributÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ria'                             WHERE slug='tributaria'",
+            "UPDATE agrupamentos SET nome='( - ) Energia ElÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©trica'                      WHERE slug='energia_eletrica'",
+            "UPDATE agrupamentos SET nome='( - ) Utilidades e ServiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§os'                 WHERE slug='utilidades_e_servicos'",
+            "UPDATE agrupamentos SET nome='( - ) ManutenÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes'                           WHERE slug='manutencoes'",
+            "UPDATE agrupamentos SET nome='( - ) VeÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­culos'                              WHERE slug='veiculos'",
+            "UPDATE agrupamentos SET nome='( - ) ManutenÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o ImÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³veis'                    WHERE slug='manutencao_imoveis'",
+            "UPDATE agrupamentos SET nome='( - ) InformÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tica'                            WHERE slug='informatica'",
+            "UPDATE agrupamentos SET nome='( - ) Prestadores de ServiÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§os Operacionais'  WHERE slug='prestadores_de_servicos_operacionais'",
+            "UPDATE agrupamentos SET nome='( - ) IndedutÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­veis'                          WHERE slug='indedutiveis'",
+            "UPDATE agrupamentos SET nome='( - ) Taxas Adm de CartÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes'                  WHERE slug='taxas_adm_de_cartoes'",
+            "UPDATE agrupamentos SET nome='( - ) EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos'                            WHERE slug='emprestimos_saida'",
+            "UPDATE agrupamentos SET nome='( - ) Juros/IOF S/ EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos'              WHERE slug='juros_iof_s_emprestimos'",
+            "UPDATE agrupamentos SET nome='EmprÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©stimos'                                  WHERE slug='emprestimos'",
+            "UPDATE agrupamentos SET nome='AplicaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes'                                   WHERE slug='aplicacoes'",
+            "UPDATE agrupamentos SET nome='( - ) SÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³cios'                                WHERE slug='socios'",
+            "UPDATE agrupamentos SET nome='(+/-) Mvto TransitÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio'                      WHERE slug='mvto_transitorio'",
+            # v2.6.0r: cÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³digo de acesso de 3 dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­gitos para login simplificado
             "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_acesso VARCHAR(3)",
             "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_codigo_acesso ON usuarios(codigo_acesso) WHERE codigo_acesso IS NOT NULL",
-            # v2.6.0v: DEMO-3 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â colunas novas em ref_template_linhas; segmento_id nullable em ref_templates
-            # fc_lancamentos ÃƒÆ’Ã‚Â© tabela nova ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â criada pelo create_all acima
+            # v2.6.0v: DEMO-3 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â colunas novas em ref_template_linhas; segmento_id nullable em ref_templates
+            # fc_lancamentos ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© tabela nova ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â criada pelo create_all acima
             "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) DEFAULT 'agrupamento'",
             "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS agrupamento_slug VARCHAR(200)",
             "ALTER TABLE ref_templates ALTER COLUMN segmento_id DROP NOT NULL",
-            # v2.6.0w: DEMO-4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â fc_slug_depara ÃƒÆ’Ã‚Â© tabela nova, criada pelo create_all acima
-            # v2.6.0x: DEMO-4 ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â 8 novos agrupamentos (Rio das Pedras + recuperaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o pessoal)
-            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('Vendas - Cheques SaÃƒÆ’Ã‚Â­da','vendas_cheques_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
-            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('Vendas - Extra Caixa SaÃƒÆ’Ã‚Â­da','vendas_extra_caixa_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            # v2.6.0w: DEMO-4 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â fc_slug_depara ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© tabela nova, criada pelo create_all acima
+            # v2.6.0x: DEMO-4 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â 8 novos agrupamentos (Rio das Pedras + recuperaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o pessoal)
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('Vendas - Cheques SaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­da','vendas_cheques_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('Vendas - Extra Caixa SaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­da','vendas_extra_caixa_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
             "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( + ) Outras Entradas Operacionais','outras_entradas_operacionais','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
-            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Outras SaÃƒÆ’Ã‚Â­das Operacionais','outras_saidas_operacionais','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
-            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Acordos Comerciais SaÃƒÆ’Ã‚Â­da','acordos_comerciais_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Outras SaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­das Operacionais','outras_saidas_operacionais','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Acordos Comerciais SaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­da','acordos_comerciais_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
             "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( + ) Terceiros - Recarga Entrada','terceiros_recarga_entrada','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
-            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Terceiros - Recarga SaÃƒÆ’Ã‚Â­da','terceiros_recarga_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
-            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( + ) RecuperaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o de Pessoal','recuperacao_pessoal','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( - ) Terceiros - Recarga SaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­da','terceiros_recarga_saida','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
+            "INSERT INTO agrupamentos (nome, slug, demonstrativos, padrao, ativo) VALUES ('( + ) RecuperaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o de Pessoal','recuperacao_pessoal','[\"fluxo_caixa\"]',true,true) ON CONFLICT (slug) DO NOTHING",
             # DROP tabelas do plano de contas antigo
             "DROP TABLE IF EXISTS template_formulas CASCADE",
             "DROP TABLE IF EXISTS conta_de_para CASCADE",
@@ -315,14 +315,14 @@ AND EXISTS (
                 conn.execute(text(stmt))
                 conn.commit()
             except Exception:
-                # Rollback obrigatÃƒÆ’Ã‚Â³rio ÃƒÂ¢Ã¢â€šÂ¬Ã¢â‚¬Â sem isso, PostgreSQL mantÃƒÆ’Ã‚Â©m a conexÃƒÆ’Ã‚Â£o em
+                # Rollback obrigatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â sem isso, PostgreSQL mantÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â©m a conexÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o em
                 # InFailedSqlTransaction e todos os statements seguintes falham silenciosamente
                 try:
                     conn.rollback()
                 except Exception:
                     pass
 
-# Seed dados padrÃƒÆ’Ã‚Â£o (executa apenas uma vez)
+# Seed dados padrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o (executa apenas uma vez)
 from database import SessionLocal
 from seed_controladoria import seed_agrupadores
 from seed_ref_plano import seed_ref_plano
@@ -337,7 +337,7 @@ finally:
     _db.close()
 
 app = FastAPI(
-    title="E Mais Consultoria ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Sistema de GestÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o",
+    title="E Mais Consultoria ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Sistema de GestÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o",
     version="1.0.0",
     redirect_slashes=False
 )
@@ -350,23 +350,23 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.include_router(auth.router,      prefix="/api/auth",      tags=["AutenticaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â£o"])
-app.include_router(usuarios.router,  prefix="/api/usuarios",  tags=["UsuÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡rios"])
+app.include_router(auth.router,      prefix="/api/auth",      tags=["AutenticaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o"])
+app.include_router(usuarios.router,  prefix="/api/usuarios",  tags=["UsuÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rios"])
 app.include_router(clientes.router,  prefix="/api/clientes",  tags=["Clientes"])
 app.include_router(projetos.router,  prefix="/api/projetos",  tags=["Projetos"])
 app.include_router(fases.router,     prefix="/api/fases",     tags=["Fases"])
 app.include_router(tarefas.router,   prefix="/api/tarefas",   tags=["Tarefas"])
 app.include_router(dashboard.router,      prefix="/api/dashboard",      tags=["Dashboard"])
-app.include_router(notificacoes.router,   prefix="/api/notificacoes",   tags=["NotificaÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Âµes"])
-app.include_router(relatorios.router,     prefix="/api/relatorios",     tags=["RelatÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³rios"])
-app.include_router(historico.router,      prefix="/api/historico",      tags=["HistÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â³rico"])
+app.include_router(notificacoes.router,   prefix="/api/notificacoes",   tags=["NotificaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes"])
+app.include_router(relatorios.router,     prefix="/api/relatorios",     tags=["RelatÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rios"])
+app.include_router(historico.router,      prefix="/api/historico",      tags=["HistÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rico"])
 app.include_router(subtarefas.router,     prefix="/api/subtarefas",     tags=["Subtarefas"])
 app.include_router(controladoria.router,  prefix="/api/controladoria",  tags=["Controladoria"])
 app.include_router(fluxo_caixa.router,    prefix="/api/fluxo",          tags=["Fluxo de Caixa"])
 app.include_router(balancete.router,      prefix="/api/balancete",      tags=["Balancete"])
-app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["AnotaÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Âµes"])
-app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["OrÃƒÆ’Ã‚Â§amento"])
-app.include_router(admin.router,          prefix="/api/admin",          tags=["AdministraÃƒÆ’Ã‚Â§ÃƒÆ’Ã‚Â£o"])
+app.include_router(anotacoes.router,      prefix="/api/anotacoes",      tags=["AnotaÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Âµes"])
+app.include_router(orcamento.router,      prefix="/api/orcamento",      tags=["OrÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amento"])
+app.include_router(admin.router,          prefix="/api/admin",          tags=["AdministraÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o"])
 app.include_router(bandeiras.router,      prefix="/api/bandeiras",      tags=["Bandeiras"])
 app.include_router(modelos.router,        prefix="/api/modelos",        tags=["Modelos de Projeto"])
 app.include_router(busca.router,          prefix="/api/busca",          tags=["Busca Global"])
@@ -378,7 +378,7 @@ app.include_router(openrouter.router,     prefix="/api/openrouter",     tags=["O
 app.include_router(dre_import.router,          prefix="/api/dre",              tags=["Motor DRE"])
 app.include_router(ref_segmentos.router,       prefix="/api/ref/segmentos",    tags=["Ref: Segmentos"])
 app.include_router(ref_plano.router,           prefix="/api/ref/plano",        tags=["Ref: Plano"])
-app.include_router(ref_lancamentos.router,     prefix="/api/ref/lancamentos",  tags=["Ref: LanÃƒÆ’Ã‚Â§amentos"])
+app.include_router(ref_lancamentos.router,     prefix="/api/ref/lancamentos",  tags=["Ref: LanÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â§amentos"])
 app.include_router(ref_depara.router,          prefix="/api/ref/depara",       tags=["Ref: De-Para"])
 app.include_router(ref_templates.router,       prefix="/api/ref/templates",    tags=["Ref: Templates"])
 app.include_router(ref_demonstrativos.router,  prefix="/api/ref/demonstrativos", tags=["Ref: Demonstrativos"])
@@ -386,16 +386,16 @@ app.include_router(ref_benchmark.router,       prefix="/api/ref/benchmark",    t
 app.include_router(fc_exec.router,             tags=["Demonstrativos FC"])
 app.include_router(pdf.router,                 prefix="/api/pdf",             tags=["PDF"])
 
-# Cria diretÃƒÆ’Ã‚Â³rio de uploads se nÃƒÆ’Ã‚Â£o existir
+# Cria diretÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio de uploads se nÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â£o existir
 from pathlib import Path as _Path
 import os as _os
 _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(parents=True, exist_ok=True)
 
-# Inicia backup automÃƒÆ’Ã‚Â¡tico diÃƒÆ’Ã‚Â¡rio
+# Inicia backup automÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡tico diÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡rio
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.2d"
+app.version = "2.6.2f"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
@@ -423,7 +423,7 @@ def get_version():
         "projetos": _np,
     }
 
-# Servir o frontend React (arquivos estÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ticos do build)
+# Servir o frontend React (arquivos estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ticos do build)
 FRONTEND_DIST = Path(__file__).parent.parent / "frontend" / "dist"
 if FRONTEND_DIST.exists():
     app.mount("/assets", StaticFiles(directory=FRONTEND_DIST / "assets"), name="assets")
@@ -431,13 +431,15 @@ if FRONTEND_DIST.exists():
     @app.get("/")
     @app.get("/{full_path:path}")
     def serve_frontend(full_path: str = ""):
-        # Rotas da API jÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¡ foram registradas antes ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â qualquer outra rota serve o index.html
+        # Rotas da API jÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ foram registradas antes ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â qualquer outra rota serve o index.html
         index = FRONTEND_DIST / "index.html"
         return FileResponse(index)
 else:
     @app.get("/")
     def root():
-        return {"message": "E Mais Consultoria API ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â Online"}
+        return {"message": "E Mais Consultoria API ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Online"}
+
+
 
 
 
