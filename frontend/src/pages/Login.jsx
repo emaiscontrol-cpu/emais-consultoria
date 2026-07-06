@@ -238,6 +238,7 @@ export default function Login() {
     const loadSaved = async () => {
       let savedEmpresaId = localStorage.getItem('saved_empresa_id') || ''
       let savedCodigo    = localStorage.getItem('saved_codigo') || ''
+      let savedSenha     = ''
 
       if (isElectron && window.electronAPI) {
         try {
@@ -245,6 +246,7 @@ export default function Login() {
           if (creds) {
             savedEmpresaId = creds.empresa_id || savedEmpresaId
             savedCodigo = creds.codigo || savedCodigo
+            savedSenha = creds.senha || ''
           }
         } catch {}
       }
@@ -252,7 +254,7 @@ export default function Login() {
       const savedRemember = localStorage.getItem('remember_credentials')
       if (savedRemember === 'true' || (isElectron && savedCodigo)) {
         if (savedCodigo) {
-          setForm(f => ({ ...f, codigo: savedCodigo }))
+          setForm({ codigo: savedCodigo, senha: savedSenha })
           if (savedEmpresaId === 'interno') {
             setIsInterno(true)
             setEmpresaId('interno')
@@ -279,6 +281,7 @@ export default function Login() {
         localStorage.setItem('remember_credentials', 'true')
         window.electronAPI?.setCredentials({
           codigo: payload.codigo,
+          senha: payload.senha,
           empresa_id: isInterno ? 'interno' : String(empresaId)
         }).catch(() => {})
       } else {
@@ -307,17 +310,20 @@ export default function Login() {
       toast.error('Por favor, selecione uma empresa')
       return
     }
-    if (!form.codigo) {
+    const codigoVal = codeRef.current?.value || form.codigo
+    const senhaVal = senhaRef.current?.value || form.senha
+
+    if (!codigoVal) {
       toast.error('Por favor, informe o código de acesso')
       return
     }
-    if (!form.senha) {
+    if (!senhaVal) {
       toast.error('Por favor, informe a senha')
       return
     }
     await doLogin({
-      codigo: form.codigo,
-      senha: form.senha,
+      codigo: codigoVal,
+      senha: senhaVal,
       cliente_id: isInterno ? null : empresaId,
       is_interno: isInterno
     })
@@ -412,22 +418,23 @@ export default function Login() {
               <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>Sistema de Gestão</div>
             </div>
 
+            {/* Empresa */}
+            <div style={{ marginBottom: 14 }}>
+              <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6, letterSpacing: '.02em' }}>
+                Empresa / Cliente
+              </label>
+              <SearchableSelect
+                options={empresaOptions}
+                value={empresaId}
+                onChange={handleEmpresaChange}
+                placeholder="Selecione ou busque a empresa..."
+                onFocus={onFocus}
+                onBlur={onBlur}
+                disabled={loading}
+              />
+            </div>
+
             <form onSubmit={handleSubmit}>
-              {/* Empresa */}
-              <div style={{ marginBottom: 14 }}>
-                <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6, letterSpacing: '.02em' }}>
-                  Empresa / Cliente
-                </label>
-                <SearchableSelect
-                  options={empresaOptions}
-                  value={empresaId}
-                  onChange={handleEmpresaChange}
-                  placeholder="Selecione ou busque a empresa..."
-                  onFocus={onFocus}
-                  onBlur={onBlur}
-                  disabled={loading}
-                />
-              </div>
 
               {/* Código */}
               <div style={{ marginBottom: 14 }}>
@@ -437,17 +444,35 @@ export default function Login() {
                 <input
                   ref={codeRef}
                   type="text"
+                  name="username"
+                  autoComplete="username"
                   inputMode="numeric"
                   maxLength={3}
                   placeholder="000"
                   value={form.codigo}
-                  onChange={e => setForm(f => ({ ...f, codigo: e.target.value.replace(/\D/g, '').slice(0, 3) }))}
-                  onKeyDown={e => e.key === 'Enter' && senhaRef.current?.focus()}
+                  onChange={e => {
+                    const val = e.target.value.replace(/\D/g, '').slice(0, 3)
+                    setForm(f => ({ ...f, codigo: val }))
+                    const currentSenha = senhaRef.current?.value || form.senha
+                    if (val.length === 3 && !currentSenha) {
+                      setTimeout(() => senhaRef.current?.focus(), 50)
+                    }
+                  }}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault()
+                      const currentSenha = senhaRef.current?.value || form.senha
+                      if (currentSenha) {
+                        handleSubmit(e)
+                      } else {
+                        senhaRef.current?.focus()
+                      }
+                    }
+                  }}
                   onFocus={onFocus}
                   onBlur={onBlur}
                   disabled={loading}
                   style={{ ...INPUT_BASE, fontSize: 20, fontWeight: 800, textAlign: 'center', letterSpacing: 10 }}
-                  autoComplete="off"
                 />
               </div>
 
@@ -456,13 +481,16 @@ export default function Login() {
                 <label style={{ display: 'block', fontSize: 11.5, fontWeight: 700, color: 'var(--text-2)', marginBottom: 6 }}>Senha</label>
                 <input
                   ref={senhaRef}
-                  type="password" placeholder="••••••••" value={form.senha}
+                  type="password"
+                  name="password"
+                  autoComplete="current-password"
+                  placeholder="••••••••"
+                  value={form.senha}
                   onChange={e => setForm(f => ({ ...f, senha: e.target.value }))}
                   onKeyDown={e => e.key === 'Enter' && handleLogin()}
                   onFocus={onFocus} onBlur={onBlur}
                   disabled={loading}
                   style={{ ...INPUT_BASE, fontSize: 13 }}
-                  autoComplete="current-password"
                 />
               </div>
 
