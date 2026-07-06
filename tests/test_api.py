@@ -15,29 +15,67 @@ import models
 # ── AUTH ─────────────────────────────────────────────────────────────────
 
 class TestAuth:
-    def test_login_sucesso(self, client, admin_user):
-        r = client.post("/api/auth/login", json={"email": admin_user.email, "senha": "senha123"})
+    def test_login_sucesso_interno(self, client, db_session, admin_user):
+        admin_user.codigo_acesso = "001"
+        db_session.commit()
+        r = client.post("/api/auth/login", json={"codigo": "001", "senha": "senha123", "is_interno": True})
         assert r.status_code == 200
         body = r.json()
         assert "access_token" in body
         assert body["token_type"] == "bearer"
         assert body["usuario"]["email"] == admin_user.email
 
-    def test_login_senha_errada(self, client, admin_user):
-        r = client.post("/api/auth/login", json={"email": admin_user.email, "senha": "errada"})
-        assert r.status_code == 401
-
-    def test_login_email_inexistente(self, client):
-        r = client.post("/api/auth/login", json={"email": "naoexiste@emals.com", "senha": "x"})
-        assert r.status_code == 401
-
-    def test_login_usuario_inativo(self, client, usuario_inativo):
-        r = client.post("/api/auth/login", json={"email": usuario_inativo.email, "senha": "senha123"})
-        assert r.status_code == 403
-
-    def test_login_case_insensitive_email(self, client, admin_user):
-        r = client.post("/api/auth/login", json={"email": admin_user.email.upper(), "senha": "senha123"})
+    def test_login_sucesso_cliente(self, client, db_session, analista_user, cliente_teste):
+        analista_user.codigo_acesso = "002"
+        db_session.commit()
+        r = client.post("/api/auth/login", json={"codigo": "002", "senha": "senha123", "cliente_id": cliente_teste.id})
         assert r.status_code == 200
+        body = r.json()
+        assert "access_token" in body
+        assert body["token_type"] == "bearer"
+        assert body["usuario"]["email"] == analista_user.email
+
+    def test_login_codigos_iguais_clientes_diferentes(self, client, db_session, analista_user, cliente_teste, outro_cliente):
+        from auth import hash_senha
+        outro_analista = models.Usuario(
+            nome="Outro Analista",
+            email="outro@emals.com",
+            senha_hash=hash_senha("senha123"),
+            perfil=models.PerfilEnum.analista,
+            cliente_id=outro_cliente.id,
+            codigo_acesso="999"
+        )
+        analista_user.codigo_acesso = "999"
+        db_session.add(outro_analista)
+        db_session.commit()
+
+        r1 = client.post("/api/auth/login", json={"codigo": "999", "senha": "senha123", "cliente_id": cliente_teste.id})
+        assert r1.status_code == 200
+        assert r1.json()["usuario"]["id"] == analista_user.id
+
+        r2 = client.post("/api/auth/login", json={"codigo": "999", "senha": "senha123", "cliente_id": outro_cliente.id})
+        assert r2.status_code == 200
+        assert r2.json()["usuario"]["id"] == outro_analista.id
+
+    def test_login_senha_errada(self, client, db_session, admin_user):
+        admin_user.codigo_acesso = "001"
+        db_session.commit()
+        r = client.post("/api/auth/login", json={"codigo": "001", "senha": "errada", "is_interno": True})
+        assert r.status_code == 401
+
+    def test_login_codigo_inexistente(self, client):
+        r = client.post("/api/auth/login", json={"codigo": "999", "senha": "x", "is_interno": True})
+        assert r.status_code == 401
+
+    def test_login_sem_selecionar_empresa(self, client):
+        r = client.post("/api/auth/login", json={"codigo": "123", "senha": "x"})
+        assert r.status_code == 400
+
+    def test_login_usuario_inativo(self, client, db_session, usuario_inativo):
+        usuario_inativo.codigo_acesso = "003"
+        db_session.commit()
+        r = client.post("/api/auth/login", json={"codigo": "003", "senha": "senha123", "is_interno": True})
+        assert r.status_code == 403
 
     def test_me_com_token_valido(self, client, admin_headers, admin_user):
         r = client.get("/api/auth/me", headers=admin_headers)

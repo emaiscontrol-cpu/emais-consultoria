@@ -16,8 +16,18 @@ def criar(data: schemas.UsuarioCreate, db: Session = Depends(get_db), _=Depends(
     if db.query(models.Usuario).filter(models.Usuario.email == data.email).first():
         raise HTTPException(status_code=400, detail="Email já cadastrado")
     if data.codigo_acesso:
-        if db.query(models.Usuario).filter(models.Usuario.codigo_acesso == data.codigo_acesso).first():
-            raise HTTPException(status_code=400, detail="Código de acesso já utilizado por outro usuário")
+        if data.cliente_id is not None:
+            duplicado = db.query(models.Usuario).filter(
+                models.Usuario.codigo_acesso == data.codigo_acesso,
+                models.Usuario.cliente_id == data.cliente_id
+            ).first()
+        else:
+            duplicado = db.query(models.Usuario).filter(
+                models.Usuario.codigo_acesso == data.codigo_acesso,
+                models.Usuario.cliente_id.is_(None)
+            ).first()
+        if duplicado:
+            raise HTTPException(status_code=400, detail="Código de acesso já utilizado por outro usuário nesta empresa")
     usuario = models.Usuario(
         nome=data.nome, email=data.email,
         senha_hash=hash_senha(data.senha),
@@ -50,16 +60,29 @@ def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db
         u.cliente_id = None
     if payload.pop("remover_codigo", False):
         u.codigo_acesso = None
+
+    target_cliente_id = payload.get("cliente_id", u.cliente_id)
+    final_codigo = payload.get("codigo_acesso", u.codigo_acesso)
+    
     if "codigo_acesso" in payload:
-        codigo = payload["codigo_acesso"] or None
-        if codigo:
+        final_codigo = payload["codigo_acesso"] or None
+
+    if final_codigo:
+        if target_cliente_id is not None:
             existente = db.query(models.Usuario).filter(
-                models.Usuario.codigo_acesso == codigo,
+                models.Usuario.codigo_acesso == final_codigo,
+                models.Usuario.cliente_id == target_cliente_id,
                 models.Usuario.id != id
             ).first()
-            if existente:
-                raise HTTPException(status_code=400, detail="Código de acesso já utilizado por outro usuário")
-        payload["codigo_acesso"] = codigo
+        else:
+            existente = db.query(models.Usuario).filter(
+                models.Usuario.codigo_acesso == final_codigo,
+                models.Usuario.cliente_id.is_(None),
+                models.Usuario.id != id
+            ).first()
+        if existente:
+            raise HTTPException(status_code=400, detail="Código de acesso já utilizado nesta empresa")
+        payload["codigo_acesso"] = final_codigo
     for k, v in payload.items():
         if k == "senha":
             u.senha_hash = hash_senha(v)

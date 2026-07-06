@@ -44,19 +44,28 @@ def _modulos_do_cliente(usuario, db: Session):
         analises_gerenciais=bool(cliente.modulo_analises_gerenciais),
     )
 
+@router.get("/empresas-publico")
+def listar_empresas_publico(db: Session = Depends(get_db)):
+    clientes = db.query(models.Cliente).filter(models.Cliente.ativo == True).order_by(models.Cliente.razao_social).all()
+    return [{"id": c.id, "razao_social": c.razao_social} for c in clientes]
+
 @router.post("/login", response_model=schemas.Token)
 def login(req: schemas.LoginRequest, request: Request, db: Session = Depends(get_db)):
     ip = _get_ip(request)
     _checar_rate_limit(ip)
-    from sqlalchemy import func
-    if req.codigo:
-        usuario = db.query(models.Usuario).filter(models.Usuario.codigo_acesso == req.codigo).first()
-        msg_erro = "Código ou senha inválidos"
+    if req.is_interno:
+        usuario = db.query(models.Usuario).filter(
+            models.Usuario.codigo_acesso == req.codigo,
+            models.Usuario.cliente_id.is_(None)
+        ).first()
     else:
-        if not req.email:
-            raise HTTPException(status_code=400, detail="Informe email ou código de acesso")
-        usuario = db.query(models.Usuario).filter(func.lower(models.Usuario.email) == req.email.lower()).first()
-        msg_erro = "Email ou senha inválidos"
+        if req.cliente_id is None:
+            raise HTTPException(status_code=400, detail="Por favor, selecione uma empresa")
+        usuario = db.query(models.Usuario).filter(
+            models.Usuario.codigo_acesso == req.codigo,
+            models.Usuario.cliente_id == req.cliente_id
+        ).first()
+    msg_erro = "Código ou senha inválidos"
     if not usuario or not verificar_senha(req.senha, usuario.senha_hash):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=msg_erro)
     if not usuario.ativo:

@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -173,7 +173,8 @@ with engine.connect() as conn:
         "DROP TABLE IF EXISTS cliente_plano",
         "DROP TABLE IF EXISTS planos_itens",
         "DROP TABLE IF EXISTS planos_contas",
-        "DROP TABLE IF EXISTS planos",
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_usuarios_cliente_id_codigo_acesso ON usuarios (cliente_id, codigo_acesso) WHERE cliente_id IS NOT NULL",
+        "CREATE UNIQUE INDEX IF NOT EXISTS ix_usuarios_codigo_acesso_internal ON usuarios (codigo_acesso) WHERE cliente_id IS NULL",
     ]):
         try:
             conn.execute(text(stmt))
@@ -186,6 +187,12 @@ with engine.connect() as conn:
 if not _is_sqlite:
     with engine.connect() as conn:
         for stmt in [
+            # Drop old constraint/index on codigo_acesso
+            "ALTER TABLE usuarios DROP CONSTRAINT IF EXISTS usuarios_codigo_acesso_key",
+            "DROP INDEX IF EXISTS idx_usuarios_codigo_acesso",
+            # Create new partial unique indexes
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_usuarios_cliente_id_codigo_acesso ON usuarios (cliente_id, codigo_acesso) WHERE cliente_id IS NOT NULL",
+            "CREATE UNIQUE INDEX IF NOT EXISTS ix_usuarios_codigo_acesso_internal ON usuarios (codigo_acesso) WHERE cliente_id IS NULL",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_projetos BOOLEAN NOT NULL DEFAULT TRUE",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_inteligencia_mercado BOOLEAN NOT NULL DEFAULT FALSE",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS modulo_analises_gerenciais BOOLEAN NOT NULL DEFAULT FALSE",
