@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, globalShortcut, ipcMain } = require('electron')
+const { app, BrowserWindow, session, globalShortcut, ipcMain, safeStorage } = require('electron')
 const path = require('path')
 const fs   = require('fs')
 
@@ -11,12 +11,37 @@ function getCredsPath() {
   return path.join(app.getPath('userData'), 'saved-credentials.json')
 }
 
-ipcMain.handle('credentials:get', () => {
-  try { return JSON.parse(fs.readFileSync(getCredsPath(), 'utf8')) } catch { return null }
+ipcMain.handle('credentials:load', () => {
+  try {
+    if (!fs.existsSync(getCredsPath())) return null
+    const data = JSON.parse(fs.readFileSync(getCredsPath(), 'utf8'))
+    const result = { ...data }
+    result.senha = ''
+    if (data.senha_encrypted && safeStorage && safeStorage.isEncryptionAvailable()) {
+      const encryptedBuffer = Buffer.from(data.senha_encrypted, 'base64')
+      result.senha = safeStorage.decryptString(encryptedBuffer)
+    }
+    delete result.senha_encrypted
+    return result
+  } catch (err) {
+    console.error('Erro ao ler credenciais:', err)
+    return null
+  }
 })
 
-ipcMain.handle('credentials:set', (_, creds) => {
-  fs.writeFileSync(getCredsPath(), JSON.stringify(creds), 'utf8')
+ipcMain.handle('credentials:save', (_, creds) => {
+  try {
+    const toSave = { ...creds }
+    delete toSave.senha
+    toSave.senha_encrypted = ''
+    if (creds.senha && safeStorage && safeStorage.isEncryptionAvailable()) {
+      const encryptedBuffer = safeStorage.encryptString(creds.senha)
+      toSave.senha_encrypted = encryptedBuffer.toString('base64')
+    }
+    fs.writeFileSync(getCredsPath(), JSON.stringify(toSave), 'utf8')
+  } catch (err) {
+    console.error('Erro ao gravar credenciais:', err)
+  }
 })
 
 ipcMain.handle('credentials:clear', () => {
