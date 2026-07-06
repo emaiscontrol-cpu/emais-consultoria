@@ -64,8 +64,14 @@ export default function Usuarios() {
       // Verifica unicidade do código localmente
       const codigoLimpo = form.codigo_acesso.replace(/\D/g, '').slice(0, 3) || null
       if (codigoLimpo) {
-        const codigoJaUsado = usuarios.some(u => u.codigo_acesso === codigoLimpo && (!editando || u.id !== editando.id))
-        if (codigoJaUsado) { toast.error('Código de acesso já utilizado por outro usuário'); setSaving(false); return }
+        const codigoJaUsado = usuarios.some(u => {
+          if (u.codigo_acesso !== codigoLimpo) return false
+          if (editando && u.id === editando.id) return false
+          const uClienteId = u.cliente_id || null
+          const targetClienteId = clienteId || null
+          return uClienteId === targetClienteId
+        })
+        if (codigoJaUsado) { toast.error('Código de acesso já utilizado por outro usuário nesta empresa'); setSaving(false); return }
       }
       if (editando) {
         const payload = { nome: form.nome, email: form.email, perfil: form.perfil }
@@ -255,8 +261,14 @@ export default function Usuarios() {
                 {form.codigo_acesso.length > 0 && form.codigo_acesso.length < 3 && (
                   <div style={{ fontSize:11, color:'var(--red)', marginTop:3 }}>Deve ter 3 dígitos</div>
                 )}
-                {form.codigo_acesso.length === 3 && usuarios.some(u => u.codigo_acesso === form.codigo_acesso && (!editando || u.id !== editando.id)) && (
-                  <div style={{ fontSize:11, color:'var(--red)', marginTop:3 }}>Código já utilizado</div>
+                {form.codigo_acesso.length === 3 && usuarios.some(u => {
+                  if (u.codigo_acesso !== form.codigo_acesso) return false
+                  if (editando && u.id === editando.id) return false
+                  const uClienteId = u.cliente_id || null
+                  const targetClienteId = form.cliente_id ? parseInt(form.cliente_id) : null
+                  return uClienteId === targetClienteId
+                }) && (
+                  <div style={{ fontSize:11, color:'var(--red)', marginTop:3 }}>Código já utilizado nesta empresa</div>
                 )}
               </div>
             </div>

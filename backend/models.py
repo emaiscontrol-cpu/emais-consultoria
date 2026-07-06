@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Enum, Date, UniqueConstraint
+from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Enum, Date, UniqueConstraint, Index, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -39,6 +39,11 @@ class StatusProjeto(str, enum.Enum):
 
 class Usuario(Base):
     __tablename__ = "usuarios"
+    __table_args__ = (
+        Index("ix_usuarios_cliente_id_codigo_acesso", "cliente_id", "codigo_acesso", unique=True, sqlite_where=text("cliente_id IS NOT NULL"), postgresql_where=text("cliente_id IS NOT NULL")),
+        Index("ix_usuarios_codigo_acesso_internal", "codigo_acesso", unique=True, sqlite_where=text("cliente_id IS NULL"), postgresql_where=text("cliente_id IS NULL")),
+    )
+
     id            = Column(Integer, primary_key=True, index=True)
     nome          = Column(String(120), nullable=False)
     email         = Column(String(120), unique=True, index=True, nullable=False)
@@ -49,7 +54,7 @@ class Usuario(Base):
     ia_gemini     = Column(Boolean, default=False)
     ia_openrouter = Column(Boolean, default=False)
     foto          = Column(Text, nullable=True)
-    codigo_acesso = Column(String(3), unique=True, nullable=True)
+    codigo_acesso = Column(String(3), nullable=True)
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     # se for cliente, vincula a um cliente
     cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=True)

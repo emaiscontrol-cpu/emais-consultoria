@@ -6,9 +6,10 @@ from models import PerfilEnum, StatusTarefa, StatusFase, StatusProjeto, StatusSu
 
 # ── AUTH ──────────────────────────────────────────────
 class LoginRequest(BaseModel):
-    email: Optional[str] = None
-    codigo: Optional[str] = None
+    codigo: str
     senha: str
+    cliente_id: Optional[int] = None
+    is_interno: bool = False
 
 # ── USUARIO ───────────────────────────────────────────
 class UsuarioCreate(BaseModel):

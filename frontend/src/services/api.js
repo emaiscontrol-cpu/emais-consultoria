@@ -27,7 +27,8 @@ export const authAPI = {
   alterarSenha:   (senha_atual, nova_senha) => api.put('/auth/senha', { senha_atual, nova_senha }),
   atualizarFoto:  (foto)                    => api.put('/auth/foto', { foto }),
   esqueciSenha:   (email)                   => api.post('/auth/esqueci-senha', { email }),
-  refresh:      ()                         => api.post('/auth/refresh'),
+  refresh:        ()                        => api.post('/auth/refresh'),
+  empresasPublico:()                        => api.get('/auth/empresas-publico'),
 }
 
 export const dashboardAPI = {
