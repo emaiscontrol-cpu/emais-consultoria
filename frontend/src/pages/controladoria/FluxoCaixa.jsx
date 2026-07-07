@@ -414,7 +414,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
               value={fmtCelula(v, bold)}
               color={corValor(v)}
               fontWeight={isThisActive ? 700 : (bold ? 700 : 400)}
-              underline={isClickable}
+              underline={false}
               pct={pct}
               showPct={!!pctEnabled}
             />
@@ -427,7 +427,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         const totalRow = valores_mensais
           ? Object.values(valores_mensais).reduce((s, v) => s + (v ?? 0), 0)
           : (realizado ?? 0)
-        const pctTotal = showPct && tipo === 'agrupamento' ? getPct(linha, null) : null
+        const pctTotal = showPct && (tipo === 'agrupamento' || isTotalizador) ? getPct(linha, null) : null
 
         result.push(
           <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
@@ -444,7 +444,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
             {/* 12 colunas de mês */}
             {MESES_N.map(m => {
               const v   = valores_mensais ? (valores_mensais[m] ?? 0) : 0
-              const pct = showPct && tipo === 'agrupamento' ? getPct(linha, m) : null
+              const pct = showPct && (tipo === 'agrupamento' || isTotalizador) ? getPct(linha, m) : null
               const ck = isClickable
                 ? `${clienteId}:${ano}:m:${m}:${agrupamento_slug || 'total-' + ordem}`
                 : null

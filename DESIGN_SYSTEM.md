@@ -282,9 +282,24 @@ compartilhado em vez de reimplementar o layout:
   pctColor="#534AB7"            // opcional, default já é a cor de participação padrão
   color={corValor(v)}           // opcional
   fontWeight={bold ? 700 : 400} // opcional
-  underline={isClickable}       // opcional — sublinhado pontilhado em células clicáveis
 />
 ```
+
+> Células de valor **não usam sublinhado pontilhado** (`underline`) — uma linha ser clicável é
+> indicado só por `cursor: pointer` + hover da linha, nunca por decoração no texto do número.
+
+### % de participação em linhas de soma (totalizador)
+
+Linhas `tipo === 'totalizador'` também exibem a % de participação, não só `agrupamento` — a
+condição de cálculo é `showPct && (tipo === 'agrupamento' || isTotalizador)`. Como `getBaseRow`
+já resolve a linha-base de cada seção (ex.: "Vendas - Totais" para o bloco de até a ordem 15,
+"Vendas Líquidas Recebidas" para o restante), isso tem dois efeitos esperados, não bugs:
+- a própria linha-base mostra **100%** (ela é participação de si mesma sobre si mesma);
+- as demais linhas de soma da seção (ex.: Margem de Venda 1/2) mostram sua participação sobre
+  essa base, exatamente como qualquer `agrupamento` já mostrava.
+
+Linhas `tipo === 'titulo'` (colSpan) nunca exibem % — não têm célula de valor para reservar o
+slot.
 
 Regra central: **sempre que `showPct` for `true`, um slot de `minWidth: 42` é reservado à
 direita do valor** — com o texto da % quando `pct` vier preenchido, ou um `<span>` vazio da
