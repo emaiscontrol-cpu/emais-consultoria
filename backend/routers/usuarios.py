@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List
 from database import get_db
 from auth import hash_senha, get_usuario_atual, requer_perfil
@@ -34,7 +35,13 @@ def criar(data: schemas.UsuarioCreate, db: Session = Depends(get_db), _=Depends(
         perfil=data.perfil, cliente_id=data.cliente_id,
         codigo_acesso=data.codigo_acesso or None,
     )
-    db.add(usuario); db.commit(); db.refresh(usuario)
+    db.add(usuario)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Código de acesso já utilizado por outro usuário nesta empresa")
+    db.refresh(usuario)
     return usuario
 
 @router.put("/{id}", response_model=schemas.UsuarioOut)
@@ -88,7 +95,12 @@ def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db
             u.senha_hash = hash_senha(v)
         else:
             setattr(u, k, v)
-    db.commit(); db.refresh(u)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Código de acesso já utilizado nesta empresa")
+    db.refresh(u)
     return u
 
 @router.delete("/{id}")
