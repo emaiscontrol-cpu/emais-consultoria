@@ -37,7 +37,6 @@ import CelulaValorPct from '../../components/CelulaValorPct'
   pctColor="#534AB7"    // opcional
   color={corValor(v)}   // opcional
   fontWeight={bold ? 700 : 400}  // opcional
-  underline={isClickable}        // opcional
 />
 ```
 
@@ -51,6 +50,16 @@ quando a linha não participa do cálculo).
 Se a tela não deve reservar o slot quando não há % (comportamento do Orçamento — cada célula
 decide por si, sem afetar as colunas vizinhas), passar `showPct={pctValor !== null}` em vez do
 estado do toggle.
+
+**Células de valor não usam sublinhado pontilhado** (`underline`) — clicável é indicado só por
+`cursor: pointer` + hover da linha, nunca por decoração no texto.
+
+**Linhas de soma (`totalizador`) também exibem % de participação**, não só `agrupamento` — a
+condição correta é `showPct && (tipo === 'agrupamento' || isTotalizador)`. Como a linha-base de
+cada seção (resolvida por `getBaseRow`) participa desse cálculo, ela mostra **100%** (é
+participação de si mesma) e as demais somas da seção mostram a fatia delas sobre essa base — é
+o comportamento esperado, não um bug de dado repetido. Linhas `titulo` (colSpan) nunca exibem %,
+porque não têm célula de valor.
 
 ## Regra 2 — Formatação numérica única
 
@@ -108,10 +117,13 @@ const isDestaqueTitulo = tipo === 'agrupamento' && (
 ## Checklist
 
 - [ ] Slot de % reservado em toda célula de valor quando o toggle está ligado, mesmo sem % a
-      exibir (totalizador/título/linha sem base de cálculo)
+      exibir (linha sem base de cálculo, ou título)
+- [ ] Linhas de soma (`totalizador`) exibem % de participação igual a `agrupamento`; só `titulo`
+      (colSpan) nunca exibe %
 - [ ] `fontVariantNumeric: 'tabular-nums'` em toda célula de valor, incluindo Total/Acumulado
 - [ ] Um único helper de vazio/zero, reaproveitado em toda célula do arquivo
 - [ ] Destaque por slug implementado via `SLUGS_DESTAQUE_TITULO`, sem mudar `tipo`
+- [ ] Nenhum `underline`/sublinhado pontilhado em célula de valor — clicável só por cursor/hover
 - [ ] Nenhuma cor hardcoded nova introduzida
 - [ ] `npm run build` sem erros
 - [ ] Comportamento com o toggle desligado e modos que não usam este padrão (ex.: mensal/
