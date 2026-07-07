@@ -282,7 +282,10 @@ AND EXISTS (
             "UPDATE agrupamentos SET nome='(+/-) Mvto TransitÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³rio'                      WHERE slug='mvto_transitorio'",
             # v2.6.0r: cÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â³digo de acesso de 3 dÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â­gitos para login simplificado
             "ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS codigo_acesso VARCHAR(3)",
-            "CREATE UNIQUE INDEX IF NOT EXISTS idx_usuarios_codigo_acesso ON usuarios(codigo_acesso) WHERE codigo_acesso IS NOT NULL",
+            # v2.6.2h: NAO recriar idx_usuarios_codigo_acesso (indice unico GLOBAL) — conflita com o
+            # design multi-tenant. A unicidade correta e POR cliente, garantida pelos indices parciais
+            # ix_usuarios_cliente_id_codigo_acesso / ix_usuarios_codigo_acesso_internal (criados acima).
+            # O "DROP INDEX IF EXISTS idx_usuarios_codigo_acesso" acima remove o legado a cada startup.
             # v2.6.0v: DEMO-3 ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â colunas novas em ref_template_linhas; segmento_id nullable em ref_templates
             # fc_lancamentos ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â© tabela nova ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â criada pelo create_all acima
             "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS tipo VARCHAR(20) DEFAULT 'agrupamento'",
@@ -395,7 +398,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.2g"
+app.version = "2.6.2h"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():

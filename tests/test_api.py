@@ -319,6 +319,26 @@ class TestUsuarios:
         )
         assert r.status_code == 400
 
+    def test_codigo_acesso_pode_repetir_entre_clientes(self, client, admin_headers, cliente_teste, outro_cliente):
+        # Regressão (v2.6.2h): código de acesso é único POR cliente (multi-tenant),
+        # nunca global. Um índice único global em usuarios.codigo_acesso, recriado
+        # indevidamente na migração Postgres, fazia o 2º INSERT dar 500.
+        r1 = client.post("/api/usuarios/", json={"nome": "Ana", "email": "ana@x.com", "senha": "abc12345",
+                         "perfil": "analista", "cliente_id": cliente_teste.id, "codigo_acesso": "123"}, headers=admin_headers)
+        assert r1.status_code == 200
+        r2 = client.post("/api/usuarios/", json={"nome": "Bia", "email": "bia@x.com", "senha": "abc12345",
+                         "perfil": "analista", "cliente_id": outro_cliente.id, "codigo_acesso": "123"}, headers=admin_headers)
+        assert r2.status_code == 200
+
+    def test_codigo_acesso_duplicado_mesmo_cliente_retorna_400(self, client, admin_headers, cliente_teste):
+        # Mesmo cliente + mesmo código → 400 limpo (nunca 500 genérico).
+        r1 = client.post("/api/usuarios/", json={"nome": "Ana", "email": "ana2@x.com", "senha": "abc12345",
+                         "perfil": "analista", "cliente_id": cliente_teste.id, "codigo_acesso": "321"}, headers=admin_headers)
+        assert r1.status_code == 200
+        r2 = client.post("/api/usuarios/", json={"nome": "Ciro", "email": "ciro@x.com", "senha": "abc12345",
+                         "perfil": "analista", "cliente_id": cliente_teste.id, "codigo_acesso": "321"}, headers=admin_headers)
+        assert r2.status_code == 400
+
     def test_criar_usuario_nao_admin_proibido(self, client, consultor_headers):
         r = client.post(
             "/api/usuarios/",
