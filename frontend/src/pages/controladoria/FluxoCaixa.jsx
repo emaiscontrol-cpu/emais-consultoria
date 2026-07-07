@@ -7,6 +7,7 @@ import toast from 'react-hot-toast'
 
 import BotaoExportarPDF from '../../components/BotaoExportarPDF'
 import PainelDetalheAgrupamento from '../../components/PainelDetalheAgrupamento'
+import CelulaValorPct from '../../components/CelulaValorPct'
 import { LogoClaude, LogoGemini, LogoOpenRouter } from '../../components/FloatingAI'
 
 const MESES      = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -15,11 +16,20 @@ const MESES_FULL = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
 const ANOS       = Array.from({ length: 6 }, (_, i) => new Date().getFullYear() - 2 + i)
 const MESES_N    = Array.from({ length: 12 }, (_, i) => i + 1)
 
+// Linhas de dados que devem GANHAR APARÊNCIA de título (negrito + fundo destacado + borda
+// superior), sem virar `tipo === 'titulo'` de verdade — continuam mostrando valores e %.
+// Promover outra linha no futuro = só adicionar o slug aqui.
+const SLUGS_DESTAQUE_TITULO = ['compras']
+
 const fmt = v =>
   v == null ? '—' :
   Math.abs(v) >= 1000 && v % 1 === 0
     ? v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
     : v.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+
+// Regra única de célula vazia/zero: sem dado (null) => "—"; valor 0 numa linha normal => "—";
+// valor 0 numa linha em negrito (totalizador/destaque) => "0,00" (ver DESIGN_SYSTEM.md).
+const fmtCelula = (v, boldRow) => (v == null || (v === 0 && !boldRow)) ? '—' : fmt(v)
 
 const fmtPct = v => v == null ? '' : `${v.toFixed(1)}%`
 
@@ -298,9 +308,13 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         if (parent !== undefined && collapsedTotais.has(parent)) continue
       }
 
-      const isTotalizador = tipo === 'totalizador'
-      const bold          = negrito_totalizador || isTotalizador
-      const bgRow         = negrito_totalizador ? 'rgba(83, 74, 183, 0.03)' : 'transparent'
+      const isTotalizador     = tipo === 'totalizador'
+      const isDestaqueTitulo  = tipo === 'agrupamento' && (
+        SLUGS_DESTAQUE_TITULO.includes(agrupamento_slug) ||
+        (!agrupamento_slug && SLUGS_DESTAQUE_TITULO.some(s => new RegExp(s, 'i').test(rotulo)))
+      )
+      const bold          = negrito_totalizador || isTotalizador || isDestaqueTitulo
+      const bgRow         = (negrito_totalizador || isDestaqueTitulo) ? 'rgba(83, 74, 183, 0.03)' : 'transparent'
       const isExpanded    = !collapsedTotais.has(ordem)
 
       // Células clicáveis em qualquer tipo de linha (títulos, totalizadores ou agrupamentos)
@@ -310,6 +324,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         padding: '10px 14px', fontSize: 12, fontWeight: bold ? 700 : 400,
         borderBottom: '0.5px solid var(--border)', background: bgRow,
         transition: 'all 0.15s ease',
+        ...(isDestaqueTitulo ? { borderTop: '1.5px solid var(--border)' } : {}),
       }
 
       const isOutflow = (label) => {
@@ -371,7 +386,8 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
           )}
           <span style={{
             color: bold ? 'var(--text)' : 'var(--text-2)',
-            fontSize: bold ? '12.5px' : '12px'
+            fontSize: bold ? '12.5px' : '12px',
+            fontWeight: isDestaqueTitulo ? 800 : undefined,
           }}>
             {rotulo}
           </span>
@@ -379,8 +395,10 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
       )
 
 
-      // Helper: monta uma célula de valor clicável
-      const makeValueCell = (key, v, extraStyle, cacheKey, detail, pctNode) => {
+      // Helper: monta uma célula de valor clicável.
+      // pctEnabled controla se o slot de % é reservado (independe do valor de `pct`, que
+      // pode ser null quando a linha não tem % a exibir — ver CelulaValorPct).
+      const makeValueCell = (key, v, extraStyle, cacheKey, detail, pct, pctEnabled) => {
         const isThisActive = isClickable && activeDetail?.cacheKey === cacheKey && activeDetail?.ordem === ordem
         return (
           <td key={key}
@@ -392,18 +410,14 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
             }}
             onClick={isClickable ? () => handleCellClick(ordem, cacheKey, detail) : undefined}
           >
-            <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 6, width: '100%', whiteSpace: 'nowrap' }}>
-              <span style={{
-                color: corValor(v),
-                textDecoration: isClickable ? 'underline dotted' : 'none',
-                textDecorationColor: 'var(--text-muted)',
-                textUnderlineOffset: '3px',
-                fontWeight: isThisActive ? 700 : (bold ? 700 : 400),
-              }}>
-                {v === 0 && !bold ? '—' : fmt(v)}
-              </span>
-              {pctNode}
-            </div>
+            <CelulaValorPct
+              value={fmtCelula(v, bold)}
+              color={corValor(v)}
+              fontWeight={isThisActive ? 700 : (bold ? 700 : 400)}
+              underline={isClickable}
+              pct={pct}
+              showPct={!!pctEnabled}
+            />
           </td>
         )
       }
@@ -431,11 +445,6 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
             {MESES_N.map(m => {
               const v   = valores_mensais ? (valores_mensais[m] ?? 0) : 0
               const pct = showPct && tipo === 'agrupamento' ? getPct(linha, m) : null
-              const pctNode = showPct
-                ? (pct != null
-                    ? <span style={{ color: '#534AB7', fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>{pct.toFixed(1)}%</span>
-                    : <span style={{ minWidth: 42 }} />)
-                : null
               const ck = isClickable
                 ? `${clienteId}:${ano}:m:${m}:${agrupamento_slug || 'total-' + ordem}`
                 : null
@@ -446,25 +455,21 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
                     modo: 'todos', totalAgrupamento: v, isOutflow: isOutflow(rotulo)
                   }
                 : null
-              return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, pctNode)
+              return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, pct, showPct)
             })}
 
             {/* Coluna Total */}
-            <td 
-              style={{ ...tdBase, textAlign: 'right', fontWeight: 700,
+            <td
+              style={{ ...tdBase, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums',
                 borderLeft: '0.5px solid var(--border)', whiteSpace: 'nowrap', cursor: isClickable ? 'pointer' : 'inherit' }}
               onClick={isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined}
             >
-              <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 6, width: '100%', whiteSpace: 'nowrap' }}>
-                <span style={{ color: corValor(totalRow) }}>{fmt(totalRow)}</span>
-                {showPct && (
-                  pctTotal != null
-                    ? <span style={{ color: '#534AB7', fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>
-                        {pctTotal.toFixed(1)}%
-                      </span>
-                    : <span style={{ minWidth: 42 }} />
-                )}
-              </div>
+              <CelulaValorPct
+                value={fmtCelula(totalRow, bold)}
+                color={corValor(totalRow)}
+                pct={pctTotal}
+                showPct={showPct}
+              />
             </td>
           </tr>
         )
@@ -497,7 +502,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
               {rotuloContent}
             </td>
 
-            {makeValueCell('val', val, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, null)}
+            {makeValueCell('val', val, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, null, false)}
 
             <td style={{ ...tdBase, textAlign: 'right', color: '#1e293b', fontWeight: 700, fontSize: 11.5 }}>
               {fmtPct(pct_realizado)}

@@ -7,11 +7,17 @@ import toast from 'react-hot-toast'
 
 import BotaoExportarPDF from '../../components/BotaoExportarPDF'
 import PainelDetalheOrcamento from '../../components/PainelDetalheOrcamento'
+import CelulaValorPct from '../../components/CelulaValorPct'
 import { LogoClaude, LogoGemini, LogoOpenRouter } from '../../components/FloatingAI'
 
 const ANO_ATUAL = new Date().getFullYear()
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const MESES_N = Array.from({ length: 12 }, (_, i) => i + 1)
+
+// Linhas de dados que devem GANHAR APARÊNCIA de título (negrito + fundo destacado + borda
+// superior), sem virar `tipo === 'titulo'` de verdade — continuam mostrando valores e %.
+// Promover outra linha no futuro = só adicionar o slug aqui. Ver mesma constante em FluxoCaixa.jsx.
+const SLUGS_DESTAQUE_TITULO = ['compras']
 
 // Helper para determinar se a linha é de saída/despesa
 const isOutflow = (label) => {
@@ -399,6 +405,10 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
       if (parentOrdem && collapsedTotais.has(parentOrdem)) continue
 
       const isTotal = l.tipo === 'totalizador'
+      const isDestaqueTitulo = l.tipo === 'agrupamento' && (
+        SLUGS_DESTAQUE_TITULO.includes(l.agrupamento_slug) ||
+        (!l.agrupamento_slug && SLUGS_DESTAQUE_TITULO.some(s => new RegExp(s, 'i').test(l.rotulo)))
+      )
       const isClickable = viewMode === 'comparativo' && (l.tipo === 'agrupamento' || l.tipo === 'totalizador' || l.tipo === 'titulo')
       const isThisActive = isClickable && activeDetail?.ordem === l.ordem
       const isNeg = isOutflow(l.rotulo)
@@ -407,9 +417,13 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
       if (l.tipo === 'titulo') bgRow = 'var(--surface-light, #f1f5f9)'
       else if (isTotal) bgRow = 'rgba(0,0,0,0.03)'
       else if (isThisActive) bgRow = 'var(--brand-light, rgba(83, 74, 183, 0.05))'
+      else if (isDestaqueTitulo) bgRow = 'rgba(0,0,0,0.03)'
 
       const textWeight = isTotal ? 800 : 400
       const textColor = isTotal ? 'var(--text-1)' : 'var(--text-2)'
+      // Reaproveita as regras do bloco de título (borda superior) para a linha de destaque,
+      // sem alterar tdBase (compartilhado por todas as outras linhas).
+      const tdBaseRow = isDestaqueTitulo ? { ...tdBase, borderTop: '1.5px solid var(--border)' } : tdBase
 
       // Título da Seção
       if (l.tipo === 'titulo') {
@@ -435,7 +449,12 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
           <span>{l.rotulo}</span>
         </div>
       ) : (
-        <span style={{ paddingLeft: 18, color: isClickable ? 'var(--brand-dark, #3b30ad)' : textColor, cursor: isClickable ? 'pointer' : 'default', fontWeight: isClickable ? 700 : textWeight }}>
+        <span style={{
+          paddingLeft: 18,
+          color: isDestaqueTitulo ? 'var(--text-1)' : (isClickable ? 'var(--brand-dark, #3b30ad)' : textColor),
+          cursor: isClickable ? 'pointer' : 'default',
+          fontWeight: isDestaqueTitulo ? 800 : (isClickable ? 700 : textWeight),
+        }}>
           {l.rotulo}
         </span>
       )
@@ -462,7 +481,7 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
           >
             {/* Rótulo */}
             <td
-              style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : bgRow, borderRight: '0.5px solid var(--border)', minWidth: 220, maxWidth: 280, whiteSpace: 'normal', cursor: isTotal ? 'pointer' : 'inherit', zIndex: 1 }}
+              style={{ ...tdBaseRow, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : bgRow, borderRight: '0.5px solid var(--border)', minWidth: 220, maxWidth: 280, whiteSpace: 'normal', cursor: isTotal ? 'pointer' : 'inherit', zIndex: 1 }}
               onClick={isTotal ? (e) => { e.stopPropagation(); toggleTotalizador(l.ordem); } : undefined}
             >
               {rotuloContent}
@@ -474,26 +493,24 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
               const monthlyPart = showPct ? getMonthlyPct(l, m, viewMode === 'realizado') : null
               const pctColor = viewMode === 'realizado' ? '#534AB7' : '#0ea5e9'
               return (
-                <td key={m} style={{ ...tdBase, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: isTotal ? 700 : 600, color: 'var(--text-1)' }}>
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 6, whiteSpace: 'nowrap' }}>
-                    <span>{fmt(val)}</span>
-                    {monthlyPart !== null && (
-                      <span style={{ color: pctColor, fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>
-                        {monthlyPart.toFixed(1)}%
-                      </span>
-                    )}
-                  </div>
+                <td key={m} style={{ ...tdBaseRow, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontWeight: isTotal ? 700 : 600, color: 'var(--text-1)' }}>
+                  <CelulaValorPct
+                    value={fmt(val)}
+                    pct={monthlyPart}
+                    showPct={monthlyPart !== null}
+                    pctColor={pctColor}
+                  />
                 </td>
               )
             })}
 
             {/* Acumulado Ano */}
-            <td style={{ ...tdBase, textAlign: 'right', padding: '8px 12px', fontWeight: 800, borderLeft: '1.5px solid var(--border)', position: 'sticky', right: 80, background: isTotal ? 'var(--surface-light, #f4f6fa)' : bgRow, zIndex: 1 }}>
+            <td style={{ ...tdBaseRow, textAlign: 'right', padding: '8px 12px', fontWeight: 800, borderLeft: '1.5px solid var(--border)', position: 'sticky', right: 80, background: isTotal ? 'var(--surface-light, #f4f6fa)' : bgRow, zIndex: 1 }}>
               {fmt(total)}
             </td>
 
             {/* Participação Coluna */}
-            <td style={{ ...tdBase, textAlign: 'right', padding: '8px 12px', fontWeight: 800, color: 'var(--brand)', position: 'sticky', right: 0, background: isTotal ? 'var(--surface-light, #f4f6fa)' : bgRow, zIndex: 1 }}>
+            <td style={{ ...tdBaseRow, textAlign: 'right', padding: '8px 12px', fontWeight: 800, color: 'var(--brand)', position: 'sticky', right: 0, background: isTotal ? 'var(--surface-light, #f4f6fa)' : bgRow, zIndex: 1 }}>
               {partTotal !== null ? `${partTotal.toFixed(1)}%` : '—'}
             </td>
           </tr>
@@ -504,7 +521,7 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
           <tr key={l.ordem} style={{ background: bgRow }}>
             {/* Rótulo */}
             <td
-              style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : bgRow, borderRight: '0.5px solid var(--border)', minWidth: 220, maxWidth: 280, whiteSpace: 'normal', cursor: isTotal ? 'pointer' : (isClickable ? 'pointer' : 'inherit'), verticalAlign: 'middle', zIndex: 1 }}
+              style={{ ...tdBaseRow, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : bgRow, borderRight: '0.5px solid var(--border)', minWidth: 220, maxWidth: 280, whiteSpace: 'normal', cursor: isTotal ? 'pointer' : (isClickable ? 'pointer' : 'inherit'), verticalAlign: 'middle', zIndex: 1 }}
               onClick={isTotal ? (e) => { e.stopPropagation(); toggleTotalizador(l.ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(l, null); } : undefined)}
             >
               <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -537,29 +554,30 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
               }
 
               return (
-                <td 
-                  key={m} 
-                  style={{ ...tdBase, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 11, cursor: isClickable ? 'pointer' : 'inherit' }}
+                <td
+                  key={m}
+                  style={{ ...tdBaseRow, textAlign: 'right', fontVariantNumeric: 'tabular-nums', fontSize: 11, cursor: isClickable ? 'pointer' : 'inherit' }}
                   onClick={isClickable ? (e) => { e.stopPropagation(); handleCellClick(l, m); } : undefined}
                 >
                   {/* Realizado */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 6, fontWeight: 800, color: 'var(--text-1, #0f172a)', whiteSpace: 'nowrap' }}>
-                    <span>{fmt(real)}</span>
-                    {realMonthlyPart !== null && (
-                      <span style={{ fontSize: 9, color: '#534AB7', fontWeight: 800, minWidth: 42, textAlign: 'right' }}>
-                        {realMonthlyPart.toFixed(1)}%
-                      </span>
-                    )}
-                  </div>
+                  <CelulaValorPct
+                    value={fmt(real)}
+                    color="var(--text-1, #0f172a)"
+                    fontWeight={800}
+                    pct={realMonthlyPart}
+                    showPct={realMonthlyPart !== null}
+                    pctColor="#534AB7"
+                  />
                   {/* Planejado */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 6, color: 'var(--text-2, #334155)', fontWeight: 700, margin: '2px 0', whiteSpace: 'nowrap' }}>
-                    <span>{fmt(orc)}</span>
-                    {orcMonthlyPart !== null && (
-                      <span style={{ fontSize: 9, color: '#0ea5e9', fontWeight: 800, minWidth: 42, textAlign: 'right' }}>
-                        {orcMonthlyPart.toFixed(1)}%
-                      </span>
-                    )}
-                  </div>
+                  <CelulaValorPct
+                    value={fmt(orc)}
+                    color="var(--text-2, #334155)"
+                    fontWeight={700}
+                    pct={orcMonthlyPart}
+                    showPct={orcMonthlyPart !== null}
+                    pctColor="#0ea5e9"
+                    containerStyle={{ margin: '2px 0' }}
+                  />
                   {/* Desvio */}
                   <div style={{ color: devColor, fontWeight: 800, fontSize: 10.5, whiteSpace: 'nowrap' }}>
                     {fmtPct(devPct)}
@@ -569,8 +587,8 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
             })}
 
             {/* Acumulado Ano */}
-            <td 
-              style={{ ...tdBase, textAlign: 'right', padding: '8px 12px', borderLeft: '1.5px solid var(--border)', position: 'sticky', right: 80, background: isTotal ? 'var(--surface-light, #f4f6fa)' : (isThisActive ? 'var(--brand-light, rgba(83, 74, 183, 0.05))' : 'var(--surface)'), zIndex: 1, cursor: isClickable ? 'pointer' : 'inherit' }}
+            <td
+              style={{ ...tdBaseRow, textAlign: 'right', padding: '8px 12px', borderLeft: '1.5px solid var(--border)', position: 'sticky', right: 80, background: isTotal ? 'var(--surface-light, #f4f6fa)' : (isThisActive ? 'var(--brand-light, rgba(83, 74, 183, 0.05))' : 'var(--surface)'), zIndex: 1, cursor: isClickable ? 'pointer' : 'inherit' }}
               onClick={isClickable ? (e) => { e.stopPropagation(); handleCellClick(l, null); } : undefined}
             >
               <div style={{ fontWeight: 800, color: 'var(--text-1, #0f172a)' }}>{fmt(realTotal)}</div>
@@ -581,8 +599,8 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
             </td>
 
             {/* Participação Coluna */}
-            <td 
-              style={{ ...tdBase, textAlign: 'right', padding: '8px 12px', position: 'sticky', right: 0, background: isTotal ? 'var(--surface-light, #f4f6fa)' : (isThisActive ? 'var(--brand-light, rgba(83, 74, 183, 0.05))' : 'var(--surface)'), zIndex: 1, cursor: isClickable ? 'pointer' : 'inherit' }}
+            <td
+              style={{ ...tdBaseRow, textAlign: 'right', padding: '8px 12px', position: 'sticky', right: 0, background: isTotal ? 'var(--surface-light, #f4f6fa)' : (isThisActive ? 'var(--brand-light, rgba(83, 74, 183, 0.05))' : 'var(--surface)'), zIndex: 1, cursor: isClickable ? 'pointer' : 'inherit' }}
               onClick={isClickable ? (e) => { e.stopPropagation(); handleCellClick(l, null); } : undefined}
             >
               <div style={{ fontWeight: 800, color: 'var(--text-1)' }}>
