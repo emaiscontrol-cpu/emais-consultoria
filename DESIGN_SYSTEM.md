@@ -1,7 +1,7 @@
 # Design System — E Mais Consultoria
 
 > Arquivo de referência visual para o Claude Code. Leia antes de criar ou alterar qualquer componente de interface.
-> Última atualização: 2026-06-28
+> Última atualização: 2026-07-06
 
 ---
 
@@ -262,7 +262,90 @@ Colunas: `Conta / Descrição` | `Tipo` | `Demonstrativo` | `Agrupamento` | `Aç
 
 ---
 
-## 9. Regras gerais para o Claude Code
+## 9. Padrão de tabelas de demonstrativos
+
+> Referência de implementação: `frontend/src/pages/controladoria/FluxoCaixa.jsx` (modo "Todos os
+> meses") e `frontend/src/pages/controladoria/Orcamento.jsx`. Componente compartilhado:
+> `frontend/src/components/CelulaValorPct.jsx`. Vale para FC, Orçamento e deve ser adotado por
+> DRE / Balancete / Demonstrativo Ref. quando ganharem a mesma grade mês a mês.
+
+### Célula de valor + % — `CelulaValorPct`
+
+Toda célula numérica que pode exibir uma % de participação ao lado do valor usa o componente
+compartilhado em vez de reimplementar o layout:
+
+```jsx
+<CelulaValorPct
+  value={fmtCelula(v, bold)}   // string já formatada — cada tela mantém sua própria regra de vazio/zero
+  pct={pctValor}                // número (0-100) ou null
+  showPct={showPct}             // reflete o toggle da tela; controla se o slot é reservado
+  pctColor="#534AB7"            // opcional, default já é a cor de participação padrão
+  color={corValor(v)}           // opcional
+  fontWeight={bold ? 700 : 400} // opcional
+  underline={isClickable}       // opcional — sublinhado pontilhado em células clicáveis
+/>
+```
+
+Regra central: **sempre que `showPct` for `true`, um slot de `minWidth: 42` é reservado à
+direita do valor** — com o texto da % quando `pct` vier preenchido, ou um `<span>` vazio da
+mesma largura quando a linha não tiver % a exibir (ex.: totalizador). Isso é o que mantém as
+colunas de número alinhadas verticalmente independente do tipo de linha — nunca gerar o slot de
+% só condicionalmente (`pct != null ? <span/> : null`), porque linhas sem % ficam com o número
+colado na borda em vez de alinhado com as demais.
+
+Quando a tela não deve reservar o slot de jeito nenhum se não houver valor de %, passar
+`showPct={pctValor !== null}` em vez do estado do toggle diretamente (é o que o Orçamento faz —
+ver o comentário no próprio componente).
+
+### Formatação numérica
+
+- `fontVariantNumeric: 'tabular-nums'` em **toda** célula que mostra número (incluindo colunas
+  de total/acumulado — é comum esquecer essas ao copiar o padrão das colunas de mês).
+- Regra única de vazio/zero por tela, num único helper reaproveitado em todos os tipos de linha:
+  sem dado (`null`) → `"—"`; valor `0` numa linha normal → `"—"`; valor `0` numa linha em negrito
+  (totalizador ou destaque) → `"0,00"`. Nunca resolver isso inline em mais de um lugar do mesmo
+  arquivo — é assim que uma tela acaba mostrando `"—"` nos meses e `"0,00"` no Total para a mesma
+  linha.
+
+### Destaque de linha por slug (aparência de título sem ser título)
+
+Para dar destaque visual a uma conta específica (ex.: "Compras") sem transformá-la numa linha de
+título de verdade (que usa `colSpan` e perde os valores):
+
+```js
+const SLUGS_DESTAQUE_TITULO = ['compras']
+// no loop de renderização, para linhas tipo === 'agrupamento':
+const isDestaqueTitulo = tipo === 'agrupamento' && (
+  SLUGS_DESTAQUE_TITULO.includes(agrupamento_slug) ||
+  (!agrupamento_slug && SLUGS_DESTAQUE_TITULO.some(s => new RegExp(s, 'i').test(rotulo)))
+)
+```
+
+- `tipo` no dado **nunca muda** — a linha continua `agrupamento`, com valores e % normais.
+- Visual: `fontWeight: 800` no rótulo, fundo com a mesma cor sutil já usada para linhas em
+  destaque no arquivo (reaproveitar o valor existente, nunca introduzir uma cor nova) e
+  `borderTop: '1.5px solid var(--border)'` na linha inteira.
+- Promover outra conta no futuro é só adicionar o slug à constante — nunca duplicar a lógica de
+  detecção.
+
+### Totalizador com chevron colapsável
+
+- Linhas `tipo === 'totalizador'` mostram `ChevronDown`/`ChevronRight` (Lucide) no lugar do
+  conector tracejado das linhas filhas, e um clique no rótulo colapsa/expande as linhas
+  `agrupamento` daquela seção.
+- Rótulo de linha filha (não totalizador): conector visual tracejado de 12x12px
+  (`borderLeft`/`borderBottom` de `1.5px dashed var(--border)`) para indicar hierarquia.
+
+### Título em colSpan
+
+- Linhas `tipo === 'titulo'` renderizam uma única `<td colSpan={...}>` cobrindo toda a largura da
+  tabela — sem células de valor, sem slot de %. `fontWeight: 800`, `color: 'var(--text-muted)'`,
+  `textTransform: 'uppercase'`, `borderTop` mais grosso que o padrão para servir de divisor de
+  seção.
+
+---
+
+## 10. Regras gerais para o Claude Code
 
 1. **Nunca hardcodar cores** — sempre usar CSS variables ou a paleta definida acima
 2. **Nunca usar modais** para ações simples de vinculação — usar painel inline
