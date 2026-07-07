@@ -431,8 +431,10 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
             {MESES_N.map(m => {
               const v   = valores_mensais ? (valores_mensais[m] ?? 0) : 0
               const pct = showPct && tipo === 'agrupamento' ? getPct(linha, m) : null
-              const pctNode = pct != null
-                ? <span style={{ color: '#534AB7', fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>{pct.toFixed(1)}%</span>
+              const pctNode = showPct
+                ? (pct != null
+                    ? <span style={{ color: '#534AB7', fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>{pct.toFixed(1)}%</span>
+                    : <span style={{ minWidth: 42 }} />)
                 : null
               const ck = isClickable
                 ? `${clienteId}:${ano}:m:${m}:${agrupamento_slug || 'total-' + ordem}`
@@ -455,10 +457,12 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
             >
               <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'baseline', gap: 6, width: '100%', whiteSpace: 'nowrap' }}>
                 <span style={{ color: corValor(totalRow) }}>{fmt(totalRow)}</span>
-                {pctTotal != null && (
-                  <span style={{ color: '#534AB7', fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>
-                    {pctTotal.toFixed(1)}%
-                  </span>
+                {showPct && (
+                  pctTotal != null
+                    ? <span style={{ color: '#534AB7', fontSize: 9, fontWeight: 800, minWidth: 42, textAlign: 'right' }}>
+                        {pctTotal.toFixed(1)}%
+                      </span>
+                    : <span style={{ minWidth: 42 }} />
                 )}
               </div>
             </td>
