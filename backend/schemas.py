@@ -495,6 +495,7 @@ class LancamentoRefCreate(BaseModel):
     valor: float
     ano: int
     mes: int
+    unidade: Optional[str] = None  # Nome (ex: Roosevelt) ou código de 3 dígitos (ex: 104)
 
 class LancamentoRefBulkRequest(BaseModel):
     cliente_id: int
@@ -504,6 +505,7 @@ class LancamentoRefBulkRequest(BaseModel):
 class LancamentoRefOut(BaseModel):
     id: int
     conta_cliente_id: int
+    unidade_codigo: Optional[str] = None
     valor: float
     ano: int
     mes: int

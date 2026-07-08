@@ -2,9 +2,13 @@
   - [x] Adicionar coluna `unidade_nome` em `models.LancamentoRef` (`models.py`)
   - [x] Atualizar constraint de unicidade para incluir `unidade_nome`
   - [x] Implementar e testar migração automática no startup para SQLite e PostgreSQL (`main.py`)
-- [ ] Fase 2: Importação de 02 Modelos XLSX (Parsers de Balancete e Planilha DRE)
-  - [ ] Implementar parser para Modelo A (DRE aberta por filial em colunas) no `xlsx_parser.py`
-  - [ ] Implementar parser para Modelo B (Balancete bruto com quebra de unidade) no `xlsx_parser.py`
-  - [ ] Atualizar endpoints de importação de lançamentos em `ref_lancamentos.py` para processar e salvar `unidade_nome`
+- [x] Fase 2: Importação de 02 Modelos XLSX (Parsers de Balancete e Planilha DRE)
+  - [x] Criar a tabela `Unidade` com código de 3 dígitos e nome amigável (`models.py`)
+  - [x] Atualizar `models.LancamentoRef` para usar `unidade_codigo` e constraint correspondente
+  - [x] Adicionar e testar scripts de migração automática para SQLite e Postgres (`main.py`)
+  - [x] Criar os endpoints de CRUD para gestão manual de Unidades (`routers/ref_unidades.py` e `main.py`)
+  - [x] Implementar inteligência de auto-cadastro e resolução de unidade (código ou nome) no importador (`ref_lancamentos.py`)
+  - [x] Atualizar parser `xlsx_parser.py` para extrair unidade nos formatos linear, mensal e aberto em colunas
+  - [x] Criar endpoint de importação física de arquivo XLSX contábil (`ref_lancamentos.py`)
 - [ ] Fase 3: Evolução do Motor De-Para e Fórmulas por Unidade
 - [ ] Fase 4: Frontend - Tabela Dinâmica e Grid Interativo de Edição

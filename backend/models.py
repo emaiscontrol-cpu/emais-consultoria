@@ -456,6 +456,8 @@ class ImportLayout(Base):
     coluna_mes         = Column(Integer, nullable=True)
     coluna_valor       = Column(Integer, nullable=True)
     formato_mes        = Column(String(20), default="MM/YYYY")
+    coluna_unidade     = Column(Integer, nullable=True) # Usado para Modelo B (balancete ERP)
+    coluna_inicio_unidades = Column(Integer, nullable=True) # Usado para Modelo A (colunas lado a lado)
     prefixos_ignorar   = Column(Text, default="[]")  # JSON lista de strings
     linhas_ignorar     = Column(Text, default="[]")  # JSON lista de ints
     ativo              = Column(Boolean, default=True)
@@ -587,18 +589,32 @@ class DeParaRef(Base):
     conta_referencial    = relationship("ContaReferencial")
 
 
+class Unidade(Base):
+    """Unidades de negócio (filiais) do cliente contendo código de 3 dígitos e nome."""
+    __tablename__ = "unidades"
+    id            = Column(Integer, primary_key=True, index=True)
+    cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
+    codigo        = Column(String(3), nullable=False)   # exatamente 3 dígitos (ex: "104")
+    nome          = Column(String(100), nullable=False)  # nome amigável (ex: "Roosevelt")
+    ativo         = Column(Boolean, default=True)
+    criado_em     = Column(DateTime(timezone=True), server_default=func.now())
+    
+    cliente       = relationship("Cliente")
+    __table_args__ = (UniqueConstraint("cliente_id", "codigo"), UniqueConstraint("cliente_id", "nome"))
+
+
 class LancamentoRef(Base):
     """Lançamento do cliente vinculado a uma conta do ERP (para o plano referencial)."""
     __tablename__ = "ref_lancamentos"
     id               = Column(Integer, primary_key=True, index=True)
     conta_cliente_id = Column(Integer, ForeignKey("ref_contas_cliente.id"), nullable=False)
-    unidade_nome     = Column(String(100), nullable=True) # Quebra por filial (ex: Roosevelt, Tibery, Consolidado)
+    unidade_codigo   = Column(String(3), nullable=True) # Quebra por filial de 3 dígitos (ex: "104")
     valor            = Column(Float, nullable=False)
     ano              = Column(Integer, nullable=False)
     mes              = Column(Integer, nullable=False)   # 1–12
     data_importacao  = Column(DateTime(timezone=True), server_default=func.now())
     conta_cliente    = relationship("ContaClienteRef", back_populates="lancamentos")
-    __table_args__ = (UniqueConstraint("conta_cliente_id", "unidade_nome", "ano", "mes"),)
+    __table_args__ = (UniqueConstraint("conta_cliente_id", "unidade_codigo", "ano", "mes"),)
 
 
 class TemplateRef(Base):

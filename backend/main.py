@@ -5,7 +5,7 @@ from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
 from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import
-from routers import ref_segmentos, ref_plano, ref_lancamentos, ref_depara, ref_templates, ref_demonstrativos, ref_benchmark
+from routers import ref_segmentos, ref_plano, ref_lancamentos, ref_depara, ref_templates, ref_demonstrativos, ref_benchmark, ref_unidades
 from routers import fc_exec
 from routers import pdf
 
@@ -176,6 +176,9 @@ with engine.connect() as conn:
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_usuarios_cliente_id_codigo_acesso ON usuarios (cliente_id, codigo_acesso) WHERE cliente_id IS NOT NULL",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_usuarios_codigo_acesso_internal ON usuarios (codigo_acesso) WHERE cliente_id IS NULL",
         "ALTER TABLE ref_lancamentos ADD COLUMN unidade_nome VARCHAR(100)",
+        "ALTER TABLE ref_lancamentos ADD COLUMN unidade_codigo VARCHAR(3)",
+        "ALTER TABLE import_layouts ADD COLUMN coluna_unidade INTEGER",
+        "ALTER TABLE import_layouts ADD COLUMN coluna_inicio_unidades INTEGER",
     ]):
         try:
             conn.execute(text(stmt))
@@ -203,10 +206,15 @@ if not _is_sqlite:
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS enviado_por_id INTEGER REFERENCES usuarios(id)",
             # Categoria de arquivo adicionada na v2.6.0e
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS categoria VARCHAR(50) NOT NULL DEFAULT 'Outros'",
-            # v2.6.2q: DRE Multi-Unidades - coluna de unidade_nome e constraint
+            # v2.6.2q: DRE Multi-Unidades - colunas e constraints
             "ALTER TABLE ref_lancamentos ADD COLUMN IF NOT EXISTS unidade_nome VARCHAR(100)",
+            "ALTER TABLE ref_lancamentos ADD COLUMN IF NOT EXISTS unidade_codigo VARCHAR(3)",
             "ALTER TABLE ref_lancamentos DROP CONSTRAINT IF EXISTS ref_lancamentos_conta_cliente_id_ano_mes_key CASCADE",
-            "ALTER TABLE ref_lancamentos ADD CONSTRAINT uq_ref_lancamentos_unidade UNIQUE (conta_cliente_id, unidade_nome, ano, mes)",
+            "ALTER TABLE ref_lancamentos DROP CONSTRAINT IF EXISTS ref_lancamentos_conta_cliente_id_unidade_nome_ano_mes_key CASCADE",
+            "ALTER TABLE ref_lancamentos DROP CONSTRAINT IF EXISTS uq_ref_lancamentos_unidade CASCADE",
+            "ALTER TABLE ref_lancamentos ADD CONSTRAINT uq_ref_lancamentos_unidade_codigo UNIQUE (conta_cliente_id, unidade_codigo, ano, mes)",
+            "ALTER TABLE import_layouts ADD COLUMN IF NOT EXISTS coluna_unidade INTEGER",
+            "ALTER TABLE import_layouts ADD COLUMN IF NOT EXISTS coluna_inicio_unidades INTEGER",
             # Agrupadores FC ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â colunas de metadados adicionadas na v2.6.0f
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS natureza VARCHAR(20) NOT NULL DEFAULT 'soma'",
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS slug VARCHAR(100)",
@@ -391,6 +399,7 @@ app.include_router(ref_depara.router,          prefix="/api/ref/depara",       t
 app.include_router(ref_templates.router,       prefix="/api/ref/templates",    tags=["Ref: Templates"])
 app.include_router(ref_demonstrativos.router,  prefix="/api/ref/demonstrativos", tags=["Ref: Demonstrativos"])
 app.include_router(ref_benchmark.router,       prefix="/api/ref/benchmark",    tags=["Ref: Benchmark"])
+app.include_router(ref_unidades.router,        prefix="/api/ref/unidades",     tags=["Ref: Unidades"])
 app.include_router(fc_exec.router,             tags=["Demonstrativos FC"])
 app.include_router(pdf.router,                 prefix="/api/pdf",             tags=["PDF"])
 
