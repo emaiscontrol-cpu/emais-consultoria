@@ -123,8 +123,8 @@ export default function Clientes() {
 
   const salvarUnidade = async (e) => {
     e.preventDefault()
-    const cod = novaUnidade.codigo.trim()
-    const nom = novaUnidade.nome.trim()
+    const cod = String(novaUnidade.codigo || '').trim()
+    const nom = String(novaUnidade.nome || '').trim()
     if (!cod || !nom) return toast.error('Preencha código e nome da filial')
     if (cod.length !== 3 || isNaN(cod)) return toast.error('O código da filial deve possuir exatamente 3 dígitos numéricos')
 
@@ -157,7 +157,7 @@ export default function Clientes() {
 
   const iniciarEditarUnidade = (u) => {
     setEditandoUnidade(u)
-    setNovaUnidade({ codigo: u.codigo, nome: u.nome })
+    setNovaUnidade({ codigo: String(u.codigo || ''), nome: String(u.nome || '') })
   }
 
   if (loading) return <LoadingPage />
