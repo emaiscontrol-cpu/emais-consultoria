@@ -38,26 +38,88 @@ function corValor(v) {
   return v < 0 ? '#D25656' : 'var(--text)'
 }
 
+const cleanLabel = (text) => {
+  if (!text) return ''
+  return text
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, '')
+}
+
+const isOutflow = (label) => {
+  const l = (label || '').toLowerCase()
+  return l.includes('pessoal') || l.includes('serviço') || l.includes('imposto') || l.includes('despesa') || l.includes('custo') || l.includes('pagamento') || l.includes('saída')
+}
+
+const getPerfilLinha = (rotulo) => {
+  const clean = cleanLabel(rotulo)
+
+  // Lucro das Operações (EBITDA)
+  if (clean.includes('lucrodasoperacoes') || clean.includes('ebitda')) {
+    return 'especial'
+  }
+
+  // Destaques
+  const destaque = ['compras', 'lucrobruto', 'emprestimos']
+  if (destaque.some(d => clean.includes(d))) {
+    return 'destaque'
+  }
+
+  // Derivadas
+  const derivada = [
+    'vendasliquidasrecebidas', 'vendasliquidas',
+    'margemdevenda1', 'margemdevenda2',
+    'movimentofinanceiro', 'mvtofinanceiro',
+    'lucroantesdoimpostoderenda', 'lucroantesdoir',
+    'lucroliquido',
+    'investimentosefinanciamentos',
+    'ncg1', 'ncg2',
+    'socios', 'coligadas'
+  ]
+  if (derivada.some(d => clean.includes(d))) {
+    return 'derivada'
+  }
+
+  // Padrão (Entradas, Saídas, Sub Total de Fornecedores, Custos Operacionais, Vendas Totais)
+  const padraoMatches = ['entradas', 'saidas', 'fornecedores', 'custosoperacionais', 'vendastotais']
+  if (padraoMatches.some(p => clean.includes(p))) {
+    return 'padrao'
+  }
+
+  return 'padrao'
+}
+
+
 
 // Para cada agrupamento: qual totalizador fecha sua seção (collapse e % de participação)
 function buildGroupings(linhas) {
   const parentOf        = {}
   const sectionRefOrdem = {}
+  // ordem do totalizador -> slug composto das contas-filhas da seção ('slug1+slug2+...').
+  // Permite abrir o MESMO gráfico das analíticas ao clicar num totalizador (que
+  // sozinho não tem agrupamento_slug próprio — é uma fórmula).
+  const totalizadorChildSlugs = {}
   let pending = []
+  let pendingSlugs = []
   for (const l of linhas) {
     if (l.tipo === 'titulo') {
       pending = []
+      pendingSlugs = []
     } else if (l.tipo === 'agrupamento') {
       pending.push(l.ordem)
+      if (l.agrupamento_slug) pendingSlugs.push(l.agrupamento_slug)
     } else if (l.tipo === 'totalizador') {
       for (const o of pending) {
         parentOf[o]        = l.ordem
         sectionRefOrdem[o] = l.ordem
       }
+      if (pendingSlugs.length) totalizadorChildSlugs[l.ordem] = pendingSlugs.join('+')
       pending = []
+      pendingSlugs = []
     }
   }
-  return { parentOf, sectionRefOrdem }
+  return { parentOf, sectionRefOrdem, totalizadorChildSlugs }
 }
 
 function SegControl({ value, onChange, options }) {
@@ -146,14 +208,14 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
   }, [clienteId])
 
 
-  const { parentOf, sectionRefOrdem, totalizadorMap, allTotalizadores } = useMemo(() => {
-    if (!dados) return { parentOf: {}, sectionRefOrdem: {}, totalizadorMap: {}, allTotalizadores: new Set() }
-    const { parentOf, sectionRefOrdem } = buildGroupings(dados.linhas)
+  const { parentOf, sectionRefOrdem, totalizadorMap, allTotalizadores, totalizadorChildSlugs } = useMemo(() => {
+    if (!dados) return { parentOf: {}, sectionRefOrdem: {}, totalizadorMap: {}, allTotalizadores: new Set(), totalizadorChildSlugs: {} }
+    const { parentOf, sectionRefOrdem, totalizadorChildSlugs } = buildGroupings(dados.linhas)
     const totalizadorMap = Object.fromEntries(dados.linhas.map(l => [l.ordem, l]))
     const allTotalizadores = new Set(
       dados.linhas.filter(l => l.tipo === 'totalizador').map(l => l.ordem)
     )
-    return { parentOf, sectionRefOrdem, totalizadorMap, allTotalizadores }
+    return { parentOf, sectionRefOrdem, totalizadorMap, allTotalizadores, totalizadorChildSlugs }
   }, [dados])
 
   // Dados no formato genérico aceito por POST /api/pdf/demonstrativo
@@ -209,18 +271,194 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
     })
   }
 
+  const obterDadosLocaisTotalizador = (targetOrdem, modoClique, mesClique) => {
+    if (!dados || !dados.linhas) return null
+    const totalizador = dados.linhas.find(l => l.ordem === targetOrdem)
+    if (!totalizador || totalizador.tipo !== 'totalizador') return null
+
+    const filhas = dados.linhas.filter(l => l.tipo === 'agrupamento' && parentOf[l.ordem] === targetOrdem)
+
+    let mesRef = null
+    let mesFimRef = null
+
+    if (modoClique === 'todos') {
+      if (mesClique && mesClique !== 'all') {
+        mesRef = Number(mesClique)
+      } else {
+        mesRef = null
+      }
+    } else if (modoClique === 'mensal') {
+      mesRef = dados.mes
+    } else if (modoClique === 'acumulado') {
+      mesRef = dados.mes
+      mesFimRef = dados.mes_fim
+    }
+
+    const isDeducao = (l) => {
+      const rot = l.rotulo || ''
+      return rot.includes('( - )') || isOutflow(rot)
+    }
+
+    const atual = []
+    const anterior = []
+
+    filhas.forEach(l => {
+      let valAtual = 0
+      let valAnterior = 0
+
+      const multiplicador = isDeducao(l) ? -1 : 1
+
+      if (modoClique === 'todos') {
+        if (mesRef !== null) {
+          valAtual = (l.valores_mensais ? (l.valores_mensais[mesRef] ?? 0) : 0) * multiplicador
+          if (mesRef > 1) {
+            valAnterior = (l.valores_mensais ? (l.valores_mensais[mesRef - 1] ?? 0) : 0) * multiplicador
+          }
+        } else {
+          const totalAno = l.valores_mensais
+            ? Object.values(l.valores_mensais).reduce((s, v) => s + (v ?? 0), 0)
+            : (l.realizado ?? 0)
+          valAtual = totalAno * multiplicador
+          valAnterior = 0
+        }
+      } else if (modoClique === 'mensal') {
+        valAtual = (l.realizado ?? 0) * multiplicador
+        if (mesRef > 1) {
+          valAnterior = (l.valores_mensais ? (l.valores_mensais[mesRef - 1] ?? 0) : 0) * multiplicador
+        }
+      } else if (modoClique === 'acumulado') {
+        valAtual = (l.realizado ?? 0) * multiplicador
+        const ultimoMes = mesFimRef ?? mesRef
+        if (ultimoMes > 1) {
+          valAnterior = (l.valores_mensais ? (l.valores_mensais[ultimoMes - 1] ?? 0) : 0) * multiplicador
+        }
+      }
+
+      atual.push({
+        conta_origem: l.rotulo,
+        descricao: '',
+        valor: valAtual
+      })
+
+      anterior.push({
+        conta_origem: l.rotulo,
+        descricao: '',
+        valor: valAnterior
+      })
+    })
+
+    const MESES_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+    const trend = Array.from({ length: 12 }, (_, i) => {
+      const m = i + 1
+      const val = totalizador.valores_mensais ? (totalizador.valores_mensais[m] ?? 0) : 0
+      return { mes: MESES_ABR[i], valor: val }
+    })
+
+    const obterRotuloPeriodo = (mIni, mFim, a) => {
+      if (mIni === null) return `Ano ${a}`
+      if (mFim === null || mIni === mFim) return `${MESES_ABR[mIni - 1]}/${a}`
+      return `${MESES_ABR[mIni - 1]} a ${MESES_ABR[mFim - 1]}/${a}`
+    }
+
+    let pAtual = obterRotuloPeriodo(mesRef, mesFimRef, ano)
+    let pAnterior = '—'
+    if (modoClique === 'acumulado') {
+      const ultimoMes = mesFimRef ?? mesRef
+      if (ultimoMes > 1) {
+        pAnterior = obterRotuloPeriodo(ultimoMes - 1, null, ano)
+      }
+    } else if (mesRef && mesRef > 1) {
+      pAnterior = obterRotuloPeriodo(mesRef - 1, null, ano)
+    }
+
+    return {
+      atual,
+      anterior,
+      periodo_atual: pAtual,
+      periodo_anterior: pAnterior,
+      trend
+    }
+  }
+
   // Abre/fecha painel de detalhe ao clicar numa célula de valor
   const handleCellClick = (ordem, cacheKey, detail) => {
     let targetDetail = { ...detail }
+    let targetOrdem = ordem
     const clickedLinha = dados?.linhas?.find(l => l.ordem === ordem)
+    
     if (clickedLinha && clickedLinha.tipo === 'titulo') {
       const idx = dados.linhas.indexOf(clickedLinha)
       if (idx !== -1) {
         const nextClickable = dados.linhas.slice(idx + 1).find(l => l.tipo === 'totalizador' || l.tipo === 'agrupamento')
         if (nextClickable) {
-          targetDetail.agrupamentoSlug = nextClickable.agrupamento_slug || null
+          targetOrdem = nextClickable.ordem
+          targetDetail.agrupamentoSlug = nextClickable.agrupamento_slug
+            || (nextClickable.tipo === 'totalizador' ? totalizadorChildSlugs[nextClickable.ordem] : null)
+            || null
           targetDetail.totalAgrupamento = nextClickable.realizado ?? 0
         }
+      }
+    }
+
+    const resolvedLinha = dados?.linhas?.find(l => l.ordem === targetOrdem)
+    if (resolvedLinha) {
+      const isTotalizador = resolvedLinha.tipo === 'totalizador'
+      const isDestaqueTitulo = resolvedLinha.tipo === 'agrupamento' && (
+        SLUGS_DESTAQUE_TITULO.includes(resolvedLinha.agrupamento_slug) ||
+        (!resolvedLinha.agrupamento_slug && SLUGS_DESTAQUE_TITULO.some(s => new RegExp(s, 'i').test(resolvedLinha.rotulo)))
+      )
+      const bold = resolvedLinha.negrito_totalizador || isTotalizador || isDestaqueTitulo
+      const perfil = getPerfilLinha(resolvedLinha.rotulo)
+
+      let mesClique = null
+      let modoClique = modo
+      
+      const parts = cacheKey.split(':')
+      if (parts.length >= 4) {
+        const t = parts[2]
+        const m = parts[3]
+        if (t === 'm' && m !== 'all') {
+          mesClique = m
+        }
+        if (m === 'all') {
+          modoClique = 'todos'
+          mesClique = 'all'
+        }
+      }
+
+      // Receita do período correspondente (usado pelo perfil especial)
+      let receitaVal = 0
+      const linhaReceita = dados?.linhas?.find(l => {
+        const c = cleanLabel(l.rotulo)
+        return c.includes('vendastotais')
+      })
+      if (linhaReceita) {
+        if (modoClique === 'todos') {
+          if (mesClique && mesClique !== 'all') {
+            receitaVal = linhaReceita.valores_mensais ? (linhaReceita.valores_mensais[Number(mesClique)] ?? 0) : 0
+          } else {
+            receitaVal = linhaReceita.valores_mensais
+              ? Object.values(linhaReceita.valores_mensais).reduce((s, v) => s + (v ?? 0), 0)
+              : (linhaReceita.realizado ?? 0)
+          }
+        } else {
+          receitaVal = linhaReceita.realizado ?? 0
+        }
+      }
+
+      targetDetail.valoresMensaisLinha = resolvedLinha.valores_mensais || null
+      targetDetail.realizadoLinha = resolvedLinha.realizado ?? null
+      targetDetail.rotuloLinha = resolvedLinha.rotulo || ''
+      targetDetail.isBold = bold
+      targetDetail.perfilLinha = perfil
+      targetDetail.receitaPeriodo = receitaVal
+
+      if (isTotalizador && perfil === 'padrao') {
+        targetDetail.isTotalizador = true
+        targetDetail.dadosLocais = obterDadosLocaisTotalizador(targetOrdem, modoClique, mesClique)
+      } else {
+        targetDetail.isTotalizador = false
+        targetDetail.dadosLocais = null
       }
     }
 
@@ -314,11 +552,17 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         (!agrupamento_slug && SLUGS_DESTAQUE_TITULO.some(s => new RegExp(s, 'i').test(rotulo)))
       )
       const bold          = negrito_totalizador || isTotalizador || isDestaqueTitulo
+      const perfil        = getPerfilLinha(rotulo)
       const bgRow         = (negrito_totalizador || isDestaqueTitulo) ? 'rgba(83, 74, 183, 0.03)' : 'transparent'
       const isExpanded    = !collapsedTotais.has(ordem)
 
       // Células clicáveis em qualquer tipo de linha (títulos, totalizadores ou agrupamentos)
       const isClickable = tipo === 'agrupamento' || tipo === 'totalizador' || tipo === 'titulo'
+
+      // Slug usado pelo painel de detalhe (gráfico). Agrupamento usa o próprio;
+      // totalizador (sem slug próprio) usa o composto das contas-filhas da seção,
+      // para renderizar o MESMO gráfico das analíticas em vez de dar erro.
+      const detailSlug = agrupamento_slug || (isTotalizador ? totalizadorChildSlugs[ordem] : null) || null
 
       const tdBase = {
         padding: '10px 14px', fontSize: 12, fontWeight: bold ? 700 : 400,
@@ -327,10 +571,6 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         ...(isDestaqueTitulo ? { borderTop: '1.5px solid var(--border)' } : {}),
       }
 
-      const isOutflow = (label) => {
-        const l = label.toLowerCase()
-        return l.includes('pessoal') || l.includes('serviço') || l.includes('imposto') || l.includes('despesa') || l.includes('custo') || l.includes('pagamento') || l.includes('saída')
-      }
 
       if (tipo === 'titulo') {
         const cacheKey = `${clienteId}:${ano}:titulo-${ordem}:ano`
@@ -433,10 +673,10 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
           <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
             {/* Coluna rótulo — sticky */}
             <td
-              style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : bgRow,
+              style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : '#F5F4FB',
                 borderRight: '0.5px solid var(--border)', minWidth: 200, maxWidth: 260,
                 whiteSpace: 'normal', cursor: isClickable ? 'pointer' : 'default', zIndex: 1 }}
-              onClick={isTotalizador ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined)}
+              onClick={isTotalizador && perfil === 'padrao' ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined)}
             >
               {rotuloContent}
             </td>
@@ -450,7 +690,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
                 : null
               const detail = isClickable
                 ? {
-                    agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo,
+                    agrupamentoSlug: detailSlug, agrupamentoNome: rotulo,
                     periodo: `${MESES_FULL[m - 1]}/${ano}`, clienteId, ano, mes: m, mesFim: null,
                     modo: 'todos', totalAgrupamento: v, isOutflow: isOutflow(rotulo)
                   }
@@ -458,11 +698,14 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
               return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, pct, showPct)
             })}
 
-            {/* Coluna Total */}
+            {/* Coluna Total — congelada à direita (sticky), fundo opaco para não deixar
+                o conteúdo rolado vazar por trás (padrão do módulo Orçamento). */}
             <td
               style={{ ...tdBase, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums',
-                borderLeft: '0.5px solid var(--border)', whiteSpace: 'nowrap', cursor: isClickable ? 'pointer' : 'inherit' }}
-              onClick={isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined}
+                position: 'sticky', right: 0, zIndex: 1,
+                background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : '#F5F4FB',
+                borderLeft: '1.5px solid var(--border)', whiteSpace: 'nowrap', cursor: isClickable ? 'pointer' : 'inherit' }}
+              onClick={isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined}
             >
               <CelulaValorPct
                 value={fmtCelula(totalRow, bold)}
@@ -482,12 +725,12 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         const detail = isClickable
           ? modo === 'mensal'
             ? {
-                agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo,
+                agrupamentoSlug: detailSlug, agrupamentoNome: rotulo,
                 periodo: MESES_FULL[mes - 1], clienteId, ano, mes, mesFim: null,
                 modo: 'mensal', totalAgrupamento: val, isOutflow: isOutflow(rotulo)
               }
             : {
-                agrupamentoSlug: agrupamento_slug || null, agrupamentoNome: rotulo,
+                agrupamentoSlug: detailSlug, agrupamentoNome: rotulo,
                 periodo: `Acumulado Jan a ${MESES[mes - 1]}`, clienteId, ano, mes: 1, mesFim: mes,
                 modo: 'acumulado', totalAgrupamento: val, isOutflow: isOutflow(rotulo)
               }
@@ -497,7 +740,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
           <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
             <td
               style={{ ...tdBase, minWidth: 220, cursor: isClickable ? 'pointer' : 'default' }}
-              onClick={isTotalizador ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, ck, detail); } : undefined)}
+              onClick={isTotalizador && perfil === 'padrao' ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, ck, detail); } : undefined)}
             >
               {rotuloContent}
             </td>
@@ -529,6 +772,14 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
                 modo={activeDetail.modo}
                 totalAgrupamento={activeDetail.totalAgrupamento}
                 isOutflow={activeDetail.isOutflow}
+                isTotalizador={activeDetail.isTotalizador || false}
+                dadosLocais={activeDetail.dadosLocais || null}
+                valoresMensaisLinha={activeDetail.valoresMensaisLinha || null}
+                realizadoLinha={activeDetail.realizadoLinha ?? null}
+                rotuloLinha={activeDetail.rotuloLinha || ''}
+                isBold={activeDetail.isBold || false}
+                perfilLinha={activeDetail.perfilLinha || 'padrao'}
+                receitaPeriodo={activeDetail.receitaPeriodo ?? null}
               />
             </td>
           </tr>
@@ -545,11 +796,10 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         .fc-row {
           transition: background-color 0.12s ease;
         }
-        .fc-row:hover {
-          background-color: rgba(83, 74, 183, 0.025) !important;
-        }
+        /* Hover OPACO: fundo translúcido deixava o conteúdo rolado vazar por trás
+           das colunas congeladas (sticky) exatamente na linha sob o mouse. */
         .fc-row:hover td {
-          background-color: rgba(83, 74, 183, 0.025) !important;
+          background-color: #F4F3FB !important;
         }
         .app-shell.hide-sidebar .sidebar {
           display: none !important;
