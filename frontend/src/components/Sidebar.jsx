@@ -336,10 +336,9 @@ function InteligenciaSection({ bloqueado }) {
 // ── MÓDULO 3: ANÁLISES GERENCIAIS ─────────────────────────────────────────────
 const ITEMS_ANALISES = [
   { to: '/controladoria/fluxo-de-caixa', label: 'Fluxo de Caixa Executivo', emoji: '💲' },
-  { to: '/controladoria/dre',             label: 'DRE Gerencial',            icon: BarChart2 },
+  { to: '/controladoria/dre',             label: 'DRE Referencial',          icon: BarChart2 },
   { to: '/controladoria/balancetes',      label: 'Balancete',                icon: FileSpreadsheet },
   { to: '/controladoria/orcamento',       label: 'Controle Orçamentário',    icon: Target },
-  { to: '/controladoria/demonstrativo',   label: 'Demonstrativo Ref.',       icon: LineChart },
   { to: '/controladoria/benchmark',       label: 'Benchmark Segmento',       icon: TrendingUp },
 ]
 

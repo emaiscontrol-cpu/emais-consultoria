@@ -76,10 +76,12 @@ class Cliente(Base):
     modulo_inteligencia_mercado = Column(Boolean, default=False)
     modulo_analises_gerenciais = Column(Boolean, default=False)
     segmento_id   = Column(Integer, ForeignKey("ref_segmentos.id"), nullable=True)
+    template_dre_padrao_id = Column(Integer, ForeignKey("ref_templates.id"), nullable=True)
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     projetos      = relationship("Projeto", back_populates="cliente")
     usuarios      = relationship("Usuario", back_populates="cliente", foreign_keys=[Usuario.cliente_id])
     segmento      = relationship("Segmento", back_populates="clientes", foreign_keys="Cliente.segmento_id")
+    template_dre_padrao = relationship("TemplateRef", foreign_keys=[template_dre_padrao_id])
 
 
 class TipoConsultoria(Base):

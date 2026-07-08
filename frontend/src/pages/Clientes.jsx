@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { clientesAPI } from '../services/api'
+import { clientesAPI, refUnidadesAPI, refTemplatesAPI } from '../services/api'
 import { Modal, LoadingPage } from '../components/shared'
-import { Building2, FolderKanban, TrendingUp, BarChart2 } from 'lucide-react'
+import { Building2, FolderKanban, TrendingUp, BarChart2, Plus, Edit2, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const MODULOS = [
@@ -31,6 +31,7 @@ const MODULOS = [
 const FORM_VAZIO = {
   razao_social: '', cnpj: '', contato_nome: '', contato_email: '', contato_fone: '',
   modulo_projetos: true, modulo_inteligencia_mercado: false, modulo_analises_gerenciais: false,
+  template_dre_padrao_id: '',
 }
 
 export default function Clientes() {
@@ -40,6 +41,14 @@ export default function Clientes() {
   const [editando,  setEditando]  = useState(null)
   const [form,      setForm]      = useState(FORM_VAZIO)
   const [saving,    setSaving]    = useState(false)
+  const [templatesDRE, setTemplatesDRE] = useState([])
+
+  // Estados de gestão de Unidades (Filiais)
+  const [showUnidadesModal, setShowUnidadesModal] = useState(false)
+  const [clienteUnidades, setClienteUnidades] = useState(null)
+  const [unidadesList, setUnidadesList] = useState([])
+  const [novaUnidade, setNovaUnidade] = useState({ codigo: '', nome: '' })
+  const [editandoUnidade, setEditandoUnidade] = useState(null)
 
   const carregar = async () => {
     try {
@@ -48,7 +57,11 @@ export default function Clientes() {
     } catch { toast.error('Erro ao carregar clientes') }
     finally { setLoading(false) }
   }
-  useEffect(() => { carregar() }, [])
+
+  useEffect(() => {
+    carregar()
+    refTemplatesAPI.listar('dre', null).then(r => setTemplatesDRE(r.data || [])).catch(() => {})
+  }, [])
 
   const abrirNovo = () => {
     setEditando(null)
@@ -67,15 +80,20 @@ export default function Clientes() {
       modulo_projetos:             c.modulo_projetos             ?? true,
       modulo_inteligencia_mercado: c.modulo_inteligencia_mercado ?? false,
       modulo_analises_gerenciais:  c.modulo_analises_gerenciais  ?? false,
+      template_dre_padrao_id:      c.template_dre_padrao_id      || '',
     })
     setShowModal(true)
   }
 
   const handleSalvar = async e => {
     e.preventDefault(); setSaving(true)
+    const payload = {
+      ...form,
+      template_dre_padrao_id: form.template_dre_padrao_id ? Number(form.template_dre_padrao_id) : null
+    }
     try {
-      if (editando) await clientesAPI.atualizar(editando.id, form)
-      else          await clientesAPI.criar(form)
+      if (editando) await clientesAPI.atualizar(editando.id, payload)
+      else          await clientesAPI.criar(payload)
       toast.success(editando ? 'Cliente atualizado!' : 'Cliente criado!')
       setShowModal(false); carregar()
     } catch { toast.error('Erro ao salvar cliente') }
@@ -84,6 +102,58 @@ export default function Clientes() {
 
   const toggleModulo = key =>
     setForm(f => ({ ...f, [key]: !f[key] }))
+
+  // CRUD de Unidades/Filiais
+  const abrirUnidades = async (c) => {
+    setClienteUnidades(c)
+    setNovaUnidade({ codigo: '', nome: '' })
+    setEditandoUnidade(null)
+    carregarUnidades(c.id)
+    setShowUnidadesModal(true)
+  }
+
+  const carregarUnidades = async (cid) => {
+    try {
+      const r = await refUnidadesAPI.listar(cid)
+      setUnidadesList(r.data || [])
+    } catch {
+      toast.error('Erro ao carregar unidades contábeis')
+    }
+  }
+
+  const salvarUnidade = async (e) => {
+    e.preventDefault()
+    const cod = novaUnidade.codigo.trim()
+    const nom = novaUnidade.nome.trim()
+    if (!cod || !nom) return toast.error('Preencha código e nome da filial')
+    if (cod.length !== 3 || isNaN(cod)) return toast.error('O código da filial deve possuir exatamente 3 dígitos numéricos')
+
+    try {
+      if (editandoUnidade) {
+        await refUnidadesAPI.atualizar(editandoUnidade.id, { codigo: cod, nome: nom, ativo: true })
+        toast.success('Filial atualizada com sucesso!')
+      } else {
+        await refUnidadesAPI.criar(clienteUnidades.id, { codigo: cod, nome: nom, ativo: true })
+        toast.success('Nova filial adicionada!')
+      }
+      setNovaUnidade({ codigo: '', nome: '' })
+      setEditandoUnidade(null)
+      carregarUnidades(clienteUnidades.id)
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao salvar filial')
+    }
+  }
+
+  const deletarUnidade = async (uid) => {
+    if (!confirm('Deseja realmente remover esta filial contábil? Lançamentos associados podem ficar órfãos.')) return
+    try {
+      await refUnidadesAPI.deletar(uid)
+      toast.success('Filial removida com sucesso!')
+      carregarUnidades(clienteUnidades.id)
+    } catch (err) {
+      toast.error(err.response?.data?.detail || 'Erro ao remover filial')
+    }
+  }
 
   if (loading) return <LoadingPage />
 
@@ -131,7 +201,14 @@ export default function Clientes() {
                       </div>
                     </td>
                     <td>
-                      <button className="btn btn-sm btn-ghost" onClick={() => abrirEditar(c)}>Editar</button>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                        <button className="btn btn-sm btn-ghost" onClick={() => abrirEditar(c)}>Editar</button>
+                        {c.modulo_analises_gerenciais && (
+                          <button className="btn btn-sm btn-outline" onClick={() => abrirUnidades(c)} style={{ borderColor: '#059669', color: '#059669' }}>
+                            Unidades
+                          </button>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -141,6 +218,7 @@ export default function Clientes() {
         )}
       </div>
 
+      {/* Modal Novo/Editar Cliente */}
       {showModal && (
         <Modal
           title={editando ? 'Editar cliente' : 'Novo cliente'}
@@ -177,6 +255,20 @@ export default function Clientes() {
                 <input value={form.contato_fone} onChange={e => setForm(f => ({...f, contato_fone: e.target.value}))} />
               </div>
             </div>
+
+            {/* Template DRE Padrão do Cliente */}
+            {form.modulo_analises_gerenciais && (
+              <div className="form-group" style={{ marginTop: 10 }}>
+                <label>Template DRE Padrão (Carregamento automático)</label>
+                <select 
+                  value={form.template_dre_padrao_id} 
+                  onChange={e => setForm(f => ({...f, template_dre_padrao_id: e.target.value}))}
+                >
+                  <option value="">Selecione um template padrão...</option>
+                  {templatesDRE.map(t => <option key={t.id} value={t.id}>{t.nome}</option>)}
+                </select>
+              </div>
+            )}
 
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               <div style={{
@@ -227,6 +319,88 @@ export default function Clientes() {
               </div>
             </div>
           </form>
+        </Modal>
+      )}
+
+      {/* Modal Gestão de Unidades (Filiais) do Cliente */}
+      {showUnidadesModal && clienteUnidades && (
+        <Modal
+          title={`Filiais / Unidades Contábeis — ${clienteUnidades.razao_social}`}
+          onClose={() => setShowUnidadesModal(false)}
+          footer={<button className="btn btn-primary" onClick={() => setShowUnidadesModal(false)}>Concluir</button>}
+        >
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+            {/* Formulário de Adicionar/Editar */}
+            <form onSubmit={salvarUnidade} style={{ display: 'flex', gap: 10, background: 'var(--surface, #fafafa)', padding: 12, borderRadius: 8, border: '1px solid var(--border)', alignItems: 'flex-end' }}>
+              <div className="form-group" style={{ margin: 0, flex: '0 0 90px' }}>
+                <label style={{ fontSize: 11 }}>Código (3 d.) *</label>
+                <input 
+                  value={novaUnidade.codigo} 
+                  onChange={e => setNovaUnidade(u => ({...u, codigo: e.target.value.slice(0, 3)}))}
+                  placeholder="100" 
+                  maxLength={3}
+                  required 
+                />
+              </div>
+              <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                <label style={{ fontSize: 11 }}>Nome da Unidade/Filial *</label>
+                <input 
+                  value={novaUnidade.nome} 
+                  onChange={e => setNovaUnidade(u => ({...u, nome: e.target.value}))}
+                  placeholder="Nome amigável da filial" 
+                  required 
+                />
+              </div>
+              <button className="btn btn-primary" type="submit" style={{ display: 'flex', alignItems: 'center', gap: 4, height: 38 }}>
+                <Plus size={14} />
+                {editandoUnidade ? 'Salvar' : 'Adicionar'}
+              </button>
+              {editandoUnidade && (
+                <button className="btn" type="button" onClick={() => { setEditandoUnidade(null); setNovaUnidade({ codigo: '', nome: '' }) }} style={{ height: 38 }}>
+                  Cancelar
+                </button>
+              )}
+            </form>
+
+            {/* Listagem */}
+            <div className="table-wrap" style={{ maxHeight: 280, overflowY: 'auto' }}>
+              <table style={{ fontSize: 13 }}>
+                <thead>
+                  <tr style={{ background: 'var(--surface-header, #f3f4f6)' }}>
+                    <th>Código</th>
+                    <th>Nome da Filial</th>
+                    <th style={{ textAlign: 'right' }}>Ações</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unidadesList.length === 0 ? (
+                    <tr>
+                      <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 20 }}>
+                        Nenhuma filial cadastrada para este cliente. Elas também podem ser criadas automaticamente durante a importação.
+                      </td>
+                    </tr>
+                  ) : (
+                    unidadesList.map(u => (
+                      <tr key={u.id}>
+                        <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{u.codigo}</td>
+                        <td>{u.nome}</td>
+                        <td style={{ textAlign: 'right' }}>
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            <button className="btn btn-sm btn-ghost" onClick={() => iniciarEditarUnidade(u)} style={{ padding: 4 }}>
+                              <Edit2 size={13} />
+                            </button>
+                            <button className="btn btn-sm btn-ghost" onClick={() => deletarUnidade(u.id)} style={{ padding: 4, color: '#ef4444' }}>
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
         </Modal>
       )}
     </div>

@@ -88,6 +88,12 @@ def _calcular_template(
     unidade_codigo: Optional[str] = None
 ) -> tuple[list, bool]:
     """Retorna (lista de linhas calculadas, periodo_fechado)."""
+    cliente = db.query(models.Cliente).get(cliente_id)
+    if not cliente or not cliente.ativo:
+        raise HTTPException(404, "Cliente não encontrado ou inativo")
+    if not cliente.modulo_analises_gerenciais:
+        raise HTTPException(403, "Este cliente não possui o módulo de análises gerenciais ativo.")
+
     template = db.query(models.TemplateRef).get(template_id)
     if not template:
         raise HTTPException(404, "Template não encontrado")
@@ -123,11 +129,16 @@ def _calcular_template(
         rotulo = linha.rotulo
         erros_dz_por_linha[rotulo] = {}
 
+        # Determina a fórmula a ser executada. Se for vazia e tiver agrupamento_slug, considera o agrupamento.
+        formula = linha.formula_texto
+        if not formula and linha.agrupamento_slug:
+            formula = f"{{agrupamento:{linha.agrupamento_slug}}}"
+
         for u in todas_unidades:
             val_agr_u = {agr: valores.get(u, 0.0) for agr, valores in val_agr.items()}
             val_lin_u = val_lin_por_unidade[u]
 
-            valor, tem_dz = calcular_linha(linha.formula_texto or "", val_agr_u, val_lin_u)
+            valor, tem_dz = calcular_linha(formula or "", val_agr_u, val_lin_u)
             val_lin_u[rotulo] = valor
             erros_dz_por_linha[rotulo][u] = tem_dz
 

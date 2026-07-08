@@ -60,6 +60,7 @@ class ClienteCreate(BaseModel):
     modulo_inteligencia_mercado: bool = False
     modulo_analises_gerenciais: bool = False
     segmento_id: Optional[int] = None
+    template_dre_padrao_id: Optional[int] = None
 
     @field_validator('cnpj', 'contato_nome', 'contato_email', 'contato_fone', mode='before')
     @classmethod
@@ -78,6 +79,7 @@ class ClienteOut(BaseModel):
     modulo_inteligencia_mercado: bool = False
     modulo_analises_gerenciais: bool = False
     segmento_id: Optional[int] = None
+    template_dre_padrao_id: Optional[int] = None
     class Config:
         from_attributes = True
 

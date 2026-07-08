@@ -24,3 +24,10 @@
   - [x] Desenvolver grid interativo de edição in-line com blur/enter e suporte a reajuste nas células analíticas
   - [x] Adicionar endpoint de suporte `/editar-celula` no backend para upsert de lançamentos manuais
   - [x] Compilar o frontend com Vite e certificar que todos os 69 testes unitários/E2E e API contábeis passam com 100% de sucesso
+- [x] Ajustes Finais e Homologação Local
+  - [x] Readequação da Sidebar: renomear menu para "DRE Referencial" e remover Demonstrativo Ref. duplicado
+  - [x] Cadastro de Clientes: adicionar seletor de "Template DRE Padrão" no modal e salvar no banco
+  - [x] Carregamento Automático: selecionar o cliente e carregar seu template padrão na DRE de forma automática
+  - [x] Validação de Módulo: bloquear demonstrativo de clientes que não possuam `modulo_analises_gerenciais` ativo
+  - [x] Bug do Valor Zero na Grade: implementar cálculo de fórmulas implícitas para linhas do template sem fórmula e com `agrupamento_slug`
+  - [x] Gestão de Unidades: adicionar modal CRUD completo de filiais diretamente no botão "Unidades" na tela de Clientes

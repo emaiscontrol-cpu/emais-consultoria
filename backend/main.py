@@ -179,6 +179,7 @@ with engine.connect() as conn:
         "ALTER TABLE ref_lancamentos ADD COLUMN unidade_codigo VARCHAR(3)",
         "ALTER TABLE import_layouts ADD COLUMN coluna_unidade INTEGER",
         "ALTER TABLE import_layouts ADD COLUMN coluna_inicio_unidades INTEGER",
+        "ALTER TABLE clientes ADD COLUMN template_dre_padrao_id INTEGER",
     ]):
         try:
             conn.execute(text(stmt))
@@ -215,6 +216,7 @@ if not _is_sqlite:
             "ALTER TABLE ref_lancamentos ADD CONSTRAINT uq_ref_lancamentos_unidade_codigo UNIQUE (conta_cliente_id, unidade_codigo, ano, mes)",
             "ALTER TABLE import_layouts ADD COLUMN IF NOT EXISTS coluna_unidade INTEGER",
             "ALTER TABLE import_layouts ADD COLUMN IF NOT EXISTS coluna_inicio_unidades INTEGER",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS template_dre_padrao_id INTEGER REFERENCES ref_templates(id)",
             # Agrupadores FC ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â colunas de metadados adicionadas na v2.6.0f
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS natureza VARCHAR(20) NOT NULL DEFAULT 'soma'",
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS slug VARCHAR(100)",
@@ -412,7 +414,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.2q"
+app.version = "2.6.2r"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():

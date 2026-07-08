@@ -49,12 +49,20 @@ export default function Demonstrativo() {
     if (clienteId) {
       refDemonstrativosAPI.periodos(clienteId).then(r => setPeriodosF(r.data)).catch(() => {})
       refUnidadesAPI.listar(clienteId).then(r => setUnidades(r.data || [])).catch(() => {})
+      
+      const cliObj = clientes.find(c => String(c.id) === String(clienteId))
+      if (cliObj && cliObj.template_dre_padrao_id) {
+        setTemplateId(String(cliObj.template_dre_padrao_id))
+      } else {
+        setTemplateId('')
+      }
     } else {
       setPeriodosF([])
       setUnidades([])
       setUnidadeSel('')
+      setTemplateId('')
     }
-  }, [clienteId])
+  }, [clienteId, clientes])
 
   // Foco automático no input ao abrir edição
   useEffect(() => {
@@ -165,9 +173,9 @@ export default function Demonstrativo() {
     <div style={{ padding: 24 }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Demonstrativo Gerencial</h1>
+          <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>DRE Referencial</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 0' }}>
-            DRE · Fluxo de Caixa · Orçamento calculado pelo plano referencial
+            Demonstrativo de DRE estruturado com quebra e consolidação por filiais contábeis
           </p>
         </div>
         {isAdminConsultor && clienteId && (

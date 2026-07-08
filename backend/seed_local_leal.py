@@ -94,12 +94,19 @@ def seed_leal():
 
     # 3. Cria as contas referenciais analiticas no Plano Referencial 1 se nao existirem
     plano_id = 1
+    # Deleta as contas referenciais analíticas antigas para recriá-las com a natureza contábil correta
+    db.query(models.ContaReferencial).filter(
+        models.ContaReferencial.plano_id == plano_id,
+        models.ContaReferencial.codigo.in_(["1.02", "1.03", "1.04", "1.05"])
+    ).delete(synchronize_session=False)
+    db.flush()
+
     contas_ref_data = [
         {"codigo": "1.01", "descricao": "Receita Bruta Leal", "agrupamento": "receita_bruta", "natureza": "soma"},
-        {"codigo": "1.02", "descricao": "Deduções de Receita", "agrupamento": "deducoes", "natureza": "subtrai"},
-        {"codigo": "1.03", "descricao": "Custo de Mercadorias Vendidas (CMV)", "agrupamento": "cmv", "natureza": "subtrai"},
-        {"codigo": "1.04", "descricao": "Despesas Variáveis de Venda", "agrupamento": "despesas_variaveis", "natureza": "subtrai"},
-        {"codigo": "1.05", "descricao": "Despesas Operacionais Fixas", "agrupamento": "despesas_fixas", "natureza": "subtrai"},
+        {"codigo": "1.02", "descricao": "Deduções de Receita", "agrupamento": "deducoes", "natureza": "soma"},
+        {"codigo": "1.03", "descricao": "Custo de Mercadorias Vendidas (CMV)", "agrupamento": "cmv", "natureza": "soma"},
+        {"codigo": "1.04", "descricao": "Despesas Variáveis de Venda", "agrupamento": "despesas_variaveis", "natureza": "soma"},
+        {"codigo": "1.05", "descricao": "Despesas Operacionais Fixas", "agrupamento": "despesas_fixas", "natureza": "soma"},
     ]
     
     cr_objs = {}
@@ -166,6 +173,11 @@ def seed_leal():
         print("Linhas da DRE Leal criadas.")
     else:
         print(f"Template DRE Padrão Leal ja existe com ID: {template.id}")
+
+    # Associa o template padrão ao cliente
+    cliente.template_dre_padrao_id = template.id
+    db.flush()
+    print("Template DRE Padrão Leal associado como padrão do cliente Leal-MG.")
 
     # 5. Cria as contas do ERP cliente e De-Para correspondente
     contas_cliente_data = [

@@ -123,7 +123,7 @@ function ProtectedLayout() {
           <Route path="/manual"                        element={<Manual />} />
           <Route path="/controladoria"                 element={<ControladoriaIndex />} />
           <Route path="/controladoria/fluxo-de-caixa" element={<FluxoCaixa aiPanel={aiPanel} setAiPanel={setAiPanel} />} />
-          <Route path="/controladoria/dre"             element={<DRE />} />
+          <Route path="/controladoria/dre"             element={<Demonstrativo />} />
           <Route path="/controladoria/dre-dashboard"  element={<DreDashboard2 />} />
           <Route path="/controladoria/dre-dashboard2" element={<DreDashboard2 />} />
           <Route path="/controladoria/orcamento"       element={<Orcamento aiPanel={aiPanel} setAiPanel={setAiPanel} />} />
