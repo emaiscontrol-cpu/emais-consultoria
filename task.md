@@ -10,5 +10,11 @@
   - [x] Implementar inteligência de auto-cadastro e resolução de unidade (código ou nome) no importador (`ref_lancamentos.py`)
   - [x] Atualizar parser `xlsx_parser.py` para extrair unidade nos formatos linear, mensal e aberto em colunas
   - [x] Criar endpoint de importação física de arquivo XLSX contábil (`ref_lancamentos.py`)
-- [ ] Fase 3: Evolução do Motor De-Para e Fórmulas por Unidade
+- [x] Fase 3: Evolução do Motor De-Para e Fórmulas por Unidade
+  - [x] Estender o agregador contábil `_get_valores_agrupamento` para particionar por `unidade_codigo` e `Consolidado` (`ref_demonstrativos.py`)
+  - [x] Atualizar o motor de cálculo `_calcular_template` para executar as fórmulas matemáticas de forma paralela e independente para cada unidade (`ref_demonstrativos.py`)
+  - [x] Retornar o mapa completo de `valores_unidades` em cada linha do demonstrativo para o frontend (`ref_demonstrativos.py` e `schemas.py`)
+  - [x] Garantir fidelidade aos cálculos e tratamento correto de divisões por zero em fórmulas por loja
+  - [x] Validar que o app FastAPI e as migrações locais executam com 100% de estabilidade
+  - [x] Executar testes do pytest e certificar integridade dos 68 testes de API contábil do backend
 - [ ] Fase 4: Frontend - Tabela Dinâmica e Grid Interativo de Edição

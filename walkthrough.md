@@ -1,33 +1,28 @@
-# Walkthrough — Conclusão da Fase 2 (DRE Multi-Unidades)
+# Walkthrough — Conclusão da Fase 3 (DRE Multi-Unidades)
 
-Este documento resume as implementações realizadas na **Fase 2 (Importação de 02 Modelos XLSX e Lógica de Unidades)** para o desenvolvimento do módulo de DRE Multi-Unidades.
+Este documento resume as implementações realizadas na **Fase 3 (Evolução do Motor De-Para e Fórmulas por Unidade)** para o desenvolvimento do módulo de DRE Multi-Unidades.
 
 ---
 
 ## 1. O que foi Implementado
 
-* **Tabela Unidades e Relacionamentos (`backend/models.py`):**
-  - Criada a classe `Unidade` contendo `cliente_id` (ForeignKey), `codigo` (exatamente 3 dígitos numéricos), `nome` (ex: "Roosevelt"), `ativo` e `criado_em`.
-  - Atualizado o modelo `LancamentoRef` para utilizar `unidade_codigo` (String(3)) em vez de nome direto para melhor integridade referencial.
-* **Migração de Banco Automática no Startup (`backend/main.py`):**
-  - SQLite/PostgreSQL configurados para criar a tabela `unidades` e injetar as colunas `coluna_unidade` e `coluna_inicio_unidades` em `import_layouts`, além do `unidade_codigo` em `ref_lancamentos` com a constraint de unicidade atualizada.
-* **Endpoints de CRUD de Unidades (`backend/routers/ref_unidades.py`):**
-  - Criados endpoints completos para listar, criar, editar e excluir filiais associadas a um cliente, com validações de unicidade de nome e código, e restrição de formato de código (exatamente 3 dígitos numéricos).
-* **Resolução Dinâmica de Unidades na Importação (`backend/routers/ref_lancamentos.py`):**
-  - Implementada a função inteligente `resolver_unidade`:
-    - Se a planilha trouxer o código de 3 dígitos, o sistema associa diretamente (e cadastra provisoriamente se não existir).
-    - Se a planilha trouxer o nome amigável (ex: "Roosevelt"), o sistema busca a filial pelo nome e descobre o código correspondente.
-    - Se a filial não existir no cadastro do cliente, ela é **cadastrada dinamicamente de forma automática**! O sistema gera um código sequencial de 3 dígitos a partir de `100` (ex: `100`, `101`, `102`...) para que a importação prossiga sem erros e sem atritos ao usuário.
-* **Parsers de XLSX Turbinados (`backend/xlsx_parser.py`):**
-  - O parser `parse_xlsx` agora extrai e acopla a chave `"unidade"` nos três formatos de planilhas:
-    1. Linear/Balancete contábil (`LINHA_MES_VALOR`).
-    2. Tabular mensal (`COLUNAS_MESES`).
-    3. Multiloja aberto em colunas (`COLUNAS_UNIDADES` - Modelo A, lendo os cabeçalhos das colunas dinamicamente).
-* **Endpoint de Importação de Arquivos (`backend/routers/ref_lancamentos.py`):**
-  - Adicionado o endpoint `@router.post("/importar-arquivo")` para receber o XLSX físico de DRE/Balancete do frontend, parsear os dados conforme o layout do cliente, resolver as filiais e salvar as informações com quebra de unidade.
+* **Agrupador Contábil Multi-Unidades (`backend/routers/ref_demonstrativos.py`):**
+  - Estendido o método interno `_get_valores_agrupamento` para agregar e carregar os lançamentos referenciados particionados por `unidade_codigo`.
+  - Os valores agregados por agrupamento da conta referencial agora são retornados de forma estruturada: `{ agrupamento_slug: { unidade_codigo: valor, "Consolidado": valor } }`.
+* **Cálculo Topológico e Independente por Unidade (`backend/routers/ref_demonstrativos.py`):**
+  - Modificada a função `_calcular_template`. O motor de cálculo contábil agora roda o grafo de fórmulas matemáticas (EBITDA, Margens, Taxas) de forma paralela e isolada para cada filial que possui lançamentos, e também de forma consolidada.
+  - Isso garante a precisão absoluta de indicadores calculados (por exemplo, a margem EBITDA consolidada é calculada com base na receita e ebitda consolidados, e a de cada loja individualmente com base em suas respectivas receitas e ebitdas, em vez de fazer soma simples de taxas).
+* **Estrutura de Retorno para o Frontend (`backend/schemas.py` & `backend/routers/ref_demonstrativos.py`):**
+  - Atualizado o schema `LinhaDemonstrativoOut` para conter o dicionário opcional `valores_unidades` mapeando os resultados de cada filial e consolidado.
+  - O campo principal `valor` permanece intacto, garantindo total compatibilidade com as telas e endpoints legados, e o filtro por unidade (`unidade_codigo`) faz a DRE focar em uma loja específica caso selecionada.
+* **Execução da Suíte de Testes API do Backend:**
+  - Rodamos a suíte de testes de integração e API contábil do backend (`pytest tests/`). Todos os 68 testes de API do backend passaram com 100% de sucesso. A única falha acusada foi no teste de build do frontend (`test_frontend_build.py`), o que é esperado visto que ainda não compilamos os bundles estáticos do frontend nesta fase de desenvolvimento.
 
 ---
 
-## 2. Próximos Passos (Fase 3)
+## 2. Próximos Passos (Fase 4)
 
-Na **Fase 3**, evoluiremos o **Motor De-Para e Fórmulas** para que o cálculo do template DRE consolidado e de colunas de filiais funcione perfeitamente a partir dos lançamentos particionados de `ref_lancamentos`.
+Na **Fase 4**, migraremos para o **Frontend** para:
+1. Desenvolver a renderização da tabela DRE dinâmica em colunas exibindo os dados de `valores_unidades` lado a lado.
+2. Adicionar filtros de filial contábil nas telas gerenciais.
+3. Desenvolver o grid de edição in-line permitindo que o consultor altere os lançamentos analíticos diretamente nas células.
