@@ -453,9 +453,12 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
       targetDetail.perfilLinha = perfil
       targetDetail.receitaPeriodo = receitaVal
 
-      if (isTotalizador) {
+      if (isTotalizador && perfil === 'padrao') {
         targetDetail.isTotalizador = true
         targetDetail.dadosLocais = obterDadosLocaisTotalizador(targetOrdem, modoClique, mesClique)
+      } else {
+        targetDetail.isTotalizador = false
+        targetDetail.dadosLocais = null
       }
     }
 
@@ -549,6 +552,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         (!agrupamento_slug && SLUGS_DESTAQUE_TITULO.some(s => new RegExp(s, 'i').test(rotulo)))
       )
       const bold          = negrito_totalizador || isTotalizador || isDestaqueTitulo
+      const perfil        = getPerfilLinha(rotulo)
       const bgRow         = (negrito_totalizador || isDestaqueTitulo) ? 'rgba(83, 74, 183, 0.03)' : 'transparent'
       const isExpanded    = !collapsedTotais.has(ordem)
 
@@ -672,7 +676,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
               style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : '#F5F4FB',
                 borderRight: '0.5px solid var(--border)', minWidth: 200, maxWidth: 260,
                 whiteSpace: 'normal', cursor: isClickable ? 'pointer' : 'default', zIndex: 1 }}
-              onClick={isTotalizador ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined)}
+              onClick={isTotalizador && perfil === 'padrao' ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined)}
             >
               {rotuloContent}
             </td>
@@ -736,7 +740,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
           <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
             <td
               style={{ ...tdBase, minWidth: 220, cursor: isClickable ? 'pointer' : 'default' }}
-              onClick={isTotalizador ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, ck, detail); } : undefined)}
+              onClick={isTotalizador && perfil === 'padrao' ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, ck, detail); } : undefined)}
             >
               {rotuloContent}
             </td>

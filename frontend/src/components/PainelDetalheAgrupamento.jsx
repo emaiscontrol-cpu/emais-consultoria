@@ -340,7 +340,9 @@ export default function PainelDetalheAgrupamento({
       </div>
 
       <div style={{ display: 'flex', alignItems: 'stretch', width: '100%' }}>
-        {/* Coluna 1 — lista de contas */}
+        {/* Coluna 1 — lista de contas (só no perfil padrão, que decompõe em contas reais).
+            Derivada/Destaque/Especial não mostram esta lista — apenas os gráficos. */}
+        {perfilLinha === 'padrao' && (
         <div style={{
           flex: 1.2, minWidth: 320, borderRight: '1px solid rgba(0,0,0,0.06)',
           alignSelf: 'stretch', display: 'flex', flexDirection: 'column',
@@ -384,6 +386,7 @@ export default function PainelDetalheAgrupamento({
             </div>
           ))}
         </div>
+        )}
 
         {/* Coluna 2 — rosca analítica ou indicador Margem % ou omissão dependendo do perfil */}
         {perfilLinha === 'padrao' && (
