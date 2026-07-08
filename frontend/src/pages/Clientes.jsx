@@ -155,6 +155,11 @@ export default function Clientes() {
     }
   }
 
+  const iniciarEditarUnidade = (u) => {
+    setEditandoUnidade(u)
+    setNovaUnidade({ codigo: u.codigo, nome: u.nome })
+  }
+
   if (loading) return <LoadingPage />
 
   return (
