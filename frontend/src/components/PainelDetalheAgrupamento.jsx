@@ -21,6 +21,9 @@ const CustomTooltip = ({ active, payload }) => {
 const CustomTooltipBars = ({ active, payload }) => {
   if (active && payload && payload.length) {
     const formatValue = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+    const p0 = payload[0].payload;
+    const val0 = p0.origAtual !== undefined ? p0.origAtual : payload[0].value;
+    const val1 = p0.origAnterior !== undefined ? p0.origAnterior : (payload[1]?.value ?? 0);
     return (
       <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', padding: '8px 12px', borderRadius: 4, boxShadow: 'var(--shadow)', maxWidth: 220 }}>
         <p style={{ margin: '0 0 4px 0', fontSize: 10, fontWeight: 700, color: 'var(--text)', whiteSpace: 'normal', wordBreak: 'break-all' }}>
@@ -28,20 +31,20 @@ const CustomTooltipBars = ({ active, payload }) => {
         </p>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10.5 }}>
           <span style={{ color: '#534AB7', fontWeight: 600 }}>Atual:</span>
-          <span style={{ fontWeight: 700 }}>R$ {formatValue(payload[0].value)}</span>
+          <span style={{ fontWeight: 700 }}>R$ {formatValue(val0)}</span>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 10.5, marginTop: 2 }}>
           <span style={{ color: '#9B9A94', fontWeight: 600 }}>Anterior:</span>
-          <span style={{ fontWeight: 700 }}>R$ {formatValue(payload[1]?.value)}</span>
+          <span style={{ fontWeight: 700 }}>R$ {formatValue(val1)}</span>
         </div>
-        {payload[0].value != null && payload[1]?.value != null ? (
+        {val0 != null && val1 != null && val1 !== 0 ? (
           <div style={{
             marginTop: 4, paddingTop: 4, borderTop: '0.5px solid var(--border)',
             fontSize: 10, fontWeight: 700,
-            color: payload[0].value > payload[1].value ? '#C0392B' : '#1E8449',
+            color: val0 > val1 ? '#C0392B' : '#1E8449',
             textAlign: 'right'
           }}>
-            Variação: {payload[0].value > payload[1].value ? '+' : ''}{((payload[0].value - payload[1].value) / Math.abs(payload[1].value) * 100).toFixed(0)}%
+            Variação: {val0 > val1 ? '+' : ''}{((val0 - val1) / Math.abs(val1) * 100).toFixed(0)}%
           </div>
         ) : null}
       </div>
@@ -88,7 +91,7 @@ function classificarABC(itens, total) {
   let acumulado = 0
   const posPorClasse = { A: 0, B: 0, C: 0 }
   return ordenados.map(it => {
-    const pct = total ? (it.valor / total) * 100 : 0
+    const pct = total ? (Math.abs(it.valor) / Math.abs(total)) * 100 : 0
     // Classifica pelo acumulado ANTES de somar esta conta: a conta que cruza o
     // limiar ainda pertence à classe que está sendo alcançada (ex.: uma única
     // conta com 85% do total é A, não B — o acumulado prévio era 0%, < 70%).
@@ -106,12 +109,122 @@ export default function PainelDetalheAgrupamento({
   agrupamentoSlug, agrupamentoNome, periodo,
   clienteId, ano, mes, mesFim, modo = 'mensal',
   totalAgrupamento,
+  isTotalizador = false,
+  dadosLocais = null,
+  valoresMensaisLinha = null,
+  realizadoLinha = null,
+  rotuloLinha = '',
+  isBold = false,
+  perfilLinha = 'padrao',
+  receitaPeriodo = null,
 }) {
   const [dados, setDados] = useState(null)
   const [erro, setErro]   = useState('')
   const [animar, setAnimar] = useState(false)
 
   useEffect(() => {
+    if (dadosLocais) {
+      setDados(dadosLocais)
+      setErro('')
+      setAnimar(false)
+      return
+    }
+
+    const fallbackLocal = () => {
+      const MESES_ABR = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+      let mesRef = null
+      let mesFimRef = null
+
+      if (modo === 'todos') {
+        if (mes != null) {
+          mesRef = Number(mes)
+        } else {
+          mesRef = null
+        }
+      } else if (modo === 'mensal') {
+        mesRef = mes
+      } else if (modo === 'acumulado') {
+        mesRef = mes
+        mesFimRef = mesFim
+      }
+
+      let valAtual = 0
+      let valAnterior = 0
+
+      if (modo === 'todos') {
+        if (mesRef !== null) {
+          valAtual = valoresMensaisLinha ? (valoresMensaisLinha[mesRef] ?? 0) : 0
+          if (mesRef > 1) {
+            valAnterior = valoresMensaisLinha ? (valoresMensaisLinha[mesRef - 1] ?? 0) : 0
+          }
+        } else {
+          valAtual = totalAgrupamento ?? realizadoLinha ?? 0
+          valAnterior = 0
+        }
+      } else if (modo === 'mensal') {
+        valAtual = totalAgrupamento ?? realizadoLinha ?? 0
+        if (mesRef > 1) {
+          valAnterior = valoresMensaisLinha ? (valoresMensaisLinha[mesRef - 1] ?? 0) : 0
+        }
+      } else if (modo === 'acumulado') {
+        valAtual = totalAgrupamento ?? realizadoLinha ?? 0
+        const ultimoMes = mesFimRef ?? mesRef
+        if (ultimoMes > 1) {
+          valAnterior = valoresMensaisLinha ? (valoresMensaisLinha[ultimoMes - 1] ?? 0) : 0
+        }
+      }
+
+      const atual = [{
+        conta_origem: rotuloLinha || agrupamentoNome || '—',
+        descricao: '',
+        valor: valAtual
+      }]
+
+      const anterior = [{
+        conta_origem: rotuloLinha || agrupamentoNome || '—',
+        descricao: '',
+        valor: valAnterior
+      }]
+
+      const trend = Array.from({ length: 12 }, (_, i) => {
+        const m = i + 1
+        const val = valoresMensaisLinha ? (valoresMensaisLinha[m] ?? 0) : 0
+        return { mes: MESES_ABR[i], valor: val }
+      })
+
+      const obterRotuloPeriodo = (mIni, mFim, a) => {
+        if (mIni === null) return `Ano ${a}`
+        if (mFim === null || mIni === mFim) return `${MESES_ABR[mIni - 1]}/${a}`
+        return `${MESES_ABR[mIni - 1]} a ${MESES_ABR[mFim - 1]}/${a}`
+      }
+
+      let pAtual = obterRotuloPeriodo(mesRef, mesFimRef, ano)
+      let pAnterior = '—'
+      if (modo === 'acumulado') {
+        const ultimoMes = mesFimRef ?? mesRef
+        if (ultimoMes > 1) {
+          pAnterior = obterRotuloPeriodo(ultimoMes - 1, null, ano)
+        }
+      } else if (mesRef && mesRef > 1) {
+        pAnterior = obterRotuloPeriodo(mesRef - 1, null, ano)
+      }
+
+      setDados({
+        atual,
+        anterior,
+        periodo_atual: pAtual,
+        periodo_anterior: pAnterior,
+        trend
+      })
+    }
+
+    if (perfilLinha !== 'padrao') {
+      fallbackLocal()
+      setErro('')
+      setAnimar(false)
+      return
+    }
+
     let cancelado = false
     setDados(null)
     setErro('')
@@ -122,11 +235,29 @@ export default function PainelDetalheAgrupamento({
     if (mesFim != null) params.mes_fim = mesFim
 
     demonstrativoFcAPI.detalheComparativo(params)
-      .then(r => { if (!cancelado) setDados(r.data ?? { atual: [], anterior: [] }) })
-      .catch(() => { if (!cancelado) setErro('Erro ao carregar lançamentos.') })
+      .then(r => {
+        if (!cancelado) {
+          if (r.data && r.data.atual && r.data.atual.length > 0) {
+            setDados(r.data)
+          } else if (isBold) {
+            fallbackLocal()
+          } else {
+            setDados({ atual: [], anterior: [] })
+          }
+        }
+      })
+      .catch(() => {
+        if (!cancelado) {
+          if (isBold) {
+            fallbackLocal()
+          } else {
+            setErro('Erro ao carregar lançamentos.')
+          }
+        }
+      })
 
     return () => { cancelado = true }
-  }, [clienteId, ano, agrupamentoSlug, modo, mes, mesFim])
+  }, [clienteId, ano, agrupamentoSlug, modo, mes, mesFim, dadosLocais, isBold, valoresMensaisLinha, realizadoLinha, rotuloLinha, agrupamentoNome, totalAgrupamento, perfilLinha])
 
   // Dispara a animação só depois que o painel já está pintado com barras/arcos em 0
   useEffect(() => {
@@ -173,7 +304,7 @@ export default function PainelDetalheAgrupamento({
   return (
     <div style={{
       background: '#EAEBE5',
-      borderTop: '3px solid #534AB7',
+      borderTop: perfilLinha === 'destaque' ? '3px solid #E24B4A' : '3px solid #534AB7',
       borderBottom: '1.5px solid #c7c7c2',
       borderLeft: 'none',
       borderRight: 'none',
@@ -193,18 +324,18 @@ export default function PainelDetalheAgrupamento({
         }
       `}</style>
       <div style={{
-        background: 'rgba(0, 0, 0, 0.03)', padding: '8px 20px',
+        background: perfilLinha === 'destaque' ? 'rgba(226, 75, 74, 0.08)' : 'rgba(0, 0, 0, 0.03)', padding: '8px 20px',
         display: 'flex', alignItems: 'center', gap: 24,
         borderBottom: '1.5px solid #c7c7c2',
       }}>
         <span style={{
           fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.06em',
-          fontWeight: 700, color: 'var(--brand)',
+          fontWeight: 700, color: perfilLinha === 'destaque' ? '#E24B4A' : 'var(--brand)',
         }}>
           Detalhamento · {agrupamentoNome} · {periodo}
         </span>
         <span style={{ fontSize: 11.5, fontWeight: 600, color: 'var(--text-2)' }}>
-          Total: <span style={{ color: 'var(--brand-dark)', fontWeight: 800 }}>R$ {fmt(total)}</span> · <span style={{ color: 'var(--text-muted)' }}>{linhas.length} {linhas.length === 1 ? 'conta' : 'contas'}</span>
+          Total: <span style={{ color: total < 0 ? '#A32D2D' : 'var(--brand-dark)', fontWeight: 800 }}>R$ {fmt(total)}</span> · <span style={{ color: 'var(--text-muted)' }}>{linhas.length} {linhas.length === 1 ? 'conta' : 'contas'}</span>
         </span>
       </div>
 
@@ -254,72 +385,103 @@ export default function PainelDetalheAgrupamento({
           ))}
         </div>
 
-        {/* Coluna 2 — rosca analítica */}
-        <div style={{
-          width: 200, flexShrink: 0, borderRight: '1px solid rgba(0,0,0,0.06)',
-          padding: '14px 12px', display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center',
-        }}>
+        {/* Coluna 2 — rosca analítica ou indicador Margem % ou omissão dependendo do perfil */}
+        {perfilLinha === 'padrao' && (
           <div style={{
-            fontSize: 9, fontWeight: 700, color: 'var(--text)',
-            textTransform: 'uppercase', letterSpacing: '.03em',
-            width: '100%', marginBottom: 5
+            width: 200, flexShrink: 0, borderRight: '1px solid rgba(0,0,0,0.06)',
+            padding: '14px 12px', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
           }}>
-            Distribuição ABC
-          </div>
-          <div style={{ position: 'relative', width: 140, height: 140 }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={[
-                    { name: 'Classe A', value: pctPorClasse.A },
-                    { name: 'Classe B', value: pctPorClasse.B },
-                    { name: 'Classe C', value: pctPorClasse.C },
-                  ]}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={36}
-                  outerRadius={55}
-                  paddingAngle={3}
-                  dataKey="value"
-                >
-                  <Cell fill="#534AB7" />
-                  <Cell fill="#8F85F0" />
-                  <Cell fill="#C5C2EC" />
-                </Pie>
-              </PieChart>
-            </ResponsiveContainer>
             <div style={{
-              position: 'absolute',
-              top: '47%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              pointerEvents: 'none',
+              fontSize: 9, fontWeight: 700, color: 'var(--text)',
+              textTransform: 'uppercase', letterSpacing: '.03em',
+              width: '100%', marginBottom: 5
             }}>
-              <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
-                {maior ? `${Math.abs(maior.pct).toFixed(0)}%` : '—'}
+              Distribuição ABC
+            </div>
+            <div style={{ position: 'relative', width: 140, height: 140 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: 'Classe A', value: pctPorClasse.A },
+                      { name: 'Classe B', value: pctPorClasse.B },
+                      { name: 'Classe C', value: pctPorClasse.C },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={36}
+                    outerRadius={55}
+                    paddingAngle={3}
+                    dataKey="value"
+                  >
+                    <Cell fill="#534AB7" />
+                    <Cell fill="#8F85F0" />
+                    <Cell fill="#C5C2EC" />
+                  </Pie>
+                </PieChart>
+              </ResponsiveContainer>
+              <div style={{
+                position: 'absolute',
+                top: '47%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                pointerEvents: 'none',
+              }}>
+                <span style={{ fontSize: 18, fontWeight: 800, color: 'var(--text)', lineHeight: 1 }}>
+                  {maior ? `${Math.abs(maior.pct).toFixed(0)}%` : '—'}
+                </span>
+                <span style={{ fontSize: 9.5, color: 'var(--brand)', fontWeight: 700, letterSpacing: '0.02em', marginTop: 3 }}>
+                  {maior ? maior.conta_origem : ''}
+                </span>
+              </div>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 10px', justifyContent: 'center', marginTop: 8, width: '100%' }}>
+              {LEGENDA_ABC.map(l => (
+                <div key={l.classe} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: l.bg, flexShrink: 0 }} />
+                  <span style={{ fontSize: 9.5, fontWeight: 700, color: l.cor }}>{l.classe}</span>
+                  <span style={{ fontSize: 9.5, color: 'var(--text-3)' }}>
+                    {Math.round(pctPorClasse[l.classe] ?? 0)}%
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {perfilLinha === 'especial' && (
+          <div style={{
+            width: 200, flexShrink: 0, borderRight: '1px solid rgba(0,0,0,0.06)',
+            padding: '14px 12px', display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <div style={{
+              fontSize: 9, fontWeight: 700, color: 'var(--text)',
+              textTransform: 'uppercase', letterSpacing: '.03em',
+              width: '100%', marginBottom: 15
+            }}>
+              Margem Operacional
+            </div>
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+              flex: 1
+            }}>
+              <span style={{ fontSize: 32, fontWeight: 800, color: '#534AB7', lineHeight: 1 }}>
+                {receitaPeriodo && receitaPeriodo !== 0
+                  ? `${((totalAgrupamento / receitaPeriodo) * 100).toFixed(1)}%`
+                  : '0.0%'}
               </span>
-              <span style={{ fontSize: 9.5, color: 'var(--brand)', fontWeight: 700, letterSpacing: '0.02em', marginTop: 3 }}>
-                {maior ? maior.conta_origem : ''}
+              <span style={{ fontSize: 9.5, color: 'var(--text-muted)', fontWeight: 700, marginTop: 10, textAlign: 'center' }}>
+                EBITDA / Vendas Totais
               </span>
             </div>
           </div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px 10px', justifyContent: 'center', marginTop: 8, width: '100%' }}>
-            {LEGENDA_ABC.map(l => (
-              <div key={l.classe} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 7, height: 7, borderRadius: '50%', background: l.bg, flexShrink: 0 }} />
-                <span style={{ fontSize: 9.5, fontWeight: 700, color: l.cor }}>{l.classe}</span>
-                <span style={{ fontSize: 9.5, color: 'var(--text-3)' }}>
-                  {Math.round(pctPorClasse[l.classe] ?? 0)}%
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+        )}
 
         {/* Coluna 3 — comparativo com período anterior */}
         <div style={{ width: 260, flexShrink: 0, padding: '10px 14px', display: 'flex', flexDirection: 'column', borderRight: '1px solid rgba(0,0,0,0.06)' }}>
@@ -345,8 +507,10 @@ export default function PainelDetalheAgrupamento({
               <ResponsiveContainer width="100%" height={140}>
                 <BarChart data={top6.map(it => ({
                   name: nomeCurto(it),
-                  Atual: it.valor,
-                  Anterior: anteriorMap.get(it.conta_origem) ?? 0,
+                  Atual: Math.abs(it.valor ?? 0),
+                  Anterior: Math.abs(anteriorMap.get(it.conta_origem) ?? 0),
+                  origAtual: it.valor,
+                  origAnterior: anteriorMap.get(it.conta_origem) ?? 0,
                   conta: nomeConta(it),
                 }))} margin={{ top: 5, right: 5, left: -22, bottom: 5 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
@@ -358,8 +522,18 @@ export default function PainelDetalheAgrupamento({
                     return v
                   }} />
                   <Tooltip content={<CustomTooltipBars />} />
-                  <Bar dataKey="Atual" fill="#534AB7" radius={[2, 2, 0, 0]} barSize={8} />
-                  <Bar dataKey="Anterior" fill="#C5C2EC" radius={[2, 2, 0, 0]} barSize={8} />
+                  <Bar dataKey="Atual" radius={[2, 2, 0, 0]} barSize={8}>
+                    {top6.map((entry, index) => {
+                      const isNeg = entry.origAtual < 0 || entry.origAnterior < 0 || (entry.conta && entry.conta.includes('( - )'))
+                      return <Cell key={`cell-actual-${index}`} fill={isNeg ? '#E24B4A' : '#534AB7'} />
+                    })}
+                  </Bar>
+                  <Bar dataKey="Anterior" radius={[2, 2, 0, 0]} barSize={8}>
+                    {top6.map((entry, index) => {
+                      const isNeg = entry.origAtual < 0 || entry.origAnterior < 0 || (entry.conta && entry.conta.includes('( - )'))
+                      return <Cell key={`cell-prev-${index}`} fill={isNeg ? '#ECA4A4' : '#C5C2EC'} />
+                    })}
+                  </Bar>
                 </BarChart>
               </ResponsiveContainer>
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' }}>
