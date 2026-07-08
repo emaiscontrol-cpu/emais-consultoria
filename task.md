@@ -1,0 +1,12 @@
+- [x] Criar branch `fix/fc-detalhe-perfis`
+- [x] Desenvolvimento e Implementação Técnica
+    - [x] Modificar `PainelDetalheAgrupamento.jsx` para suportar perfis de visualização (Padrão, Derivada, Destaque, Especial), roscas e comparativos baseados em magnitude absoluta, e exibição do KPI Margem Operacional
+    - [x] Modificar `FluxoCaixa.jsx` para classificar perfis, calcular a receita do período para o EBITDA e repassar as props de fallback
+    - [x] Buildar o frontend atualizado (`npm run build` na pasta `frontend/`)
+- [x] Checklist de Testes no Navegador (realizado localmente http://localhost:8000 nos 3 modos)
+    - [x] Validar clique em linhas PADRÃO (ex.: "Vendas - Totais" -> 3 blocos: Rosca + Comparativo para cima + Evolução)
+    - [x] Validar clique em linhas DERIVADA (ex.: "Vendas Líquidas Recebidas" -> 2 blocos: Comparativo + Evolução)
+    - [x] Validar clique em linhas DESTAQUE (ex.: "( - ) Compras" -> 2 blocos com realce visual no cabeçalho)
+    - [x] Validar clique na linha ESPECIAL ("Lucro das operações" -> 3 blocos: KPI Margem Operacional + Comparativo + Evolução)
+    - [x] Confirmar que nenhuma linha em negrito no Acumulado/Mensal (como Devoluções) dá erro ou abre vazia
+- [x] Git PR e Entrega conforme CLAUDE.md
