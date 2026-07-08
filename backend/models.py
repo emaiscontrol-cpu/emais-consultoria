@@ -592,12 +592,13 @@ class LancamentoRef(Base):
     __tablename__ = "ref_lancamentos"
     id               = Column(Integer, primary_key=True, index=True)
     conta_cliente_id = Column(Integer, ForeignKey("ref_contas_cliente.id"), nullable=False)
+    unidade_nome     = Column(String(100), nullable=True) # Quebra por filial (ex: Roosevelt, Tibery, Consolidado)
     valor            = Column(Float, nullable=False)
     ano              = Column(Integer, nullable=False)
     mes              = Column(Integer, nullable=False)   # 1–12
     data_importacao  = Column(DateTime(timezone=True), server_default=func.now())
     conta_cliente    = relationship("ContaClienteRef", back_populates="lancamentos")
-    __table_args__ = (UniqueConstraint("conta_cliente_id", "ano", "mes"),)
+    __table_args__ = (UniqueConstraint("conta_cliente_id", "unidade_nome", "ano", "mes"),)
 
 
 class TemplateRef(Base):

@@ -1,12 +1,10 @@
-- [x] Criar branch `fix/fc-detalhe-perfis`
-- [x] Desenvolvimento e Implementação Técnica
-    - [x] Modificar `PainelDetalheAgrupamento.jsx` para suportar perfis de visualização (Padrão, Derivada, Destaque, Especial), roscas e comparativos baseados em magnitude absoluta, e exibição do KPI Margem Operacional
-    - [x] Modificar `FluxoCaixa.jsx` para classificar perfis, calcular a receita do período para o EBITDA e repassar as props de fallback
-    - [x] Buildar o frontend atualizado (`npm run build` na pasta `frontend/`)
-- [x] Checklist de Testes no Navegador (realizado localmente http://localhost:8000 nos 3 modos)
-    - [x] Validar clique em linhas PADRÃO (ex.: "Vendas - Totais" -> 3 blocos: Rosca + Comparativo para cima + Evolução)
-    - [x] Validar clique em linhas DERIVADA (ex.: "Vendas Líquidas Recebidas" -> 2 blocos: Comparativo + Evolução)
-    - [x] Validar clique em linhas DESTAQUE (ex.: "( - ) Compras" -> 2 blocos com realce visual no cabeçalho)
-    - [x] Validar clique na linha ESPECIAL ("Lucro das operações" -> 3 blocos: KPI Margem Operacional + Comparativo + Evolução)
-    - [x] Confirmar que nenhuma linha em negrito no Acumulado/Mensal (como Devoluções) dá erro ou abre vazia
-- [x] Git PR e Entrega conforme CLAUDE.md
+- [x] Fase 1: Modelagem de Dados de Unidades e Lançamentos
+  - [x] Adicionar coluna `unidade_nome` em `models.LancamentoRef` (`models.py`)
+  - [x] Atualizar constraint de unicidade para incluir `unidade_nome`
+  - [x] Implementar e testar migração automática no startup para SQLite e PostgreSQL (`main.py`)
+- [ ] Fase 2: Importação de 02 Modelos XLSX (Parsers de Balancete e Planilha DRE)
+  - [ ] Implementar parser para Modelo A (DRE aberta por filial em colunas) no `xlsx_parser.py`
+  - [ ] Implementar parser para Modelo B (Balancete bruto com quebra de unidade) no `xlsx_parser.py`
+  - [ ] Atualizar endpoints de importação de lançamentos em `ref_lancamentos.py` para processar e salvar `unidade_nome`
+- [ ] Fase 3: Evolução do Motor De-Para e Fórmulas por Unidade
+- [ ] Fase 4: Frontend - Tabela Dinâmica e Grid Interativo de Edição
