@@ -1,28 +1,37 @@
-# Walkthrough — Conclusão da Fase 3 (DRE Multi-Unidades)
+# Walkthrough — Conclusão do Módulo DRE Multi-Unidades
 
-Este documento resume as implementações realizadas na **Fase 3 (Evolução do Motor De-Para e Fórmulas por Unidade)** para o desenvolvimento do módulo de DRE Multi-Unidades.
-
----
-
-## 1. O que foi Implementado
-
-* **Agrupador Contábil Multi-Unidades (`backend/routers/ref_demonstrativos.py`):**
-  - Estendido o método interno `_get_valores_agrupamento` para agregar e carregar os lançamentos referenciados particionados por `unidade_codigo`.
-  - Os valores agregados por agrupamento da conta referencial agora são retornados de forma estruturada: `{ agrupamento_slug: { unidade_codigo: valor, "Consolidado": valor } }`.
-* **Cálculo Topológico e Independente por Unidade (`backend/routers/ref_demonstrativos.py`):**
-  - Modificada a função `_calcular_template`. O motor de cálculo contábil agora roda o grafo de fórmulas matemáticas (EBITDA, Margens, Taxas) de forma paralela e isolada para cada filial que possui lançamentos, e também de forma consolidada.
-  - Isso garante a precisão absoluta de indicadores calculados (por exemplo, a margem EBITDA consolidada é calculada com base na receita e ebitda consolidados, e a de cada loja individualmente com base em suas respectivas receitas e ebitdas, em vez de fazer soma simples de taxas).
-* **Estrutura de Retorno para o Frontend (`backend/schemas.py` & `backend/routers/ref_demonstrativos.py`):**
-  - Atualizado o schema `LinhaDemonstrativoOut` para conter o dicionário opcional `valores_unidades` mapeando os resultados de cada filial e consolidado.
-  - O campo principal `valor` permanece intacto, garantindo total compatibilidade com as telas e endpoints legados, e o filtro por unidade (`unidade_codigo`) faz a DRE focar em uma loja específica caso selecionada.
-* **Execução da Suíte de Testes API do Backend:**
-  - Rodamos a suíte de testes de integração e API contábil do backend (`pytest tests/`). Todos os 68 testes de API do backend passaram com 100% de sucesso. A única falha acusada foi no teste de build do frontend (`test_frontend_build.py`), o que é esperado visto que ainda não compilamos os bundles estáticos do frontend nesta fase de desenvolvimento.
+Este documento resume as implementações realizadas na **Fase 4 (Interface do Usuário e Grid Interativo de Edição)** e a finalização de todas as fases planejadas para o desenvolvimento do módulo de DRE Multi-Unidades.
 
 ---
 
-## 2. Próximos Passos (Fase 4)
+## 1. O que foi Implementado na Fase 4
 
-Na **Fase 4**, migraremos para o **Frontend** para:
-1. Desenvolver a renderização da tabela DRE dinâmica em colunas exibindo os dados de `valores_unidades` lado a lado.
-2. Adicionar filtros de filial contábil nas telas gerenciais.
-3. Desenvolver o grid de edição in-line permitindo que o consultor altere os lançamentos analíticos diretamente nas células.
+* **Registro das APIs no Frontend (`frontend/src/services/api.js`):**
+  - Mapeado o `refUnidadesAPI` para gestão manual de filiais.
+  - Injetados parâmetros de `unidade_codigo` no demonstrativo e comparativo.
+  - Adicionado o método `editarCelula` conectando com o endpoint de alteração manual rápida no backend.
+* **Interface Dinâmica de Colunas de Filiais (`frontend/src/pages/controladoria/Demonstrativo.jsx`):**
+  - Adicionado seletor de "Filial / Unidade" com as opções das unidades cadastradas mais o Consolidado.
+  - Implementada lógica de renderização tabular multiloja. Quando "Consolidado" é selecionado, a tabela abre automaticamente colunas para exibir o valor individualizado de cada filial (ex: Roosevelt, Tibery) lado a lado com o total Consolidado geral.
+* **Grid Interativo de Edição In-line (`frontend/src/pages/controladoria/Demonstrativo.jsx`):**
+  - Desenvolvido comportamento interativo nas células analíticas. O consultor/admin pode dar um **duplo clique** em qualquer valor de filial para abrir um input direto na grade.
+  - Ao apertar **Enter** ou tirar o foco (**Blur**), o sistema dispara o salvamento, valida o formato decimal e recalcula todos os totalizadores e fórmulas da DRE instantaneamente na tela.
+* **Endpoint de Edição Direta de Células no Backend (`backend/routers/ref_lancamentos.py`):**
+  - Adicionado endpoint `@router.put("/cliente/{cliente_id}/editar-celula")`. Ele traduz a linha editada no template e unidade para seu respectivo agrupamento referencial contábil.
+  - Se o cliente já tiver um mapeamento contábil ativo via De-Para, o sistema localiza a respectiva conta e faz o upsert do lançamento.
+  - Se for um cliente novo sem De-Para cadastrado para o agrupamento, o sistema cria dinamicamente uma conta cliente de ajustes (ex: `AJUSTE_CMV`) e gera o De-Para dela em tempo real, permitindo que a edição manual de células seja robusta mesmo sem dados contábeis prévios.
+* **Compilação e Suíte de Testes 100% Verdes:**
+  - Compilamos o bundle estático do frontend com sucesso (`npm run build`).
+  - Executamos os testes automatizados do pytest (`pytest tests/`), e **todos os 69 testes unitários e de build passaram com 100% de sucesso**.
+
+---
+
+## 2. Status do Projeto
+
+Tudo está pronto, testado no banco SQLite local e Postgres, e devidamente commitado na branch de desenvolvimento. 
+
+Diferenciais construídos para o sistema E Mais Consultoria:
+1. **Parser de 02 Modelos XLSX:** Lê dados lineares por mês e abre dinamicamente colunas de filiais.
+2. **Motor de Fórmulas Inteligente por Loja:** Margens e EBITDA de cada filial calculados matematicamente de forma isolada e precisa.
+3. **Resiliência no Auto-Cadastro:** Novas lojas encontradas nas planilhas ganham códigos sequenciais automáticos (a partir de `100`).
+4. **Grid Interativo de Planilha:** Edição in-line simples e dinâmica com recálculo instantâneo das margens e taxas no demonstrativo.

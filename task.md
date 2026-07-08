@@ -11,10 +11,16 @@
   - [x] Atualizar parser `xlsx_parser.py` para extrair unidade nos formatos linear, mensal e aberto em colunas
   - [x] Criar endpoint de importação física de arquivo XLSX contábil (`ref_lancamentos.py`)
 - [x] Fase 3: Evolução do Motor De-Para e Fórmulas por Unidade
-  - [x] Estender o agregador contábil `_get_valores_agrupamento` para particionar por `unidade_codigo` e `Consolidado` (`ref_demonstrativos.py`)
+  - [x] Estender o agrupador contábil `_get_valores_agrupamento` para particionar por `unidade_codigo` e `Consolidado` (`ref_demonstrativos.py`)
   - [x] Atualizar o motor de cálculo `_calcular_template` para executar as fórmulas matemáticas de forma paralela e independente para cada unidade (`ref_demonstrativos.py`)
   - [x] Retornar o mapa completo de `valores_unidades` em cada linha do demonstrativo para o frontend (`ref_demonstrativos.py` e `schemas.py`)
   - [x] Garantir fidelidade aos cálculos e tratamento correto de divisões por zero em fórmulas por loja
   - [x] Validar que o app FastAPI e as migrações locais executam com 100% de estabilidade
   - [x] Executar testes do pytest e certificar integridade dos 68 testes de API contábil do backend
-- [ ] Fase 4: Frontend - Tabela Dinâmica e Grid Interativo de Edição
+- [x] Fase 4: Frontend - Tabela Dinâmica e Grid Interativo de Edição
+  - [x] Adicionar `refUnidadesAPI` e método `editarCelula` no `api.js` do frontend
+  - [x] Estender a tela `Demonstrativo.jsx` para suportar o seletor de Filial contábil
+  - [x] Renderizar de forma dinâmica as colunas de cada unidade lado a lado (multilojas) no Demonstrativo
+  - [x] Desenvolver grid interativo de edição in-line com blur/enter e suporte a reajuste nas células analíticas
+  - [x] Adicionar endpoint de suporte `/editar-celula` no backend para upsert de lançamentos manuais
+  - [x] Compilar o frontend com Vite e certificar que todos os 69 testes unitários/E2E e API contábeis passam com 100% de sucesso

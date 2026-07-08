@@ -45,7 +45,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 - **Script:** `.\release.ps1` na raiz do projeto
 - **Fluxo:** compila frontend → git add/commit/push → servidor puxa via git → `.github/workflows/deploy.yml` (self-hosted, no próprio servidor) para o serviço, roda `pip install -r requirements.txt` no venv de produção e reinicia o `EmaisBackend`
 - **Versão:** atualizar `app.version` em `backend/main.py` a cada release
-- **Versão atual:** `2.6.2o` (em `backend/main.py` → `app.version`)
+- **Versão atual:** `2.6.2q` (em `backend/main.py` → `app.version`)
 - **Padrão de versão:** `2.5.0a`, `2.5.0b`, ... `2.5.0z`, `2.5.1a`, etc.
 - **ATENÇÃO:** novos arquivos backend não são commitados automaticamente pelo `release.ps1` — commitar explicitamente antes do release se necessário
 
@@ -317,6 +317,11 @@ emals_consultoria/
 ---
 
 ## Histórico de Sessões
+
+### 2026-07-08 (sessão 14)
+**O que foi feito:** Conclusão das Fases 1, 2, 3 e 4 do módulo DRE Multi-Unidades (`2.6.2q`) na branch `feature/dre-multi-unidades`. Backend: criada a tabela de `Unidades` com código de 3 dígitos e nome amigável com CRUD completo (`ref_unidades.py`); atualizada a tabela de `LancamentoRef` para quebrar lançamentos por `unidade_codigo` e adicionada migração automática SQLite/Postgres. Turbinado o parser XLSX (`xlsx_parser.py`) para ler os 3 modos de quebra de filiais (incluindo o modo tabular multiloja em colunas), e implementada lógica resiliente de auto-cadastro de novas filiais a partir de códigos sequenciais contábeis auto-incrementados a partir de `100`. Atualizado o motor de demonstrativo contábil (`ref_demonstrativos.py`) para agrupar e calcular fórmulas matemáticas do template de forma paralela e isolada para cada filial e para o consolidado, com retorno aberto em `valores_unidades`. Adicionado o endpoint `/editar-celula` para atualizar lançamentos de agrupamentos contábeis a partir de edições manuais nas células da DRE. Frontend: atualizados `api.js` (adicionados `refUnidadesAPI` e `editarCelula`) e a tela `Demonstrativo.jsx`, implementando a renderização dinâmica de colunas multilojas (filiais exibidas lado a lado) e o grid interativo de edição in-line com blur/enter e recálculo instantâneo na tela.
+**Decisões tomadas:** Manter isolamento de cálculos contábeis do motor de formulas por filial, gerando a correta margem/taxa consolidada sem somas simples. Edição manual em células de agrupamento busca/cria De-Para ativo e conta cliente virtual de ajustes se necessário.
+**Próximo passo:** Prosseguir para o teste final de homologação do usuário na máquina de desenvolvimento e deploy para produção.
 
 ### 2026-07-08 (sessão 13)
 **O que foi feito:** Ajuste completo do painel de detalhe do Fluxo de Caixa Executivo baseando-se em Perfis (`2.6.2o`) na branch `fix/fc-detalhe-perfis`. Implementados os 4 perfis de visualização das linhas em negrito: Padrão (3 blocos com rosca baseada em magnitude), Derivada (2 blocos sem rosca, props-based sem fetch), Destaque (2 blocks props-based com cabeçalho avermelhado de realce) e Especial (Margem operacional % baseada na receita correspondente, comparativo e tendência). Gráficos de barras comparativas do painel de detalhe passam a plotar magnitudes absolutas (barras crescendo para cima), com cores dinâmicas no BarChart (vermelho para despesas/saídas, roxo para receitas/entradas). Ajuste crítico no frontend para totalizadores de perfis não-padrão (EBITDA, Lucro Líquido, etc.) para passarem `dadosLocais = null`, ativando o fallback local correto no painel de detalhes (corrigido bug de decomposição que impedia o painel de abrir). Clique no rótulo de totalizadores de perfil não-padrão agora abre o painel gráfico em vez de tentar expandir/recolher.

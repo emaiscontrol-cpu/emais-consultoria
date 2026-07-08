@@ -329,8 +329,17 @@ export const refPlanoAPI = {
 
 export const refLancamentosAPI = {
   importar:           data                    => api.post('/ref/lancamentos/importar', data),
+  importarArquivo:    (cid, data, params)     => api.post(`/ref/lancamentos/importar-arquivo`, data, { params }),
   listar:             (cid, ano, mes)         => api.get(`/ref/lancamentos/cliente/${cid}`, { params: { ano, mes } }),
   deletarCompetencia: (cid, ano, mes)         => api.delete(`/ref/lancamentos/cliente/${cid}/competencia/${ano}/${mes}`),
+  editarCelula:       (cid, data)             => api.put(`/ref/lancamentos/cliente/${cid}/editar-celula`, data),
+}
+
+export const refUnidadesAPI = {
+  listar:    cid => api.get(`/ref/unidades/cliente/${cid}`),
+  criar:     (cid, data) => api.post(`/ref/unidades/cliente/${cid}`, data),
+  atualizar: (id, data) => api.put(`/ref/unidades/${id}`, data),
+  deletar:   id => api.delete(`/ref/unidades/${id}`),
 }
 
 export const refDeParaAPI = {
@@ -354,8 +363,16 @@ export const refTemplatesAPI = {
 }
 
 export const refDemonstrativosAPI = {
-  calcular:       (cid, tid, ano, mes)          => api.get(`/ref/demonstrativos/cliente/${cid}/template/${tid}`, { params: { ano, mes } }),
-  comparativo:    (cid, ano, mes, tReal, tOrc)  => api.get(`/ref/demonstrativos/cliente/${cid}/comparativo`, { params: { ano, mes, template_realizado_id: tReal, template_orcado_id: tOrc } }),
+  calcular:       (cid, tid, ano, mes, unidade_codigo = null) => {
+    const params = { ano, mes }
+    if (unidade_codigo) params.unidade_codigo = unidade_codigo
+    return api.get(`/ref/demonstrativos/cliente/${cid}/template/${tid}`, { params })
+  },
+  comparativo:    (cid, ano, mes, tReal, tOrc, unidade_codigo = null)  => {
+    const params = { ano, mes, template_realizado_id: tReal, template_orcado_id: tOrc }
+    if (unidade_codigo) params.unidade_codigo = unidade_codigo
+    return api.get(`/ref/demonstrativos/cliente/${cid}/comparativo`, { params })
+  },
   fecharPeriodo:  (cid, ano, mes)               => api.post(`/ref/demonstrativos/cliente/${cid}/periodo/${ano}/${mes}/fechar`),
   reabrirPeriodo: (cid, ano, mes)               => api.delete(`/ref/demonstrativos/cliente/${cid}/periodo/${ano}/${mes}/reabrir`),
   periodos:       cid                           => api.get(`/ref/demonstrativos/cliente/${cid}/periodos`),

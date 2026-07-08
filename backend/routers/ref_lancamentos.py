@@ -323,3 +323,119 @@ def deletar_competencia(
         
     db.commit()
     return {"lancamentos_removidos": deleted}
+
+
+@router.put("/cliente/{cliente_id}/editar-celula")
+def editar_celula(
+    cliente_id: int,
+    body: dict,
+    db: Session = Depends(get_db),
+    usuario=Depends(requer_perfil("admin", "consultor")),
+):
+    """
+    Atualiza ou cria um lançamento diretamente a partir da edição de uma célula
+    do demonstrativo na coluna da unidade especificada.
+    """
+    template_id = body.get("template_id")
+    rotulo_linha = body.get("rotulo_linha")
+    unidade_cod = body.get("unidade_codigo")
+    ano = body.get("ano")
+    mes = body.get("mes")
+    novo_valor = body.get("novo_valor")
+
+    if not template_id or not rotulo_linha or ano is None or mes is None or novo_valor is None:
+        raise HTTPException(400, "Dados incompletos")
+
+    if _periodo_fechado(db, cliente_id, ano, mes):
+        raise HTTPException(400, f"Período {mes:02d}/{ano} está fechado.")
+
+    if unidade_cod == "Consolidado" or not unidade_cod:
+        raise HTTPException(400, "Por favor, selecione uma filial/unidade específica para editar o valor. O Consolidado é calculado automaticamente.")
+
+    # 1. Encontra a linha no template
+    linha = (
+        db.query(models.TemplateLinhaRef)
+        .filter(models.TemplateLinhaRef.template_id == template_id,
+                models.TemplateLinhaRef.rotulo == rotulo_linha)
+        .first()
+    )
+    if not linha:
+        raise HTTPException(404, "Linha do template não encontrada")
+
+    if not linha.agrupamento_slug:
+        raise HTTPException(400, "Esta linha não é editável pois não possui agrupamento contábil associado.")
+
+    # 2. Encontra a conta referencial vinculada a esse agrupamento
+    conta_ref = (
+        db.query(models.ContaReferencial)
+        .filter(models.ContaReferencial.agrupamento == linha.agrupamento_slug)
+        .first()
+    )
+    if not conta_ref:
+        raise HTTPException(404, f"Conta referencial para o agrupamento '{linha.agrupamento_slug}' não encontrada.")
+
+    # 3. Busca De-Para ativo para o cliente
+    dp = (
+        db.query(models.DeParaRef)
+        .join(models.ContaClienteRef)
+        .filter(models.ContaClienteRef.cliente_id == cliente_id,
+                models.DeParaRef.conta_referencial_id == conta_ref.id)
+        .first()
+    )
+
+    if dp:
+        cc = dp.conta_cliente
+    else:
+        # Se não houver De-Para, cria uma conta cliente de ajuste
+        codigo_ajuste = f"AJUSTE_{linha.agrupamento_slug.upper()}"
+        cc = (
+            db.query(models.ContaClienteRef)
+            .filter(models.ContaClienteRef.cliente_id == cliente_id,
+                    models.ContaClienteRef.codigo_origem == codigo_ajuste)
+            .first()
+        )
+        if not cc:
+            cc = models.ContaClienteRef(
+                cliente_id=cliente_id,
+                codigo_origem=codigo_ajuste,
+                descricao_origem=f"Ajuste manual de {rotulo_linha}",
+            )
+            db.add(cc)
+            db.flush()
+
+        # Cria o De-Para automático
+        from datetime import date
+        dp = models.DeParaRef(
+            conta_cliente_id=cc.id,
+            conta_referencial_id=conta_ref.id,
+            percentual=100.0,
+            status="confirmado",
+            confianca=1.0,
+            origem_vinculo="manual",
+            vigente_a_partir=date(ano, mes, 1),
+        )
+        db.add(dp)
+        db.flush()
+
+    # 4. Fazer o upsert do LancamentoRef
+    lanc = (
+        db.query(models.LancamentoRef)
+        .filter(models.LancamentoRef.conta_cliente_id == cc.id,
+                models.LancamentoRef.unidade_codigo == unidade_cod,
+                models.LancamentoRef.ano == ano,
+                models.LancamentoRef.mes == mes)
+        .first()
+    )
+    if lanc:
+        lanc.valor = novo_valor
+    else:
+        db.add(models.LancamentoRef(
+            conta_cliente_id=cc.id,
+            unidade_codigo=unidade_cod,
+            valor=novo_valor,
+            ano=ano,
+            mes=mes,
+        ))
+
+    db.commit()
+    return {"ok": True, "conta_origem": cc.codigo_origem, "valor": novo_valor}
