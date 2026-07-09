@@ -8,7 +8,7 @@ tests/conftest.py — nunca toca no Supabase de produção.
 """
 import pytest
 from sqlalchemy import text
-
+from auth import criar_token
 import models
 
 
@@ -663,5 +663,87 @@ class TestOrcamentoReferencial:
             headers=analista_headers
         )
         assert r.status_code == 403
+
+
+# ── SEGURANÇA DE TENANT ──────────────────────────────────────────────────
+
+class TestSegurancaTenant:
+    def test_analista_acesso_outro_cliente_403(self, client, db_session, analista_user, outro_cliente):
+        # analista_user pertence ao cliente_teste. Vamos tentar acessar outro_cliente (id = outro_cliente.id)
+        # GET /api/ref/demonstrativos/cliente/{outro_cliente.id}/template/1?ano=2026&mes=1
+        outro_cliente.modulo_analises_gerenciais = True
+        db_session.commit()
+        
+        token = criar_token({"sub": analista_user.email, "perfil": analista_user.perfil})
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        r = client.get(
+            f"/api/ref/demonstrativos/cliente/{outro_cliente.id}/template/1?ano=2026&mes=1",
+            headers=headers
+        )
+        assert r.status_code == 403
+        assert "Acesso negado: este recurso pertence a outro cliente" in r.json()["detail"]
+
+    def test_analista_acesso_proprio_cliente_200_ou_404(self, client, db_session, analista_user, cliente_teste):
+        # analista_user pertence ao cliente_teste. O acesso deve passar na trava de tenant (não retornar 403)
+        # Pode retornar 404 porque o template 9999 não existe, mas NÃO pode ser 403.
+        cliente_teste.modulo_analises_gerenciais = True
+        db_session.commit()
+        
+        token = criar_token({"sub": analista_user.email, "perfil": analista_user.perfil})
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        r = client.get(
+            f"/api/ref/demonstrativos/cliente/{cliente_teste.id}/template/9999?ano=2026&mes=1",
+            headers=headers
+        )
+        assert r.status_code != 403
+
+    def test_usuario_restrito_cliente_id_nulo_403(self, client, db_session, cliente_teste):
+        # Criamos um analista com cliente_id nulo
+        from auth import hash_senha
+        analista_nulo = models.Usuario(
+            nome="Analista Nulo",
+            email="analista.nulo@emals.com",
+            senha_hash=hash_senha("senha123"),
+            perfil=models.PerfilEnum.analista,
+            cliente_id=None
+        )
+        db_session.add(analista_nulo)
+        db_session.commit()
+        
+        token = criar_token({"sub": analista_nulo.email, "perfil": analista_nulo.perfil})
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # Tenta listar anotações do cliente_teste (deveria dar 403)
+        r_anot = client.get(f"/api/anotacoes/cliente/{cliente_teste.id}", headers=headers)
+        assert r_anot.status_code == 403
+        
+        # Tenta listar bandeiras do cliente_teste (deveria dar 403)
+        r_band = client.get(f"/api/bandeiras/cliente/{cliente_teste.id}", headers=headers)
+        assert r_band.status_code == 403
+
+    def test_admin_acessa_qualquer_cliente_id(self, client, db_session, admin_user, cliente_teste, outro_cliente):
+        cliente_teste.modulo_analises_gerenciais = True
+        outro_cliente.modulo_analises_gerenciais = True
+        db_session.commit()
+        
+        token = criar_token({"sub": admin_user.email, "perfil": admin_user.perfil})
+        headers = {"Authorization": f"Bearer {token}"}
+        
+        # Admin acessa cliente_teste (deve ser 404 porque o template não existe, mas não 403)
+        r1 = client.get(
+            f"/api/ref/demonstrativos/cliente/{cliente_teste.id}/template/9999?ano=2026&mes=1",
+            headers=headers
+        )
+        assert r1.status_code != 403
+        
+        # Admin acessa outro_cliente
+        r2 = client.get(
+            f"/api/ref/demonstrativos/cliente/{outro_cliente.id}/template/9999?ano=2026&mes=1",
+            headers=headers
+        )
+        assert r2.status_code != 403
+
 
 

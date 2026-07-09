@@ -60,7 +60,7 @@ def relatorio_projetos(db: Session = Depends(get_db), usuario=Depends(get_usuari
         joinedload(models.Projeto.cliente),
         joinedload(models.Projeto.fases),
     )
-    if usuario.perfil == "analista":
+    if usuario.perfil in ("analista", "ger_projeto", "ti"):
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
     projetos = q.all()
 

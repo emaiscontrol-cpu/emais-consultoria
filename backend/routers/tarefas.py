@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timezone
 from database import get_db
-from auth import get_usuario_atual, requer_perfil
+from auth import get_usuario_atual, requer_perfil, verificar_tenant
 from routers.fases import recalcular_fase
 from helpers import log, notificar_mencoes
 import models, schemas
@@ -53,13 +53,14 @@ def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)
 
 @router.post("/", response_model=schemas.TarefaOut)
 def criar(data: schemas.TarefaCreate, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
+    fase = db.query(models.Fase).get(data.fase_id)
+    if not fase:
+        raise HTTPException(status_code=404, detail="Fase não encontrada")
+    verificar_tenant(usuario, fase.projeto.cliente_id)
+
     if usuario.perfil not in ("admin", "consultor", "ger_projeto"):
-        fase = db.query(models.Fase).get(data.fase_id)
-        if not fase:
-            raise HTTPException(status_code=404, detail="Fase não encontrada")
         resp = fase.responsavel
         autorizado = (
-            usuario.cliente_id == fase.projeto.cliente_id and
             resp is not None and
             resp.perfil == models.PerfilEnum.ger_projeto
         )
@@ -74,6 +75,7 @@ def atualizar(id: int, data: schemas.TarefaUpdate, db: Session = Depends(get_db)
     t = db.query(models.Tarefa).get(id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    verificar_tenant(usuario, t.fase.projeto.cliente_id)
 
     update = data.model_dump(exclude_none=True)
 
@@ -118,10 +120,11 @@ def atualizar(id: int, data: schemas.TarefaUpdate, db: Session = Depends(get_db)
     return t
 
 @router.delete("/{id}")
-def deletar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "ger_projeto"))):
+def deletar(id: int, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "ger_projeto"))):
     t = db.query(models.Tarefa).get(id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    verificar_tenant(usuario, t.fase.projeto.cliente_id)
     fase = t.fase
     t.ativo = False
     db.commit()
@@ -144,6 +147,7 @@ def reordenar(
     ).first()
     if not tarefa:
         raise HTTPException(404)
+    verificar_tenant(usuario, tarefa.fase.projeto.cliente_id)
     tarefas = (
         db.query(models.Tarefa)
         .filter(models.Tarefa.fase_id == tarefa.fase_id, models.Tarefa.ativo == True)
@@ -170,6 +174,7 @@ def comentar(id: int, data: schemas.ComentarioCreate, db: Session = Depends(get_
     t = db.query(models.Tarefa).get(id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    verificar_tenant(usuario, t.fase.projeto.cliente_id)
     c = models.Comentario(tarefa_id=id, autor_id=usuario.id, texto=data.texto)
     db.add(c); db.commit(); db.refresh(c)
 
@@ -193,16 +198,21 @@ def listar_responsaveis(id: int, db: Session = Depends(get_db), _=Depends(get_us
     ).order_by(models.ResponsavelTarefa.id).all()
 
 @router.post("/{id}/responsaveis", response_model=schemas.ResponsavelTarefaOut)
-def adicionar_responsavel(id: int, data: schemas.ResponsavelTarefaCreate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
+def adicionar_responsavel(id: int, data: schemas.ResponsavelTarefaCreate, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
     t = db.query(models.Tarefa).get(id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    verificar_tenant(usuario, t.fase.projeto.cliente_id)
     resp = models.ResponsavelTarefa(tarefa_id=id, **data.model_dump())
     db.add(resp); db.commit(); db.refresh(resp)
     return resp
 
 @router.delete("/{id}/responsaveis/{resp_id}")
-def remover_responsavel(id: int, resp_id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
+def remover_responsavel(id: int, resp_id: int, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
+    t = db.query(models.Tarefa).get(id)
+    if not t:
+        raise HTTPException(status_code=404, detail="Tarefa não encontrada")
+    verificar_tenant(usuario, t.fase.projeto.cliente_id)
     resp = db.query(models.ResponsavelTarefa).filter(
         models.ResponsavelTarefa.id == resp_id,
         models.ResponsavelTarefa.tarefa_id == id

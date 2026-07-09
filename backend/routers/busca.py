@@ -14,7 +14,7 @@ def busca_global(
     usuario=Depends(get_usuario_atual),
 ):
     termo = f"%{q}%"
-    restrito = usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id
+    restrito = usuario.perfil in ("analista", "ger_projeto", "ti")
 
     q_proj = db.query(models.Projeto).filter(
         models.Projeto.ativo == True,

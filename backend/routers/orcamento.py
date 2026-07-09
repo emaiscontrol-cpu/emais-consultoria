@@ -12,7 +12,7 @@ import httpx
 from pydantic import BaseModel
 import models
 from database import get_db
-from auth import get_usuario_atual, requer_perfil
+from auth import get_usuario_atual, requer_perfil, verificar_tenant
 from routers.fc_exec import _parse_compound_slug, _eval_formula
 
 router = APIRouter()
@@ -284,9 +284,7 @@ def obter_orcamento_editavel(
 ):
     """Retorna a listagem de contas, totalizadores e títulos associados ao realizado do ano anterior e ao planejado atual."""
     # Check tenant restriction
-    restrito = usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id
-    if restrito and usuario.cliente_id != cliente_id:
-        raise HTTPException(status_code=403, detail="Acesso não autorizado a este cliente")
+    verificar_tenant(usuario, cliente_id)
 
     from routers.fc_exec import _parse_compound_slug, _eval_formula
 
@@ -424,9 +422,7 @@ def upsert_orcamento(
 ):
     """Insere ou atualiza um valor orçado mensal e gera registro de auditoria."""
     # Check tenant restriction
-    restrito = usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id
-    if restrito and usuario.cliente_id != cliente_id:
-        raise HTTPException(status_code=403, detail="Acesso não autorizado a este cliente")
+    verificar_tenant(usuario, cliente_id)
 
     if not (1 <= mes <= 12):
         raise HTTPException(status_code=400, detail="Mês inválido (deve ser entre 1 e 12)")
@@ -491,9 +487,7 @@ async def sugerir_ia_orcamento(
 ):
     """Chama a IA para projetar a série orçamentária baseado no realizado anterior e no cenário."""
     # Check tenant restriction
-    restrito = usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id
-    if restrito and usuario.cliente_id != cliente_id:
-        raise HTTPException(status_code=403, detail="Acesso não autorizado a este cliente")
+    verificar_tenant(usuario, cliente_id)
 
     api_key_gemini = os.getenv("GEMINI_API_KEY")
     api_key_claude = os.getenv("ANTHROPIC_API_KEY")

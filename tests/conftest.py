@@ -43,6 +43,9 @@ from routers import (  # noqa: E402
     subtarefas,
     pdf,
     orcamento,
+    ref_demonstrativos,
+    bandeiras,
+    ref_unidades,
 )
 
 
@@ -83,6 +86,9 @@ def _montar_app() -> FastAPI:
     app.include_router(subtarefas.router,  prefix="/api/subtarefas")
     app.include_router(pdf.router,         prefix="/api/pdf")
     app.include_router(orcamento.router,   prefix="/api/orcamento")
+    app.include_router(ref_demonstrativos.router, prefix="/api/ref/demonstrativos")
+    app.include_router(bandeiras.router,   prefix="/api/bandeiras")
+    app.include_router(ref_unidades.router, prefix="/api/ref/unidades")
     return app
 
 
