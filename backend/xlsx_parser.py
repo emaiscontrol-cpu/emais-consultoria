@@ -90,7 +90,7 @@ def _parse_mes(val, formato: str) -> int | None:
 def parse_xlsx(content: bytes, layout: ImportLayout) -> list[dict]:
     """
     Lê o XLSX e retorna lista de:
-      {"codigo": str, "descricao": str, "mes": int, "valor": float}
+      {"codigo": str, "descricao": str, "mes": int | None, "valor": float, "unidade": str | None}
     """
     import openpyxl
 
@@ -109,7 +109,7 @@ def parse_xlsx(content: bytes, layout: ImportLayout) -> list[dict]:
 
     if layout.tipo_estrutura == "COLUNAS_MESES":
         mapa = json.loads(layout.mapa_colunas_meses or "[]")
-        # mapa: [{"mes": 1, "coluna": 3}, ...]
+        col_uni = layout.coluna_unidade
 
         for row_num, row in enumerate(rows, start=1):
             if row_num < layout.linha_inicio:
@@ -126,6 +126,7 @@ def parse_xlsx(content: bytes, layout: ImportLayout) -> list[dict]:
                 continue
 
             desc = _str(row[col_desc] if col_desc is not None and col_desc < len(row) else None)
+            unidade = _str(row[col_uni]) if col_uni is not None and col_uni < len(row) else None
 
             for entry in mapa:
                 mes = int(entry["mes"])
@@ -137,11 +138,13 @@ def parse_xlsx(content: bytes, layout: ImportLayout) -> list[dict]:
                         "descricao": desc,
                         "mes": mes,
                         "valor": valor,
+                        "unidade": unidade,
                     })
 
     elif layout.tipo_estrutura == "LINHA_MES_VALOR":
         col_mes = layout.coluna_mes or 1
         col_val = layout.coluna_valor or 2
+        col_uni = layout.coluna_unidade
 
         for row_num, row in enumerate(rows, start=1):
             if row_num < layout.linha_inicio:
@@ -162,13 +165,58 @@ def parse_xlsx(content: bytes, layout: ImportLayout) -> list[dict]:
             if not mes:
                 continue
             valor = _limpar_val(row[col_val] if col_val < len(row) else None)
+            unidade = _str(row[col_uni]) if col_uni is not None and col_uni < len(row) else None
 
             resultado.append({
                 "codigo": codigo,
                 "descricao": desc,
                 "mes": mes,
                 "valor": valor,
+                "unidade": unidade,
             })
+
+    elif layout.tipo_estrutura == "COLUNAS_UNIDADES":
+        # Estrutura com colunas de unidades/filiais lado a lado (um único mês importado)
+        linha_cab_idx = max(0, layout.linha_inicio - 2)
+        if len(rows) > linha_cab_idx:
+            cabecalho = rows[linha_cab_idx]
+        else:
+            cabecalho = []
+
+        col_inicio_uni = layout.coluna_inicio_unidades or 1
+
+        for row_num, row in enumerate(rows, start=1):
+            if row_num < layout.linha_inicio:
+                continue
+            if row_num in linhas_ignorar:
+                continue
+            if not any(c for c in row if c is not None):
+                continue
+
+            codigo = _str(row[col_conta] if col_conta < len(row) else None)
+            if not codigo:
+                continue
+            if any(codigo.startswith(p) for p in prefixos if p):
+                continue
+
+            desc = _str(row[col_desc] if col_desc is not None and col_desc < len(row) else None)
+
+            # Lança uma entrada por coluna de unidade a partir de col_inicio_uni
+            for col_idx in range(col_inicio_uni, len(row)):
+                # Nome da unidade vem do cabeçalho correspondente
+                nome_unidade = _str(cabecalho[col_idx]) if col_idx < len(cabecalho) else f"Unidade_{col_idx}"
+                if not nome_unidade or nome_unidade.lower() in ("consolidado", "total", "diferença", "diferenca", "geral", "desvio", "%", "part."):
+                    continue
+
+                valor = _limpar_val(row[col_idx])
+                if valor != 0.0:
+                    resultado.append({
+                        "codigo": codigo,
+                        "descricao": desc,
+                        "mes": None, # Preenchido no endpoint com o mês selecionado
+                        "valor": valor,
+                        "unidade": nome_unidade
+                    })
 
     return resultado
 

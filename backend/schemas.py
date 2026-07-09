@@ -49,6 +49,23 @@ class UsuarioUpdate(BaseModel):
     codigo_acesso: Optional[str] = None
     remover_codigo: Optional[bool] = None
 
+# ── UNIDADE SCHEMA ────────────────────────────────────
+class UnidadeSchema(BaseModel):
+    id: Optional[int] = None
+    codigo: str
+    nome: str
+    cnpj: Optional[str] = None
+    endereco_logradouro: Optional[str] = None
+    endereco_numero: Optional[str] = None
+    endereco_complemento: Optional[str] = None
+    endereco_bairro: Optional[str] = None
+    endereco_cidade: Optional[str] = None
+    endereco_estado: Optional[str] = None
+    endereco_cep: Optional[str] = None
+    ativo: bool = True
+    class Config:
+        from_attributes = True
+
 # ── CLIENTE ───────────────────────────────────────────
 class ClienteCreate(BaseModel):
     razao_social: str
@@ -60,6 +77,8 @@ class ClienteCreate(BaseModel):
     modulo_inteligencia_mercado: bool = False
     modulo_analises_gerenciais: bool = False
     segmento_id: Optional[int] = None
+    template_dre_padrao_id: Optional[int] = None
+    unidades: Optional[List[UnidadeSchema]] = None
 
     @field_validator('cnpj', 'contato_nome', 'contato_email', 'contato_fone', mode='before')
     @classmethod
@@ -78,6 +97,8 @@ class ClienteOut(BaseModel):
     modulo_inteligencia_mercado: bool = False
     modulo_analises_gerenciais: bool = False
     segmento_id: Optional[int] = None
+    template_dre_padrao_id: Optional[int] = None
+    unidades: List[UnidadeSchema] = []
     class Config:
         from_attributes = True
 
@@ -495,6 +516,7 @@ class LancamentoRefCreate(BaseModel):
     valor: float
     ano: int
     mes: int
+    unidade: Optional[str] = None  # Nome (ex: Roosevelt) ou código de 3 dígitos (ex: 104)
 
 class LancamentoRefBulkRequest(BaseModel):
     cliente_id: int
@@ -504,6 +526,7 @@ class LancamentoRefBulkRequest(BaseModel):
 class LancamentoRefOut(BaseModel):
     id: int
     conta_cliente_id: int
+    unidade_codigo: Optional[str] = None
     valor: float
     ano: int
     mes: int
@@ -565,6 +588,7 @@ class LinhaDemonstrativoOut(BaseModel):
     valor: float
     negrito_totalizador: bool
     tem_divisao_por_zero: bool = False
+    valores_unidades: Optional[dict[str, float]] = None
 
 class DemonstrativoOut(BaseModel):
     cliente_id: int

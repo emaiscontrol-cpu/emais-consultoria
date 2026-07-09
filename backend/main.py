@@ -1,11 +1,11 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from pathlib import Path
 from database import engine, Base
 from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboard, notificacoes, relatorios, historico, subtarefas, controladoria, fluxo_caixa, balancete, anotacoes, orcamento, admin, bandeiras, modelos, busca, chat, arquivos, ia, gemini, openrouter, dre_import
-from routers import ref_segmentos, ref_plano, ref_lancamentos, ref_depara, ref_templates, ref_demonstrativos, ref_benchmark
+from routers import ref_segmentos, ref_plano, ref_lancamentos, ref_depara, ref_templates, ref_demonstrativos, ref_benchmark, ref_unidades
 from routers import fc_exec
 from routers import pdf
 
@@ -175,6 +175,19 @@ with engine.connect() as conn:
         "DROP TABLE IF EXISTS planos_contas",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_usuarios_cliente_id_codigo_acesso ON usuarios (cliente_id, codigo_acesso) WHERE cliente_id IS NOT NULL",
         "CREATE UNIQUE INDEX IF NOT EXISTS ix_usuarios_codigo_acesso_internal ON usuarios (codigo_acesso) WHERE cliente_id IS NULL",
+        "ALTER TABLE ref_lancamentos ADD COLUMN unidade_nome VARCHAR(100)",
+        "ALTER TABLE ref_lancamentos ADD COLUMN unidade_codigo VARCHAR(3)",
+        "ALTER TABLE import_layouts ADD COLUMN coluna_unidade INTEGER",
+        "ALTER TABLE import_layouts ADD COLUMN coluna_inicio_unidades INTEGER",
+        "ALTER TABLE clientes ADD COLUMN template_dre_padrao_id INTEGER",
+        "ALTER TABLE unidades ADD COLUMN cnpj VARCHAR(20)",
+        "ALTER TABLE unidades ADD COLUMN endereco_logradouro VARCHAR(200)",
+        "ALTER TABLE unidades ADD COLUMN endereco_numero VARCHAR(30)",
+        "ALTER TABLE unidades ADD COLUMN endereco_complemento VARCHAR(100)",
+        "ALTER TABLE unidades ADD COLUMN endereco_bairro VARCHAR(100)",
+        "ALTER TABLE unidades ADD COLUMN endereco_cidade VARCHAR(100)",
+        "ALTER TABLE unidades ADD COLUMN endereco_estado VARCHAR(2)",
+        "ALTER TABLE unidades ADD COLUMN endereco_cep VARCHAR(10)",
     ]):
         try:
             conn.execute(text(stmt))
@@ -202,6 +215,24 @@ if not _is_sqlite:
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS enviado_por_id INTEGER REFERENCES usuarios(id)",
             # Categoria de arquivo adicionada na v2.6.0e
             "ALTER TABLE arquivos ADD COLUMN IF NOT EXISTS categoria VARCHAR(50) NOT NULL DEFAULT 'Outros'",
+            # v2.6.2q: DRE Multi-Unidades - colunas e constraints
+            "ALTER TABLE ref_lancamentos ADD COLUMN IF NOT EXISTS unidade_nome VARCHAR(100)",
+            "ALTER TABLE ref_lancamentos ADD COLUMN IF NOT EXISTS unidade_codigo VARCHAR(3)",
+            "ALTER TABLE ref_lancamentos DROP CONSTRAINT IF EXISTS ref_lancamentos_conta_cliente_id_ano_mes_key CASCADE",
+            "ALTER TABLE ref_lancamentos DROP CONSTRAINT IF EXISTS ref_lancamentos_conta_cliente_id_unidade_nome_ano_mes_key CASCADE",
+            "ALTER TABLE ref_lancamentos DROP CONSTRAINT IF EXISTS uq_ref_lancamentos_unidade CASCADE",
+            "ALTER TABLE ref_lancamentos ADD CONSTRAINT uq_ref_lancamentos_unidade_codigo UNIQUE (conta_cliente_id, unidade_codigo, ano, mes)",
+            "ALTER TABLE import_layouts ADD COLUMN IF NOT EXISTS coluna_unidade INTEGER",
+            "ALTER TABLE import_layouts ADD COLUMN IF NOT EXISTS coluna_inicio_unidades INTEGER",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS template_dre_padrao_id INTEGER REFERENCES ref_templates(id)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS cnpj VARCHAR(20)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_logradouro VARCHAR(200)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_numero VARCHAR(30)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_complemento VARCHAR(100)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_bairro VARCHAR(100)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_cidade VARCHAR(100)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_estado VARCHAR(2)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_cep VARCHAR(10)",
             # Agrupadores FC ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â colunas de metadados adicionadas na v2.6.0f
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS natureza VARCHAR(20) NOT NULL DEFAULT 'soma'",
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS slug VARCHAR(100)",
@@ -386,6 +417,7 @@ app.include_router(ref_depara.router,          prefix="/api/ref/depara",       t
 app.include_router(ref_templates.router,       prefix="/api/ref/templates",    tags=["Ref: Templates"])
 app.include_router(ref_demonstrativos.router,  prefix="/api/ref/demonstrativos", tags=["Ref: Demonstrativos"])
 app.include_router(ref_benchmark.router,       prefix="/api/ref/benchmark",    tags=["Ref: Benchmark"])
+app.include_router(ref_unidades.router,        prefix="/api/ref/unidades",     tags=["Ref: Unidades"])
 app.include_router(fc_exec.router,             tags=["Demonstrativos FC"])
 app.include_router(pdf.router,                 prefix="/api/pdf",             tags=["PDF"])
 
@@ -398,7 +430,7 @@ _Path(_os.getenv("UPLOADS_DIR", str(_Path(__file__).parent / "uploads"))).mkdir(
 from routers.admin import iniciar_backup_automatico
 iniciar_backup_automatico()
 
-app.version = "2.6.2p"
+app.version = "2.6.2r"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():

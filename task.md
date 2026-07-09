@@ -1,0 +1,67 @@
+- [x] Fase 1: Modelagem de Dados de Unidades e Lançamentos
+  - [x] Adicionar coluna `unidade_nome` em `models.LancamentoRef` (`models.py`)
+  - [x] Atualizar constraint de unicidade para incluir `unidade_nome`
+  - [x] Implementar e testar migração automática no startup para SQLite e PostgreSQL (`main.py`)
+- [x] Fase 2: Importação de 02 Modelos XLSX (Parsers de Balancete e Planilha DRE)
+  - [x] Criar a tabela `Unidade` com código de 3 dígitos e nome amigável (`models.py`)
+  - [x] Atualizar `models.LancamentoRef` para usar `unidade_codigo` e constraint correspondente
+  - [x] Adicionar e testar scripts de migração automática para SQLite e Postgres (`main.py`)
+  - [x] Criar os endpoints de CRUD para gestão manual de Unidades (`routers/ref_unidades.py` e `main.py`)
+  - [x] Implementar inteligência de auto-cadastro e resolução de unidade (código ou nome) no importador (`ref_lancamentos.py`)
+  - [x] Atualizar parser `xlsx_parser.py` para extrair unidade nos formatos linear, mensal e aberto em colunas
+  - [x] Criar endpoint de importação física de arquivo XLSX contábil (`ref_lancamentos.py`)
+- [x] Fase 3: Evolução do Motor De-Para e Fórmulas por Unidade
+  - [x] Estender o agrupador contábil `_get_valores_agrupamento` para particionar por `unidade_codigo` e `Consolidado` (`ref_demonstrativos.py`)
+  - [x] Atualizar o motor de cálculo `_calcular_template` para executar as fórmulas matemáticas de forma paralela e independente para cada unidade (`ref_demonstrativos.py`)
+  - [x] Retornar o mapa completo de `valores_unidades` em cada linha do demonstrativo para o frontend (`ref_demonstrativos.py` e `schemas.py`)
+- [x] Fase 4: Frontend - Tabela Dinâmica e Grid Interativo de Edição
+  - [x] Adicionar `refUnidadesAPI` e método `editarCelula` no `api.js` do frontend
+  - [x] Estender a tela `Demonstrativo.jsx` para suportar o seletor de Filial contábil
+  - [x] Renderizar de forma dinâmica as colunas de cada unidade lado a lado (multilojas) no Demonstrativo
+  - [x] Desenvolver grid interativo de edição in-line com blur/enter e suporte a reajuste nas células analíticas
+- [x] Ajustes Finais e Homologação Local
+  - [x] Readequação da Sidebar: renomear menu para "DRE Referencial" e remover Demonstrativo Ref. duplicado
+  - [x] Cadastro de Clientes: adicionar seletor de "Template DRE Padrão" no modal e salvar no banco
+  - [x] Carregamento Automático: selecionar o cliente e carregar seu template padrão na DRE de forma automática
+  - [x] Validação de Módulo: bloquear demonstrativo de clientes que não possuam `modulo_analises_gerenciais` ativo
+  - [x] Bug do Valor Zero na Grade: implementar cálculo de fórmulas implícitas para linhas do template sem fórmula e com `agrupamento_slug`
+- [x] Refatorações de UI e Gestão de Filiais Aninhada (Sessão 15b)
+  - [x] Mapear novos campos de endereço e CNPJ na model de unidades e migrações do banco de dados
+  - [x] Remover botões e colunas soltas de "Unidades" da listagem geral de clientes
+  - [x] Criar seção/componente de Unidades compartilhado e injetá-lo nos modais de Novo e Editar Cliente
+  - [x] Prever máscaras de digitação dinâmica para CNPJ e CEP no formulário de filiais
+  - [x] Trocar ícone de edição da listagem pelo lápis marcado `Pencil` padrão do sistema
+  - [x] Implementar confirmação em duas etapas para exclusão de clientes da listagem
+  - [x] Implementar confirmação em duas etapas para remoção de filiais de dentro do modal
+- [x] Correção de Bug e Reorganização em Abas do Modal de Cliente (Sessão 15c)
+  - [x] Corrigir o ícone de excluir cliente: `abrirExcluirCliente` estava sendo chamado no JSX sem nunca ter sido definido (`ReferenceError` silencioso ao clicar) — função implementada
+  - [x] Reorganizar o modal de Novo/Editar Cliente em abas ("Geral" e "Unidades"), eliminando o scroll duplo (removida a rolagem própria da tabela de unidades; mantida rolagem única de 60vh por aba)
+  - [x] Padronizar nomenclatura de "Filial"/"Unidade Contábil" para "Unidade" em toda a tela de Clientes
+  - [x] Validar código da unidade: bloqueio de não-numéricos e limite de 3 dígitos na digitação, bloqueio de salvamento com código incompleto, bloqueio de duplicidade de código dentro do mesmo cliente (checagem no `handleAdicionarUnidade` e reforço em `handleSalvar`)
+  - [x] Validação via Playwright headless contra o dev server local (login com usuário de teste temporário, criado e removido do SQLite local só para o teste): confirmados exclusão de cliente em 2 etapas, abas sem scroll aninhado, remoção de unidade em 2 etapas (testado no cliente Leal-MG, 7 unidades) e bloqueio de código duplicado/inválido
+- [x] Edição Inline de Código/Nome na Tabela de Unidades (Sessão 15d)
+  - [x] Duplo-clique nas células de Código e Unidade (nome) da tabela ativa edição inline, com o valor atual pré-selecionado (autoFocus + select no focus)
+  - [x] Botões de confirmar (✓) e cancelar (✕) ao lado do input, com `onMouseDown` preventDefault para não conflitar com o blur
+  - [x] Enter confirma, Esc cancela e restaura o valor anterior, blur confirma (reaproveitando o mesmo handler de confirmação)
+  - [x] Reaproveitadas as validações existentes: código com exatamente 3 dígitos numéricos (filtro de não-numéricos já na digitação) e único por cliente; nome não pode ficar vazio nem duplicado — falha mantém a célula em edição com o valor digitado e mostra toast de erro
+  - [x] Edição inline só altera o estado local do formulário (`form.unidades`); gravação real continua acontecendo apenas no "Salvar" do modal, e "Cancelar" descarta tudo (comportamento já existente, preservado)
+  - [x] CNPJ e Cidade/UF permanecem sem edição inline, editáveis somente pelo formulário completo (lápis)
+  - [x] Mutuamente exclusivo com o formulário completo: abrir a edição completa (lápis) cancela qualquer edição inline em andamento e vice-versa
+  - [x] Validado com Playwright headless no cliente Leal-MG (7 unidades): renomeação de "Roosevelt" para "Roosevelt Centro" via Enter, filtro de caracteres não numéricos no código, cancelamento via Esc, bloqueio de código duplicado (toast, célula mantida em edição) e bloqueio de nome vazio (toast). Nenhuma alteração foi persistida no backend (confirmado via API após o teste)
+- [x] Investigação de 2 bugs reais no cadastro de clientes (Sessão 15e) — só diagnóstico, sem alterar código nessa etapa
+  - [x] Bug 1 ("Erro ao salvar cliente"): causa raiz confirmada via log de um uvicorn de debug (porta 8001, mesmo código/banco): `sqlalchemy.exc.IntegrityError: UNIQUE constraint failed: clientes.cnpj`, não capturado em `criar()`/`atualizar()` (`backend/routers/clientes.py`) — vira 500 genérico, escondido pelo catch cego do frontend. Reproduzido criando um cliente com CNPJ já usado por outro
+  - [x] Bug 2 ("unidades não gravam ao criar"): hipótese do usuário sobre ordem/ID refutada — o backend já faz `db.flush()` antes de criar as `Unidade` vinculadas, testado e funcionando via API direta e via UI real. Causa raiz real: mini-formulário de "Adicionar Nova Unidade" era um estado separado (`unidadeForm`) que só entrava em `form.unidades` ao clicar no botão "Adicionar Unidade" — se o usuário digitava e ia direto no "Salvar" do modal, o texto era descartado silenciosamente (`unidades: []` no payload, sem erro). Reproduzido e confirmado via captura de rede
+  - [x] Fix do Bug 1 e Bug 2 ainda não aplicado nessa sessão — aguardando aprovação do usuário (perguntas feitas sobre as opções de correção)
+- [x] Linha de Adição Inline na Tabela de Unidades (Sessão 15f) — corrige a causa raiz do Bug 2 sem tocar backend
+  - [x] Substituído o mini-formulário separado (Código+Nome) por uma linha fixa sempre visível ao final da tabela de unidades, com inputs inline controlados por `novaUnidade` (estado novo)
+  - [x] Enter no Código foca o Nome; Enter no Nome confirma (`confirmarNovaUnidadeInline`), adiciona à lista, limpa a linha e devolve o foco ao Código; botões ✓/✕ com o mesmo padrão visual da edição inline de célula já existente
+  - [x] Nova função pura `validarNovaUnidade` (reaproveita as mesmas regras de `handleAdicionarUnidade`/`confirmarEdicaoInlineUnidade`: código 3 dígitos único, nome não vazio único) usada tanto para habilitar/desabilitar o botão ✓ quanto para validar na confirmação
+  - [x] Erro de validação mantém o texto digitado, realça o campo com borda vermelha e mostra mensagem discreta abaixo da linha (sem toast bloqueante)
+  - [x] Rede de segurança em `handleSalvar`: se a linha inline tiver texto válido não confirmado, é auto-adicionada antes de montar o payload (usando uma variável local `unidadesFinal`, não o estado assíncrono); se for inválida, bloqueia o Salvar, foca o campo com erro e não perde o texto
+  - [x] Formulário completo (CNPJ/CEP/endereço) só renderiza quando editando uma unidade existente (lápis) — deixou de ser usado para adicionar unidade nova
+  - [x] Validado com Playwright: filtro de caracteres no código, navegação de foco via Enter, botão ✓ desabilitado com nome vazio/código duplicado, mensagem de erro sem perda de dados, rede de segurança confirmada por captura de rede (payload incluiu a unidade não confirmada manualmente), e o lápis de edição completa testado continua funcionando normalmente após a mudança
+- [x] Um único botão "Salvar" na tela de Cliente (Sessão 15g)
+  - [x] Investigado (item 4 do pedido): `handleAdicionarUnidade` (por trás do antigo "Salvar na Lista"), `confirmarNovaUnidadeInline` e `confirmarEdicaoInlineUnidade` nunca chamaram a API — só `setForm(...)` local. A única chamada real ao backend no modal é dentro de `handleSalvar`, disparada só pelo botão azul "Salvar" do rodapé. Não havia gravação escondida para remover, só um rótulo enganoso
+  - [x] Botão "Salvar na Lista" renomeado para "Concluir" (ícone trocado de `Plus` para `Check`); título do bloco de edição de unidade simplificado de "✏️ Editar Unidade na Lista" para "✏️ Editar Unidade"
+  - [x] Avaliado o item 5 (inlinar os 8 campos do formulário completo — CNPJ/CEP/endereço — direto na linha da tabela) e decidido não aplicar: quebraria aparência/responsividade e o próprio pedido previa manter o formulário com um botão neutro como saída válida
+  - [x] Validado com Playwright: confirmado que "Salvar na Lista" não existe mais, "Concluir" existe, clicar em "Concluir" não dispara nenhuma chamada a `/api/clientes` (só `setForm` local), e só o clique no "Salvar" do rodapé dispara o `POST`/`PUT` real
