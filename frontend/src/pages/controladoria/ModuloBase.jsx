@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { Upload } from 'lucide-react'
 import { clientesAPI, balanceteAPI } from '../../services/api'
 import toast from 'react-hot-toast'
+import { parseValorBR } from '../../components/shared'
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
 const ANO_ATUAL = new Date().getFullYear()
@@ -22,8 +23,7 @@ function fmtBRL(v) {
 }
 
 function parseBRL(s) {
-  const n = parseFloat(String(s).replace(/\./g,'').replace(',','.'))
-  return isNaN(n) ? 0 : n
+  return parseValorBR(s)
 }
 
 export default function ModuloBase({ modulo, titulo, descricao, children }) {

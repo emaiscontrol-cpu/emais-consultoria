@@ -4,6 +4,7 @@ import { orcamentoAPI, bandeiraAPI, dreMotorAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
 import { Pencil, Trash2 } from 'lucide-react'
+import { parseValorBR } from '../../components/shared'
 
 const ANO_ATUAL = new Date().getFullYear()
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -1182,7 +1183,7 @@ export default function DRE() {
 
   // ── Salvar valor editado ─────────────────────────────────────────────────────
   const handleCelulaSave = async (item_id, mes, valorStr) => {
-    const v = parseFloat(String(valorStr??editVal).replace(',','.')) || 0
+    const v = parseValorBR(valorStr??editVal)
     setEditando(null); setEditVal('')
     setValsById(prev => ({ ...prev, [item_id]: { ...(prev[item_id]||{}), [mes]: v } }))
     try {
