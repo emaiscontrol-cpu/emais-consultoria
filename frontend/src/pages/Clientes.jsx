@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { clientesAPI, refUnidadesAPI, refTemplatesAPI } from '../services/api'
 import { Modal, LoadingPage } from '../components/shared'
-import { Building2, FolderKanban, TrendingUp, BarChart2, Plus, Edit2, Trash2 } from 'lucide-react'
+import { Building2, FolderKanban, TrendingUp, BarChart2, Plus, Edit2, Trash2, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const MODULOS = [
@@ -164,6 +164,25 @@ export default function Clientes() {
 
   return (
     <div className="page">
+      <style>{`
+        .btn-acao-tabela {
+          width: 32px;
+          height: 32px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          border: none;
+          background: transparent;
+          border-radius: 6px;
+          color: var(--text-muted, #6b7280) !important;
+          cursor: pointer;
+          transition: background .2s, color .2s;
+        }
+        .btn-acao-tabela:hover {
+          background: var(--border-color, rgba(0, 0, 0, 0.05));
+          color: var(--text, #111827) !important;
+        }
+      `}</style>
       <div className="page-header">
         <div>
           <div className="page-title">Clientes</div>
@@ -184,7 +203,9 @@ export default function Clientes() {
               <thead>
                 <tr>
                   <th>Razão social</th><th>CNPJ</th><th>Contato</th>
-                  <th>Email</th><th>Telefone</th><th>Módulos ativos</th><th></th>
+                  <th>Email</th><th>Telefone</th><th>Módulos ativos</th>
+                  <th style={{ textAlign: 'center', width: 90 }}>Unidades</th>
+                  <th style={{ textAlign: 'center', width: 90 }}>Editar</th>
                 </tr>
               </thead>
               <tbody>
@@ -205,14 +226,32 @@ export default function Clientes() {
                         )}
                       </div>
                     </td>
-                    <td>
-                      <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                        <button className="btn btn-sm btn-ghost" onClick={() => abrirEditar(c)}>Editar</button>
-                        {c.modulo_analises_gerenciais && (
-                          <button className="btn btn-sm btn-outline" onClick={() => abrirUnidades(c)} style={{ borderColor: '#059669', color: '#059669' }}>
-                            Unidades
+                    <td style={{ textAlign: 'center' }}>
+                      {c.modulo_analises_gerenciais ? (
+                        <div style={{ display: 'flex', justifyContent: 'center' }}>
+                          <button 
+                            className="btn-acao-tabela" 
+                            onClick={() => abrirUnidades(c)} 
+                            title="Ver filiais contábeis" 
+                            aria-label="Ver unidades"
+                          >
+                            <Store size={18} />
                           </button>
-                        )}
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted, #6b7280)', opacity: 0.35 }}>—</span>
+                      )}
+                    </td>
+                    <td style={{ textAlign: 'center' }}>
+                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                        <button 
+                          className="btn-acao-tabela" 
+                          onClick={() => abrirEditar(c)} 
+                          title="Editar cliente" 
+                          aria-label="Editar cliente"
+                        >
+                          <Edit2 size={16} />
+                        </button>
                       </div>
                     </td>
                   </tr>
