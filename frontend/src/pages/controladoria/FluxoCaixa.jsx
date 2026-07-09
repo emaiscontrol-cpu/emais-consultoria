@@ -21,6 +21,21 @@ const MESES_N    = Array.from({ length: 12 }, (_, i) => i + 1)
 // Promover outra linha no futuro = só adicionar o slug aqui.
 const SLUGS_DESTAQUE_TITULO = ['compras']
 
+const getErroDesc = (erro) => {
+  if (!erro) return '';
+  if (erro === 'div_zero') return 'Erro: Divisão por zero na fórmula';
+  if (erro === 'ciclo') return 'Erro: Referência circular / ciclo de cálculo';
+  if (erro.startsWith('ref_inexistente:')) {
+    const ref = erro.split(':')[1];
+    return `Erro: Fórmula referencia elemento inexistente: '${ref}'`;
+  }
+  if (erro.startsWith('erro_calculo:')) {
+    const detail = erro.substring('erro_calculo:'.length);
+    return `Erro de cálculo: ${detail}`;
+  }
+  return `Erro de fórmula: ${erro}`;
+}
+
 const fmt = v =>
   v == null ? '—' :
   Math.abs(v) >= 1000 && v % 1 === 0
@@ -537,7 +552,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
       const {
         ordem, tipo, rotulo, negrito_totalizador,
         realizado, pct_realizado, valores_mensais,
-        conta_count, agrupamento_slug,
+        conta_count, agrupamento_slug, erro, erros_mensais,
       } = linha
 
       // Agrupamentos sob totalizador colapsado ficam ocultos
@@ -638,7 +653,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
       // Helper: monta uma célula de valor clicável.
       // pctEnabled controla se o slot de % é reservado (independe do valor de `pct`, que
       // pode ser null quando a linha não tem % a exibir — ver CelulaValorPct).
-      const makeValueCell = (key, v, extraStyle, cacheKey, detail, pct, pctEnabled) => {
+      const makeValueCell = (key, v, extraStyle, cacheKey, detail, pct, pctEnabled, erroCell) => {
         const isThisActive = isClickable && activeDetail?.cacheKey === cacheKey && activeDetail?.ordem === ordem
         return (
           <td key={key}
@@ -646,17 +661,18 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
             style={{
               ...tdBase, ...extraStyle,
               fontVariantNumeric: 'tabular-nums',
-              cursor: isClickable ? 'pointer' : 'default',
+              cursor: isClickable && !erroCell ? 'pointer' : 'default',
             }}
-            onClick={isClickable ? () => handleCellClick(ordem, cacheKey, detail) : undefined}
+            onClick={isClickable && !erroCell ? () => handleCellClick(ordem, cacheKey, detail) : undefined}
+            title={getErroDesc(erroCell)}
           >
             <CelulaValorPct
-              value={fmtCelula(v, bold)}
-              color={corValor(v)}
+              value={erroCell ? "—" : fmtCelula(v, bold)}
+              color={erroCell ? "var(--danger)" : corValor(v)}
               fontWeight={isThisActive ? 700 : (bold ? 700 : 400)}
               underline={false}
-              pct={pct}
-              showPct={!!pctEnabled}
+              pct={erroCell ? null : pct}
+              showPct={erroCell ? false : !!pctEnabled}
             />
           </td>
         )
@@ -684,18 +700,19 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
             {/* 12 colunas de mês */}
             {MESES_N.map(m => {
               const v   = valores_mensais ? (valores_mensais[m] ?? 0) : 0
+              const erroM = erros_mensais ? erros_mensais[m] : null
               const pct = showPct && (tipo === 'agrupamento' || isTotalizador) ? getPct(linha, m) : null
-              const ck = isClickable
+              const ck = isClickable && !erroM
                 ? `${clienteId}:${ano}:m:${m}:${agrupamento_slug || 'total-' + ordem}`
                 : null
-              const detail = isClickable
+              const detail = isClickable && !erroM
                 ? {
                     agrupamentoSlug: detailSlug, agrupamentoNome: rotulo,
                     periodo: `${MESES_FULL[m - 1]}/${ano}`, clienteId, ano, mes: m, mesFim: null,
                     modo: 'todos', totalAgrupamento: v, isOutflow: isOutflow(rotulo)
                   }
                 : null
-              return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, pct, showPct)
+              return makeValueCell(m, v, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, pct, showPct, erroM)
             })}
 
             {/* Coluna Total — congelada à direita (sticky), fundo opaco para não deixar
@@ -704,14 +721,15 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
               style={{ ...tdBase, textAlign: 'right', fontWeight: 700, fontVariantNumeric: 'tabular-nums',
                 position: 'sticky', right: 0, zIndex: 1,
                 background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : '#F5F4FB',
-                borderLeft: '1.5px solid var(--border)', whiteSpace: 'nowrap', cursor: isClickable ? 'pointer' : 'inherit' }}
-              onClick={isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined}
+                borderLeft: '1.5px solid var(--border)', whiteSpace: 'nowrap', cursor: isClickable && !erro ? 'pointer' : 'inherit' }}
+              onClick={isClickable && !erro ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined}
+              title={getErroDesc(erro)}
             >
               <CelulaValorPct
-                value={fmtCelula(totalRow, bold)}
-                color={corValor(totalRow)}
-                pct={pctTotal}
-                showPct={showPct}
+                value={erro ? "—" : fmtCelula(totalRow, bold)}
+                color={erro ? "var(--danger)" : corValor(totalRow)}
+                pct={erro ? null : pctTotal}
+                showPct={erro ? false : showPct}
               />
             </td>
           </tr>
@@ -719,10 +737,10 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
       } else {
         // Modo mensal / acumulado
         const val = realizado ?? 0
-        const ck = isClickable
+        const ck = isClickable && !erro
           ? `${clienteId}:${ano}:${modo === 'mensal' ? 'm' : 'a'}:${mes}:${agrupamento_slug || 'total-' + ordem}`
           : null
-        const detail = isClickable
+        const detail = isClickable && !erro
           ? modo === 'mensal'
             ? {
                 agrupamentoSlug: detailSlug, agrupamentoNome: rotulo,
@@ -739,16 +757,16 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
         result.push(
           <tr key={ordem} className="fc-row" style={{ background: bgRow }}>
             <td
-              style={{ ...tdBase, minWidth: 220, cursor: isClickable ? 'pointer' : 'default' }}
-              onClick={isTotalizador && perfil === 'padrao' ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, ck, detail); } : undefined)}
+              style={{ ...tdBase, minWidth: 220, cursor: isClickable && !erro ? 'pointer' : 'default' }}
+              onClick={isTotalizador && perfil === 'padrao' ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable && !erro ? (e) => { e.stopPropagation(); handleCellClick(ordem, ck, detail); } : undefined)}
             >
               {rotuloContent}
             </td>
 
-            {makeValueCell('val', val, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, null, false)}
+            {makeValueCell('val', val, { textAlign: 'right', whiteSpace: 'nowrap' }, ck, detail, null, false, erro)}
 
             <td style={{ ...tdBase, textAlign: 'right', color: '#1e293b', fontWeight: 700, fontSize: 11.5 }}>
-              {fmtPct(pct_realizado)}
+              {erro ? '' : fmtPct(pct_realizado)}
             </td>
           </tr>
         )

@@ -1,60 +1,59 @@
-# Plano de Implementação — Correção de Bugs de Integridade de Dados (fix/corrupcao-de-dados)
+# Plano de Implementação — Exibição Visível de Erros de Fórmula (feature/erros-de-formula-visiveis)
 
-Este plano descreve as modificações necessárias para solucionar três bugs críticos de integridade de dados no sistema.
+Este plano descreve a reestruturação dos motores de fórmulas do Plano Referencial e Fluxo de Caixa para propagar e exibir visualmente erros de cálculo nos demonstrativos, rejeitando typos e ciclos diretamente na persistência de templates.
 
 ## Proposed Changes
 
-### [Componente Frontend] - Unificação de Parse Monetário
+### [Componente Backend] - Motor de Fórmulas e Diagnóstico
 
-#### [NEW] [shared.jsx](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/frontend/src/components/shared.jsx) (Adição de helper)
-* Criar e exportar o helper `parseValorBR(str)` que replica a lógica de limpeza de strings monetárias do backend:
-  * Remove símbolos de moeda (`R$`, `$`, `€`) e espaços.
-  * Se contém vírgula E ponto, remove os pontos de milhar e substitui a vírgula por ponto.
-  * Se contém apenas vírgula, substitui por ponto.
-  * Converte via `parseFloat` e, caso resulte in `NaN`, retorna `0.0`.
+#### [MODIFY] [ref_formula_engine.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/ref_formula_engine.py)
+* Renomear a função `_safe_eval` para `safe_eval` e expor como pública. Adicionar alias `_safe_eval = safe_eval`.
+* Alterar assinatura de `calcular_linha` para `calcular_linha(formula: str, val_agr: dict, val_lin: dict) -> tuple[float, str | None]`.
+* Caso a fórmula referencie agrupamento ou linha que não exista nos dicionários `val_agr` / `val_lin`, retornar erro `"ref_inexistente:<slug>"`.
+* Retornar `"div_zero"` em vez de booleano no erro de divisão por zero.
+* Estender `validar_formula(formula: str, refs_validas: set | None = None) -> str | None` para validar e listar referências inexistentes caso `refs_validas` seja fornecido.
 
-#### [MODIFY] [DRE.jsx](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/frontend/src/pages/controladoria/DRE.jsx)
-* Importar o helper `parseValorBR` de `../../components/shared` e substituir a lógica inline `parseFloat(String(...).replace(',', '.'))` por `parseValorBR(...)`.
+#### [MODIFY] [ref_demonstrativos.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/ref_demonstrativos.py)
+* Chamar `detectar_ciclo` antes de ordenar/calcular o demonstrativo. Se houver ciclo, marcar as linhas pertencentes com erro `"ciclo"` e valor `0.0`.
+* Atualizar a iteração de cálculo de linha para capturar a tupla de retorno de `calcular_linha` e propagar o erro por unidade no mapa de erros.
+* Adicionar os campos `erro` e `erros_unidades` no retorno da listagem de demonstrativos.
+
+#### [MODIFY] [ref_templates.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/ref_templates.py)
+* No endpoint de criação/atualização de linhas de template, obter o conjunto de referências válidas (slugs de agrupamento cadastrados e rótulos de linhas do mesmo template).
+* Chamar `validar_formula` fornecendo as referências válidas e rejeitar com HTTP 400 em caso de typos.
+* Chamar `detectar_ciclo` e, caso detectado, rejeitar a criação/edição com HTTP 400 listando os rótulos envolvidos.
+
+#### [MODIFY] [fc_exec.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/fc_exec.py)
+* Ajustar `_eval_formula` para normalizar separadores (converter `;` para `,` fora de strings de aspas) e literal de porcentagem (converter `N%` em `(N/100)`).
+* Alterar a assinatura de retorno para `tuple[float, bool]` (retornando `True` no erro).
+* Atualizar `_compute_fc` para inicializar as chaves `"erro"` e `"erros_mensais"` em todas as linhas e preencher os erros capturados nos totalizadores.
+
+---
+
+### [Componente Schemas] - Payload dos Demonstrativos
+
+#### [MODIFY] [schemas.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/schemas.py)
+* Adicionar `erro: Optional[str] = None` e `erros_unidades: Optional[dict[str, Optional[str]]] = None` na classe `LinhaDemonstrativoOut`.
+
+---
+
+### [Componente Frontend] - Tooltips e Design System de Erros
 
 #### [MODIFY] [Demonstrativo.jsx](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/frontend/src/pages/controladoria/Demonstrativo.jsx)
-* Importar o helper `parseValorBR` de `../../components/shared` e substituir o parsing manual do input de edição inline pelo helper.
+* Renderizar células de demonstrativos com erro exibindo `"—"` com destaque visual discreto em tom de perigo (`var(--danger)` ou similar) e tooltip detalhada descrevendo o erro.
 
-#### [MODIFY] [ModuloBase.jsx](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/frontend/src/pages/controladoria/ModuloBase.jsx)
-* Importar `parseValorBR` e atualizar a função local `parseBRL(s)` para retornar `parseValorBR(s)`.
-
-#### [MODIFY] [EditarOrcamento.jsx](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/frontend/src/pages/controladoria/EditarOrcamento.jsx)
-* Importar `parseValorBR` e atualizar a função local `parseBRL(val)` para retornar `parseValorBR(val)`.
+#### [MODIFY] [FluxoCaixa.jsx](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/frontend/src/pages/controladoria/FluxoCaixa.jsx)
+* Replicar a mesma exibição para células mensais e totalizadores com erro.
 
 ---
 
-### [Componente Backend] - Importadores Atômicos e Seguros
+### [Componente Testes] - Testes Unitários e de Regressão
 
-#### [MODIFY] [orcamento.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/orcamento.py)
-* Modificar `importar_orcamento` para processar e validar a planilha inteira em memória em um array de objetos `models.FCOrcamento`.
-* Após a validação total, iniciar a gravação: executar o `DELETE` do orçamento anterior e o `INSERT` das novas linhas dentro do mesmo bloco try/except e commit/rollback transacional único.
-* Em caso de falha de validação ou escrita, disparar `db.rollback()` e retornar HTTP 400.
-
-#### [MODIFY] [importar_orcamento_planilha.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/importar_orcamento_planilha.py)
-* Reorganizar de forma similar: carregar os dados em memória primeiro e executar `DELETE` + `INSERT` em transação unificada com rollback em caso de falha.
-
----
-
-### [Componente Backend] - Tratamento de IntegrityError de CNPJ
-
-#### [MODIFY] [clientes.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/clientes.py)
-* Envolver os commits de gravação nas rotas `criar` (POST `/`) e `atualizar` (PUT `/{id}`) em blocos `try/except IntegrityError`.
-* Em caso de erro de integridade de banco de dados, efetuar `db.rollback()` e lançar `HTTPException(400, "Já existe um cliente com este CNPJ")`.
-
----
-
-### [Componente Testes] - Testes de Regressão
-
-#### [MODIFY] [test_api.py](file:///c:/Users/luiz/OneDrive/Anexos/Anexos/Administrador/Documentos/Projetos/emals_consultoria/tests/test_api.py)
-* Adicionar testes unitários para a rota de importação de orçamentos, assegurando que o envio de uma planilha corrompida ou com dados inválidos a meio do arquivo não causa a deleção de registros de orçamentos previamente existentes (garantia de transação com rollback).
-* Adicionar testes para o cadastro de clientes validando que a tentativa de criar um cliente com CNPJ duplicado ou atualizar para um CNPJ já existente retorna HTTP 400 com a mensagem `"Já existe um cliente com este CNPJ"`.
+#### [MODIFY] [test_formulas.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/tests/test_formulas.py)
+* Adicionar testes para IF com `;`, literal de porcentagem `%`, referência inexistente retornando `ref_inexistente`, ciclo A->B->A falhando com HTTP 400, e divisão por zero.
 
 ## Verification Plan
 
 ### Automated Tests
 * Executar toda a suíte de testes do Pytest: `.\backend\venv\Scripts\pytest.exe tests/ -p no:warnings`.
-* Garantir que o build de produção do frontend compila perfeitamente sem erros de imports: `npm run build` na pasta `frontend/`.
+* Garantir que o build de produção do frontend compila perfeitamente: `npm run build` na pasta `frontend/`.

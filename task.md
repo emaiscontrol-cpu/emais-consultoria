@@ -1,24 +1,25 @@
-# Checklist de Tarefas — fix/corrupcao-de-dados
+# Checklist de Tarefas — feature/erros-de-formula-visiveis
 
-- [x] TAREFA 1: Parse monetário da célula editável do DRE
-  - [x] Criar helper `parseValorBR(str)` em `frontend/src/components/shared.jsx`
-  - [x] Substituir parse inline no `DRE.jsx` pelo helper `parseValorBR`
-  - [x] Substituir parse inline no `Demonstrativo.jsx` pelo helper `parseValorBR`
-  - [x] Substituir parse inline no `ModuloBase.jsx` pelo helper `parseValorBR`
-  - [x] Substituir parse inline no `EditarOrcamento.jsx` pelo helper `parseValorBR`
-  - [x] Executar `npm run build` no frontend para garantir que compila sem erros
+- [x] TAREFA 1: backend/ref_formula_engine.py e routers/ref_templates.py
+  - [x] Renomear `_safe_eval` para `safe_eval` e expor no `ref_formula_engine.py`
+  - [x] Alterar assinatura de `calcular_linha` para retornar `tuple[float, str | None]`
+  - [x] Implementar validação de referências inexistentes no `calcular_linha`
+  - [x] Atualizar `validar_formula` para receber `refs_validas` e retornar erros
+  - [x] Chamar `validar_formula` com referências reais nos endpoints de `ref_templates.py` (criação e edição de linhas de template)
+  - [x] Ajustar `ordenar_linhas` e propagar erro `"ciclo"` caso detectado
 
-- [x] TAREFA 2: Transação do importador de orçamento
-  - [x] Reordenar `importar_orcamento` em `backend/routers/orcamento.py` para fazer DELETE + INSERT na mesma transação com try/except e rollback em caso de falha
-  - [x] Ajustar `backend/importar_orcamento_planilha.py` com o mesmo padrão transacional seguro
-  - [x] Auditar e confirmar que os demais importadores (`ref_lancamentos.py`, `dre_import.py`) não apresentam o bug
-  - [x] Adicionar teste de regressão em `tests/test_api.py` para garantir que erros a meio da importação do orçamento não deletam os dados pré-existentes
+- [x] TAREFA 2: backend/routers/fc_exec.py e ref_demonstrativos.py
+  - [x] Atualizar `_eval_formula` no `fc_exec.py` para suportar separador `;` e porcentagem `%`
+  - [x] Mudar assinatura de `_eval_formula` para `tuple[float, bool]` e propagar erro nas totalizadoras
+  - [x] Atualizar `_calcular_template` no `ref_demonstrativos.py` para capturar os erros e preencher o payload com `"ciclo"` se houver ciclo
+  - [x] Mapear o payload com os novos campos `erro` e `erros_unidades` no schemas e routers
 
-- [x] TAREFA 3: IntegrityError de CNPJ duplicado
-  - [x] Tratar `IntegrityError` com try/except, db.rollback() e retornar HTTP 400 em `criar` no `backend/routers/clientes.py`
-  - [x] Tratar `IntegrityError` com try/except, db.rollback() e retornar HTTP 400 em `atualizar` no `backend/routers/clientes.py`
-  - [x] Adicionar testes de regressão em `tests/test_api.py` validando as respostas HTTP 400 e mensagens para CNPJ repetido na criação e atualização
+- [x] TAREFA 3: Propagação no Frontend e UI
+  - [x] Adicionar os campos `erro` e `erros_unidades` no `LinhaDemonstrativoOut` de `schemas.py`
+  - [x] Exibir tooltip e estilo de erro visual em `Demonstrativo.jsx`
+  - [x] Exibir tooltip e estilo de erro visual em `FluxoCaixa.jsx`
+  - [x] Garantir que o build de produção do frontend compila perfeitamente (`npm run build`)
 
-- [x] Validação Final
-  - [x] Executar toda a suíte do Pytest (`pytest tests/ -p no:warnings`) e obter 100% verde
-  - [x] Gerar walkthrough final de homologação
+- [x] Testes e Validação Final
+  - [x] Adicionar testes de regressão no `test_formulas.py` cobrindo os novos cenários
+  - [x] Executar toda a suíte de testes do pytest (`pytest tests/ -p no:warnings`) obtendo 100% verde

@@ -5,7 +5,7 @@ from datetime import date
 from database import get_db
 from auth import requer_perfil, get_usuario_atual, verificar_tenant
 import models, schemas
-from ref_formula_engine import ordenar_linhas, calcular_linha
+from ref_formula_engine import ordenar_linhas, calcular_linha, detectar_ciclo
 
 router = APIRouter()
 
@@ -123,11 +123,14 @@ def _calcular_template(
     val_lin_por_unidade: dict[str, dict[str, float]] = {u: {} for u in todas_unidades}
     linhas_ordenadas = ordenar_linhas(list(template.linhas))
 
-    erros_dz_por_linha: dict[str, dict[str, bool]] = {}
+    ciclo_detectado = detectar_ciclo(list(template.linhas))
+    ciclo_set = set(ciclo_detectado) if ciclo_detectado else set()
+
+    erros_por_linha: dict[str, dict[str, str | None]] = {}
 
     for linha in linhas_ordenadas:
         rotulo = linha.rotulo
-        erros_dz_por_linha[rotulo] = {}
+        erros_por_linha[rotulo] = {}
 
         # Determina a fórmula a ser executada. Se for vazia e tiver agrupamento_slug, considera o agrupamento.
         formula = linha.formula_texto
@@ -138,9 +141,13 @@ def _calcular_template(
             val_agr_u = {agr: valores.get(u, 0.0) for agr, valores in val_agr.items()}
             val_lin_u = val_lin_por_unidade[u]
 
-            valor, tem_dz = calcular_linha(formula or "", val_agr_u, val_lin_u)
+            if rotulo in ciclo_set:
+                valor = 0.0
+                erro_str = "ciclo"
+            else:
+                valor, erro_str = calcular_linha(formula or "", val_agr_u, val_lin_u)
             val_lin_u[rotulo] = valor
-            erros_dz_por_linha[rotulo][u] = tem_dz
+            erros_por_linha[rotulo][u] = erro_str
 
     # Compila resultado para retorno
     resultado = []
@@ -150,17 +157,21 @@ def _calcular_template(
         # Determina o valor a ser focado no campo valor principal
         u_foco = unidade_codigo if (unidade_codigo and unidade_codigo in todas_unidades) else "Consolidado"
         valor_principal = val_lin_por_unidade.get(u_foco, {}).get(rotulo, 0.0)
-        tem_dz_principal = erros_dz_por_linha.get(rotulo, {}).get(u_foco, False)
+        erro_principal = erros_por_linha.get(rotulo, {}).get(u_foco)
+        tem_dz_principal = (erro_principal == "div_zero")
 
         # Mapa com a abertura de todas as unidades
         valores_unidades = {u: round(val_lin_por_unidade[u].get(rotulo, 0.0), 2) for u in todas_unidades}
+        erros_unidades = {u: erros_por_linha[rotulo].get(u) for u in todas_unidades}
 
         resultado.append(schemas.LinhaDemonstrativoOut(
             rotulo=rotulo,
             valor=round(valor_principal, 2),
             negrito_totalizador=linha.negrito_totalizador,
             tem_divisao_por_zero=tem_dz_principal,
-            valores_unidades=valores_unidades
+            valores_unidades=valores_unidades,
+            erro=erro_principal,
+            erros_unidades=erros_unidades
         ))
 
     # Reordena pelo campo `ordem` para exibição

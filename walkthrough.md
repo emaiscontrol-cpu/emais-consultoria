@@ -1,27 +1,34 @@
-# Registro de Homologação Final — Correção de Bugs de Integridade de Dados
+# Registro de Homologação Final — Visibilidade de Erros de Fórmula
 
-Todas as correções de integridade de dados na branch `fix/corrupcao-de-dados` foram finalizadas e validadas com sucesso.
+Este documento registra as implementações para tornar os erros de fórmula visíveis e seguros no backend e frontend do Plano Referencial e Fluxo de Caixa Executivo.
 
 ---
 
 ## 1. Modificações Efetuadas
 
-### A. Unificação do Parse Monetário no Frontend
-* **Helper Compartilhado:** Implementado o helper `parseValorBR` em `frontend/src/components/shared.jsx` que replica a lógica de limpeza de strings monetárias do backend.
-* **Substituição Geral:** Substituído o parsing monetário manual/inline nos arquivos `DRE.jsx`, `Demonstrativo.jsx`, `ModuloBase.jsx` e `EditarOrcamento.jsx`.
-* **Compilação:** O build de produção do frontend (`npm run build`) compilou perfeitamente sem qualquer erro.
+### A. Motor de Fórmulas e Seguranças
+* **`calcular_linha` (Plano Referencial):** Modificado em `backend/ref_formula_engine.py` para retornar `tuple[float, str | None]`. Erros são mapeados para `"div_zero"` e `"ref_inexistente:<slug>"`.
+* **Validação de Fórmulas no Save:** A função `validar_formula` agora aceita referências válidas (slugs e rótulos ativos) e rejeita typos e ciclos com **HTTP 400** na criação e edição de linhas de templates (`backend/routers/ref_templates.py`).
+* **Propagação de Ciclo:** Demonstrativos com loops de referências circulares (`detectar_ciclo`) são calculados com valor `0.0` e marcados com erro `"ciclo"`.
 
-### B. Transações de Importação Atômicas com Rollback
-* **Importador de Orçamento:** O endpoint `importar_orcamento` em `backend/routers/orcamento.py` foi reestruturado para ler e validar toda a planilha em memória antes de alterar o banco. O `DELETE` e os `INSERT` das novas linhas agora acontecem em um único bloco de transação segura. Em caso de falha, é executado `db.rollback()` e uma exceção HTTP 400 é lançada.
-* **Carga de Orçamento:** O script de carga manual `backend/importar_orcamento_planilha.py` foi ajustado seguindo a mesma estrutura atômica com rollback.
-* **Auditoria de Outros Importadores:** Confirmado que o importador de lançamentos (`ref_lancamentos.py`) realiza upserts granulares sem deleção em massa prévia, e o importador antigo de DRE (`dre_import.py`) está desativado (410 Gone).
+### B. Normalização e Erros no Fluxo de Caixa Executivo (`fc_exec.py`)
+* **Separador pt-BR:** Normalização de `;` para `,` fora de strings de aspas no `_eval_formula`.
+* **Literais de Porcentagem:** Regex substitui `N%` por `(N/100.0)` de forma automática antes da avaliação.
+* **Propagação de Erros:** Erros na avaliação retornam `(0.0, True)` e propagam-se ativamente pelas totalizadoras dependentes.
 
-### C. Tratamento de CNPJ Duplicado no Cadastro de Clientes
-* **Tratamento de IntegrityError:** As funções de criação e atualização em `backend/routers/clientes.py` foram envolvidas em blocos try/except que capturam erros de integridade do banco (como constraint de CNPJ duplicado), efetuam `db.rollback()` e retornam HTTP 400 amigável com a mensagem: `"Já existe um cliente com este CNPJ"`.
+### C. UI e Frontend
+* **Demonstrativo & Fluxo de Caixa:** Células com erros de cálculo exibem `"—"` em vez de `0,00` silencioso.
+* **Tooltips de Erro:** Passar o cursor sobre a célula de erro exibe um title/tooltip amigável detalhando o erro (ex: `Erro: Divisão por zero na fórmula` ou `Fórmula referencia elemento inexistente: 'XYZ'`).
+* **Estilo Visual:** As células com erro utilizam destaque discreto usando o token semântico `var(--danger)` do Design System.
 
 ---
 
 ## 2. Testes de Regressão e Validação
-* **Rollback de Importação:** Criado o teste `test_importar_falha_nao_deleta_existentes` que simula uma falha de transação durante a importação da planilha, provando que o `db.rollback()` mantém as informações pré-existentes intactas.
-* **CNPJ Duplicado:** Criados os testes `test_criar_cliente_cnpj_duplicado` e `test_atualizar_cliente_cnpj_duplicado` provando o retorno de HTTP 400 e a mensagem amigável no caso de duplicidade.
-* **Suíte Geral:** A execução geral obteve **72/72 testes com sucesso (100% verde)**.
+* Criado o arquivo `tests/test_formulas.py` cobrindo:
+  - Equivalência de IF com `;` e `,`.
+  - Suporte a literais de porcentagem (`D5*10%`).
+  - Lançamento de erro de referência inexistente (`ref_inexistente`).
+  - Lançamento de divisão por zero (`div_zero`).
+  - Rejeição de ciclos com HTTP 400 no save de template.
+* Executada a suíte de testes com sucesso absoluto: **74/74 testes passados (100% verde)**.
+* Build de produção do frontend (`npm run build`) validado sem erros de compilação.

@@ -9,6 +9,20 @@ const fmt = (v) => {
   if (v === undefined || v === null) return '0,00'
   return new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(v)
 }
+const getErroDesc = (erro) => {
+  if (!erro) return '';
+  if (erro === 'div_zero') return 'Erro: Divisão por zero na fórmula';
+  if (erro === 'ciclo') return 'Erro: Referência circular / ciclo de cálculo';
+  if (erro.startsWith('ref_inexistente:')) {
+    const ref = erro.split(':')[1];
+    return `Erro: Fórmula referencia elemento inexistente: '${ref}'`;
+  }
+  if (erro.startsWith('erro_calculo:')) {
+    const detail = erro.substring('erro_calculo:'.length);
+    return `Erro de cálculo: ${detail}`;
+  }
+  return `Erro de fórmula: ${erro}`;
+}
 const MESES = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez']
 
 export default function Demonstrativo() {
@@ -304,7 +318,8 @@ export default function Demonstrativo() {
                     {/* Coluna Rótulo */}
                     <td style={{ padding: '10px 16px', display: 'flex', alignItems: 'center', gap: 6 }}>
                       <span style={{ color: negrito ? 'var(--text-1)' : 'var(--text-2)' }}>{l.rotulo}</span>
-                      {dzero && <AlertTriangle size={12} color="#f59e0b" title="Divisão por zero — valor zerado" />}
+                      {l.erro && <AlertTriangle size={12} color="var(--danger)" title={getErroDesc(l.erro)} />}
+                      {!l.erro && dzero && <AlertTriangle size={12} color="#f59e0b" title="Divisão por zero — valor zerado" />}
                     </td>
                     
                     {/* Colunas Valores */}
@@ -313,20 +328,21 @@ export default function Demonstrativo() {
                         <>
                           {colunasUnidades.map(col => {
                             const valorF = l.valores_unidades ? l.valores_unidades[col.codigo] : 0.0
+                            const erroF = l.erros_unidades ? l.erros_unidades[col.codigo] : null
                             const editando = celulaEditando?.rotulo === l.rotulo && celulaEditando?.unidade === col.codigo
                             
                             return (
                               <td key={col.codigo} 
-                                onDoubleClick={() => iniciarEdicao(l, col.codigo, valorF)}
+                                onDoubleClick={() => !erroF && iniciarEdicao(l, col.codigo, valorF)}
                                 style={{ 
                                   textAlign: 'right', 
                                   padding: '8px 16px', 
                                   fontFamily: 'monospace',
-                                  cursor: (!negrito && isAdminConsultor && !estahFechado) ? 'pointer' : 'default',
+                                  cursor: (!negrito && isAdminConsultor && !estahFechado && !erroF) ? 'pointer' : 'default',
                                   transition: 'background 0.2s',
                                   position: 'relative'
                                 }}
-                                className={(!negrito && isAdminConsultor && !estahFechado) ? 'hover-editable-cell' : ''}
+                                className={(!negrito && isAdminConsultor && !estahFechado && !erroF) ? 'hover-editable-cell' : ''}
                               >
                                 {editando ? (
                                   <input
@@ -350,9 +366,19 @@ export default function Demonstrativo() {
                                     }}
                                   />
                                 ) : (
-                                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                                    {fmt(valorF)}
-                                    {!negrito && isAdminConsultor && !estahFechado && (
+                                  <div 
+                                    style={{ 
+                                      display: 'flex', 
+                                      alignItems: 'center', 
+                                      justifyContent: 'flex-end', 
+                                      gap: 4,
+                                      color: erroF ? 'var(--danger)' : 'inherit',
+                                      fontWeight: erroF ? 700 : 'inherit'
+                                    }}
+                                    title={getErroDesc(erroF)}
+                                  >
+                                    {erroF ? '—' : fmt(valorF)}
+                                    {!negrito && isAdminConsultor && !estahFechado && !erroF && (
                                       <Edit2 size={10} className="edit-icon" style={{ opacity: 0, color: 'var(--text-muted)' }} />
                                     )}
                                   </div>
@@ -362,20 +388,24 @@ export default function Demonstrativo() {
                           })}
                           
                           {/* Coluna Consolidado final da linha */}
-                          <td style={{ 
-                            textAlign: 'right', 
-                            padding: '10px 16px', 
-                            fontFamily: 'monospace', 
-                            fontWeight: 700, 
-                            color: 'var(--brand)' 
-                          }}>
-                            {fmt(l.valores_unidades?.Consolidado || l.valor)}
+                          <td 
+                            style={{ 
+                              textAlign: 'right', 
+                              padding: '10px 16px', 
+                              fontFamily: 'monospace', 
+                              fontWeight: 700, 
+                              color: (l.erros_unidades?.Consolidado || l.erro) ? 'var(--danger)' : 'var(--brand)' 
+                            }}
+                            title={getErroDesc(l.erros_unidades?.Consolidado || l.erro)}
+                          >
+                            {(l.erros_unidades?.Consolidado || l.erro) ? '—' : fmt(l.valores_unidades?.Consolidado || l.valor)}
                           </td>
                         </>
                       ) : (
                         // Exibição simples de unidade selecionada (permite editar a própria célula consolidada caso seja de uma filial)
                         <td 
                           onDoubleClick={() => {
+                            if (l.erro) return
                             if (unidadeSel !== '') {
                               iniciarEdicao(l, unidadeSel, l.valor)
                             } else {
@@ -386,9 +416,9 @@ export default function Demonstrativo() {
                             textAlign: 'right', 
                             padding: '10px 16px', 
                             fontFamily: 'monospace',
-                            cursor: (!negrito && isAdminConsultor && !estahFechado && unidadeSel !== '') ? 'pointer' : 'default'
+                            cursor: (!negrito && isAdminConsultor && !estahFechado && unidadeSel !== '' && !l.erro) ? 'pointer' : 'default'
                           }}
-                          className={(!negrito && isAdminConsultor && !estahFechado && unidadeSel !== '') ? 'hover-editable-cell' : ''}
+                          className={(!negrito && isAdminConsultor && !estahFechado && unidadeSel !== '' && !l.erro) ? 'hover-editable-cell' : ''}
                         >
                           {celulaEditando?.rotulo === l.rotulo && celulaEditando?.unidade === unidadeSel ? (
                             <input
@@ -411,9 +441,19 @@ export default function Demonstrativo() {
                               }}
                             />
                           ) : (
-                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
-                              {fmt(l.valor)}
-                              {!negrito && isAdminConsultor && !estahFechado && unidadeSel !== '' && (
+                            <div 
+                              style={{ 
+                                display: 'flex', 
+                                alignItems: 'center', 
+                                justifyContent: 'flex-end', 
+                                gap: 4,
+                                color: l.erro ? 'var(--danger)' : 'inherit',
+                                fontWeight: l.erro ? 700 : 'inherit'
+                              }}
+                              title={getErroDesc(l.erro)}
+                            >
+                              {l.erro ? '—' : fmt(l.valor)}
+                              {!negrito && isAdminConsultor && !estahFechado && unidadeSel !== '' && !l.erro && (
                                 <Edit2 size={10} className="edit-icon" style={{ opacity: 0, color: 'var(--text-muted)' }} />
                               )}
                             </div>
