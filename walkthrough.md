@@ -4,29 +4,22 @@ Todas as fases e requisitos extras do módulo de DRE e Comparativos com quebra d
 
 ---
 
-## 1. Ajustes e Recursos Adicionados (Fase de Homologação)
+## 1. Refatorações de UI e Gestão de Filiais Aninhada (Sessão 15b)
 
-### Readequação de Menus e Telas
-* **Readequação da Sidebar:** O item de menu **"DRE Gerencial"** foi renomeado para **"DRE Referencial"** e aponta para a nova rota `/controladoria/dre` que renderiza o componente avançado multilojas. O item duplicado "Demonstrativo Ref." foi removido.
-* **Títulos e Descrições:** Cabeçalho do demonstrativo atualizado de forma concisa e focado apenas em DRE contábil, eliminando textos de orçamento/fluxo de caixa que já residem em outros locais.
+### Gestão Transacional de Unidades Contábeis
+* **Seção de Unidades Aninhada:** Removidos os botões soltos de unidades da listagem geral de clientes. A gestão de filiais agora reside de forma integrada e elegante **dentro dos próprios modais de Novo e Editar Cliente**.
+* **Reutilização de Componente:** Foi implementado o mesmo componente reativo e robusto de gestão local de unidades em ambos os fluxos, salvando e cancelando transacionalmente de uma única vez contra o backend.
+* **Novos Campos e Endereço:** Cada unidade conta agora com suporte a CNPJ, endereço completo (CEP, logradouro, número, complemento, bairro, cidade, estado) e validações ativas de tipo e duplicidade de código/nome.
+* **Máscaras de Digitação:** Injetadas máscaras automáticas no frontend para facilitar o preenchimento de CNPJ (`00.000.000/0001-00`) e CEP (`00000-000`).
 
-### Vínculo Automático de Template
-* **Template DRE Padrão do Cliente:** Adicionado o campo `template_dre_padrao_id` na model e no schema de clientes. No modal de Clientes, há agora um seletor para escolher o template padrão.
-* **Auto-Seleção:** Ao entrar na DRE Referencial e escolher o cliente, o template DRE padrão dele é pré-selecionado automaticamente na tela, acelerando o carregamento dos dados.
-
-### Validação do Módulo Ativo
-* **Restrição de Acesso:** O backend e o frontend agora barram o carregamento de relatórios e dados contábeis de clientes que não possuem a flag `modulo_analises_gerenciais` contratada e ativa no sistema.
-
-### Correção de Visualização de Célula (Valor Zero)
-* **Fórmula Implícita por Slug:** Linhas de agrupamento (sem fórmula explícita como CMV e Receita) que mostravam `0,00` por conta de nulo na fórmula agora buscam o valor do agrupamento contábil associado dinamicamente: `f"{{agrupamento:{linha.agrupamento_slug}}}"`. Com isso, a planilha renderiza os valores reais carregados e alterados instantaneamente!
-
-### CRUD de Unidades no Painel Clientes
-* **Localização Amigável:** Na listagem de clientes, adicionamos o botão verde **"Unidades"** ao lado de "Editar".
-* **Modal Completo de Gestão:** Abre uma interface dedicada para listar, criar, editar e excluir as filiais (código de exatamente 3 dígitos numéricos e nome da loja) consumindo as APIs REST de forma segura.
+### Refinamentos Visuais e Exclusão em Duas Etapas
+* **Ações com Ícones Padronizados:** O lápis fino foi substituído pelo ícone de lápis marcado `<Pencil size={15} />` (corretamente importado e herdado da biblioteca *lucide-react*), padronizando a listagem com o restante do sistema.
+* **Exclusão de Clientes:** Adicionado o botão de lixeira vermelha `<Trash2 size={15} color="#ef4444" />` ao lado de editar na tabela de clientes.
+* **Confirmação em Duas Etapas:** Tanto a exclusão de clientes na tabela quanto a remoção de filiais de dentro do modal são controladas por sub-modais de confirmação dedicados, exigindo clique explícito do usuário (ex: "Confirmar exclusão") antes de efetivar e garantindo que nenhuma exclusão acidental aconteça.
 
 ---
 
 ## 2. Testes de Regressão e Validação Estática
-* A suíte de testes de API do backend foi estendida e a execução retornou **69/69 testes bem-sucedidos (100% verde)**.
-* O build de produção do frontend Vite/React foi concluído sem qualquer erro ou aviso (`npm run build` bem-sucedido).
-* O script de seed local foi atualizado para ajustar as naturezas das contas do CMV/Deduções para `"soma"`, de modo a exibir sempre os valores positivos na planilha mantendo as subtrações corretas nas margens.
+* A suíte de testes de API do backend foi executada e a resposta retornou **69/69 testes bem-sucedidos (100% verde)**.
+* O build de produção do frontend Vite/React compilou com absoluto sucesso (`npm run build` bem-sucedido).
+* O uvicorn local (porta 8000) e o Vite dev server (porta 5173) foram reiniciados em segundo plano na máquina de dev do Luiz.

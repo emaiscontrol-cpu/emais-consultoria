@@ -49,6 +49,23 @@ class UsuarioUpdate(BaseModel):
     codigo_acesso: Optional[str] = None
     remover_codigo: Optional[bool] = None
 
+# ── UNIDADE SCHEMA ────────────────────────────────────
+class UnidadeSchema(BaseModel):
+    id: Optional[int] = None
+    codigo: str
+    nome: str
+    cnpj: Optional[str] = None
+    endereco_logradouro: Optional[str] = None
+    endereco_numero: Optional[str] = None
+    endereco_complemento: Optional[str] = None
+    endereco_bairro: Optional[str] = None
+    endereco_cidade: Optional[str] = None
+    endereco_estado: Optional[str] = None
+    endereco_cep: Optional[str] = None
+    ativo: bool = True
+    class Config:
+        from_attributes = True
+
 # ── CLIENTE ───────────────────────────────────────────
 class ClienteCreate(BaseModel):
     razao_social: str
@@ -61,6 +78,7 @@ class ClienteCreate(BaseModel):
     modulo_analises_gerenciais: bool = False
     segmento_id: Optional[int] = None
     template_dre_padrao_id: Optional[int] = None
+    unidades: Optional[List[UnidadeSchema]] = None
 
     @field_validator('cnpj', 'contato_nome', 'contato_email', 'contato_fone', mode='before')
     @classmethod
@@ -80,6 +98,7 @@ class ClienteOut(BaseModel):
     modulo_analises_gerenciais: bool = False
     segmento_id: Optional[int] = None
     template_dre_padrao_id: Optional[int] = None
+    unidades: List[UnidadeSchema] = []
     class Config:
         from_attributes = True
 

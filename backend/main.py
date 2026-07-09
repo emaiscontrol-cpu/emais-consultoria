@@ -180,6 +180,14 @@ with engine.connect() as conn:
         "ALTER TABLE import_layouts ADD COLUMN coluna_unidade INTEGER",
         "ALTER TABLE import_layouts ADD COLUMN coluna_inicio_unidades INTEGER",
         "ALTER TABLE clientes ADD COLUMN template_dre_padrao_id INTEGER",
+        "ALTER TABLE unidades ADD COLUMN cnpj VARCHAR(20)",
+        "ALTER TABLE unidades ADD COLUMN endereco_logradouro VARCHAR(200)",
+        "ALTER TABLE unidades ADD COLUMN endereco_numero VARCHAR(30)",
+        "ALTER TABLE unidades ADD COLUMN endereco_complemento VARCHAR(100)",
+        "ALTER TABLE unidades ADD COLUMN endereco_bairro VARCHAR(100)",
+        "ALTER TABLE unidades ADD COLUMN endereco_cidade VARCHAR(100)",
+        "ALTER TABLE unidades ADD COLUMN endereco_estado VARCHAR(2)",
+        "ALTER TABLE unidades ADD COLUMN endereco_cep VARCHAR(10)",
     ]):
         try:
             conn.execute(text(stmt))
@@ -217,6 +225,14 @@ if not _is_sqlite:
             "ALTER TABLE import_layouts ADD COLUMN IF NOT EXISTS coluna_unidade INTEGER",
             "ALTER TABLE import_layouts ADD COLUMN IF NOT EXISTS coluna_inicio_unidades INTEGER",
             "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS template_dre_padrao_id INTEGER REFERENCES ref_templates(id)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS cnpj VARCHAR(20)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_logradouro VARCHAR(200)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_numero VARCHAR(30)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_complemento VARCHAR(100)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_bairro VARCHAR(100)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_cidade VARCHAR(100)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_estado VARCHAR(2)",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS endereco_cep VARCHAR(10)",
             # Agrupadores FC ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â colunas de metadados adicionadas na v2.6.0f
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS natureza VARCHAR(20) NOT NULL DEFAULT 'soma'",
             "ALTER TABLE agrupadores_fc ADD COLUMN IF NOT EXISTS slug VARCHAR(100)",

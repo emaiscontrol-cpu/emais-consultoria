@@ -43,6 +43,7 @@ export const clientesAPI = {
   detalhe: id       => api.get(`/clientes/${id}`),
   criar:   data     => api.post('/clientes/', data),
   atualizar:(id,d)  => api.put(`/clientes/${id}`, d),
+  deletar:  id      => api.delete(`/clientes/${id}`),
 }
 
 export const projetosAPI = {

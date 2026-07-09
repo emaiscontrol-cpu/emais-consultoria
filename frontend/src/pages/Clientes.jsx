@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
-import { clientesAPI, refUnidadesAPI, refTemplatesAPI } from '../services/api'
+import { clientesAPI, refTemplatesAPI } from '../services/api'
 import { Modal, LoadingPage } from '../components/shared'
-import { Building2, FolderKanban, TrendingUp, BarChart2, Plus, Edit2, Trash2, Store } from 'lucide-react'
+import { Building2, FolderKanban, TrendingUp, BarChart2, Plus, Pencil, Trash2, Store } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const MODULOS = [
@@ -32,7 +32,19 @@ const FORM_VAZIO = {
   razao_social: '', cnpj: '', contato_nome: '', contato_email: '', contato_fone: '',
   modulo_projetos: true, modulo_inteligencia_mercado: false, modulo_analises_gerenciais: false,
   template_dre_padrao_id: '',
+  unidades: []
 }
+
+const UNIDADE_FORM_VAZIO = {
+  codigo: '', nome: '', cnpj: '',
+  endereco_logradouro: '', endereco_numero: '', endereco_complemento: '',
+  endereco_bairro: '', endereco_cidade: '', endereco_estado: '', endereco_cep: ''
+}
+
+const UFS = [
+  'AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG',
+  'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'
+]
 
 export default function Clientes() {
   const [clientes,  setClientes]  = useState([])
@@ -43,12 +55,15 @@ export default function Clientes() {
   const [saving,    setSaving]    = useState(false)
   const [templatesDRE, setTemplatesDRE] = useState([])
 
-  // Estados de gestão de Unidades (Filiais)
-  const [showUnidadesModal, setShowUnidadesModal] = useState(false)
-  const [clienteUnidades, setClienteUnidades] = useState(null)
-  const [unidadesList, setUnidadesList] = useState([])
-  const [novaUnidade, setNovaUnidade] = useState({ codigo: '', nome: '' })
-  const [editandoUnidade, setEditandoUnidade] = useState(null)
+  // Confirmação em 2 etapas para exclusão de cliente
+  const [clienteExcluindo, setClienteExcluindo] = useState(null)
+
+  // Confirmação em 2 etapas para remoção de unidade contábil
+  const [unidadeRemovendoIdx, setUnidadeRemovendoIdx] = useState(null)
+
+  // Formulário interno de unidade contábil (dentro do modal)
+  const [unidadeForm, setUnidadeForm] = useState(UNIDADE_FORM_VAZIO)
+  const [editandoUnidadeIdx, setEditandoUnidadeIdx] = useState(null)
 
   const carregar = async () => {
     try {
@@ -65,7 +80,9 @@ export default function Clientes() {
 
   const abrirNovo = () => {
     setEditando(null)
-    setForm(FORM_VAZIO)
+    setForm({ ...FORM_VAZIO, unidades: [] })
+    setUnidadeForm(UNIDADE_FORM_VAZIO)
+    setEditandoUnidadeIdx(null)
     setShowModal(true)
   }
 
@@ -81,7 +98,10 @@ export default function Clientes() {
       modulo_inteligencia_mercado: c.modulo_inteligencia_mercado ?? false,
       modulo_analises_gerenciais:  c.modulo_analises_gerenciais  ?? false,
       template_dre_padrao_id:      c.template_dre_padrao_id      || '',
+      unidades:                    c.unidades                    || []
     })
+    setUnidadeForm(UNIDADE_FORM_VAZIO)
+    setEditandoUnidadeIdx(null)
     setShowModal(true)
   }
 
@@ -103,61 +123,92 @@ export default function Clientes() {
   const toggleModulo = key =>
     setForm(f => ({ ...f, [key]: !f[key] }))
 
-  // CRUD de Unidades/Filiais
-  const abrirUnidades = async (c) => {
-    setClienteUnidades(c)
-    setNovaUnidade({ codigo: '', nome: '' })
-    setEditandoUnidade(null)
-    carregarUnidades(c.id)
-    setShowUnidadesModal(true)
-  }
-
-  const carregarUnidades = async (cid) => {
+  // Exclusão de cliente (2 etapas)
+  const confirmarExcluirCliente = async () => {
+    if (!clienteExcluindo) return
     try {
-      const r = await refUnidadesAPI.listar(cid)
-      setUnidadesList(r.data || [])
+      await clientesAPI.deletar(clienteExcluindo.id)
+      toast.success('Cliente excluído com sucesso!')
+      setClienteExcluindo(null)
+      carregar()
     } catch {
-      toast.error('Erro ao carregar unidades contábeis')
+      toast.error('Erro ao excluir cliente')
     }
   }
 
-  const salvarUnidade = async (e) => {
+  // Manipuladores da lista local de Unidades do Formulário
+  const formatarCNPJ = (v) => {
+    v = v.replace(/\D/g, '')
+    if (v.length > 14) v = v.slice(0, 14)
+    if (v.length <= 2) return v
+    if (v.length <= 5) return `${v.slice(0, 2)}.${v.slice(2)}`
+    if (v.length <= 8) return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5)}`
+    if (v.length <= 12) return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8)}`
+    return `${v.slice(0, 2)}.${v.slice(2, 5)}.${v.slice(5, 8)}/${v.slice(8, 12)}-${v.slice(12)}`
+  }
+
+  const formatarCEP = (v) => {
+    v = v.replace(/\D/g, '')
+    if (v.length > 8) v = v.slice(0, 8)
+    if (v.length <= 5) return v
+    return `${v.slice(0, 5)}-${v.slice(5)}`
+  }
+
+  const handleAdicionarUnidade = (e) => {
     e.preventDefault()
-    const cod = String(novaUnidade.codigo || '').trim()
-    const nom = String(novaUnidade.nome || '').trim()
-    if (!cod || !nom) return toast.error('Preencha código e nome da filial')
-    if (cod.length !== 3 || isNaN(cod)) return toast.error('O código da filial deve possuir exatamente 3 dígitos numéricos')
+    const cod = String(unidadeForm.codigo || '').trim()
+    const nom = String(unidadeForm.nome || '').trim()
+    const doc = String(unidadeForm.cnpj || '').trim()
+    const cep = String(unidadeForm.endereco_cep || '').trim()
 
-    try {
-      if (editandoUnidade) {
-        await refUnidadesAPI.atualizar(editandoUnidade.id, { codigo: cod, nome: nom, ativo: true })
-        toast.success('Filial atualizada com sucesso!')
-      } else {
-        await refUnidadesAPI.criar(clienteUnidades.id, { codigo: cod, nome: nom, ativo: true })
-        toast.success('Nova filial adicionada!')
-      }
-      setNovaUnidade({ codigo: '', nome: '' })
-      setEditandoUnidade(null)
-      carregarUnidades(clienteUnidades.id)
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao salvar filial')
+    if (cod.length !== 3 || isNaN(cod)) {
+      return toast.error('O código da filial contábil deve ter exatamente 3 dígitos numéricos')
     }
+    if (!nom) {
+      return toast.error('O nome da filial contábil é obrigatório')
+    }
+    if (doc && doc.replace(/\D/g, '').length !== 14) {
+      return toast.error('CNPJ da filial inválido (deve conter 14 dígitos)')
+    }
+    if (cep && cep.replace(/\D/g, '').length !== 8) {
+      return toast.error('CEP da filial inválido (deve conter 8 dígitos)')
+    }
+
+    const unidades = form.unidades || []
+
+    // Validar duplicidade local
+    const dupCod = unidades.some((u, idx) => u.codigo === cod && idx !== editandoUnidadeIdx)
+    if (dupCod) return toast.error(`Código de filial '${cod}' já está adicionado neste formulário`)
+
+    const dupNom = unidades.some((u, idx) => u.nome.toLowerCase() === nom.toLowerCase() && idx !== editandoUnidadeIdx)
+    if (dupNom) return toast.error(`Nome de filial '${nom}' já está adicionado neste formulário`)
+
+    let novas = [...unidades]
+    if (editandoUnidadeIdx !== null) {
+      novas[editandoUnidadeIdx] = { ...unidadeForm, codigo: cod, nome: nom }
+      toast.success('Filial atualizada no formulário!')
+    } else {
+      novas.push({ ...unidadeForm, codigo: cod, nome: nom })
+      toast.success('Filial adicionada ao formulário!')
+    }
+
+    setForm(f => ({ ...f, unidades: novas }))
+    setUnidadeForm(UNIDADE_FORM_VAZIO)
+    setEditandoUnidadeIdx(null)
   }
 
-  const deletarUnidade = async (uid) => {
-    if (!confirm('Deseja realmente remover esta filial contábil? Lançamentos associados podem ficar órfãos.')) return
-    try {
-      await refUnidadesAPI.deletar(uid)
-      toast.success('Filial removida com sucesso!')
-      carregarUnidades(clienteUnidades.id)
-    } catch (err) {
-      toast.error(err.response?.data?.detail || 'Erro ao remover filial')
-    }
+  const iniciarEditarUnidadeLocal = (idx) => {
+    setEditandoUnidadeIdx(idx)
+    setUnidadeForm({ ...form.unidades[idx] })
   }
 
-  const iniciarEditarUnidade = (u) => {
-    setEditandoUnidade(u)
-    setNovaUnidade({ codigo: String(u.codigo || ''), nome: String(u.nome || '') })
+  const confirmarRemoverUnidadeLocal = () => {
+    if (unidadeRemovendoIdx === null) return
+    const novas = [...form.unidades]
+    novas.splice(unidadeRemovendoIdx, 1)
+    setForm(f => ({ ...f, unidades: novas }))
+    setUnidadeRemovendoIdx(null)
+    toast.success('Filial removida do formulário!')
   }
 
   if (loading) return <LoadingPage />
@@ -174,13 +225,11 @@ export default function Clientes() {
           border: none;
           background: transparent;
           border-radius: 6px;
-          color: var(--text-muted, #6b7280) !important;
           cursor: pointer;
           transition: background .2s, color .2s;
         }
         .btn-acao-tabela:hover {
           background: var(--border-color, rgba(0, 0, 0, 0.05));
-          color: var(--text, #111827) !important;
         }
       `}</style>
       <div className="page-header">
@@ -204,8 +253,7 @@ export default function Clientes() {
                 <tr>
                   <th>Razão social</th><th>CNPJ</th><th>Contato</th>
                   <th>Email</th><th>Telefone</th><th>Módulos ativos</th>
-                  <th style={{ textAlign: 'center', width: 90 }}>Unidades</th>
-                  <th style={{ textAlign: 'center', width: 90 }}>Editar</th>
+                  <th style={{ textAlign: 'center', width: 100 }}>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -227,30 +275,22 @@ export default function Clientes() {
                       </div>
                     </td>
                     <td style={{ textAlign: 'center' }}>
-                      {c.modulo_analises_gerenciais ? (
-                        <div style={{ display: 'flex', justifyContent: 'center' }}>
-                          <button 
-                            className="btn-acao-tabela" 
-                            onClick={() => abrirUnidades(c)} 
-                            title="Ver filiais contábeis" 
-                            aria-label="Ver unidades"
-                          >
-                            <Store size={18} />
-                          </button>
-                        </div>
-                      ) : (
-                        <span style={{ color: 'var(--text-muted, #6b7280)', opacity: 0.35 }}>—</span>
-                      )}
-                    </td>
-                    <td style={{ textAlign: 'center' }}>
-                      <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
                         <button 
                           className="btn-acao-tabela" 
                           onClick={() => abrirEditar(c)} 
                           title="Editar cliente" 
                           aria-label="Editar cliente"
                         >
-                          <Edit2 size={16} />
+                          <Pencil size={15} color="var(--text, #111827)" />
+                        </button>
+                        <button 
+                          className="btn-acao-tabela" 
+                          onClick={() => abrirExcluirCliente(c)} 
+                          title="Excluir cliente" 
+                          aria-label="Excluir cliente"
+                        >
+                          <Trash2 size={15} color="#ef4444" />
                         </button>
                       </div>
                     </td>
@@ -274,7 +314,7 @@ export default function Clientes() {
             </button>
           </>}
         >
-          <form onSubmit={handleSalvar}>
+          <form onSubmit={handleSalvar} style={{ maxHeight: '72vh', overflowY: 'auto', paddingRight: 8 }}>
             <div className="form-group">
               <label>Razão social *</label>
               <input value={form.razao_social} onChange={e => setForm(f => ({...f, razao_social: e.target.value}))} required />
@@ -282,7 +322,11 @@ export default function Clientes() {
             <div className="form-row">
               <div className="form-group">
                 <label>CNPJ</label>
-                <input value={form.cnpj} onChange={e => setForm(f => ({...f, cnpj: e.target.value}))} placeholder="00.000.000/0001-00" />
+                <input 
+                  value={form.cnpj} 
+                  onChange={e => setForm(f => ({...f, cnpj: formatarCNPJ(e.target.value)}))} 
+                  placeholder="00.000.000/0001-00" 
+                />
               </div>
               <div className="form-group">
                 <label>Nome do contato</label>
@@ -300,7 +344,7 @@ export default function Clientes() {
               </div>
             </div>
 
-            {/* Template DRE Padrão do Cliente */}
+            {/* Template DRE Padrão */}
             {form.modulo_analises_gerenciais && (
               <div className="form-group" style={{ marginTop: 10 }}>
                 <label>Template DRE Padrão (Carregamento automático)</label>
@@ -314,6 +358,7 @@ export default function Clientes() {
               </div>
             )}
 
+            {/* Módulos Contratados */}
             <div style={{ marginTop: 20, paddingTop: 16, borderTop: '1px solid var(--border)' }}>
               <div style={{
                 fontSize: 12, fontWeight: 700, letterSpacing: '.06em',
@@ -347,7 +392,7 @@ export default function Clientes() {
                       </div>
                       <div style={{ flex: 1, minWidth: 0 }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: ativo ? cor : 'var(--text)' }}>
-                          {label}
+                           {label}
                         </div>
                         <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>
                           {desc}
@@ -358,92 +403,262 @@ export default function Clientes() {
                   )
                 })}
               </div>
-              <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 10 }}>
-                As permissões entram em vigor no próximo login dos usuários deste cliente.
+            </div>
+
+            {/* SEÇÃO COMPARTILHADA: Gestão de Unidades Contábeis (Filiais) */}
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '2px solid var(--border, #eaeaea)' }}>
+              <div style={{
+                fontSize: 12, fontWeight: 700, letterSpacing: '.06em',
+                textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: 12,
+                display: 'flex', alignItems: 'center', gap: 6
+              }}>
+                <Store size={15} /> Filiais / Unidades Contábeis
+              </div>
+
+              {/* Tabela de Unidades Locais Adicionadas */}
+              <div className="table-wrap" style={{ maxHeight: 200, overflowY: 'auto', marginBottom: 16 }}>
+                <table style={{ fontSize: 12 }}>
+                  <thead>
+                    <tr style={{ background: 'var(--surface-header, #f3f4f6)' }}>
+                      <th>Código</th>
+                      <th>Filial</th>
+                      <th>CNPJ</th>
+                      <th>Cidade/UF</th>
+                      <th style={{ textAlign: 'right', width: 80 }}>Ações</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(form.unidades || []).length === 0 ? (
+                      <tr>
+                        <td colSpan={5} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: '12px' }}>
+                          Nenhuma filial adicionada neste cliente. Use o formulário abaixo para adicionar.
+                        </td>
+                      </tr>
+                    ) : (
+                      form.unidades.map((u, idx) => (
+                        <tr key={idx}>
+                          <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{u.codigo}</td>
+                          <td>{u.nome}</td>
+                          <td className="text-muted">{u.cnpj || '—'}</td>
+                          <td className="text-muted">{u.endereco_cidade ? `${u.endereco_cidade}/${u.endereco_estado || '—'}` : '—'}</td>
+                          <td style={{ textAlign: 'right' }}>
+                            <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
+                              <button 
+                                className="btn-acao-tabela" 
+                                type="button"
+                                onClick={() => iniciarEditarUnidadeLocal(idx)} 
+                                style={{ padding: 4, width: 28, height: 28 }}
+                                title="Editar filial"
+                              >
+                                <Pencil size={12} color="var(--text)" />
+                              </button>
+                              <button 
+                                className="btn-acao-tabela" 
+                                type="button"
+                                onClick={() => setUnidadeRemovendoIdx(idx)} 
+                                style={{ padding: 4, width: 28, height: 28 }}
+                                title="Remover filial"
+                              >
+                                <Trash2 size={12} color="#ef4444" />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Formulário para Adicionar / Editar Unidades */}
+              <div style={{
+                background: 'var(--surface, #fafafa)',
+                border: '1.5px dashed var(--border, #e5e7eb)',
+                borderRadius: 8,
+                padding: 16,
+                marginTop: 10
+              }}>
+                <div style={{ fontSize: 12, fontWeight: 600, marginBottom: 12, color: 'var(--text)' }}>
+                  {editandoUnidadeIdx !== null ? '✏️ Editar Filial na Lista' : '➕ Adicionar Nova Filial'}
+                </div>
+                
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {/* Linha 1 */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div className="form-group" style={{ margin: 0, flex: '0 0 90px' }}>
+                      <label style={{ fontSize: 11 }}>Código (3 d.) *</label>
+                      <input 
+                        value={unidadeForm.codigo} 
+                        onChange={e => setUnidadeForm(u => ({...u, codigo: e.target.value.replace(/\D/g, '').slice(0, 3)}))}
+                        placeholder="100" 
+                        maxLength={3}
+                        required={editandoUnidadeIdx !== null || unidadeForm.nome !== ''} 
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                      <label style={{ fontSize: 11 }}>Nome da Filial *</label>
+                      <input 
+                        value={unidadeForm.nome} 
+                        onChange={e => setUnidadeForm(u => ({...u, nome: e.target.value}))}
+                        placeholder="Nome amigável da filial" 
+                        required={editandoUnidadeIdx !== null || unidadeForm.codigo !== ''} 
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                      <label style={{ fontSize: 11 }}>CNPJ da Filial</label>
+                      <input 
+                        value={unidadeForm.cnpj} 
+                        onChange={e => setUnidadeForm(u => ({...u, cnpj: formatarCNPJ(e.target.value)}))}
+                        placeholder="00.000.000/0001-00" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Linha 2 */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div className="form-group" style={{ margin: 0, flex: '0 0 110px' }}>
+                      <label style={{ fontSize: 11 }}>CEP</label>
+                      <input 
+                        value={unidadeForm.endereco_cep} 
+                        onChange={e => setUnidadeForm(u => ({...u, endereco_cep: formatarCEP(e.target.value)}))}
+                        placeholder="00000-000" 
+                        maxLength={9}
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                      <label style={{ fontSize: 11 }}>Logradouro (Endereço)</label>
+                      <input 
+                        value={unidadeForm.endereco_logradouro} 
+                        onChange={e => setUnidadeForm(u => ({...u, endereco_logradouro: e.target.value}))}
+                        placeholder="Av. Principal, Rua, etc." 
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0, flex: '0 0 90px' }}>
+                      <label style={{ fontSize: 11 }}>Número</label>
+                      <input 
+                        value={unidadeForm.endereco_numero} 
+                        onChange={e => setUnidadeForm(u => ({...u, endereco_numero: e.target.value}))}
+                        placeholder="S/N" 
+                      />
+                    </div>
+                  </div>
+
+                  {/* Linha 3 */}
+                  <div style={{ display: 'flex', gap: 10 }}>
+                    <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                      <label style={{ fontSize: 11 }}>Complemento</label>
+                      <input 
+                        value={unidadeForm.endereco_complemento} 
+                        onChange={e => setUnidadeForm(u => ({...u, endereco_complemento: e.target.value}))}
+                        placeholder="Sala, Andar, Bloco, etc." 
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                      <label style={{ fontSize: 11 }}>Bairro</label>
+                      <input 
+                        value={unidadeForm.endereco_bairro} 
+                        onChange={e => setUnidadeForm(u => ({...u, endereco_bairro: e.target.value}))}
+                        placeholder="Bairro" 
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0, flex: 1 }}>
+                      <label style={{ fontSize: 11 }}>Cidade</label>
+                      <input 
+                        value={unidadeForm.endereco_cidade} 
+                        onChange={e => setUnidadeForm(u => ({...u, endereco_cidade: e.target.value}))}
+                        placeholder="Cidade" 
+                      />
+                    </div>
+                    <div className="form-group" style={{ margin: 0, flex: '0 0 90px' }}>
+                      <label style={{ fontSize: 11 }}>Estado</label>
+                      <select 
+                        value={unidadeForm.endereco_estado} 
+                        onChange={e => setUnidadeForm(u => ({...u, endereco_estado: e.target.value}))}
+                      >
+                        <option value="">UF</option>
+                        {UFS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Botões do Formulário de Unidades */}
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginTop: 6 }}>
+                    {editandoUnidadeIdx !== null && (
+                      <button 
+                        className="btn" 
+                        type="button" 
+                        onClick={() => { setUnidadeForm(UNIDADE_FORM_VAZIO); setEditandoUnidadeIdx(null); }}
+                      >
+                        Cancelar
+                      </button>
+                    )}
+                    <button 
+                      className="btn btn-secondary" 
+                      type="button" 
+                      onClick={handleAdicionarUnidade}
+                      style={{ borderColor: 'var(--brand)', color: 'var(--brand)', display: 'flex', alignItems: 'center', gap: 4 }}
+                    >
+                      <Plus size={14} />
+                      {editandoUnidadeIdx !== null ? 'Salvar na Lista' : 'Adicionar Filial'}
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
           </form>
         </Modal>
       )}
 
-      {/* Modal Gestão de Unidades (Filiais) do Cliente */}
-      {showUnidadesModal && clienteUnidades && (
+      {/* MODAL 2 ETAPAS: Excluir Cliente */}
+      {clienteExcluindo && (
         <Modal
-          title={`Filiais / Unidades Contábeis — ${clienteUnidades.razao_social}`}
-          onClose={() => setShowUnidadesModal(false)}
-          footer={<button className="btn btn-primary" onClick={() => setShowUnidadesModal(false)}>Concluir</button>}
+          title="Excluir Cliente"
+          onClose={() => setClienteExcluindo(null)}
+          footer={<>
+            <button className="btn" onClick={() => setClienteExcluindo(null)}>Cancelar</button>
+            <button 
+              className="btn btn-danger" 
+              onClick={confirmarExcluirCliente} 
+              style={{ background: '#ef4444', color: '#fff' }}
+            >
+              Confirmar exclusão
+            </button>
+          </>}
         >
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-            {/* Formulário de Adicionar/Editar */}
-            <form onSubmit={salvarUnidade} style={{ display: 'flex', gap: 10, background: 'var(--surface, #fafafa)', padding: 12, borderRadius: 8, border: '1px solid var(--border)', alignItems: 'flex-end' }}>
-              <div className="form-group" style={{ margin: 0, flex: '0 0 90px' }}>
-                <label style={{ fontSize: 11 }}>Código (3 d.) *</label>
-                <input 
-                  value={novaUnidade.codigo} 
-                  onChange={e => setNovaUnidade(u => ({...u, codigo: e.target.value.slice(0, 3)}))}
-                  placeholder="100" 
-                  maxLength={3}
-                  required 
-                />
-              </div>
-              <div className="form-group" style={{ margin: 0, flex: 1 }}>
-                <label style={{ fontSize: 11 }}>Nome da Unidade/Filial *</label>
-                <input 
-                  value={novaUnidade.nome} 
-                  onChange={e => setNovaUnidade(u => ({...u, nome: e.target.value}))}
-                  placeholder="Nome amigável da filial" 
-                  required 
-                />
-              </div>
-              <button className="btn btn-primary" type="submit" style={{ display: 'flex', alignItems: 'center', gap: 4, height: 38 }}>
-                <Plus size={14} />
-                {editandoUnidade ? 'Salvar' : 'Adicionar'}
-              </button>
-              {editandoUnidade && (
-                <button className="btn" type="button" onClick={() => { setEditandoUnidade(null); setNovaUnidade({ codigo: '', nome: '' }) }} style={{ height: 38 }}>
-                  Cancelar
-                </button>
-              )}
-            </form>
+          <div style={{ padding: '8px 0' }}>
+            <p style={{ margin: 0, fontSize: 14 }}>
+              Tem certeza que deseja excluir o cliente <strong>{clienteExcluindo.razao_social}</strong>?
+            </p>
+            <p style={{ color: '#ef4444', fontSize: 12, marginTop: 12, lineHeight: 1.4, background: '#ef44440f', padding: '10px 12px', borderRadius: 6, border: '1px solid #ef444426' }}>
+              <strong>Atenção:</strong> Esta ação é irreversível e excluirá também todas as filiais e dados de demonstrativos (realizados e lançamentos contábeis) vinculados a este cliente.
+            </p>
+          </div>
+        </Modal>
+      )}
 
-            {/* Listagem */}
-            <div className="table-wrap" style={{ maxHeight: 280, overflowY: 'auto' }}>
-              <table style={{ fontSize: 13 }}>
-                <thead>
-                  <tr style={{ background: 'var(--surface-header, #f3f4f6)' }}>
-                    <th>Código</th>
-                    <th>Nome da Filial</th>
-                    <th style={{ textAlign: 'right' }}>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {unidadesList.length === 0 ? (
-                    <tr>
-                      <td colSpan={3} style={{ textAlign: 'center', color: 'var(--text-muted)', padding: 20 }}>
-                        Nenhuma filial cadastrada para este cliente. Elas também podem ser criadas automaticamente durante a importação.
-                      </td>
-                    </tr>
-                  ) : (
-                    unidadesList.map(u => (
-                      <tr key={u.id}>
-                        <td style={{ fontFamily: 'monospace', fontWeight: 600 }}>{u.codigo}</td>
-                        <td>{u.nome}</td>
-                        <td style={{ textAlign: 'right' }}>
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
-                            <button className="btn btn-sm btn-ghost" onClick={() => iniciarEditarUnidade(u)} style={{ padding: 4 }}>
-                              <Edit2 size={13} />
-                            </button>
-                            <button className="btn btn-sm btn-ghost" onClick={() => deletarUnidade(u.id)} style={{ padding: 4, color: '#ef4444' }}>
-                              <Trash2 size={13} />
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
+      {/* MODAL 2 ETAPAS: Remover Unidade Contábil */}
+      {unidadeRemovendoIdx !== null && (
+        <Modal
+          title="Confirmar Remoção da Filial"
+          onClose={() => setUnidadeRemovendoIdx(null)}
+          footer={<>
+            <button className="btn" onClick={() => setUnidadeRemovendoIdx(null)}>Cancelar</button>
+            <button 
+              className="btn btn-danger" 
+              onClick={confirmarRemoverUnidadeLocal} 
+              style={{ background: '#ef4444', color: '#fff' }}
+            >
+              Confirmar remoção
+            </button>
+          </>}
+        >
+          <div style={{ padding: '8px 0' }}>
+            <p style={{ margin: 0, fontSize: 14 }}>
+              Tem certeza que deseja remover a filial <strong>{form.unidades[unidadeRemovendoIdx]?.nome} ({form.unidades[unidadeRemovendoIdx]?.codigo})</strong> deste formulário?
+            </p>
+            <p style={{ color: '#ef4444', fontSize: 12, marginTop: 12, lineHeight: 1.4 }}>
+              * A remoção só será definitiva e gravada no banco de dados quando você clicar em <strong>Salvar</strong> no formulário principal do cliente.
+            </p>
           </div>
         </Modal>
       )}

@@ -14,20 +14,22 @@
   - [x] Estender o agrupador contábil `_get_valores_agrupamento` para particionar por `unidade_codigo` e `Consolidado` (`ref_demonstrativos.py`)
   - [x] Atualizar o motor de cálculo `_calcular_template` para executar as fórmulas matemáticas de forma paralela e independente para cada unidade (`ref_demonstrativos.py`)
   - [x] Retornar o mapa completo de `valores_unidades` em cada linha do demonstrativo para o frontend (`ref_demonstrativos.py` e `schemas.py`)
-  - [x] Garantir fidelidade aos cálculos e tratamento correto de divisões por zero em fórmulas por loja
-  - [x] Validar que o app FastAPI e as migrações locais executam com 100% de estabilidade
-  - [x] Executar testes do pytest e certificar integridade dos 68 testes de API contábil do backend
 - [x] Fase 4: Frontend - Tabela Dinâmica e Grid Interativo de Edição
   - [x] Adicionar `refUnidadesAPI` e método `editarCelula` no `api.js` do frontend
   - [x] Estender a tela `Demonstrativo.jsx` para suportar o seletor de Filial contábil
   - [x] Renderizar de forma dinâmica as colunas de cada unidade lado a lado (multilojas) no Demonstrativo
   - [x] Desenvolver grid interativo de edição in-line com blur/enter e suporte a reajuste nas células analíticas
-  - [x] Adicionar endpoint de suporte `/editar-celula` no backend para upsert de lançamentos manuais
-  - [x] Compilar o frontend com Vite e certificar que todos os 69 testes unitários/E2E e API contábeis passam com 100% de sucesso
 - [x] Ajustes Finais e Homologação Local
   - [x] Readequação da Sidebar: renomear menu para "DRE Referencial" e remover Demonstrativo Ref. duplicado
   - [x] Cadastro de Clientes: adicionar seletor de "Template DRE Padrão" no modal e salvar no banco
   - [x] Carregamento Automático: selecionar o cliente e carregar seu template padrão na DRE de forma automática
   - [x] Validação de Módulo: bloquear demonstrativo de clientes que não possuam `modulo_analises_gerenciais` ativo
   - [x] Bug do Valor Zero na Grade: implementar cálculo de fórmulas implícitas para linhas do template sem fórmula e com `agrupamento_slug`
-  - [x] Gestão de Unidades: adicionar modal CRUD completo de filiais diretamente no botão "Unidades" na tela de Clientes
+- [x] Refatorações de UI e Gestão de Filiais Aninhada (Sessão 15b)
+  - [x] Mapear novos campos de endereço e CNPJ na model de unidades e migrações do banco de dados
+  - [x] Remover botões e colunas soltas de "Unidades" da listagem geral de clientes
+  - [x] Criar seção/componente de Unidades compartilhado e injetá-lo nos modais de Novo e Editar Cliente
+  - [x] Prever máscaras de digitação dinâmica para CNPJ e CEP no formulário de filiais
+  - [x] Trocar ícone de edição da listagem pelo lápis marcado `Pencil` padrão do sistema
+  - [x] Implementar confirmação em duas etapas para exclusão de clientes da listagem
+  - [x] Implementar confirmação em duas etapas para remoção de filiais de dentro do modal

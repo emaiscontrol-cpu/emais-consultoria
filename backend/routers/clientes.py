@@ -30,8 +30,19 @@ def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)
 
 @router.post("/", response_model=schemas.ClienteOut)
 def criar(data: schemas.ClienteCreate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
-    cliente = models.Cliente(**data.model_dump())
-    db.add(cliente); db.commit(); db.refresh(cliente)
+    dados = data.model_dump()
+    unidades_data = dados.pop("unidades", None) or []
+    cliente = models.Cliente(**dados)
+    db.add(cliente)
+    db.flush()
+    
+    for u_data in unidades_data:
+        u_data.pop("id", None)
+        u = models.Unidade(cliente_id=cliente.id, **u_data)
+        db.add(u)
+        
+    db.commit()
+    db.refresh(cliente)
     return cliente
 
 @router.put("/{id}", response_model=schemas.ClienteOut)
@@ -39,9 +50,39 @@ def atualizar(id: int, data: schemas.ClienteCreate, db: Session = Depends(get_db
     c = db.query(models.Cliente).get(id)
     if not c:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
-    for k, v in data.model_dump().items():
+    
+    dados = data.model_dump()
+    unidades_data = dados.pop("unidades", None)
+    
+    for k, v in dados.items():
         setattr(c, k, v)
-    db.commit(); db.refresh(c)
+        
+    if unidades_data is not None:
+        unidades_atuais = db.query(models.Unidade).filter(models.Unidade.cliente_id == id).all()
+        atuais_dict = {u.codigo: u for u in unidades_atuais}
+        
+        recebidos_codigos = set()
+        for u_data in unidades_data:
+            u_data.pop("id", None)
+            cod = str(u_data.get("codigo", "")).strip()
+            if not cod:
+                continue
+            recebidos_codigos.add(cod)
+            
+            if cod in atuais_dict:
+                u_existente = atuais_dict[cod]
+                for key, val in u_data.items():
+                    setattr(u_existente, key, val)
+            else:
+                u_nova = models.Unidade(cliente_id=id, **u_data)
+                db.add(u_nova)
+                
+        for cod, u_antiga in atuais_dict.items():
+            if cod not in recebidos_codigos:
+                db.delete(u_antiga)
+                
+    db.commit()
+    db.refresh(c)
     return c
 
 @router.delete("/{id}")

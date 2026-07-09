@@ -82,6 +82,7 @@ class Cliente(Base):
     usuarios      = relationship("Usuario", back_populates="cliente", foreign_keys=[Usuario.cliente_id])
     segmento      = relationship("Segmento", back_populates="clientes", foreign_keys="Cliente.segmento_id")
     template_dre_padrao = relationship("TemplateRef", foreign_keys=[template_dre_padrao_id])
+    unidades            = relationship("Unidade", back_populates="cliente", cascade="all, delete-orphan")
 
 
 class TipoConsultoria(Base):
@@ -592,16 +593,24 @@ class DeParaRef(Base):
 
 
 class Unidade(Base):
-    """Unidades de negócio (filiais) do cliente contendo código de 3 dígitos e nome."""
+    """Unidades de negócio (filiais) do cliente contendo código de 3 dígitos, nome, CNPJ e endereço."""
     __tablename__ = "unidades"
     id            = Column(Integer, primary_key=True, index=True)
     cliente_id    = Column(Integer, ForeignKey("clientes.id"), nullable=False)
     codigo        = Column(String(3), nullable=False)   # exatamente 3 dígitos (ex: "104")
     nome          = Column(String(100), nullable=False)  # nome amigável (ex: "Roosevelt")
+    cnpj          = Column(String(20), nullable=True)
+    endereco_logradouro = Column(String(200), nullable=True)
+    endereco_numero     = Column(String(30), nullable=True)
+    endereco_complemento = Column(String(100), nullable=True)
+    endereco_bairro     = Column(String(100), nullable=True)
+    endereco_cidade     = Column(String(100), nullable=True)
+    endereco_estado     = Column(String(2), nullable=True)
+    endereco_cep        = Column(String(10), nullable=True)
     ativo         = Column(Boolean, default=True)
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     
-    cliente       = relationship("Cliente")
+    cliente       = relationship("Cliente", back_populates="unidades")
     __table_args__ = (UniqueConstraint("cliente_id", "codigo"), UniqueConstraint("cliente_id", "nome"))
 
 
