@@ -153,6 +153,53 @@ class TestClientes:
         listagem = client.get("/api/clientes/", headers=admin_headers)
         assert listagem.json() == []
 
+    def test_criar_cliente_cnpj_duplicado(self, client, admin_headers, db_session):
+        # Cria um cliente inicial com um CNPJ
+        r1 = client.post(
+            "/api/clientes/",
+            json={"razao_social": "Cliente Um LTDA", "cnpj": "12.345.678/0001-90"},
+            headers=admin_headers
+        )
+        assert r1.status_code == 200
+        
+        # Tenta criar outro cliente com o mesmo CNPJ
+        r2 = client.post(
+            "/api/clientes/",
+            json={"razao_social": "Cliente Dois LTDA", "cnpj": "12.345.678/0001-90"},
+            headers=admin_headers
+        )
+        assert r2.status_code == 400
+        assert r2.json()["detail"] == "Já existe um cliente com este CNPJ"
+
+    def test_atualizar_cliente_cnpj_duplicado(self, client, admin_headers, db_session):
+        # Limpa para evitar conflitos
+        db_session.execute(text("DELETE FROM clientes"))
+        db_session.commit()
+        
+        # Cria dois clientes distintos com CNPJs diferentes
+        r1 = client.post(
+            "/api/clientes/",
+            json={"razao_social": "Cliente Alpha", "cnpj": "11.111.111/0001-11"},
+            headers=admin_headers
+        )
+        id_alpha = r1.json()["id"]
+        
+        r2 = client.post(
+            "/api/clientes/",
+            json={"razao_social": "Cliente Beta", "cnpj": "22.222.222/0001-22"},
+            headers=admin_headers
+        )
+        id_beta = r2.json()["id"]
+        
+        # Tenta atualizar o Cliente Beta usando o CNPJ do Cliente Alpha
+        r3 = client.put(
+            f"/api/clientes/{id_beta}",
+            json={"razao_social": "Cliente Beta Atualizado", "cnpj": "11.111.111/0001-11"},
+            headers=admin_headers
+        )
+        assert r3.status_code == 400
+        assert r3.json()["detail"] == "Já existe um cliente com este CNPJ"
+
 
 # ── PROJETOS ─────────────────────────────────────────────────────────────
 
@@ -663,6 +710,71 @@ class TestOrcamentoReferencial:
             headers=analista_headers
         )
         assert r.status_code == 403
+
+    def test_importar_falha_nao_deleta_existentes(self, client, admin_headers, cliente_teste, db_session):
+        import io
+        import openpyxl
+        import models
+        from database import get_db
+
+        # 1. Limpa orçamentos para ter um estado conhecido
+        db_session.query(models.FCOrcamento).filter(models.FCOrcamento.cliente_id == cliente_teste.id).delete()
+        
+        # 2. Insere um registro pré-existente
+        db_session.add(models.FCOrcamento(
+            cliente_id=cliente_teste.id,
+            agrupamento_slug="Vda_Din",
+            ano=2026,
+            mes=1,
+            valor=999.0,
+            versao="Original"
+        ))
+        db_session.commit()
+
+        # 3. Prepara a planilha de teste
+        wb = openpyxl.Workbook()
+        ws = wb.active
+        ws.title = "CLAUDE"
+        ws.append(["", "", ""])
+        ws.append(["", "", "CONTA", "Janeiro"])
+        ws.append(["", "", "Receita", "✅REALIZADO", "📐%REA", "🎯ORÇADO"])
+        ws.append(["Vda_Din", "", "Vendas - Dinheiro", 1000.0, 1.0, 1200.0])
+
+        file_bytes = io.BytesIO()
+        wb.save(file_bytes)
+        file_bytes.seek(0)
+        files = {"file": ("orçamento.xlsx", file_bytes, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")}
+
+        # 4. Mocka o commit do db via dependency override do FastAPI
+        def mock_get_db():
+            # Mocka o commit desta sessão
+            original_commit = db_session.commit
+            def mock_commit():
+                raise Exception("Erro de Banco de Dados Simulado")
+            db_session.commit = mock_commit
+            try:
+                yield db_session
+            finally:
+                db_session.commit = original_commit
+
+        client.app.dependency_overrides[get_db] = mock_get_db
+
+        try:
+            r = client.post(f"/api/orcamento/cliente/{cliente_teste.id}/ano/2026/importar?versao=Original", files=files, headers=admin_headers)
+            assert r.status_code == 400
+            assert "Erro ao salvar" in r.json()["detail"]
+        finally:
+            # Limpa overrides e reseta a transação
+            client.app.dependency_overrides.pop(get_db, None)
+            db_session.rollback()
+
+        # 5. Verifica se o registro pré-existente continuou lá (não foi apagado!)
+        registro = db_session.query(models.FCOrcamento).filter(
+            models.FCOrcamento.cliente_id == cliente_teste.id,
+            models.FCOrcamento.agrupamento_slug == "Vda_Din"
+        ).first()
+        assert registro is not None
+        assert registro.valor == 999.0
 
 
 # ── SEGURANÇA DE TENANT ──────────────────────────────────────────────────

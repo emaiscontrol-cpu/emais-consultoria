@@ -33,14 +33,6 @@ def importar():
     VERSAO = "Original"
     
     try:
-        # 3. Limpa orçamentos anteriores para evitar duplicados
-        print(f"Limpando orçamento antigo de {ANO} para o cliente ID {CLIENTE_ID}...")
-        db.execute(
-            text("DELETE FROM fc_orcamento WHERE cliente_id = :cid AND ano = :ano AND versao = :ver"),
-            {"cid": CLIENTE_ID, "ano": ANO, "ver": VERSAO}
-        )
-        db.commit()
-        
         # Load template lines to map row index (ordem) to DB slug
         template_map = {}
         db_lines = db.execute(text("""
@@ -54,7 +46,7 @@ def importar():
                 template_map[line.ordem] = line.agrupamento_slug
 
         # 4. Processa as linhas
-        registros_inseridos = 0
+        novos_registros = []
         total_valor = 0.0
         
         # O cabeçalho dos meses está na linha 2. Os dados começam na linha 4
@@ -94,13 +86,23 @@ def importar():
                     valor=val,
                     versao=VERSAO
                 )
-                db.add(orcamento_row)
-                registros_inseridos += 1
+                novos_registros.append(orcamento_row)
                 total_valor += val
+
+        # Fase de gravação atômica na mesma transação
+        print(f"Limpando orçamento antigo de {ANO} para o cliente ID {CLIENTE_ID}...")
+        db.execute(
+            text("DELETE FROM fc_orcamento WHERE cliente_id = :cid AND ano = :ano AND versao = :ver"),
+            {"cid": CLIENTE_ID, "ano": ANO, "ver": VERSAO}
+        )
+
+        print(f"Inserindo novos registros do orçamento...")
+        for orc in novos_registros:
+            db.add(orc)
                 
         db.commit()
         print(f"Importação concluída com sucesso!")
-        print(f"  - Total de registros inseridos: {registros_inseridos}")
+        print(f"  - Total de registros inseridos: {len(novos_registros)}")
         print(f"  - Valor total orçado acumulado: R$ {total_valor:,.2f}")
         
     except Exception as e:

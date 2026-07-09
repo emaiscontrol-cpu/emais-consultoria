@@ -81,62 +81,77 @@ def importar_orcamento(
         
     sheet = wb["CLAUDE"]
     
-    # Remove registros anteriores da mesma versão
-    db.execute(
-        text("DELETE FROM fc_orcamento WHERE cliente_id = :cid AND ano = :ano AND versao = :ver"),
-        {"cid": cliente_id, "ano": ano, "ver": versao}
-    )
-    db.commit()
-    
     # Load template lines to map row index (ordem) to DB slug
     template_map = {}
-    db_lines = db.execute(text("""
-        SELECT tl.ordem, tl.agrupamento_slug
-        FROM ref_template_linhas tl
-        JOIN ref_templates t ON t.id = tl.template_id
-        WHERE t.tipo = 'fluxo_caixa' AND t.ativo = true
-    """)).fetchall()
-    for line in db_lines:
-        if line.agrupamento_slug:
-            template_map[line.ordem] = line.agrupamento_slug
+    try:
+        db_lines = db.execute(text("""
+            SELECT tl.ordem, tl.agrupamento_slug
+            FROM ref_template_linhas tl
+            JOIN ref_templates t ON t.id = tl.template_id
+            WHERE t.tipo = 'fluxo_caixa' AND t.ativo = true
+        """)).fetchall()
+        for line in db_lines:
+            if line.agrupamento_slug:
+                template_map[line.ordem] = line.agrupamento_slug
+    except Exception as e:
+        raise HTTPException(400, f"Erro ao ler templates do banco: {str(e)}")
             
-    registros_inseridos = 0
+    novos_registros = []
     rows = list(sheet.iter_rows(values_only=True))
     
-    for r_idx, row in enumerate(rows, start=1):
-        if r_idx < 4:
-            continue
-            
-        db_slug = template_map.get(r_idx)
-        if not db_slug:
-            slug = row[0]
-            if not slug or not str(slug).strip():
+    try:
+        for r_idx, row in enumerate(rows, start=1):
+            if r_idx < 4:
                 continue
-            db_slug = str(slug).strip()
-            
-        for m in range(1, 13):
-            col_idx = 5 + (m - 1) * 5
-            if col_idx >= len(row):
-                break
                 
-            val_raw = row[col_idx]
-            try:
-                val = float(val_raw) if val_raw is not None else 0.0
-            except (ValueError, TypeError):
-                val = 0.0
+            db_slug = template_map.get(r_idx)
+            if not db_slug:
+                slug = row[0]
+                if not slug or not str(slug).strip():
+                    continue
+                db_slug = str(slug).strip()
                 
-            db.add(models.FCOrcamento(
-                cliente_id=cliente_id,
-                agrupamento_slug=db_slug,
-                ano=ano,
-                mes=m,
-                valor=val,
-                versao=versao
-            ))
-            registros_inseridos += 1
+            for m in range(1, 13):
+                col_idx = 5 + (m - 1) * 5
+                if col_idx >= len(row):
+                    break
+                    
+                val_raw = row[col_idx]
+                try:
+                    val = float(val_raw) if val_raw is not None else 0.0
+                except (ValueError, TypeError):
+                    val = 0.0
+                    
+                novos_registros.append(models.FCOrcamento(
+                    cliente_id=cliente_id,
+                    agrupamento_slug=db_slug,
+                    ano=ano,
+                    mes=m,
+                    valor=val,
+                    versao=versao
+                ))
+    except Exception as e:
+        raise HTTPException(400, f"Erro ao processar dados da planilha: {str(e)}")
+
+    # Fase de gravação transacional única
+    try:
+        # Remove registros anteriores da mesma versão
+        db.execute(
+            text("DELETE FROM fc_orcamento WHERE cliente_id = :cid AND ano = :ano AND versao = :ver"),
+            {"cid": cliente_id, "ano": ano, "ver": versao}
+        )
+        
+        # Insere novos registros
+        for reg in novos_registros:
+            db.add(reg)
             
-    db.commit()
-    return {"success": True, "registros_inseridos": registros_inseridos}
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(400, f"Erro ao salvar orçamento no banco de dados: {str(e)}")
+        
+    return {"success": True, "registros_inseridos": len(novos_registros)}
+
 
 
 @router.get("/cliente/{cliente_id}/comparativo")
