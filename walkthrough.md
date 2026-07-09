@@ -63,6 +63,11 @@ Nesta sessão, foram corrigidas três vulnerabilidades críticas de segurança n
 * **Failsafe de Produção:** Caso o servidor seja iniciado em produção (banco de dados não-SQLite) sem que uma chave secreta segura (`SECRET_KEY`) seja definida no `.env`, o backend impede o boot imediatamente levantando um `RuntimeError`.
 
 ### E. Testes de Regressão e Validação
-* A suíte de testes de API do backend foi estendida com testes de integração simulando bypasses de tenant e diagnósticos não autorizados.
-* Execução geral final obteve **78/78 testes com sucesso absoluto (100% verde)**.
+* A suíte de testes de API do backend foi estendida com a classe `TestDiagnosticoESeguranca` em [tests/test_api.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/tests/test_api.py) validando estritamente os quatro cenários exigidos:
+  * (a) GET `/api/version` sem token retorna apenas a chave `"version"`.
+  * (b) GET `/api/admin/diagnostico` sem token retorna 401 Unauthorized.
+  * (c) GET `/api/admin/diagnostico` com token de perfil consultor retorna 403 Forbidden.
+  * (d) GET `/api/admin/diagnostico` com token admin retorna 200 OK e a URL do banco vem com a senha mascarada (contendo `***` nas credenciais).
+* Execução geral final obteve **79/79 testes com sucesso absoluto (100% verde)**.
+
 
