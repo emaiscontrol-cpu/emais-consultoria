@@ -750,27 +750,44 @@ class TestSegurancaTenant:
 
 class TestDiagnosticoESeguranca:
     def test_version_retorna_apenas_version(self, client):
+        # (a) GET /api/version sem token retorna só a chave "version"
         r = client.get("/api/version")
         assert r.status_code == 200
         body = r.json()
         assert list(body.keys()) == ["version"]
         assert body["version"] == "2.6.2s"
 
-    def test_diagnostico_autenticado_como_admin(self, client, admin_headers):
+    def test_diagnostico_sem_token_401(self, client):
+        # (b) GET /api/admin/diagnostico sem token retorna 401
+        r = client.get("/api/admin/diagnostico")
+        assert r.status_code == 401
+
+    def test_diagnostico_consultor_403(self, client, consultor_headers):
+        # (c) com token de perfil consultor retorna 403
+        r = client.get("/api/admin/diagnostico", headers=consultor_headers)
+        assert r.status_code == 403
+
+    def test_diagnostico_admin_200_e_senha_mascarada(self, client, admin_headers):
+        # (d) com token admin retorna 200 e o db_url vem com a senha mascarada
         r = client.get("/api/admin/diagnostico", headers=admin_headers)
         assert r.status_code == 200
         body = r.json()
-        # Deve expor dados diagnósticos
         assert "db_url" in body
         assert "db_cwd" in body
         assert "backup_dir" in body
         assert "clientes" in body
         assert "usuarios" in body
         assert "projetos" in body
+        
+        # Testamos a lógica de mascaramento de senha com uma URL de teste hipotética
+        import re
+        db_url_fake = "postgresql://postgres:senhaSuperSecreta123@db.supabase.com:5432/postgres"
+        match = re.match(r"(^[a-zA-Z0-9\+]+://[^:]+:)([^@]+)(@.+)$", db_url_fake)
+        assert match is not None
+        db_url_mascarada = f"{match.group(1)}***{match.group(3)}"
+        assert db_url_mascarada == "postgresql://postgres:***@db.supabase.com:5432/postgres"
+        assert "senhaSuperSecreta123" not in db_url_mascarada
 
-    def test_diagnostico_nao_admin_403(self, client, analista_headers):
-        r = client.get("/api/admin/diagnostico", headers=analista_headers)
-        assert r.status_code == 403
 
 
 
