@@ -11,6 +11,7 @@ from sqlalchemy import text
 from database import get_db
 from auth import get_usuario_atual
 from models import Cliente
+from ref_formula_engine import safe_eval
 
 router = APIRouter(prefix="/api/demonstrativos", tags=["Demonstrativos FC"])
 
@@ -84,8 +85,10 @@ def _eval_formula(formula: str, row_vals: dict) -> float:
     f = f.replace('""', '0').replace("''", '0')
 
     try:
-        result = eval(f, {"__builtins__": {}})
+        result = safe_eval(f)
         return float(result) if result not in (None, '') else 0.0
+    except (ZeroDivisionError, ValueError):
+        return 0.0
     except Exception:
         return 0.0
 

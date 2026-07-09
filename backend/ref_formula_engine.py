@@ -101,7 +101,7 @@ def ordenar_linhas(linhas):
     return resultado
 
 
-def _safe_eval(expr: str) -> float:
+def safe_eval(expr: str) -> float:
     """Avalia expressão aritmética com segurança (sem eval() aberto)."""
     def _ev(node):
         if isinstance(node, ast.Constant):
@@ -123,6 +123,9 @@ def _safe_eval(expr: str) -> float:
 
     tree = ast.parse(expr, mode='eval')
     return _ev(tree.body)
+
+
+_safe_eval = safe_eval
 
 
 def calcular_linha(formula: str, val_agr: dict, val_lin: dict) -> tuple[float, bool]:
