@@ -746,4 +746,32 @@ class TestSegurancaTenant:
         assert r2.status_code != 403
 
 
+# ── DIAGNÓSTICO E SEGURANÇA DE CREDENCIAIS ──────────────────────────────────
+
+class TestDiagnosticoESeguranca:
+    def test_version_retorna_apenas_version(self, client):
+        r = client.get("/api/version")
+        assert r.status_code == 200
+        body = r.json()
+        assert list(body.keys()) == ["version"]
+        assert body["version"] == "2.6.2s"
+
+    def test_diagnostico_autenticado_como_admin(self, client, admin_headers):
+        r = client.get("/api/admin/diagnostico", headers=admin_headers)
+        assert r.status_code == 200
+        body = r.json()
+        # Deve expor dados diagnósticos
+        assert "db_url" in body
+        assert "db_cwd" in body
+        assert "backup_dir" in body
+        assert "clientes" in body
+        assert "usuarios" in body
+        assert "projetos" in body
+
+    def test_diagnostico_nao_admin_403(self, client, analista_headers):
+        r = client.get("/api/admin/diagnostico", headers=analista_headers)
+        assert r.status_code == 403
+
+
+
 

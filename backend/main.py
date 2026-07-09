@@ -1,4 +1,4 @@
-﻿from fastapi import FastAPI
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -378,7 +378,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173", "http://localhost:8001"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -434,28 +434,8 @@ app.version = "2.6.2s"
 
 @app.get("/api/version", tags=["Sistema"])
 def get_version():
-    import os as _os
-    from database import SQLALCHEMY_DATABASE_URL as _db_url
-    from database import SessionLocal as _SL
-    import models as _m
-    _db = _SL()
-    try:
-        _nc = _db.query(_m.Cliente).count()
-        _nu = _db.query(_m.Usuario).count()
-        _np = _db.query(_m.Projeto).count()
-    finally:
-        _db.close()
-    from routers.admin import DB_PATH as _admin_db_path, BACKUP_DIR as _backup_dir
     return {
         "version": app.version,
-        "db_url": _db_url,
-        "db_cwd": _os.getcwd(),
-        "admin_db_path": str(_admin_db_path),
-        "admin_db_exists": _admin_db_path.exists() if _admin_db_path else None,
-        "backup_dir": str(_backup_dir),
-        "clientes": _nc,
-        "usuarios": _nu,
-        "projetos": _np,
     }
 
 # Servir o frontend React (arquivos estÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã‚Â ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬ÃƒÂ¢Ã¢â‚¬Å¾Ã‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€šÃ‚Â ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¾Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¡ticos do build)

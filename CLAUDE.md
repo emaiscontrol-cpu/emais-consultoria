@@ -32,7 +32,7 @@ Sempre responder em **português do Brasil (pt-BR)**, sem exceção.
 
 > ⚠️ **REGRA CRÍTICA:** Banco local é SQLite e produção é PostgreSQL (Supabase) — são engines diferentes. NUNCA tentar copiar ou restaurar o banco local para o servidor. Os dados reais ficam exclusivamente no Supabase de produção.
 
-> ⚠️ **ANTES de qualquer ação no banco:** verificar contagem via `/api/version` (expõe `clientes`, `usuarios`, `projetos`, `db_url`, `admin_db_path`). Confirmar que `admin_db_path` == caminho esperado ANTES de qualquer restore.
+> ⚠️ **ANTES de qualquer ação no banco:** verificar contagem e integridade do banco no servidor via endpoint autenticado de admin `/api/admin/diagnostico` (expõe `clientes`, `usuarios`, `projetos`, `db_url` com senha mascarada, `admin_db_path`). Confirmar que `admin_db_path` == caminho esperado ANTES de qualquer restore.
 
 > ⚠️ **O usuário (Luiz) é o DEV.** Os dados de produção existem no servidor independentemente da máquina local estar ligada ou não.
 
