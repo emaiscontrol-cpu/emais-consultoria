@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from auth import requer_perfil, get_usuario_atual
+from security import requer_perfil, get_usuario_atual
 import models, schemas
 from ref_formula_engine import validar_formula, detectar_ciclo
 

@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
-from auth import get_usuario_atual, verificar_tenant
+from security import get_usuario_atual, verificar_tenant
 from models import Cliente
 from ref_formula_engine import safe_eval
 

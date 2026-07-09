@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import SessionLocal
 from models import Anotacao, Cliente
-from auth import get_usuario_atual as get_current_user, verificar_tenant
+from security import get_usuario_atual as get_current_user, verificar_tenant
 
 router = APIRouter()
 

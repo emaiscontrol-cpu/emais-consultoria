@@ -19,16 +19,6 @@ MESES_PT = {
 }
 
 
-def _val(cell) -> float:
-    if cell is None:
-        return 0.0
-    s = str(cell).strip().replace(",", ".").replace(" ", "").replace("R$", "").replace(".", "", str(cell).count(".") - 1)
-    # segunda passagem: remover separador de milhar residual
-    try:
-        return float(s)
-    except Exception:
-        return 0.0
-
 
 def _limpar_val(cell) -> float:
     """Converte célula para float, tratando vírgula decimal e separadores de milhar."""

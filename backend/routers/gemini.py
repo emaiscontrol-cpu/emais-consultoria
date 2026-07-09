@@ -2,7 +2,7 @@ import os
 import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from auth import get_usuario_atual
+from security import get_usuario_atual
 
 router = APIRouter()
 

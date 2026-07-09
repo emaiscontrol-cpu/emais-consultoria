@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
 from models import Agrupamento
-from auth import get_usuario_atual
+from security import get_usuario_atual
 from schemas import UsuarioOut
 from pydantic import BaseModel
 import json

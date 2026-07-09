@@ -11,7 +11,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import SessionLocal
 from models import ImportLayout, ImportacaoLog, ImportacaoPendencia
-from auth import get_usuario_atual
+from security import get_usuario_atual
 from xlsx_parser import preview_xlsx
 
 router = APIRouter()

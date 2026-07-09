@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from database import get_db
-from auth import requer_perfil, get_usuario_atual
+from security import requer_perfil, get_usuario_atual
 import models, schemas
 import depara_service
 from xlsx_parser import parse_xlsx

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from pydantic import BaseModel
 from database import get_db
-from auth import get_usuario_atual, requer_perfil
+from security import get_usuario_atual, requer_perfil
 import models, schemas
 
 router = APIRouter()

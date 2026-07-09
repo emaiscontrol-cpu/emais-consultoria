@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from database import get_db
 from models import CategoriaFinanceira, Lancamento, OrcamentoLinha, Projeto, Cliente
-from auth import get_usuario_atual
+from security import get_usuario_atual
 from schemas import UsuarioOut
 from pydantic import BaseModel
 from typing import Optional

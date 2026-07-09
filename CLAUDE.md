@@ -218,7 +218,7 @@ emals_consultoria/
 │   ├── main.py                  # Startup, routers, versão, migrações
 │   ├── models.py                # Todos os modelos SQLAlchemy
 │   ├── schemas.py               # Todos os schemas Pydantic
-│   ├── auth.py                  # JWT, hash de senha, get_usuario_atual
+│   ├── security.py              # JWT, hash de senha, get_usuario_atual
 │   ├── database.py              # Engine, SessionLocal, Base, _is_sqlite
 │   ├── helpers.py               # Função log() para LogAtividade
 │   ├── xlsx_parser.py           # Leitura de planilhas .xlsx

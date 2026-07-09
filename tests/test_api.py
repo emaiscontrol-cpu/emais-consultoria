@@ -36,7 +36,7 @@ class TestAuth:
         assert body["usuario"]["email"] == analista_user.email
 
     def test_login_codigos_iguais_clientes_diferentes(self, client, db_session, analista_user, cliente_teste, outro_cliente):
-        from auth import hash_senha
+        from security import hash_senha
         outro_analista = models.Usuario(
             nome="Outro Analista",
             email="outro@emals.com",

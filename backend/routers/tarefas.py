@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from typing import List
 from datetime import datetime, timezone
 from database import get_db
-from auth import get_usuario_atual, requer_perfil, verificar_tenant
+from security import get_usuario_atual, requer_perfil, verificar_tenant
 from routers.fases import recalcular_fase
 from helpers import log, notificar_mencoes
 import models, schemas
