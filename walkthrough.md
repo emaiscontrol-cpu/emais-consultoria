@@ -37,4 +37,32 @@ Todas as fases e requisitos extras do módulo de DRE e Comparativos com quebra d
 * O campo Código já bloqueava não-numéricos e limitava a 3 dígitos na digitação; foi adicionada uma segunda validação de duplicidade de código no momento do "Salvar" final (além da já existente no "Adicionar Unidade"), como reforço.
 
 ### Validação Ponta a Ponta
-* Como o dev server local (uvicorn :8000 SQLite + Vite :5173) já estava no ar, a validação foi feita dirigindo um Chromium headless (Playwright já presente em `frontend/node_modules`) contra a UI real, autenticando com um usuário administrador temporário criado só para o teste (removido do SQLite local ao final). Capturas de tela confirmaram: modal de exclusão de cliente em 2 etapas abrindo corretamente; abas "Geral"/"Unidades" sem scroll aninhado (testado inclusive com o cliente Leal-MG, que tem 7 unidades cadastradas); modal de remoção de unidade em 2 etapas; toast de erro ao tentar salvar/adicionar unidade com código duplicado (nenhuma unidade foi de fato persistida durante o teste — todas as ações de confirmação foram canceladas propositalmente).
+* Como o dev server local (uvicorn :8000 SQLite + Vite :5173) já estava no ar, a validação foi feita dirigindo um Chromium headless (Playwright já presente in `frontend/node_modules`) contra a UI real, autenticando com um usuário administrador temporário criado só para o teste (removido do SQLite local ao final). Capturas de tela confirmaram: modal de exclusão de cliente em 2 etapas abrindo corretamente; abas "Geral"/"Unidades" sem scroll aninhado (testado inclusive com o cliente Leal-MG, que tem 7 unidades cadastradas); modal de remoção de unidade em 2 etapas; toast de erro ao tentar salvar/adicionar unidade com código duplicado (nenhuma unidade foi de fato persistida durante o teste — todas as ações de confirmação foram canceladas propositalmente).
+
+---
+
+## 4. Correção de Vulnerabilidades no Backend (Sessão 16 / fix/seguranca-superficie-publica)
+
+Nesta sessão, foram corrigidas três vulnerabilidades críticas de segurança no backend, fortalecendo a segurança de toda a superfície de API pública do sistema:
+
+### A. Substituição de eval() por safe_eval()
+* **Mitigação de RCE:** Substituição completa da função nativa do Python `eval()` por uma execução segura usando AST (`safe_eval()`) em [backend/routers/fc_exec.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/fc_exec.py).
+* **Testes de RCE:** Foram criados testes unitários específicos em [tests/test_formulas.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/tests/test_formulas.py) simulando expressões matemáticas legítimas e payloads maliciosos de escape de sandbox (como classes de mro e dunder methods), todos bloqueados com sucesso total.
+
+### B. Trava Centralizada de Tenant no Backend
+* **Injeção Unificada:** Criação de uma dependência única de validação `verificar_tenant(usuario, cliente_id)` no [backend/auth.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/auth.py).
+* **Varredura Completa:** Aplicação da função em todas as rotas operacionais que lidam com dados específicos do cliente em diversos routers (`ref_demonstrativos`, `bandeiras`, `anotacoes`, `fc_exec`, `dashboard`, `busca`, `orcamento`, `projetos`, `relatorios`, `subtarefas`, `tarefas` e `ref_unidades`).
+* **Segurança Reforçada:** Perfis restritos (`analista`, `ger_projeto`, `ti`) com `cliente_id` inválido ou nulo agora recebem HTTP 403. Administradores e consultores têm acesso irrestrito.
+
+### C. Isolamento de Credenciais e Diagnóstico de Admin
+* **Version Público Protegido:** O endpoint `/api/version` público em [backend/main.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/main.py) foi modificado para expor **exclusivamente** a chave `version`.
+* **Novo Diagnóstico:** Informações críticas (como a string de conexão do Supabase com senha mascarada, contagens de registros e caminhos internos) foram movidas para a nova rota `/api/admin/diagnostico` em [backend/routers/admin.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/admin.py), protegida estritamente com `Depends(requer_perfil("admin"))`.
+
+### D. CORS e Segurança de Inicialização
+* **Restrição de CORS:** O backend agora restringe o acesso aos hosts autorizados explicitamente (`http://localhost:5173` e `http://localhost:8001`), eliminando a diretiva aberta de wildcard (`*`).
+* **Failsafe de Produção:** Caso o servidor seja iniciado em produção (banco de dados não-SQLite) sem que uma chave secreta segura (`SECRET_KEY`) seja definida no `.env`, o backend impede o boot imediatamente levantando um `RuntimeError`.
+
+### E. Testes de Regressão e Validação
+* A suíte de testes de API do backend foi estendida com testes de integração simulando bypasses de tenant e diagnósticos não autorizados.
+* Execução geral final obteve **78/78 testes com sucesso absoluto (100% verde)**.
+
