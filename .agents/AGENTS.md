@@ -15,6 +15,9 @@
 - **Botões de ação, ícones-botão e cards** — proibido montar manualmente; sempre `BotaoEditar`,
   `BotaoExcluir`, `BotaoNovo`, `IconButton`, `Card` ou `BadgeTag` de `frontend/src/components/ui.jsx`
   (tamanhos de ícone únicos permitidos: `sm`=16px, `md`=20px). Ver DESIGN_SYSTEM.md § 9b.
+- **Gráficos** — proibido importar `recharts` (ou qualquer outra lib) direto numa tela; sempre
+  `GraficoBarras`/`GraficoLinha`/`GraficoArea`/`GraficoRosca`/`GraficoProgresso`/`GraficoComposto`
+  de `frontend/src/components/Graficos.jsx` (paleta e tokens em `chartTheme.js`). Ver DESIGN_SYSTEM.md § 11.
 
 ---
 

@@ -247,6 +247,13 @@ dados sem aprovação humana — apenas leem, analisam e reportam.
 
 ## ✅ CONCLUÍDO
 
+### Tema visual — Gráficos padronizados (branch `feature/tema-graficos`, aguardando release)
+- Padrão violeta do `PainelDetalheAgrupamento.jsx` extraído para `chartTheme.js` + wrappers `Graficos.jsx` (`GraficoBarras`/`Linha`/`Area`/`Rosca`/`Progresso`/`Composto`) — nenhuma tela importa `recharts` direto
+- `DashboardCliente.jsx` migrado de `plotly.js-dist-min` para os wrappers; `plotly.js`/`plotly.js-dist-min`/`react-plotly.js` removidos do projeto
+- Todos os demais gráficos recharts do sistema migrados (Dashboard, DashboardFases, DashboardSubtarefas, DreDashboard2, PainelDetalheOrcamento, PainelDetalheAgrupamento)
+- **Dívida visual do PR #122 — quitada nesta branch**: `.btn-acao-tabela` duplicado (Clientes.jsx, CSS var inexistente) substituído por `IconButton`; toolbar de `Orcamento.jsx`/`FluxoCaixa.jsx` (cores hex + `!important`) migrada para CSS vars (`--toolbar-*`) em `index.css`
+- Bug real encontrado de quebra: `BotaoExportarPDF` (iconOnly) ignorava a prop `className` do caller — o botão de exportar PDF da toolbar nunca teve o estilo vermelho aplicado em Orçamento/Fluxo de Caixa; corrigido
+
 ### Fases 1-7 — Segurança, correções, higiene, dependências e Numeric — v2.6.2t (11/07/2026)
 - Fase 1 — Segurança da superfície pública: remove vazamento de `db_url`/credenciais em `/api/version`, restringe CORS, substitui `eval()` cru por `safe_eval` (AST) em `fc_exec.py` (RCE), centraliza `verificar_tenant`, impede boot com `SECRET_KEY` default em produção
 - Fase 2 — Corrupção de dados: captura `IntegrityError` de CNPJ duplicado, importador de orçamento em transação única, parse monetário padronizado no frontend
