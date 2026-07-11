@@ -1,6 +1,10 @@
 import sys
 sys.path.append(r'c:\Users\luiz\OneDrive\Anexos\Administrador\Documentos\Projetos\emals_consultoria\backend')
-from database import SessionLocal, engine
+from database import _is_sqlite, SessionLocal, engine
+
+if not _is_sqlite:
+    print("seed só roda em banco local SQLite")
+    sys.exit(1)
 import models
 from datetime import date
 from sqlalchemy import text
