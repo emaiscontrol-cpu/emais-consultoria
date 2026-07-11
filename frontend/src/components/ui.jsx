@@ -18,12 +18,30 @@ export function IconButton({ icon: Icon, size = 'sm', danger = false, title, cla
   )
 }
 
-export function BotaoEditar({ size = 'sm', title = 'Editar', ...rest }) {
-  return <IconButton icon={Pencil} size={size} title={title} {...rest} />
+// Sem `children`: botão só-ícone (ação de linha de tabela). Com `children`: botão com rótulo
+// (ex.: "Editar", "Excluir fase") — mesma origem, dois formatos já usados no projeto.
+export function BotaoEditar({ children, size = 'sm', title, className = '', ...rest }) {
+  if (!children) {
+    return <IconButton icon={Pencil} size={size} title={title || 'Editar'} className={className} {...rest} />
+  }
+  return (
+    <button type="button" className={`btn btn-ghost ${size === 'sm' ? 'btn-sm' : ''} ${className}`} title={title} {...rest}>
+      <Pencil size={ICON_SIZE[size]} />
+      {children}
+    </button>
+  )
 }
 
-export function BotaoExcluir({ size = 'sm', title = 'Excluir', ...rest }) {
-  return <IconButton icon={Trash2} size={size} title={title} danger {...rest} />
+export function BotaoExcluir({ children, size = 'sm', title, className = '', ...rest }) {
+  if (!children) {
+    return <IconButton icon={Trash2} size={size} title={title || 'Excluir'} danger className={className} {...rest} />
+  }
+  return (
+    <button type="button" className={`btn btn-danger ${size === 'sm' ? 'btn-sm' : ''} ${className}`} title={title} {...rest}>
+      <Trash2 size={ICON_SIZE[size]} />
+      {children}
+    </button>
+  )
 }
 
 export function BotaoNovo({ children = 'Novo', size = 'md', className = '', ...rest }) {
