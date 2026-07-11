@@ -92,7 +92,7 @@ class TestAuth:
 
     def test_me_token_expirado(self, client, admin_user):
         from datetime import timedelta
-        from auth import criar_token
+        from security import criar_token
         token = criar_token({"sub": admin_user.email}, expires_delta=timedelta(minutes=-10))
         r = client.get("/api/auth/me", headers={"Authorization": f"Bearer {token}"})
         assert r.status_code == 401
@@ -104,7 +104,7 @@ class TestAuth:
         assert r.status_code == 401
 
     def test_verificar_senha_legado_passlib(self):
-        from auth import verificar_senha
+        from security import verificar_senha
         hash_legado = "$2b$12$ax.cWQKkgGjvT9wwff2I4ueJaIdwD0L9D6VwtViFdxRGWan8zbbWm"
         assert verificar_senha("senha123", hash_legado) is True
         assert verificar_senha("senha-errada", hash_legado) is False
