@@ -1,3 +1,20 @@
+## CONTRATO DE SESSÃO — regras inegociáveis
+
+> ⚠️ Esta seção existe em duas cópias: aqui e em `CLAUDE.md` (lido pelo Claude Code). As duas devem dizer exatamente a mesma coisa — ao mudar uma, atualizar a outra também.
+
+- **Sincronizar antes de trabalhar:** `git checkout main && git pull` no início de toda sessão.
+- **Arquivos de sessão** (`task.md`, `walkthrough.md`, `implementation_plan.md`, análises pontuais) em `documentos/sessoes/` — nunca na raiz.
+- **NUNCA usar `eval()`** — fórmulas passam por `safe_eval()` de `backend/ref_formula_engine.py`.
+- **Todo endpoint com `cliente_id`** chama `verificar_tenant` (`backend/security.py`).
+- **Auth:** PyJWT + bcrypt direto — `python-jose`/`passlib` proibidos.
+- **Dinheiro:** `Numeric(15,2)` no banco; `parseValorBR` no frontend.
+- **Dependência nova** = `requirements.txt` + regenerar `requirements.lock.txt` a partir de venv limpo.
+- **Release SOMENTE via `/conferencia-pre-release`** (GO explícito) → `/release` — nunca por conta própria.
+- **Backlog vivo:** `ROADMAP_2.md`; registrar a sessão no CLAUDE.md ao final.
+- **Mapa de leitura da arquitetura:** `documentos/ARQUITETURA*`, `DESIGN_SYSTEM.md`, `SKILLS.md`.
+
+---
+
 # Padrões de Usabilidade de Teclado e Formulários
 
 Este documento registra regras específicas de experiência do usuário (UX) para formulários e interações pelo teclado no sistema E Mais Consultoria.
