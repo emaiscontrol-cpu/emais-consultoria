@@ -1,5 +1,5 @@
 # Roadmap — E Mais Consultoria
-Mantido pelo chat de planejamento (Claude.ai Project). Última atualização: 2026-07-04.
+Mantido pelo chat de planejamento (Claude.ai Project). Última atualização: 2026-07-11.
 Marque com [x] quando concluído. Mova para a seção ✅ CONCLUÍDO com a versão de entrega.
 
 > **Como ler as prioridades**
@@ -7,6 +7,82 @@ Marque com [x] quando concluído. Mova para a seção ✅ CONCLUÍDO com a vers�
 > 🟡 Alta — entrega de valor direto ao cliente
 > 🟢 Média — melhoria relevante, não urgente
 > 🔵 Futura — inovação e diferencial competitivo
+
+---
+
+# ═══════════════════════════════════════════════════════════════
+# EVOLUÇÃO PÓS-FASES 1-7 — Consolidado em 10/07/2026
+# Fonte: avaliação dupla (Claude chat + Claude Code CLI), verificada contra o código.
+# Pré-requisito geral: as 6 branches das fases mescladas, release feito e validado no Electron.
+# ═══════════════════════════════════════════════════════════════
+
+## TEMA 1 — Segurança e Isolamento Multi-tenant
+**Quando:** RLS no Estágio 2 (infra); teste sistemático já no Estágio 1.
+- [ ] **Teste sistemático de isolamento**: teste automatizado que percorre TODOS os endpoints
+      que recebem cliente_id e confirma 403 para usuário de outro tenant (hoje a cobertura
+      é pontual). Protege contra endpoints futuros esquecerem o verificar_tenant.
+- [ ] **RLS (Row Level Security) no Supabase** — segunda camada de defesa: policy
+      `cliente_id = current_setting('app.cliente_id')::int` por tabela multi-tenant,
+      com a variável de sessão setada a cada request no SQLAlchemy. NÃO substitui o
+      verificar_tenant da aplicação — é rede de segurança para quando a aplicação errar.
+      Projeto de médio porte; planejar como as migrações da Fase 7 (janela + backup).
+- [ ] **Rate limiting geral da API** com slowapi (hoje só o login tem, em memória e
+      por processo). Ao escalar para múltiplos workers, migrar o controle para o banco
+      ou Redis, pois o dict em memória não é compartilhado entre processos.
+
+## TEMA 2 — Escalabilidade / Infraestrutura
+### Estágio 1 — "aguentar o crescimento atual" (semanas, custo baixo) — NESTA ORDEM:
+- [ ] **Paginação obrigatória** nas listagens pesadas (ref_lancamentos, balancete,
+      importações, fc_lancamentos): limit/offset ou cursor; hoje terminam em .all().
+      É o primeiro gargalo real conforme a base cresce.
+- [ ] **Backup fora do processo**: mover do threading.Timer para o Agendador de Tarefas
+      do Windows. PRÉ-REQUISITO OBRIGATÓRIO do item seguinte (Ponto de Atenção #5 —
+      múltiplos workers = backups duplicados).
+- [ ] **uvicorn --workers 2-4 atrás do Caddy** (Caddyfile já existe em deploy/ —
+      semi-provisionado). Mudança de maior impacto para carga simultânea.
+- [ ] **Monitor de uptime externo** (ex.: UptimeRobot em /api/version) com alerta.
+- [ ] **Domínio reservado no ngrok** (se ainda não houver).
+
+### Estágio 2 — "nível nacional" (projeto de infra, 1-2 meses):
+- [ ] Backend em nuvem Linux (Railway/Render/Fly/Azure) com domínio próprio + TLS —
+      aposentar o ngrok. Electron passa a apontar para api.<dominio>.com.br.
+- [ ] Pooler do Supabase (porta 6543) + redimensionar pool (hoje 5+10=15 conexões).
+- [ ] Uploads e arquivos em object storage (Supabase Storage) — eliminar estado local
+      preso na máquina Windows (impede segunda instância).
+- [ ] Error tracking (Sentry) + exception handler global. Logging estruturado (Fase 6)
+      é o degrau 1; este é o degrau 2.
+- [ ] Cache nos dashboards agregados (fluxo de caixa, DRE, orçamento) — Redis ou
+      memória com TTL curto. Monitorar tempos de resposta ANTES de implementar.
+- [ ] Deploy sem downtime (hoje todo release reinicia o serviço para todos).
+
+## TEMA 3 — Automações Headless (Claude Code CLI)
+**Quando:** três condições simultâneas — (1) fases 1-7 em produção estáveis por 1-2
+semanas sem incidente; (2) regras fiscalizáveis por escrito (✔ já cumprida pelas fases);
+(3) o operador ter rodado o ciclo manual de release 2-3 vezes com confiança — automatizar
+o que se entende é delegação; automatizar o que confunde é abdicação.
+**Implementar NESTA ordem (da mais segura para a mais sensível — 1 e 2 são somente-leitura):**
+- [ ] **1. Revisor automático de PRs (GitHub Actions + Claude CLI headless)**: em cada PR,
+      verifica eval() cru, endpoints com cliente_id sem verificar_tenant, parse monetário
+      fora do helper padrão, violações do CLAUDE.md. Posta parecer EM PORTUGUÊS como
+      comentário no PR, explicando o que o diff faz e onde está o risco. NÃO bloqueia
+      nem aprova merge — apenas opina. (Resolve o "aprovar sem saber o que significa":
+      automatiza a EXPLICAÇÃO, não a decisão.)
+- [ ] **2. Relatório noturno (Agendador de Tarefas)**: pytest na main de madrugada +
+      comparação com o dia anterior + saúde do sistema (api/version, disco, logs WinSW)
+      gravado em RELATORIO_NOTURNO.md.
+- [ ] **3. Validação de backup (script)**: após o backup diário, comparar contagens de
+      tabelas com o dia anterior e sinalizar anomalias (queda abrupta = possível
+      corrupção/deleção indevida).
+**REGRA PERMANENTE:** automações headless NUNCA fazem merge, deploy ou alteração de
+dados sem aprovação humana — apenas leem, analisam e reportam.
+
+## Ordem geral recomendada entre os temas
+1. Estabilização (1-2 semanas de produção pós-release das fases)
+2. Tema 2 / Estágio 1 (itens baratos que destravam o resto)
+3. Tema 3 / item 1 (revisor de PRs — maior retorno imediato)
+4. Tema 1 (teste sistemático → depois RLS junto do Estágio 2)
+5. Tema 3 / itens 2 e 3
+6. Tema 2 / Estágio 2 (quando a base de clientes justificar)
 
 ---
 
