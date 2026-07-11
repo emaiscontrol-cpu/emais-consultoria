@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session, joinedload
 from datetime import datetime, timezone
 from io import BytesIO
 from database import get_db
-from auth import get_usuario_atual
+from security import get_usuario_atual
 from openpyxl import Workbook
 from openpyxl.styles import Font, PatternFill
 import models

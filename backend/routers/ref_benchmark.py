@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from database import get_db
-from auth import requer_perfil
+from security import requer_perfil
 import models, schemas
 from routers.ref_demonstrativos import _calcular_template
 

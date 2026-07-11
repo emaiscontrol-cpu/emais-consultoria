@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
-from auth import get_usuario_atual
+from security import get_usuario_atual
 from services.pdf_service import gerar_pdf_demonstrativo
 
 router = APIRouter()

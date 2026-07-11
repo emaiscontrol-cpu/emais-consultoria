@@ -14,3 +14,16 @@ def seed_ref_plano(db: Session) -> None:
     if db.query(PlanoReferencial).count() == 0:
         db.add(PlanoReferencial(nome="Plano Referencial E Mais"))
         db.commit()
+
+if __name__ == "__main__":
+    import sys
+    from database import _is_sqlite, SessionLocal
+    if not _is_sqlite:
+        print("seed só roda em banco local SQLite")
+        sys.exit(1)
+    db = SessionLocal()
+    try:
+        seed_ref_plano(db)
+    finally:
+        db.close()
+

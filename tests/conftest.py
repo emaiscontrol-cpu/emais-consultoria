@@ -30,7 +30,7 @@ if _TEST_DB_PATH.exists():
 
 from database import Base, engine, SessionLocal  # noqa: E402
 import models  # noqa: E402  garante que todas as tabelas entrem em Base.metadata
-from auth import hash_senha, criar_token  # noqa: E402
+from security import hash_senha, criar_token  # noqa: E402
 from routers import (  # noqa: E402
     auth as auth_router,
     usuarios,

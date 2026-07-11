@@ -13,7 +13,7 @@ $pkgJson = "$PSScriptRoot\electron-client\package.json"
 
 # Ler versão atual do backend (suporta 2.0.0, 2.0.0a, 2.0.0a-beta)
 $content = Get-Content $mainPy -Raw
-if ($content -match 'app\.version\s*=\s*"(\d+)\.(\d+)\.(\d+)([a-z]*)(-beta)?"') {
+if ($content -match 'APP_VERSION\s*=\s*"(\d+)\.(\d+)\.(\d+)([a-z]*)(-beta)?"') {
     $major  = [int]$Matches[1]
     $minor  = [int]$Matches[2]
     $patch  = [int]$Matches[3]
@@ -25,6 +25,7 @@ if ($content -match 'app\.version\s*=\s*"(\d+)\.(\d+)\.(\d+)([a-z]*)(-beta)?"') 
 }
 
 # Calcular nova versão
+# [Linhas 27 a 57 continuam inalteradas]
 switch ($tipo) {
     "beta" {
         # Se já é beta, mantém base; senão incrementa letra e adiciona -beta
@@ -59,7 +60,7 @@ switch ($tipo) {
 Write-Host "Publicando versão $novaVersao..." -ForegroundColor Cyan
 
 # Atualizar backend/main.py
-(Get-Content $mainPy -Raw) -replace 'app\.version\s*=\s*"[\d\.a-z-]+"', "app.version = `"$novaVersao`"" |
+(Get-Content $mainPy -Raw) -replace 'APP_VERSION\s*=\s*"[\d\.a-z-]+"', "APP_VERSION = `"$novaVersao`"" |
     Set-Content $mainPy -Encoding UTF8
 
 # Atualizar electron-client/package.json (sem BOM — electron-builder falha com BOM)

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session, selectinload, joinedload
 from typing import List, Optional
 from pydantic import BaseModel
 from database import get_db
-from auth import requer_perfil, get_usuario_atual
+from security import requer_perfil, get_usuario_atual
 import models, schemas
 
 router = APIRouter()

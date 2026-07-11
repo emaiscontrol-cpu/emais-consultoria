@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
-from auth import get_usuario_atual
+from security import get_usuario_atual
 import models
 
 router = APIRouter()

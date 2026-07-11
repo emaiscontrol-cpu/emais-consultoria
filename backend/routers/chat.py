@@ -4,7 +4,7 @@ from sqlalchemy import func
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import get_db
-from auth import get_usuario_atual
+from security import get_usuario_atual
 from helpers import notificar_mencoes
 import models
 

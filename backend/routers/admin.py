@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from database import get_db
-from auth import get_usuario_atual, requer_perfil
+from security import get_usuario_atual, requer_perfil
 
 router = APIRouter()
 

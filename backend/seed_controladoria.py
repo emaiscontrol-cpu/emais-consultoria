@@ -100,3 +100,16 @@ def seed_agrupadores(db: Session) -> None:
 
     print(f"[seed] {len(_AGRUPAMENTOS)} agrupamentos inseridos")
     print(f"[seed] slugs: {', '.join(s for _, s in _AGRUPAMENTOS)}")
+
+if __name__ == "__main__":
+    import sys
+    from database import _is_sqlite, SessionLocal
+    if not _is_sqlite:
+        print("seed só roda em banco local SQLite")
+        sys.exit(1)
+    db = SessionLocal()
+    try:
+        seed_agrupadores(db)
+    finally:
+        db.close()
+

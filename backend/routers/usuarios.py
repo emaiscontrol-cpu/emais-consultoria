@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List
 from database import get_db
-from auth import hash_senha, get_usuario_atual, requer_perfil
+from security import hash_senha, get_usuario_atual, requer_perfil
 import models, schemas
 
 router = APIRouter()

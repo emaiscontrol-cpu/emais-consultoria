@@ -2,8 +2,13 @@
 Script para popular o banco com dados iniciais.
 Execute: python seed.py
 """
-from database import SessionLocal, engine, Base
-from auth import hash_senha
+from database import _is_sqlite, SessionLocal, engine, Base
+import sys
+
+if not _is_sqlite:
+    print("seed só roda em banco local SQLite")
+    sys.exit(1)
+from security import hash_senha
 import models
 
 Base.metadata.create_all(bind=engine)

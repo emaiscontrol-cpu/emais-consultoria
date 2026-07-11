@@ -12,7 +12,7 @@ import httpx
 from pydantic import BaseModel
 import models
 from database import get_db
-from auth import get_usuario_atual, requer_perfil, verificar_tenant
+from security import get_usuario_atual, requer_perfil, verificar_tenant
 from routers.fc_exec import _parse_compound_slug, _eval_formula
 
 router = APIRouter()

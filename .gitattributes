@@ -1,0 +1,6 @@
+text=auto
+*.py text eol=lf working-tree-encoding=UTF-8
+*.jsx text eol=lf
+*.js text eol=lf
+*.md text eol=lf
+*.ps1 text eol=crlf

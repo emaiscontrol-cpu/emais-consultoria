@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from auth import get_usuario_atual, requer_perfil, verificar_tenant
+from security import get_usuario_atual, requer_perfil, verificar_tenant
 from models import Unidade, Cliente
 import schemas
 

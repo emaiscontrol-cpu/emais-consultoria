@@ -1,25 +1,36 @@
-# Checklist de Tarefas — feature/erros-de-formula-visiveis
+# Checklist de Tarefas — chore/higiene-codigo-e-docs
 
-- [x] TAREFA 1: backend/ref_formula_engine.py e routers/ref_templates.py
-  - [x] Renomear `_safe_eval` para `safe_eval` e expor no `ref_formula_engine.py`
-  - [x] Alterar assinatura de `calcular_linha` para retornar `tuple[float, str | None]`
-  - [x] Implementar validação de referências inexistentes no `calcular_linha`
-  - [x] Atualizar `validar_formula` para receber `refs_validas` e retornar erros
-  - [x] Chamar `validar_formula` com referências reais nos endpoints de `ref_templates.py` (criação e edição de linhas de template)
-  - [x] Ajustar `ordenar_linhas` e propagar erro `"ciclo"` caso detectado
+- [x] TAREFA 1: Deletar código morto perigoso e testar `_limpar_val`
+  - [x] Deletar a função `_val` em `backend/xlsx_parser.py`
+  - [x] Criar `tests/test_xlsx_parser.py` cobrindo cenários com `_limpar_val`
+  - [x] Executar o teste unitário isolado e garantir sucesso
 
-- [x] TAREFA 2: backend/routers/fc_exec.py e ref_demonstrativos.py
-  - [x] Atualizar `_eval_formula` no `fc_exec.py` para suportar separador `;` e porcentagem `%`
-  - [x] Mudar assinatura de `_eval_formula` para `tuple[float, bool]` e propagar erro nas totalizadoras
-  - [x] Atualizar `_calcular_template` no `ref_demonstrativos.py` para capturar os erros e preencher o payload com `"ciclo"` se houver ciclo
-  - [x] Mapear o payload com os novos campos `erro` e `erros_unidades` no schemas e routers
+- [x] TAREFA 2: Colisão de nome de módulo auth
+  - [x] Renomear `backend/auth.py` para `backend/security.py`
+  - [x] Atualizar todos os imports de `from auth import ...` para `from security import ...`
+  - [x] Atualizar imports de `import auth` para `import security`
+  - [x] Atualizar referências no `CLAUDE.md`
+  - [x] Executar pytest para testar a correção e imports corretos
 
-- [x] TAREFA 3: Propagação no Frontend e UI
-  - [x] Adicionar os campos `erro` e `erros_unidades` no `LinhaDemonstrativoOut` de `schemas.py`
-  - [x] Exibir tooltip e estilo de erro visual em `Demonstrativo.jsx`
-  - [x] Exibir tooltip e estilo de erro visual em `FluxoCaixa.jsx`
-  - [x] Garantir que o build de produção do frontend compila perfeitamente (`npm run build`)
+- [x] TAREFA 3: Corrigir mojibake de encoding em `backend/main.py`
+  - [x] Reescrever as strings corrompidas de `backend/main.py` (título, descrição, tags do swagger e comentários)
+  - [x] Garantir salvamento de `backend/main.py` como UTF-8 sem BOM
+  - [x] Criar o arquivo `.gitattributes` na raiz
+  - [x] Executar `git add --renormalize .` e comitar isoladamente
 
-- [x] Testes e Validação Final
-  - [x] Adicionar testes de regressão no `test_formulas.py` cobrindo os novos cenários
-  - [x] Executar toda a suíte de testes do pytest (`pytest tests/ -p no:warnings`) obtendo 100% verde
+- [x] TAREFA 4: Sincronizar CLAUDE.md e versionamento do app
+  - [x] Corrigir descrição do router `orcamento.py` no `CLAUDE.md`
+  - [x] Ajustar referência do ROADMAP na seção `## ROADMAP` do `CLAUDE.md`
+  - [x] Reordenar cronologicamente o histórico de sessões no `CLAUDE.md`
+  - [x] Declarar `APP_VERSION` no topo de `backend/main.py` e ajustar FastAPI e `app.version`
+  - [x] Ajustar leitura/escrita de versão no `release.ps1` com base em `APP_VERSION`
+
+- [x] TAREFA 5: Guards nos scripts de seed
+  - [x] Adicionar guard de SQLite em `backend/seed.py`
+  - [x] Adicionar guard de SQLite em `backend/seed_controladoria.py`
+  - [x] Adicionar guard de SQLite em `backend/seed_local_leal.py`
+  - [x] Adicionar guard de SQLite em `backend/seed_ref_plano.py`
+
+- [x] VALIDAÇÃO FINAL
+  - [x] Rodar pytest com 100% verde
+  - [x] Rodar npm run build do frontend com sucesso
