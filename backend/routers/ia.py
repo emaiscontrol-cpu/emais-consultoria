@@ -1,6 +1,9 @@
 import os, json
 import httpx
+import logging
 from fastapi import APIRouter, Depends, HTTPException
+
+logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 from security import get_usuario_atual
 
@@ -53,6 +56,7 @@ async def analisar(req: IARequest, usuario=Depends(get_usuario_atual)):
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="IA demorou muito para responder. Tente novamente.")
     except Exception as e:
+        logger.exception("Erro ao se conectar à Anthropic/IA")
         raise HTTPException(status_code=502, detail=f"Erro de conexão com a IA: {str(e)}")
 
     if resp.status_code != 200:

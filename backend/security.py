@@ -1,13 +1,16 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from typing import Optional
-from jose import JWTError, jwt
-from passlib.context import CryptContext
+import jwt
+import bcrypt
+import logging
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
 from database import get_db, _is_sqlite
 from dotenv import load_dotenv
 import models, os
+
+logger = logging.getLogger(__name__)
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "emais-consultoria-secret-2026-change-in-production")
@@ -17,24 +20,31 @@ if SECRET_KEY == "emais-consultoria-secret-2026-change-in-production":
             "CRITICAL SECURITY ERROR: SECRET_KEY is set to default but database is not SQLite (production environment). "
             "Please configure a secure SECRET_KEY in your .env file."
         )
-    print("[AVISO DE SEGURANÇA] SECRET_KEY usando valor padrão inseguro. "
-          "Defina SECRET_KEY no arquivo .env antes de usar em produção.")
+    logger.warning("[AVISO DE SEGURANÇA] SECRET_KEY usando valor padrão inseguro. "
+                   "Defina SECRET_KEY no arquivo .env antes de usar em produção.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 8  # 8 horas
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
 
 def hash_senha(senha: str) -> str:
-    return pwd_context.hash(senha)
+    """Gera o hash da senha usando bcrypt direto.
+
+    Atenção: o bcrypt trunca a senha em 72 bytes.
+    """
+    return bcrypt.hashpw(senha.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
 def verificar_senha(senha: str, hash: str) -> bool:
-    return pwd_context.verify(senha, hash)
+    """Verifica a senha contra o hash usando bcrypt direto."""
+    try:
+        return bcrypt.checkpw(senha.encode("utf-8"), hash.encode("utf-8"))
+    except ValueError:
+        return False
 
 def criar_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
     to_encode = data.copy()
-    expire = datetime.utcnow() + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    expire = datetime.now(timezone.utc) + (expires_delta or timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
@@ -52,7 +62,7 @@ def get_usuario_atual(
         email: str = payload.get("sub")
         if email is None:
             raise credentials_exception
-    except JWTError:
+    except jwt.PyJWTError:
         raise credentials_exception
 
     usuario = db.query(models.Usuario).filter(models.Usuario.email == email).first()

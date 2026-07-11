@@ -71,7 +71,7 @@ def criar(data: schemas.ProjetoCreate, db: Session = Depends(get_db), usuario=De
 
 @router.put("/{id}", response_model=schemas.ProjetoOut)
 def atualizar(id: int, data: schemas.ProjetoCreate, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
-    p = db.query(models.Projeto).get(id)
+    p = db.get(models.Projeto, id)
     if not p:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
     verificar_tenant(usuario, p.cliente_id)
@@ -83,7 +83,7 @@ def atualizar(id: int, data: schemas.ProjetoCreate, db: Session = Depends(get_db
 
 @router.delete("/{id}")
 def deletar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("admin"))):
-    p = db.query(models.Projeto).get(id)
+    p = db.get(models.Projeto, id)
     if not p:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
     p.ativo = False

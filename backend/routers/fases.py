@@ -60,7 +60,7 @@ def listar_por_projeto(projeto_id: int, db: Session = Depends(get_db), _=Depends
 
 @router.get("/{id}", response_model=schemas.FaseDetalhe)
 def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
-    f = db.query(models.Fase).get(id)
+    f = db.get(models.Fase, id)
     if not f:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
     return f
@@ -82,7 +82,7 @@ def criar(data: schemas.FaseCreate, db: Session = Depends(get_db), _=Depends(req
 
 @router.put("/{id}", response_model=schemas.FaseOut)
 def atualizar(id: int, data: schemas.FaseUpdate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
-    f = db.query(models.Fase).get(id)
+    f = db.get(models.Fase, id)
     if not f:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
     for k, v in data.model_dump(exclude_none=True).items():
@@ -96,7 +96,7 @@ def atualizar(id: int, data: schemas.FaseUpdate, db: Session = Depends(get_db), 
 
 @router.delete("/{id}")
 def deletar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("admin"))):
-    f = db.query(models.Fase).get(id)
+    f = db.get(models.Fase, id)
     if not f:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
     f.ativo = False
@@ -145,7 +145,7 @@ def reordenar(
 
 @router.get("/{id}/comentarios", response_model=List[schemas.ComentarioFaseOut])
 def listar_comentarios(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
-    f = db.query(models.Fase).get(id)
+    f = db.get(models.Fase, id)
     if not f:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
     return f.comentarios_fase
@@ -153,7 +153,7 @@ def listar_comentarios(id: int, db: Session = Depends(get_db), _=Depends(get_usu
 
 @router.post("/{id}/comentarios", response_model=schemas.ComentarioFaseOut)
 def comentar(id: int, data: schemas.ComentarioFaseCreate, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
-    f = db.query(models.Fase).get(id)
+    f = db.get(models.Fase, id)
     if not f:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
     c = models.ComentarioFase(fase_id=id, autor_id=usuario.id, texto=data.texto)

@@ -3,6 +3,7 @@ import os
 import sqlite3
 import tempfile
 import threading
+import logging
 from datetime import datetime
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
@@ -12,6 +13,7 @@ from database import get_db
 from security import get_usuario_atual, requer_perfil
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Ordem de inserção respeitando dependências de FK
 TABELAS_BACKUP_ORDEM = [
@@ -170,10 +172,10 @@ def _agendar_proximo():
 def _rodar_auto():
     try:
         _executar_backup()
-        print(f"[backup] Automático concluído: {_auto_backup_state['ultimo_arq']}")
+        logger.info(f"[backup] Automático concluído: {_auto_backup_state['ultimo_arq']}")
     except Exception as e:
         _auto_backup_state["erro"] = str(e)
-        print(f"[backup] Erro no automático: {e}")
+        logger.exception("[backup] Erro no automático")
     finally:
         _agendar_proximo()
 
@@ -184,7 +186,7 @@ def iniciar_backup_automatico():
         _auto_timer.cancel()
     _agendar_proximo()
     tipo = "PostgreSQL/Supabase" if _IS_POSTGRES else "SQLite"
-    print(f"[backup] Automático agendado para {_auto_backup_state['horario']} diariamente ({tipo}).")
+    logger.info(f"[backup] Automático agendado para {_auto_backup_state['horario']} diariamente ({tipo}).")
 
 
 # ── Restore helpers ───────────────────────────────────────────────────────────
@@ -222,6 +224,7 @@ def fazer_backup(usuario=Depends(get_usuario_atual)):
             "data":    _auto_backup_state["ultimo"],
         }
     except Exception as e:
+        logger.exception("Erro ao fazer backup")
         raise HTTPException(500, f"Erro ao fazer backup: {e}")
 
 
@@ -298,6 +301,7 @@ async def restaurar_backup(
         except HTTPException:
             raise
         except Exception as e:
+            logger.exception("Erro ao restaurar Postgres a partir de upload")
             raise HTTPException(500, f"Erro ao restaurar: {e}")
 
     # SQLite
@@ -329,6 +333,7 @@ async def restaurar_backup(
     except HTTPException:
         raise
     except Exception as e:
+        logger.exception("Erro ao restaurar SQLite a partir de upload")
         raise HTTPException(500, f"Erro ao restaurar: {e}")
     finally:
         if tmp_path and os.path.exists(tmp_path):
@@ -353,6 +358,7 @@ def restaurar_backup_local(body: dict, usuario=Depends(get_usuario_atual)):
             _restaurar_postgres_sql(sql)
             return {"ok": True, "mensagem": f"Banco restaurado a partir de '{nome}'."}
         except Exception as e:
+            logger.exception("Erro ao restaurar Postgres a partir de arquivo local")
             raise HTTPException(500, f"Erro ao restaurar: {e}")
 
     # SQLite

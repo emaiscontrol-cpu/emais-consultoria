@@ -70,7 +70,7 @@ def enviar(
 ):
     if not body.texto.strip():
         return {}
-    projeto = db.query(models.Projeto).get(projeto_id)
+    projeto = db.get(models.Projeto, projeto_id)
     msg = models.MensagemChat(
         projeto_id=projeto_id,
         autor_id=usuario.id,

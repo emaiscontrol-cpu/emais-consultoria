@@ -1,36 +1,28 @@
-# Checklist de Tarefas — chore/higiene-codigo-e-docs
+# Checklist de Tarefas — chore/modernizacao-dependencias
 
-- [x] TAREFA 1: Deletar código morto perigoso e testar `_limpar_val`
-  - [x] Deletar a função `_val` em `backend/xlsx_parser.py`
-  - [x] Criar `tests/test_xlsx_parser.py` cobrindo cenários com `_limpar_val`
-  - [x] Executar o teste unitário isolado e garantir sucesso
-
-- [x] TAREFA 2: Colisão de nome de módulo auth
-  - [x] Renomear `backend/auth.py` para `backend/security.py`
-  - [x] Atualizar todos os imports de `from auth import ...` para `from security import ...`
-  - [x] Atualizar imports de `import auth` para `import security`
-  - [x] Atualizar referências no `CLAUDE.md`
-  - [x] Executar pytest para testar a correção e imports corretos
-
-- [x] TAREFA 3: Corrigir mojibake de encoding em `backend/main.py`
-  - [x] Reescrever as strings corrompidas de `backend/main.py` (título, descrição, tags do swagger e comentários)
-  - [x] Garantir salvamento de `backend/main.py` como UTF-8 sem BOM
-  - [x] Criar o arquivo `.gitattributes` na raiz
-  - [x] Executar `git add --renormalize .` e comitar isoladamente
-
-- [x] TAREFA 4: Sincronizar CLAUDE.md e versionamento do app
-  - [x] Corrigir descrição do router `orcamento.py` no `CLAUDE.md`
-  - [x] Ajustar referência do ROADMAP na seção `## ROADMAP` do `CLAUDE.md`
-  - [x] Reordenar cronologicamente o histórico de sessões no `CLAUDE.md`
-  - [x] Declarar `APP_VERSION` no topo de `backend/main.py` e ajustar FastAPI e `app.version`
-  - [x] Ajustar leitura/escrita de versão no `release.ps1` com base em `APP_VERSION`
-
-- [x] TAREFA 5: Guards nos scripts de seed
-  - [x] Adicionar guard de SQLite em `backend/seed.py`
-  - [x] Adicionar guard de SQLite em `backend/seed_controladoria.py`
-  - [x] Adicionar guard de SQLite em `backend/seed_local_leal.py`
-  - [x] Adicionar guard de SQLite em `backend/seed_ref_plano.py`
-
+- [x] TAREFA 1: Migração de python-jose para PyJWT
+  - [x] Atualizar requirements.txt (remover python-jose, adicionar PyJWT>=2.8)
+  - [x] Migrar backend/auth.py (usar jwt.encode/decode, capturar jwt.PyJWTError)
+  - [x] Adicionar testes de expiração e assinatura em tests/test_api.py
+- [x] TAREFA 2: Substituição de passlib por bcrypt nativo
+  - [x] Atualizar requirements.txt (remover passlib, pinar bcrypt>=4.1)
+  - [x] Migrar backend/auth.py (hashpw, checkpw com try/except ValueError, docstring)
+  - [x] Adicionar teste de compatibilidade do hash $2b$ legado em tests/test_api.py
+- [x] TAREFA 3: Varredura de deprecações
+  - [x] Substituir datetime.utcnow() por datetime.now(timezone.utc) em backend/auth.py e backend/routers/auth.py
+  - [x] Substituir regex=... por pattern=... em backend/routers/fc_exec.py
+  - [x] Substituir db.query(Model).get(id) por db.get(Model, id) em todos os routers
+- [x] TAREFA 4: Logging estruturado no backend
+  - [x] Criar backend/logger.py com basicConfig e nível LOG_LEVEL
+  - [x] Importar/inicializar logger no topo de backend/main.py
+  - [x] Substituir prints por logger.info/warning/error em auth.py, main.py e routers/admin.py
+  - [x] Substituir exceções críticas por logger.exception
+- [x] TAREFA 5: Lock de dependências e workflows
+  - [x] Gerar requirements.lock.txt via pip freeze no venv
+  - [x] Atualizar .github/workflows/deploy.yml para usar requirements.lock.txt
+  - [x] Atualizar .github/workflows/ci.yml para usar requirements.lock.txt
+  - [x] Documentar fluxo de pacotes no CLAUDE.md
 - [x] VALIDAÇÃO FINAL
   - [x] Rodar pytest com 100% verde
-  - [x] Rodar npm run build do frontend com sucesso
+  - [x] Rodar npm run build no frontend
+  - [x] Rodar uvicorn localmente e fazer login manual

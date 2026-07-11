@@ -5,8 +5,11 @@ Prefixo: /api/dre
 """
 
 import json
+import logging
 from typing import Optional, List
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Query
+
+logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from database import SessionLocal
@@ -159,6 +162,7 @@ async def preview_layout(
     try:
         data = preview_xlsx(content)
     except Exception as e:
+        logger.exception("Erro no preview de layout DRE")
         raise HTTPException(400, f"Erro ao ler arquivo: {e}")
     return data
 

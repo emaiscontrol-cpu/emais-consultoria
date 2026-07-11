@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
@@ -15,7 +15,7 @@ _MAX_TENTATIVAS = 20
 _JANELA_SEG = 60
 
 def _checar_rate_limit(ip: str):
-    agora = datetime.utcnow()
+    agora = datetime.now(timezone.utc)
     corte = agora - timedelta(seconds=_JANELA_SEG)
     _login_attempts[ip] = [t for t in _login_attempts[ip] if t > corte]
     if len(_login_attempts[ip]) >= _MAX_TENTATIVAS:

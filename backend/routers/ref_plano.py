@@ -87,7 +87,7 @@ def listar_contas(plano_id: int, db: Session = Depends(get_db), _=Depends(get_us
 @router.post("/{plano_id}/contas", response_model=schemas.ContaRefOut)
 def criar_conta(plano_id: int, data: schemas.ContaRefCreate, db: Session = Depends(get_db),
                 _=Depends(requer_perfil("admin", "consultor"))):
-    plano = db.query(models.PlanoReferencial).get(plano_id)
+    plano = db.get(models.PlanoReferencial, plano_id)
     if not plano:
         raise HTTPException(404, "Plano não encontrado")
     existe = (
@@ -106,7 +106,7 @@ def criar_conta(plano_id: int, data: schemas.ContaRefCreate, db: Session = Depen
 @router.post("/contas/{id}/subcontas", response_model=schemas.ContaRefOut)
 def criar_subconta(id: int, data: schemas.ContaRefCreate, db: Session = Depends(get_db),
                    _=Depends(requer_perfil("admin", "consultor"))):
-    pai = db.query(models.ContaReferencial).get(id)
+    pai = db.get(models.ContaReferencial, id)
     if not pai:
         raise HTTPException(404, "Conta pai não encontrada")
     existe = (
@@ -128,7 +128,7 @@ def criar_subconta(id: int, data: schemas.ContaRefCreate, db: Session = Depends(
 @router.put("/contas/{id}", response_model=schemas.ContaRefOut)
 def atualizar_conta(id: int, data: schemas.ContaRefUpdate, db: Session = Depends(get_db),
                     _=Depends(requer_perfil("admin", "consultor"))):
-    conta = db.query(models.ContaReferencial).get(id)
+    conta = db.get(models.ContaReferencial, id)
     if not conta:
         raise HTTPException(404, "Conta não encontrada")
     for k, v in data.model_dump(exclude_none=True).items():
@@ -140,7 +140,7 @@ def atualizar_conta(id: int, data: schemas.ContaRefUpdate, db: Session = Depends
 @router.delete("/contas/{id}")
 def deletar_conta(id: int, db: Session = Depends(get_db),
                   _=Depends(requer_perfil("admin", "consultor"))):
-    conta = db.query(models.ContaReferencial).get(id)
+    conta = db.get(models.ContaReferencial, id)
     if not conta:
         raise HTTPException(404, "Conta não encontrada")
     if db.query(models.ContaReferencial).filter(
@@ -174,12 +174,12 @@ def listar_vinculos(id: int, db: Session = Depends(get_db), _=Depends(get_usuari
 @router.post("/contas/{id}/agrupamentos", status_code=201)
 def criar_vinculo(id: int, data: VinculoIn, db: Session = Depends(get_db),
                   _=Depends(requer_perfil("admin", "consultor"))):
-    conta = db.query(models.ContaReferencial).get(id)
+    conta = db.get(models.ContaReferencial, id)
     if not conta:
         raise HTTPException(404, "Conta não encontrada")
     if data.demonstrativo not in DEMOS_VALIDOS:
         raise HTTPException(400, f"demonstrativo inválido; use: {', '.join(DEMOS_VALIDOS)}")
-    agrup = db.query(models.Agrupamento).get(data.agrupamento_id)
+    agrup = db.get(models.Agrupamento, data.agrupamento_id)
     if not agrup:
         raise HTTPException(404, "Agrupamento não encontrado")
 
@@ -255,7 +255,7 @@ def remover_vinculo(id: int, vinculo_id: int, db: Session = Depends(get_db),
 def propagar_agrupamento(id: int, db: Session = Depends(get_db),
                          _=Depends(requer_perfil("admin", "consultor"))):
     """Propaga os vínculos diretos (herdado=False) do pai para suas filhas diretas."""
-    conta = db.query(models.ContaReferencial).get(id)
+    conta = db.get(models.ContaReferencial, id)
     if not conta:
         raise HTTPException(404, "Conta não encontrada")
 
@@ -303,7 +303,7 @@ def propagar_agrupamento(id: int, db: Session = Depends(get_db),
 def sugerir_agrupamento(id: int, db: Session = Depends(get_db),
                         _=Depends(requer_perfil("admin", "consultor"))):
     """Retorna top 3 agrupamentos mais similares à descrição da conta (rapidfuzz)."""
-    conta = db.query(models.ContaReferencial).get(id)
+    conta = db.get(models.ContaReferencial, id)
     if not conta:
         raise HTTPException(404, "Conta não encontrada")
 

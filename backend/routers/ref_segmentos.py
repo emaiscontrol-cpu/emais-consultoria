@@ -26,7 +26,7 @@ def criar(data: schemas.SegmentoCreate, db: Session = Depends(get_db),
 @router.put("/{id}", response_model=schemas.SegmentoOut)
 def atualizar(id: int, data: schemas.SegmentoCreate, db: Session = Depends(get_db),
               _=Depends(requer_perfil("admin", "consultor"))):
-    s = db.query(models.Segmento).get(id)
+    s = db.get(models.Segmento, id)
     if not s:
         raise HTTPException(404, "Segmento não encontrado")
     s.nome = data.nome
@@ -37,7 +37,7 @@ def atualizar(id: int, data: schemas.SegmentoCreate, db: Session = Depends(get_d
 @router.delete("/{id}")
 def deletar(id: int, db: Session = Depends(get_db),
             _=Depends(requer_perfil("admin"))):
-    s = db.query(models.Segmento).get(id)
+    s = db.get(models.Segmento, id)
     if not s:
         raise HTTPException(404, "Segmento não encontrado")
     s.ativo = False

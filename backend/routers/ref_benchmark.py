@@ -22,7 +22,7 @@ def benchmark(
     Retorna média e faixa (min/max) de cada linha do template DRE para todos os clientes
     do segmento. Sem identificar clientes individualmente.
     """
-    segmento = db.query(models.Segmento).get(segmento_id)
+    segmento = db.get(models.Segmento, segmento_id)
     if not segmento:
         raise HTTPException(404, "Segmento não encontrado")
 
@@ -65,7 +65,7 @@ def benchmark(
         ))
 
     # Mantém ordem do template
-    template = db.query(models.TemplateRef).get(template_id)
+    template = db.get(models.TemplateRef, template_id)
     if template:
         ordem = {l.rotulo: l.ordem for l in template.linhas}
         linhas_out.sort(key=lambda r: ordem.get(r.rotulo, 9999))

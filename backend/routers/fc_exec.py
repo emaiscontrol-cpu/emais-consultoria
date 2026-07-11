@@ -331,7 +331,7 @@ def demonstrativo_fluxo_caixa(
     cliente_id: int = Query(..., description="ID do cliente"),
     ano: int = Query(..., description="Ano do demonstrativo"),
     mes: Optional[int] = Query(None, ge=1, le=12, description="Mês (obrigatório no modo mensal)"),
-    modo: str = Query("mensal", regex="^(mensal|acumulado|todos)$"),
+    modo: str = Query("mensal", pattern="^(mensal|acumulado|todos)$"),
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
@@ -397,7 +397,7 @@ def detalhe_comparativo(
     ano: int = Query(...),
     mes: Optional[int] = Query(None, ge=1, le=12),
     mes_fim: Optional[int] = Query(None, ge=1, le=12),
-    modo: str = Query("mensal", regex="^(mensal|acumulado|todos)$"),
+    modo: str = Query("mensal", pattern="^(mensal|acumulado|todos)$"),
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
@@ -470,7 +470,7 @@ def detalhe_agrupamento(
     mes: Optional[int] = Query(None, ge=1, le=12),
     mes_fim: Optional[int] = Query(None, ge=1, le=12),
     agrupamento_slug: str = Query(...),
-    modo: str = Query("mensal", regex="^(mensal|acumulado|todos)$"),
+    modo: str = Query("mensal", pattern="^(mensal|acumulado|todos)$"),
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):

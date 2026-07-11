@@ -53,7 +53,7 @@ def sugestoes(
     db: Session = Depends(get_db),
     _=Depends(requer_perfil("admin", "consultor")),
 ):
-    cc = db.query(models.ContaClienteRef).get(conta_cliente_id)
+    cc = db.get(models.ContaClienteRef, conta_cliente_id)
     if not cc:
         raise HTTPException(404, "Conta do cliente não encontrada")
     return depara_service.sugerir(db, cc)
@@ -69,7 +69,7 @@ def confirmar(
     Confirma (ou substitui) o De-Para de uma conta do cliente.
     Suporta rateio: múltiplos itens com percentuais somando ≤ 100%.
     """
-    cc = db.query(models.ContaClienteRef).get(req.conta_cliente_id)
+    cc = db.get(models.ContaClienteRef, req.conta_cliente_id)
     if not cc:
         raise HTTPException(404, "Conta do cliente não encontrada")
 
@@ -81,7 +81,7 @@ def confirmar(
 
     # Não apaga De-Para anteriores — apenas cria novos com a nova vigência
     for item in req.itens:
-        cr = db.query(models.ContaReferencial).get(item.conta_referencial_id)
+        cr = db.get(models.ContaReferencial, item.conta_referencial_id)
         if not cr:
             raise HTTPException(404, f"Conta referencial {item.conta_referencial_id} não encontrada")
         dp = models.DeParaRef(

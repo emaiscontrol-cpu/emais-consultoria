@@ -46,14 +46,14 @@ def listar_por_fase(fase_id: int, db: Session = Depends(get_db), _=Depends(get_u
 
 @router.get("/{id}", response_model=schemas.TarefaOut)
 def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
-    t = db.query(models.Tarefa).get(id)
+    t = db.get(models.Tarefa, id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     return t
 
 @router.post("/", response_model=schemas.TarefaOut)
 def criar(data: schemas.TarefaCreate, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
-    fase = db.query(models.Fase).get(data.fase_id)
+    fase = db.get(models.Fase, data.fase_id)
     if not fase:
         raise HTTPException(status_code=404, detail="Fase não encontrada")
     verificar_tenant(usuario, fase.projeto.cliente_id)
@@ -72,7 +72,7 @@ def criar(data: schemas.TarefaCreate, db: Session = Depends(get_db), usuario=Dep
 
 @router.put("/{id}", response_model=schemas.TarefaOut)
 def atualizar(id: int, data: schemas.TarefaUpdate, db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
-    t = db.query(models.Tarefa).get(id)
+    t = db.get(models.Tarefa, id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     verificar_tenant(usuario, t.fase.projeto.cliente_id)
@@ -121,7 +121,7 @@ def atualizar(id: int, data: schemas.TarefaUpdate, db: Session = Depends(get_db)
 
 @router.delete("/{id}")
 def deletar(id: int, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "ger_projeto"))):
-    t = db.query(models.Tarefa).get(id)
+    t = db.get(models.Tarefa, id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     verificar_tenant(usuario, t.fase.projeto.cliente_id)
@@ -171,7 +171,7 @@ def reordenar(
 
 @router.post("/{id}/comentarios", response_model=schemas.ComentarioOut)
 def comentar(id: int, data: schemas.ComentarioCreate, db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
-    t = db.query(models.Tarefa).get(id)
+    t = db.get(models.Tarefa, id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     verificar_tenant(usuario, t.fase.projeto.cliente_id)
@@ -199,7 +199,7 @@ def listar_responsaveis(id: int, db: Session = Depends(get_db), _=Depends(get_us
 
 @router.post("/{id}/responsaveis", response_model=schemas.ResponsavelTarefaOut)
 def adicionar_responsavel(id: int, data: schemas.ResponsavelTarefaCreate, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
-    t = db.query(models.Tarefa).get(id)
+    t = db.get(models.Tarefa, id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     verificar_tenant(usuario, t.fase.projeto.cliente_id)
@@ -209,7 +209,7 @@ def adicionar_responsavel(id: int, data: schemas.ResponsavelTarefaCreate, db: Se
 
 @router.delete("/{id}/responsaveis/{resp_id}")
 def remover_responsavel(id: int, resp_id: int, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
-    t = db.query(models.Tarefa).get(id)
+    t = db.get(models.Tarefa, id)
     if not t:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     verificar_tenant(usuario, t.fase.projeto.cliente_id)

@@ -1,47 +1,44 @@
-# Registro de Homologação Final — Higiene de Código, Organização e Docs
+# Registro de Validação — chore/modernizacao-dependencias
 
-Todas as tarefas de higiene profunda de código, segurança de scripts de seed e alinhamento de documentação foram homologadas com sucesso.
+Nesta fase de modernização de dependências, varredura de deprecações e logging estruturado, todas as metas foram concluídas com sucesso.
 
----
+## Alterações Realizadas
 
-## 1. Modificações Efetuadas
+1. **Substituição de dependências de segurança (Tarefas 1 & 2):**
+   * Removido `python-jose` e adicionado `PyJWT>=2.8` em `requirements.txt`.
+   * Removido `passlib` e atualizado `bcrypt` para `>=4.1` em `requirements.txt`.
+   * No backend [auth.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/auth.py), as lógicas de encode, decode e verificação de assinatura do JWT foram migradas para o `PyJWT` capturando a exceção genérica `jwt.PyJWTError`.
+   * A hash e a verificação de senhas foram portadas para o `bcrypt` direto usando `bcrypt.hashpw` e `bcrypt.checkpw` (com proteção try/except `ValueError` para hashes incorretos) e documentada a limitação de truncamento em 72 bytes.
 
-### TAREFA 1 — Remoção de Código Morto Perigoso em `xlsx_parser.py`
-* **Limpeza:** A função `_val(cell)` legada e insegura em [xlsx_parser.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/xlsx_parser.py) foi removida.
-* **Testes unitários:** Criado o arquivo [test_xlsx_parser.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/tests/test_xlsx_parser.py) cobrindo todos os casos especiais da função `_limpar_val` (valores formatados, vazios, negativos e nulos).
+2. **Varredura de Deprecações (Tarefa 3):**
+   * Substituídas as chamadas legadas de `datetime.utcnow()` por `datetime.now(timezone.utc)` em [auth.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/auth.py) e [routers/auth.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/auth.py).
+   * Modificado o parâmetro depreciado `regex` para `pattern` nas chamadas de `Query` em [fc_exec.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/fc_exec.py) (3 ocorrências).
+   * Modificadas todas as buscas do padrão legado `db.query(Model).get(id)` para `db.get(Model, id)` em todos os routers contidos na pasta [routers/](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers).
 
-### TAREFA 2 — Resolução de Colisão do Módulo `auth.py`
-* **Renomeação:** `backend/auth.py` renomeado para `backend/security.py`.
-* **Imports:** Todos os arquivos de rotas, scripts e testes foram atualizados de `from auth import ...` para `from security import ...`, mantendo o isolamento de pacotes do FastAPI intacto.
-* **Documentação:** Atualizadas as referências de arquivos no [CLAUDE.md](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/CLAUDE.md).
+3. **Logging Estruturado (Tarefa 4):**
+   * Criado o módulo [logger.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/logger.py) usando `logging.basicConfig` e o formato padrão de logs do uvicorn, definindo o nível de log via variável de ambiente `LOG_LEVEL` (default `INFO`).
+   * Logger inicializado e carregado no topo de [main.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/main.py).
+   * Substituídos todos os prints do backend por chamadas de logger adequadas em `auth.py`, `main.py` e `routers/admin.py`.
+   * Adicionada captura com `logger.exception` nos blocos `except Exception as e` em [routers/admin.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/admin.py) (rotas de backup, restauração e exclusão) e nos routers de IA ([gemini.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/gemini.py), [ia.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/ia.py) e [openrouter.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/openrouter.py)) para registrar o traceback detalhado.
 
-### TAREFA 3 — Correção de Mojibake e `.gitattributes`
-* **Encoding:** Normalizado o arquivo de fim de linha e encoding.
-* **Gitattributes:** Criado o arquivo [.gitattributes](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/.gitattributes) para forçar codificação UTF-8 sem BOM nos arquivos Python, Javascript/JSX e Markdown, prevenindo mojibakes futuros causados por sincronização em nuvem ou diferentes sistemas operacionais.
-
-### TAREFA 4 — Versionamento e Sincronização de Docs
-* **CLAUDE.md:** Sincronizado para apontar para `ROADMAP_2.md` (roadmap ativo) e reposicionar sessões do histórico em ordem cronológica estrita.
-* **Versão Centralizada:** Criada a constante `APP_VERSION` no topo de [main.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/main.py) e ajustado o script [release.ps1](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/release.ps1) para fazer a substituição automatizada baseando-se nela.
-
-### TAREFA 5 — Proteção contra Execução Indesejada nos Scripts de Seed
-* **Guards de SQLite:** Injetadas checagens de `_is_sqlite` importadas de `database` nos scripts:
-  * [seed.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/seed.py) (no nível do módulo)
-  * [seed_local_leal.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/seed_local_leal.py) (no nível do módulo)
-  * [seed_controladoria.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/seed_controladoria.py) (no bloco `if __name__ == "__main__":`)
-  * [seed_ref_plano.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/seed_ref_plano.py) (no bloco `if __name__ == "__main__":`)
-* A restrição do `__main__` nos scripts compartilhados garante que o servidor uvicorn/gunicorn consiga iniciar normalmente em produção (mesmo utilizando outros bancos de dados como PostgreSQL) ao importar as funções de seed automatizado de agrupamentos e planos, ao mesmo tempo que impede a execução manual isolada destes em bancos que não sejam SQLite locais.
+4. **Lock de Dependências e CI/CD (Tarefa 5):**
+   * Gerado o arquivo `backend/requirements.lock.txt` a partir das dependências limpas e atualizadas do venv de desenvolvimento.
+   * Alterados os workflows `.github/workflows/deploy.yml` e `.github/workflows/ci.yml` para passarem a rodar a instalação do backend a partir de `requirements.lock.txt`.
+   * Atualizado [CLAUDE.md](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/CLAUDE.md) documentando o processo e o fluxo de manutenção de pacotes (editar `requirements.txt` → regenerar lock).
 
 ---
 
-## 2. Resultados da Validação
+## Validação Executada
 
-### Testes Automatizados (Pytest)
-A suíte completa de testes retornou com sucesso, indicando que nenhuma regressão foi introduzida:
-```
-============================= 70 passed in 34.26s =============================
-```
+### Testes Automatizados (CI)
+* Criados e executados novos testes unitários em [tests/test_api.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/tests/test_api.py):
+  1. `test_me_token_expirado`: Valida se tokens expirados geram status HTTP 401.
+  2. `test_me_token_assinatura_invalida`: Valida se assinaturas incorretas retornam status HTTP 401.
+  3. `test_verificar_senha_legado_passlib`: Valida se o algoritmo do `bcrypt` consegue verificar um hash antigo no formato `$2b$` gerado pelo `passlib`.
+* A suíte de testes de backend rodou com 100% de sucesso (**72/72 testes passando**).
 
-### Execução dos Seeds Locais
-Testado o comportamento dos scripts de seed local:
-1. `python seed_controladoria.py` e `python seed_ref_plano.py` executados diretamente de forma segura em ambiente SQLite local.
-2. Em qualquer ambiente onde a URL de banco aponte para um dialeto que não seja SQLite, a execução é interrompida imediatamente exibindo `"seed só roda em banco local SQLite"` com código de saída `1`.
+### Build do Frontend
+* O build do frontend rodou com sucesso (`npm run build`), gerando os bundles otimizados no diretório `frontend/dist`.
+
+### Startup do Servidor Local
+* O servidor `uvicorn` foi inicializado e executou com sucesso a inicialização das tabelas e o agendamento de backup, exibindo os novos logs estruturados no console no formato esperado.
