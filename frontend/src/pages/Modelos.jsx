@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
 import { modelosAPI } from '../services/api'
 import { Modal } from '../components/shared'
-import { Copy, Plus, Trash2, Pencil, ChevronDown, ChevronRight, Clock, CheckSquare, Square, ListTodo } from 'lucide-react'
+import { BotaoEditar, BotaoExcluir, BotaoNovo } from '../components/ui'
+import { Copy, Plus, ChevronDown, ChevronRight, Clock, CheckSquare, Square, ListTodo } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const FORM_MODELO = { nome: '', descricao: '' }
@@ -185,9 +186,7 @@ export default function Modelos() {
               <Copy size={18} color="var(--brand)" />
               <span style={{ fontWeight: 700, fontSize: 15 }}>Templates</span>
             </div>
-            <button className="btn btn-primary btn-sm" onClick={() => abrirModelo(null)} style={{ gap: 5 }}>
-              <Plus size={12} /> Novo
-            </button>
+            <BotaoNovo size="sm" onClick={() => abrirModelo(null)}>Novo</BotaoNovo>
           </div>
           <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>{modelos.length} template(s)</div>
         </div>
@@ -228,8 +227,8 @@ export default function Modelos() {
                 </div>
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <button className="btn btn-ghost btn-sm" onClick={() => abrirModelo(selecionado)} style={{ gap: 5 }}><Pencil size={13} /> Editar</button>
-                <button className="btn btn-ghost btn-sm" style={{ color: 'var(--red)', gap: 5 }} onClick={() => excluirModelo(selecionado)}><Trash2 size={13} /> Excluir</button>
+                <BotaoEditar onClick={() => abrirModelo(selecionado)}>Editar</BotaoEditar>
+                <BotaoExcluir onClick={() => excluirModelo(selecionado)}>Excluir</BotaoExcluir>
               </div>
             </div>
 
@@ -257,8 +256,8 @@ export default function Modelos() {
                       <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>
                         {fase.tarefas.length} tarefa(s){fase.duracao_dias ? ` · ${fase.duracao_dias}d` : ''}{' · '}desbloqueio {fase.perc_desbloqueio}%
                       </span>
-                      <button className="btn btn-ghost btn-sm" style={{ padding: '2px 5px' }} onClick={e => { e.stopPropagation(); abrirFase(fase) }}><Pencil size={12}/></button>
-                      <button className="btn btn-ghost btn-sm" style={{ padding: '2px 5px', color: 'var(--red)' }} onClick={e => { e.stopPropagation(); excluirFase(fase) }}><Trash2 size={12}/></button>
+                      <BotaoEditar onClick={e => { e.stopPropagation(); abrirFase(fase) }} />
+                      <BotaoExcluir onClick={e => { e.stopPropagation(); excluirFase(fase) }} />
                     </div>
 
                     {/* Tarefas da fase */}
@@ -281,8 +280,8 @@ export default function Modelos() {
                                   {tar.duracao_dias && <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 3 }}><Clock size={10}/>{tar.duracao_dias}d</span>}
                                   {tar.requer_validacao && <span style={{ fontSize: 10, background: '#fef3c7', color: '#92400e', padding: '1px 6px', borderRadius: 4, fontWeight: 600 }}>Validação</span>}
                                   <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>{tar.subtarefas.length} ativ.</span>
-                                  <button className="btn btn-ghost btn-sm" style={{ padding: '2px 5px' }} onClick={e => { e.stopPropagation(); abrirTar(tar, fase.id) }}><Pencil size={11}/></button>
-                                  <button className="btn btn-ghost btn-sm" style={{ padding: '2px 5px', color: 'var(--red)' }} onClick={e => { e.stopPropagation(); excluirTarefa(tar, fase.id) }}><Trash2 size={11}/></button>
+                                  <BotaoEditar onClick={e => { e.stopPropagation(); abrirTar(tar, fase.id) }} />
+                                  <BotaoExcluir onClick={e => { e.stopPropagation(); excluirTarefa(tar, fase.id) }} />
                                 </div>
 
                                 {/* Subtarefas / Atividades */}
@@ -297,8 +296,8 @@ export default function Modelos() {
                                             <span style={{ fontSize: 10, color: 'var(--text-muted)', width: 30, flexShrink: 0 }}>{fi+1}.{ti+1}.{si+1}</span>
                                             <span style={{ flex: 1, fontSize: 12 }}>{sub.nome}</span>
                                             {sub.duracao_dias && <span style={{ fontSize: 11, color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: 2 }}><Clock size={9}/>{sub.duracao_dias}d</span>}
-                                            <button className="btn btn-ghost btn-sm" style={{ padding: '1px 4px' }} onClick={() => abrirSub(sub, fase.id, tar.id)}><Pencil size={10}/></button>
-                                            <button className="btn btn-ghost btn-sm" style={{ padding: '1px 4px', color: 'var(--red)' }} onClick={() => excluirSub(sub, fase.id, tar.id)}><Trash2 size={10}/></button>
+                                            <BotaoEditar onClick={() => abrirSub(sub, fase.id, tar.id)} />
+                                            <BotaoExcluir onClick={() => excluirSub(sub, fase.id, tar.id)} />
                                           </div>
                                         ))}
                                       </div>
