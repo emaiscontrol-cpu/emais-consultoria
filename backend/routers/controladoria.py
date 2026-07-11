@@ -59,9 +59,9 @@ def resumo(mes: Optional[int] = None, ano: Optional[int] = None,
         extract('year', Lancamento.data) == ano,
         extract('month', Lancamento.data) == mes,
     )
-    receitas  = sum(float(l.valor) for l in q.filter(Lancamento.tipo == 'receita').all())
-    despesas  = sum(float(l.valor) for l in q.filter(Lancamento.tipo == 'despesa').all())
-    resultado = receitas - despesas
+    receitas  = round(sum(float(l.valor) for l in q.filter(Lancamento.tipo == 'receita').all()), 2)
+    despesas  = round(sum(float(l.valor) for l in q.filter(Lancamento.tipo == 'despesa').all()), 2)
+    resultado = round(receitas - despesas, 2)
 
     total_lancamentos = db.query(func.count(Lancamento.id)).scalar()
 
