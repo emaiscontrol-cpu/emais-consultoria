@@ -21,10 +21,23 @@ def extrair_refs(formula: str) -> tuple[set, set]:
     return set(_RE_AGR.findall(formula or '')), set(_RE_LIN.findall(formula or ''))
 
 
-def validar_formula(formula: str) -> str | None:
+def validar_formula(formula: str, refs_validas: set | None = None) -> str | None:
     """Retorna None se OK, ou mensagem de erro."""
     if not formula or not formula.strip():
         return None
+
+    if refs_validas is not None:
+        agrs_ref, lins_ref = extrair_refs(formula)
+        invalidas = []
+        for agr in agrs_ref:
+            if agr not in refs_validas:
+                invalidas.append(f"agrupamento '{agr}'")
+        for lin in lins_ref:
+            if lin not in refs_validas:
+                invalidas.append(f"linha '{lin}'")
+        if invalidas:
+            return f"Referências desconhecidas: {', '.join(invalidas)}"
+
     placeholder = _RE_AGR.sub('1', formula)
     placeholder = _RE_LIN.sub('1', placeholder)
     try:
@@ -121,27 +134,34 @@ def safe_eval(expr: str) -> float:
             return _ALLOWED[op](_ev(node.operand))
         raise ValueError(f"Token não suportado: {type(node).__name__}")
 
-    tree = ast.parse(expr, mode='eval')
+    tree = ast.parse(expr.strip(), mode='eval')
     return _ev(tree.body)
-
 
 _safe_eval = safe_eval
 
 
-def calcular_linha(formula: str, val_agr: dict, val_lin: dict) -> tuple[float, bool]:
+def calcular_linha(formula: str, val_agr: dict, val_lin: dict) -> tuple[float, str | None]:
     """
     Calcula o valor de uma linha de template.
-    Retorna (valor, tem_divisao_por_zero).
+    Retorna (valor, erro_str).
     """
     if not formula or not formula.strip():
-        return 0.0, False
+        return 0.0, None
+
+    agrs_ref, lins_ref = extrair_refs(formula)
+    for agr in agrs_ref:
+        if agr not in val_agr:
+            return 0.0, f"ref_inexistente:{agr}"
+    for lin in lins_ref:
+        if lin not in val_lin:
+            return 0.0, f"ref_inexistente:{lin}"
 
     expr = _RE_AGR.sub(lambda m: str(val_agr.get(m.group(1), 0.0)), formula)
     expr = _RE_LIN.sub(lambda m: str(val_lin.get(m.group(1), 0.0)), expr)
 
     try:
-        return _safe_eval(expr), False
+        return safe_eval(expr), None
     except ZeroDivisionError:
-        return 0.0, True
-    except Exception:
-        return 0.0, False
+        return 0.0, "div_zero"
+    except Exception as e:
+        return 0.0, f"erro_calculo:{str(e)}"

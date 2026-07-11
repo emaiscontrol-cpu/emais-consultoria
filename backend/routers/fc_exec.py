@@ -35,14 +35,32 @@ def _parse_compound_slug(slug_str: Optional[str]) -> list[tuple[str, int]]:
     return result
 
 
-def _eval_formula(formula: str, row_vals: dict) -> float:
+def _eval_formula(formula: str, row_vals: dict) -> tuple[float, bool]:
     """
     Avalia fórmula Excel-like usando row_vals = {ordem: valor}.
     Suporta: SUM(Da:Db), IFERROR(expr,0), IF(cond,val,val), aritmética com D{n}.
+    Retorna (valor, tem_erro).
     """
     if not formula:
-        return 0.0
+        return 0.0, False
+    
+    # 1. Normaliza separadores (converter ; para , fora de aspas)
     f = formula.strip().lstrip('=')
+    resultado = []
+    in_single_quote = False
+    in_double_quote = False
+    for char in f:
+        if char == "'" and not in_double_quote:
+            in_single_quote = not in_single_quote
+        elif char == '"' and not in_single_quote:
+            in_double_quote = not in_double_quote
+        elif char == ';' and not in_single_quote and not in_double_quote:
+            char = ','
+        resultado.append(char)
+    f = "".join(resultado)
+
+    # 2. Suporta literal de porcentagem (transforma N% em (N/100))
+    f = re.sub(r'(\d+(?:\.\d+)?)%', r'(\1/100.0)', f)
 
     # Expand SUM(Da:Db) → (Da+Da+1+...+Db)
     f = re.sub(
@@ -86,11 +104,10 @@ def _eval_formula(formula: str, row_vals: dict) -> float:
 
     try:
         result = safe_eval(f)
-        return float(result) if result not in (None, '') else 0.0
-    except (ZeroDivisionError, ValueError):
-        return 0.0
+        val = float(result) if result not in (None, '') else 0.0
+        return val, False
     except Exception:
-        return 0.0
+        return 0.0, True
 
 
 # ── Cálculo principal ─────────────────────────────────────────────────────────
@@ -200,6 +217,8 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
             "valores_mensais": None,
             "conta_count": 0,
             "agrupamento_slug": None,
+            "erro": None,
+            "erros_mensais": None,
         }
         if r.tipo == "agrupamento":
             val = agrup_val(r.agrupamento_slug)
@@ -217,6 +236,8 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
 
     # 5. Phase 2 — compute totalizadores (multi-pass for forward refs)
     formula_map = {r.ordem: r.formula_texto for r in rows if r.tipo == "totalizador"}
+    ordem_to_entry = {e["ordem"]: e for e in linhas_out}
+
     for _ in range(10):
         changed = False
         for entry in linhas_out:
@@ -226,21 +247,64 @@ def _compute_fc(db: Session, cliente_id: int, ano: int, mes: Optional[int], modo
             formula = formula_map.get(ordem)
             if not formula:
                 continue
+
+            # Descobre dependências da fórmula
+            dep_ordens = []
+            dep_ordens.extend([int(n) for n in re.findall(r'D(\d+)', formula, re.IGNORECASE)])
+            for start, end in re.findall(r'SUM\(D(\d+):D(\d+)\)', formula, re.IGNORECASE):
+                dep_ordens.extend(range(int(start), int(end) + 1))
+
             if modo == "todos":
                 new_by_mes = {}
+                erros_mensais = {}
                 for mes_i in range(1, 13):
-                    scalars = {
-                        k: (v.get(mes_i, 0.0) if isinstance(v, dict) else float(v))
-                        for k, v in row_vals.items()
-                    }
-                    new_by_mes[mes_i] = _eval_formula(formula, scalars)
+                    # Verifica se alguma dependência tem erro neste mês
+                    tem_erro_dep = False
+                    for dep in dep_ordens:
+                        dep_e = ordem_to_entry.get(dep)
+                        if dep_e and dep_e.get("erros_mensais") and dep_e["erros_mensais"].get(mes_i):
+                            tem_erro_dep = True
+                            break
+
+                    if tem_erro_dep:
+                        val = 0.0
+                        tem_erro = True
+                    else:
+                        scalars = {
+                            k: (v.get(mes_i, 0.0) if isinstance(v, dict) else float(v))
+                            for k, v in row_vals.items()
+                        }
+                        val, tem_erro = _eval_formula(formula, scalars)
+
+                    new_by_mes[mes_i] = val
+                    if tem_erro:
+                        erros_mensais[mes_i] = "erro"
+
+                entry["erros_mensais"] = erros_mensais if erros_mensais else None
+                entry["erro"] = "erro" if erros_mensais else None
+
                 if row_vals.get(ordem) != new_by_mes:
                     row_vals[ordem] = new_by_mes
                     entry["valores_mensais"] = new_by_mes
                     entry["realizado"] = round(sum(new_by_mes.values()), 2)
                     changed = True
             else:
-                new_val = _eval_formula(formula, {k: float(v) for k, v in row_vals.items() if not isinstance(v, dict)})
+                # Verifica se alguma dependência tem erro geral
+                tem_erro_dep = False
+                for dep in dep_ordens:
+                    dep_e = ordem_to_entry.get(dep)
+                    if dep_e and dep_e.get("erro"):
+                        tem_erro_dep = True
+                        break
+
+                if tem_erro_dep:
+                    new_val = 0.0
+                    tem_erro = True
+                else:
+                    new_val, tem_erro = _eval_formula(formula, {k: float(v) for k, v in row_vals.items() if not isinstance(v, dict)})
+
+                entry["erro"] = "erro" if tem_erro else None
+
                 if row_vals.get(ordem) != new_val:
                     row_vals[ordem] = new_val
                     entry["realizado"] = round(new_val, 2)

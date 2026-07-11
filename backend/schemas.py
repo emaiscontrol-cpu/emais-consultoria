@@ -589,6 +589,8 @@ class LinhaDemonstrativoOut(BaseModel):
     negrito_totalizador: bool
     tem_divisao_por_zero: bool = False
     valores_unidades: Optional[dict[str, float]] = None
+    erro: Optional[str] = None
+    erros_unidades: Optional[dict[str, Optional[str]]] = None
 
 class DemonstrativoOut(BaseModel):
     cliente_id: int

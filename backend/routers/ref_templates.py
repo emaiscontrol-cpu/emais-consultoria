@@ -73,7 +73,7 @@ def _validar_linhas_do_template(template_id: int, db: Session, excluir_id: int =
         linhas = [l for l in linhas if l.id != excluir_id]
     ciclo = detectar_ciclo(linhas)
     if ciclo:
-        raise HTTPException(422, f"Referência circular detectada entre: {' → '.join(ciclo)}")
+        raise HTTPException(400, f"Referência circular detectada entre: {' → '.join(ciclo)}")
     return linhas
 
 
@@ -84,9 +84,16 @@ def criar_linha(id: int, data: schemas.TemplateLinhaCreate, db: Session = Depend
     if not t:
         raise HTTPException(404, "Template não encontrado")
 
-    erro = validar_formula(data.formula_texto)
+    # Obter referências válidas
+    agrs_validos = {a.slug for a in db.query(models.Agrupamento).filter(models.Agrupamento.ativo == True).all() if a.slug}
+    linhas_t = db.query(models.TemplateLinhaRef).filter(models.TemplateLinhaRef.template_id == id).all()
+    lins_validas = {l.rotulo for l in linhas_t}
+    lins_validas.add(data.rotulo)
+    refs_validas = agrs_validos | lins_validas
+
+    erro = validar_formula(data.formula_texto, refs_validas)
     if erro:
-        raise HTTPException(422, erro)
+        raise HTTPException(400, erro)
 
     linha = models.TemplateLinhaRef(template_id=id, **data.model_dump())
     db.add(linha); db.flush()
@@ -109,9 +116,18 @@ def atualizar_linha(id: int, lid: int, data: schemas.TemplateLinhaUpdate,
         raise HTTPException(404, "Linha não encontrada")
 
     if data.formula_texto is not None:
-        erro = validar_formula(data.formula_texto)
+        # Obter referências válidas
+        agrs_validos = {a.slug for a in db.query(models.Agrupamento).filter(models.Agrupamento.ativo == True).all() if a.slug}
+        linhas_t = db.query(models.TemplateLinhaRef).filter(models.TemplateLinhaRef.template_id == id).all()
+        lins_validas = {l.rotulo for l in linhas_t if l.id != lid}
+        # Se alterou o rotulo, consideramos o novo, senão consideramos o antigo
+        rotulo_final = data.rotulo if data.rotulo is not None else linha.rotulo
+        lins_validas.add(rotulo_final)
+        refs_validas = agrs_validos | lins_validas
+
+        erro = validar_formula(data.formula_texto, refs_validas)
         if erro:
-            raise HTTPException(422, erro)
+            raise HTTPException(400, erro)
 
     for k, v in data.model_dump(exclude_none=True).items():
         setattr(linha, k, v)
