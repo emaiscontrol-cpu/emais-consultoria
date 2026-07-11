@@ -48,7 +48,7 @@ def obter_orcamento(
         if o.agrupamento_slug not in data:
             data[o.agrupamento_slug] = [0.0] * 12
         if 1 <= o.mes <= 12:
-            data[o.agrupamento_slug][o.mes - 1] = o.valor
+            data[o.agrupamento_slug][o.mes - 1] = float(o.valor) if o.valor is not None else 0.0
             
     return [
         {
@@ -453,7 +453,7 @@ def upsert_orcamento(
 
     valor_antes = 0.0
     if item:
-        valor_antes = item.valor
+        valor_antes = float(item.valor) if item.valor is not None else 0.0
         item.valor = data.valor
     else:
         item = models.FCOrcamento(

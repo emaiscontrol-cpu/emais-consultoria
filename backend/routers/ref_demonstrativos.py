@@ -60,7 +60,7 @@ def _get_valores_agrupamento(db: Session, cliente_id: int, ano: int, mes: int) -
 
     for l in lancs:
         cc_id = l.conta_cliente_id
-        valor_bruto = l.valor
+        valor_bruto = float(l.valor) if l.valor is not None else 0.0
         unidade_cod = l.unidade_codigo or "Consolidado"
 
         dp_ativos = _ativos(dp_por_cc.get(cc_id, []))

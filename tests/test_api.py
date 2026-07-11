@@ -923,3 +923,31 @@ class TestDiagnosticoESeguranca:
 
 
 
+# ── TESTE DE INVARIANTE SOMA CENTAVOS ────────────────────────────────────────
+
+def test_invariante_soma_centavos(client, admin_headers, cliente_teste, db_session):
+    import models
+    from datetime import date
+    from sqlalchemy import text
+    db_session.execute(text("DELETE FROM lancamentos"))
+    db_session.commit()
+
+    # N = 10 (soma de 10 lançamentos de 0.1 deve dar exatamente 1.0)
+    for _ in range(10):
+        db_session.add(models.Lancamento(
+            tipo="receita",
+            descricao="Centavo",
+            valor=0.10,
+            data=date(2026, 6, 15),
+            usuario_id=1,
+            cliente_id=cliente_teste.id
+        ))
+    db_session.commit()
+
+    r = client.get("/api/controladoria/resumo?mes=6&ano=2026", headers=admin_headers)
+    assert r.status_code == 200
+    body = r.json()
+    assert body["receitas"] == 1.0
+
+
+
