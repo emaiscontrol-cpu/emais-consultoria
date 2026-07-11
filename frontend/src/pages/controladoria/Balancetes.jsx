@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
-import { Upload, Trash2, Eye } from 'lucide-react'
+import { Upload, Eye } from 'lucide-react'
 import { clientesAPI, balanceteAPI } from '../../services/api'
+import { BotaoExcluir } from '../../components/ui'
 import toast from 'react-hot-toast'
 
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -178,10 +179,7 @@ export default function Balancetes() {
                         onClick={() => abrirDetalhe(p.ano, p.mes)}>
                         <Eye size={12}/> Ver
                       </button>
-                      <button className="btn btn-sm" style={{ color: 'var(--red)' }}
-                        onClick={() => handleDeletar(p.ano, p.mes)}>
-                        <Trash2 size={12}/>
-                      </button>
+                      <BotaoExcluir onClick={() => handleDeletar(p.ano, p.mes)} />
                     </div>
                   </div>
                 ))}

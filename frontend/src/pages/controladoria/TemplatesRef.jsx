@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react'
-import { Plus, Pencil, Trash2, Copy, GripVertical, AlertTriangle } from 'lucide-react'
+import { Plus, Copy, GripVertical, AlertTriangle } from 'lucide-react'
 import { refTemplatesAPI, refSegmentosAPI, refPlanoAPI } from '../../services/api'
 import { Modal } from '../../components/shared'
+import { BotaoEditar, BotaoExcluir, BotaoNovo } from '../../components/ui'
 import toast from 'react-hot-toast'
 
 const TIPO_LABEL = { dre: 'DRE', fluxo_caixa: 'Fluxo de Caixa', orcamento: 'Orçamento' }
@@ -92,12 +93,8 @@ function LinhaRow({ linha, templateId, agrupamentos, rotulosDisponiveis, onRefre
       <td style={{ padding: '8px 16px', textAlign: 'center' }}>{linha.ordem}</td>
       <td style={{ padding: '8px 16px', textAlign: 'right' }}>
         <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-          <button onClick={() => setEditando(true)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-            <Pencil size={13} />
-          </button>
-          <button onClick={excluir} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)' }}>
-            <Trash2 size={13} />
-          </button>
+          <BotaoEditar onClick={() => setEditando(true)} />
+          <BotaoExcluir onClick={excluir} />
         </div>
       </td>
     </tr>
@@ -241,7 +238,7 @@ export default function TemplatesRef() {
           <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>Templates de Demonstrativos</h1>
           <p style={{ color: 'var(--text-muted)', fontSize: 13, margin: '4px 0 0' }}>DRE, Fluxo de Caixa e Orçamento por segmento</p>
         </div>
-        <button className="btn btn-primary" onClick={() => setCriando(true)}><Plus size={14} /> Novo Template</button>
+        <BotaoNovo onClick={() => setCriando(true)}>Novo Template</BotaoNovo>
       </div>
 
       <div style={{ display: 'flex', gap: 10, marginBottom: 16 }}>
@@ -266,10 +263,10 @@ export default function TemplatesRef() {
               </div>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>
-              <button className="btn btn-sm" onClick={() => setEditando(t)}><Pencil size={12} /> Editar Linhas</button>
+              <BotaoEditar onClick={() => setEditando(t)}>Editar Linhas</BotaoEditar>
               <button className="btn btn-sm" onClick={() => { setDuplicando(t); setDupForm({ segmento_id: '', nome: `${t.nome} (cópia)` }) }}
                 title="Duplicar para outro segmento"><Copy size={12} /></button>
-              <button className="btn btn-sm" onClick={() => excluir(t.id)} style={{ color: 'var(--red)' }}><Trash2 size={12} /></button>
+              <BotaoExcluir onClick={() => excluir(t.id)} />
             </div>
           </div>
         ))}
