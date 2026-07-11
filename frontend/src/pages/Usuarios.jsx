@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react'
 import { usuariosAPI, clientesAPI } from '../services/api'
 import { Modal, Avatar, LoadingPage } from '../components/shared'
-import { Pencil, Trash2, KeyRound, X } from 'lucide-react'
+import { BotaoEditar, BotaoExcluir, BotaoNovo } from '../components/ui'
+import { KeyRound, X } from 'lucide-react'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -132,7 +133,7 @@ export default function Usuarios() {
           <div className="page-title">Usuários</div>
           <div className="page-sub">{usuarios.length} usuário(s) ativo(s)</div>
         </div>
-        <button className="btn btn-primary" onClick={abrirNovo}>+ Novo usuário</button>
+        <BotaoNovo onClick={abrirNovo}>Novo usuário</BotaoNovo>
       </div>
 
       {/* Banner solicitações de reset (admin only) */}
@@ -208,13 +209,8 @@ export default function Usuarios() {
                     <td className="text-muted">{cliente?.razao_social || '—'}</td>
                     <td>
                       <div style={{ display:'flex', gap:4 }}>
-                        <button className="btn btn-sm btn-ghost" onClick={() => abrirEditar(u)} title="Editar">
-                          <Pencil size={13}/>
-                        </button>
-                        <button className="btn btn-sm btn-ghost" onClick={() => setDeletando(u)} title="Excluir"
-                          style={{ color:'var(--red)' }}>
-                          <Trash2 size={13}/>
-                        </button>
+                        <BotaoEditar onClick={() => abrirEditar(u)} />
+                        <BotaoExcluir onClick={() => setDeletando(u)} />
                       </div>
                     </td>
                   </tr>
