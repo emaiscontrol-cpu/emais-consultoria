@@ -1,9 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import {
-  ComposedChart, Area, BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell
-} from 'recharts'
+import { GraficoComposto, GraficoBarras, GraficoLinha } from '../../components/Graficos'
 import { clientesAPI, orcamentoAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
@@ -602,23 +599,21 @@ export default function DreDashboard2() {
                   <div style={{fontSize:13,fontWeight:500,color:C.text,marginBottom:14}}>
                     Receita Líquida × Custos Variáveis — mensal
                   </div>
-                  <ResponsiveContainer width="100%" height={subTab==='evolucao'?280:200}>
-                    <ComposedChart data={evolData} margin={{top:2,right:4,left:0,bottom:0}}>
-                      <defs>
-                        <linearGradient id="gradMargem2" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%"  stopColor={C.green} stopOpacity={0.28}/>
-                          <stop offset="95%" stopColor={C.green} stopOpacity={0.03}/>
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false}/>
-                      <XAxis dataKey="mes" tick={axisSt} axisLine={false} tickLine={false}/>
-                      <YAxis tick={axisSt} axisLine={false} tickLine={false} width={44} tickFormatter={fmtK}/>
-                      <Tooltip content={<EvolTooltip/>}/>
-                      <Area type="monotone" dataKey="margem" fill="url(#gradMargem2)" stroke={C.green} strokeWidth={1.5} dot={false} name="Margem"/>
-                      <Line type="monotone" dataKey="receita" stroke={C.blue} strokeWidth={2} dot={{r:3,fill:C.blue}} activeDot={{r:5}} name="Receita Líquida"/>
-                      <Line type="monotone" dataKey="custos"  stroke={C.red}  strokeWidth={2} strokeDasharray="5 4" dot={{r:3,fill:C.red}} activeDot={{r:5}} name="Custos Variáveis"/>
-                    </ComposedChart>
-                  </ResponsiveContainer>
+                  <GraficoComposto
+                    dados={evolData}
+                    chaveX="mes"
+                    altura={subTab==='evolucao'?280:200}
+                    margin={{top:2,right:4,left:0,bottom:0}}
+                    xAxisProps={{ tick: axisSt, axisLine:false, tickLine:false }}
+                    yAxisProps={{ tick: axisSt, axisLine:false, tickLine:false, width:44 }}
+                    formatoY={fmtK}
+                    tooltipContent={<EvolTooltip/>}
+                    series={[
+                      { tipo:'area', chave:'margem', cor:C.green, opacidade:0.28, nome:'Margem' },
+                      { tipo:'linha', chave:'receita', cor:C.blue, dot:{r:3,fill:C.blue}, activeDot:{r:5}, nome:'Receita Líquida' },
+                      { tipo:'linha', chave:'custos', cor:C.red, tracejado:true, dot:{r:3,fill:C.red}, activeDot:{r:5}, nome:'Custos Variáveis' },
+                    ]}
+                  />
                   <div style={{display:'flex',gap:16,marginTop:8,fontSize:11,color:C.muted}}>
                     {[[C.blue,'Receita Líquida'],[C.red,'Custos Variáveis'],['rgba(99,153,34,0.5)','Margem']].map(([c,l])=>(
                       <span key={l} style={{display:'flex',alignItems:'center',gap:5}}>
@@ -638,23 +633,25 @@ export default function DreDashboard2() {
                     {loadingAll&&<div style={{textAlign:'center',padding:'30px 0',color:C.muted,fontSize:12}}>Carregando unidades...</div>}
                     {!loadingAll&&rankData.length===0&&<div style={{textAlign:'center',padding:'30px 0',color:C.muted,fontSize:12}}>Sem dados de unidades para exibir.</div>}
                     {!loadingAll&&rankData.length>0&&(
-                      <ResponsiveContainer width="100%" height={Math.max(160, rankData.length*26)}>
-                        <BarChart data={rankData} layout="vertical" margin={{top:0,right:30,left:0,bottom:0}}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" horizontal={false}/>
-                          <XAxis type="number" tick={axisSt} axisLine={false} tickLine={false} tickFormatter={v=>`R$${v}k`}/>
-                          <YAxis type="category" dataKey="unidade" tick={axisSt} axisLine={false} tickLine={false} width={38}/>
-                          <Tooltip
-                            content={({active,payload})=>active&&payload?.length
-                              ?<div style={{background:'#1e2235',border:`1px solid ${C.border}`,borderRadius:6,padding:'8px 12px',fontSize:12,color:C.text}}>
-                                 <div style={{color:C.muted,marginBottom:4}}>{payload[0]?.payload?.fullName}</div>
-                                 <div style={{fontWeight:700,color:payload[0]?.color}}>{rankLabel}: R${payload[0]?.value}k</div>
-                               </div>:null}
-                          />
-                          <Bar dataKey="valor" radius={[0,4,4,0]} maxBarSize={18}>
-                            {rankData.map((d,i)=><Cell key={i} fill={d.color}/>)}
-                          </Bar>
-                        </BarChart>
-                      </ResponsiveContainer>
+                      <GraficoBarras
+                        dados={rankData}
+                        chaveX="unidade"
+                        layout="vertical"
+                        altura={Math.max(160, rankData.length*26)}
+                        margin={{top:0,right:30,left:0,bottom:0}}
+                        xAxisProps={{ tick: axisSt, axisLine:false, tickLine:false }}
+                        yAxisProps={{ tick: axisSt, axisLine:false, tickLine:false, width:38 }}
+                        formatoY={v=>`R$${v}k`}
+                        tooltipContent={({active,payload})=>active&&payload?.length
+                          ?<div style={{background:'#1e2235',border:`1px solid ${C.border}`,borderRadius:6,padding:'8px 12px',fontSize:12,color:C.text}}>
+                             <div style={{color:C.muted,marginBottom:4}}>{payload[0]?.payload?.fullName}</div>
+                             <div style={{fontWeight:700,color:payload[0]?.color}}>{rankLabel}: R${payload[0]?.value}k</div>
+                           </div>:null}
+                        barras={[{
+                          chave:'valor', radius:[0,4,4,0], maxBarSize:18,
+                          cellProps: d => ({ fill: d.color }),
+                        }]}
+                      />
                     )}
                     <div style={{display:'flex',gap:14,marginTop:8,fontSize:11,color:C.muted}}>
                       {[['#4a7c20','Acima da média'],['#185FA5','Na média'],['#9e2c2b','Abaixo']].map(([c,l])=>(
@@ -694,19 +691,19 @@ export default function DreDashboard2() {
                 </div>
                 {loadingAll&&<div style={{textAlign:'center',padding:'20px 0',color:C.muted,fontSize:12}}>Carregando dados de unidades...</div>}
                 {!loadingAll&&(
-                  <ResponsiveContainer width="100%" height={subTab==='comparativo'?260:180}>
-                    <LineChart data={compLineData} margin={{top:4,right:8,left:0,bottom:0}}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" vertical={false}/>
-                      <XAxis dataKey="mes" tick={axisSt} axisLine={false} tickLine={false}/>
-                      <YAxis tick={axisSt} axisLine={false} tickLine={false} width={46} tickFormatter={fmtK}/>
-                      <Tooltip content={<CompTooltip/>}/>
-                      {Array.from(selFlags).map((u,i)=>(
-                        <Line key={u} type="monotone" dataKey={u} name={u}
-                          stroke={UNIT_COLORS[i % UNIT_COLORS.length]}
-                          strokeWidth={2} dot={false} connectNulls={false}/>
-                      ))}
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <GraficoLinha
+                    dados={compLineData}
+                    chaveX="mes"
+                    altura={subTab==='comparativo'?260:180}
+                    margin={{top:4,right:8,left:0,bottom:0}}
+                    xAxisProps={{ tick: axisSt, axisLine:false, tickLine:false }}
+                    yAxisProps={{ tick: axisSt, axisLine:false, tickLine:false, width:46 }}
+                    formatoY={fmtK}
+                    tooltipContent={<CompTooltip/>}
+                    linhas={Array.from(selFlags).map((u,i)=>({
+                      chave: u, nome: u, cor: UNIT_COLORS[i % UNIT_COLORS.length], strokeWidth:2,
+                    }))}
+                  />
                 )}
               </div>
             )}

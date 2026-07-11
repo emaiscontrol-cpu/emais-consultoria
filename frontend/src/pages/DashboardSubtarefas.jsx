@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react'
 import { projetosAPI, dashboardAPI, subtarefasAPI } from '../services/api'
 import { LoadingPage } from '../components/shared'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend,
-  BarChart, Bar, XAxis, YAxis, CartesianGrid,
-} from 'recharts'
+import { GraficoRosca, GraficoBarras } from '../components/Graficos'
 import toast from 'react-hot-toast'
 
 const PROJ_KEY = 'emais_dash_projeto'
@@ -231,19 +228,21 @@ export default function DashboardSubtarefas() {
             <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: '20px 16px' }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: D.text2, textTransform: 'uppercase',
                 letterSpacing: '.08em', marginBottom: 16 }}>Distribuição por Status</div>
-              <ResponsiveContainer width="100%" height={220}>
-                <PieChart>
-                  <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={85}
-                    dataKey="value" paddingAngle={3}>
-                    {pieData.map((e, i) => <Cell key={i} fill={e.color} />)}
-                  </Pie>
-                  <Tooltip content={<TooltipEscuro />} />
-                  <Legend
-                    formatter={v => <span style={{ color: D.text2, fontSize: 11 }}>{v}</span>}
-                    iconType="circle" iconSize={8}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
+              <GraficoRosca
+                dados={pieData} altura={220} innerRadius={55} outerRadius={85}
+                tooltip tooltipContent={<TooltipEscuro />}
+                legenda legendaContent={({ payload }) => (
+                  <ul style={{ listStyle: 'none', padding: 0, margin: '8px 0 0', display: 'flex', justifyContent: 'center', gap: 14, flexWrap: 'wrap' }}>
+                    {(payload || []).map((e, i) => (
+                      <li key={i} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: e.color, flexShrink: 0 }} />
+                        <span style={{ color: D.text2, fontSize: 11 }}>{e.value}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                dark
+              />
               {/* % no centro — texto abaixo */}
               <div style={{ textAlign: 'center', marginTop: 4 }}>
                 <span style={{ fontSize: 28, fontWeight: 700, color: '#4CAF50' }}>{perc}%</span>
@@ -255,18 +254,18 @@ export default function DashboardSubtarefas() {
             <div style={{ background: D.card, border: `1px solid ${D.border}`, borderRadius: 12, padding: '20px 16px' }}>
               <div style={{ fontSize: 10, fontWeight: 700, color: D.text2, textTransform: 'uppercase',
                 letterSpacing: '.08em', marginBottom: 16 }}>Atividades por Fase</div>
-              <ResponsiveContainer width="100%" height={260}>
-                <BarChart data={barData} margin={{ top: 0, right: 8, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={D.grid} vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: D.text2, fontSize: 11 }} axisLine={false} tickLine={false} />
-                  <YAxis tick={{ fill: D.text2, fontSize: 11 }} axisLine={false} tickLine={false} allowDecimals={false} />
-                  <Tooltip content={<TooltipEscuro />} cursor={{ fill: 'rgba(255,255,255,.04)' }} />
-                  <Legend formatter={v => <span style={{ color: D.text2, fontSize: 11 }}>{v}</span>} iconType="circle" iconSize={8} />
-                  <Bar dataKey="Concluída" stackId="a" fill="#4CAF50" radius={[0,0,0,0]} />
-                  <Bar dataKey="Pendente"  stackId="a" fill="#FFC107" />
-                  <Bar dataKey="A Fazer"   stackId="a" fill="#555" radius={[4,4,0,0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <GraficoBarras
+                dados={barData} chaveX="name" altura={260}
+                margin={{ top: 0, right: 8, left: -20, bottom: 0 }}
+                tooltipContent={<TooltipEscuro />} tooltipCursor={{ fill: 'rgba(255,255,255,.04)' }}
+                legenda
+                dark
+                barras={[
+                  { chave: 'Concluída', cor: '#4CAF50', stackId: 'a', radius: [0, 0, 0, 0] },
+                  { chave: 'Pendente', cor: '#FFC107', stackId: 'a', radius: [0, 0, 0, 0] },
+                  { chave: 'A Fazer', nome: 'A Fazer', cor: '#555', stackId: 'a', radius: [4, 4, 0, 0] },
+                ]}
+              />
             </div>
           </div>
 

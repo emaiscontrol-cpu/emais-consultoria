@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { projetosAPI, dashboardAPI, relatoriosAPI } from '../services/api'
 import { LoadingPage } from '../components/shared'
-import { PieChart, Pie, Cell, Label, ResponsiveContainer } from 'recharts'
+import { GraficoRosca } from '../components/Graficos'
 import { useAuth } from '../contexts/AuthContext'
 import toast from 'react-hot-toast'
 
@@ -58,22 +58,8 @@ function DonutFase({ data, total, perc }) {
       height: 150, color: D.text2, fontSize: 12 }}>Sem tarefas</div>
   )
   return (
-    <ResponsiveContainer width="100%" height={150}>
-      <PieChart>
-        <Pie data={data} cx="50%" cy="50%" innerRadius={42} outerRadius={62}
-          dataKey="value" paddingAngle={3} strokeWidth={0}>
-          {data.map((e, i) => <Cell key={i} fill={e.color} />)}
-          <Label position="center" content={({ viewBox: { cx, cy } }) => (
-            <g>
-              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                fontSize={20} fontWeight={800} fill={D.text}>{perc}%</text>
-              <text x={cx} y={cy + 16} textAnchor="middle" dominantBaseline="middle"
-                fontSize={9} fill={D.text2}>{total} tar.</text>
-            </g>
-          )} />
-        </Pie>
-      </PieChart>
-    </ResponsiveContainer>
+    <GraficoRosca dados={data} altura={150} innerRadius={42} outerRadius={62}
+      valorCentro={`${perc}%`} rotuloCentro={`${total} tar.`} dark />
   )
 }
 

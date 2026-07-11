@@ -1,64 +1,39 @@
 import { useState, useEffect } from 'react'
 import { Thermometer, Gauge, CalendarDays, TrendingUp, ArrowUp, ArrowDown } from 'lucide-react'
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar } from 'recharts'
+import { GraficoBarras, GraficoArea, fmtNumeroBR } from './Graficos'
 
-// Custom tooltip for Evolution chart (Realizado vs Planejado)
-const CustomTooltipEvolucao = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    const formatVal = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    return (
-      <div style={{ background: 'var(--surface, #ffffff)', border: '0.5px solid var(--border)', padding: '8px 12px', borderRadius: 6, boxShadow: 'var(--shadow)' }}>
-        <p style={{ margin: '0 0 4px 0', fontSize: 11, fontWeight: 700, color: '#1e293b' }}>{payload[0].payload.mes}</p>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 2, fontSize: 11 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ color: '#534AB7', fontWeight: 600 }}>Realizado:</span>
-            <span style={{ fontWeight: 700, color: '#1e293b' }}>R$ {formatVal(payload[0].value)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ color: '#0ea5e9', fontWeight: 600 }}>Planejado:</span>
-            <span style={{ fontWeight: 700, color: '#1e293b' }}>R$ {formatVal(payload[1]?.value)}</span>
-          </div>
+const fmt = fmtNumeroBR
+
+// Tooltip trimestral com desvio % — específico deste painel (o padrão de
+// chartTheme.js não deriva percentuais, só formata valores).
+const TooltipQuarters = ({ active, payload }) => {
+  if (!active || !payload || !payload.length) return null
+  const real = payload[0].value
+  const plan = payload[1]?.value ?? 0
+  const diff = real - plan
+  const pct = plan !== 0 ? (diff / Math.abs(plan)) * 100 : 0
+  return (
+    <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', padding: '8px 12px', borderRadius: 6, boxShadow: 'var(--shadow)' }}>
+      <p style={{ margin: '0 0 4px 0', fontSize: 11, fontWeight: 700, color: 'var(--text)' }}>{payload[0].payload.name}</p>
+      <div style={{ fontSize: 11 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
+          <span style={{ color: '#534AB7', fontWeight: 600 }}>Realizado:</span>
+          <span style={{ fontWeight: 700, color: 'var(--text)' }}>R$ {fmt(real)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 2 }}>
+          <span style={{ color: '#0ea5e9', fontWeight: 600 }}>Planejado:</span>
+          <span style={{ fontWeight: 700, color: 'var(--text)' }}>R$ {fmt(plan)}</span>
+        </div>
+        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 4, paddingTop: 4, borderTop: '0.5px solid var(--border)' }}>
+          <span style={{ color: 'var(--text)', fontWeight: 600 }}>Desvio %:</span>
+          <span style={{ fontWeight: 700, color: diff >= 0 ? '#1E8449' : '#C0392B' }}>
+            {pct > 0 ? '+' : ''}{pct.toFixed(1)}%
+          </span>
         </div>
       </div>
-    )
-  }
-  return null
+    </div>
+  )
 }
-
-// Custom tooltip for Quarterly Bar chart
-const CustomTooltipQuarters = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    const formatVal = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    const real = payload[0].value;
-    const plan = payload[1]?.value ?? 0;
-    const diff = real - plan;
-    const pct = plan !== 0 ? (diff / Math.abs(plan)) * 100 : 0;
-    return (
-      <div style={{ background: 'var(--surface, #ffffff)', border: '0.5px solid var(--border)', padding: '8px 12px', borderRadius: 6, boxShadow: 'var(--shadow)' }}>
-        <p style={{ margin: '0 0 4px 0', fontSize: 11, fontWeight: 700, color: '#1e293b' }}>{payload[0].payload.name}</p>
-        <div style={{ fontSize: 11 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <span style={{ color: '#534AB7', fontWeight: 600 }}>Realizado:</span>
-            <span style={{ fontWeight: 700, color: '#1e293b' }}>R$ {formatVal(real)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 2 }}>
-            <span style={{ color: '#0ea5e9', fontWeight: 600 }}>Planejado:</span>
-            <span style={{ fontWeight: 700, color: '#1e293b' }}>R$ {formatVal(plan)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, marginTop: 4, paddingTop: 4, borderTop: '0.5px solid var(--border)' }}>
-            <span style={{ color: '#1e293b', fontWeight: 600 }}>Desvio %:</span>
-            <span style={{ fontWeight: 700, color: diff >= 0 ? '#1E8449' : '#C0392B' }}>
-              {pct > 0 ? '+' : ''}{pct.toFixed(1)}%
-            </span>
-          </div>
-        </div>
-      </div>
-    )
-  }
-  return null
-}
-
-const fmt = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 })
 
 export default function PainelDetalheOrcamento({
   agrupamentoSlug,
@@ -307,21 +282,17 @@ export default function PainelDetalheOrcamento({
           </div>
 
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-            <ResponsiveContainer width="100%" height={140}>
-              <BarChart data={quartersData} margin={{ top: 5, right: 5, left: -22, bottom: 5 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.08)" />
-                <XAxis dataKey="name" tickLine={false} axisLine={false} style={{ fontSize: 9.5, fill: '#1e293b', fontWeight: 700 }} />
-                <YAxis tickLine={false} axisLine={false} style={{ fontSize: 9.5, fill: '#1e293b', fontWeight: 700 }} tickFormatter={v => {
-                  const abs = Math.abs(v)
-                  if (abs >= 1000000) return `${(v/1000000).toFixed(1)}M`
-                  if (abs >= 1000) return `${(v/1000).toFixed(0)}K`
-                  return v
-                }} />
-                <Tooltip content={<CustomTooltipQuarters />} />
-                <Bar dataKey="Realizado" fill="#534AB7" radius={[3, 3, 0, 0]} barSize={12} />
-                <Bar dataKey="Planejado" fill="#0ea5e9" radius={[3, 3, 0, 0]} barSize={12} />
-              </BarChart>
-            </ResponsiveContainer>
+            <GraficoBarras
+              dados={quartersData}
+              chaveX="name"
+              altura={140}
+              margin={{ top: 5, right: 5, left: -22, bottom: 5 }}
+              tooltipContent={<TooltipQuarters />}
+              barras={[
+                { chave: 'Realizado', cor: '#534AB7', barSize: 12 },
+                { chave: 'Planejado', cor: '#0ea5e9', barSize: 12 },
+              ]}
+            />
             <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' }}>
               <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9.5, color: '#1e293b', fontWeight: 700 }}>
                 <span style={{ width: 8, height: 8, borderRadius: 2, background: '#534AB7' }} />
@@ -342,31 +313,16 @@ export default function PainelDetalheOrcamento({
           </div>
           
           <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 5 }}>
-            <ResponsiveContainer width="100%" height={150}>
-              <AreaChart data={trendData} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                <defs>
-                  <linearGradient id="colorRealTrend" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#534AB7" stopOpacity={0.25}/>
-                    <stop offset="95%" stopColor="#534AB7" stopOpacity={0.00}/>
-                  </linearGradient>
-                  <linearGradient id="colorOrcTrend" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.15}/>
-                    <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.00}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.08)" />
-                <XAxis dataKey="mes" tickLine={false} axisLine={false} style={{ fontSize: 10, fill: '#1e293b', fontWeight: 700 }} />
-                <YAxis tickLine={false} axisLine={false} style={{ fontSize: 10, fill: '#1e293b', fontWeight: 700 }} tickFormatter={v => {
-                  const abs = Math.abs(v)
-                  if (abs >= 1000000) return `${(v/1000000).toFixed(1)}M`
-                  if (abs >= 1000) return `${(v/1000).toFixed(0)}K`
-                  return v
-                }} />
-                <Tooltip content={<CustomTooltipEvolucao />} />
-                <Area type="monotone" dataKey="Realizado" stroke="#534AB7" strokeWidth={2} fillOpacity={1} fill="url(#colorRealTrend)" />
-                <Area type="monotone" dataKey="Planejado" stroke="#0ea5e9" strokeWidth={1.5} strokeDasharray="3 3" fillOpacity={1} fill="url(#colorOrcTrend)" />
-              </AreaChart>
-            </ResponsiveContainer>
+            <GraficoArea
+              dados={trendData}
+              chaveX="mes"
+              altura={150}
+              margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+              areas={[
+                { chave: 'Realizado', cor: '#534AB7', opacidade: 0.25 },
+                { chave: 'Planejado', cor: '#0ea5e9', opacidade: 0.15, tracejado: true, strokeWidth: 1.5 },
+              ]}
+            />
           </div>
         </div>
 

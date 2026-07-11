@@ -1,22 +1,6 @@
 import { useState, useEffect } from 'react'
 import { demonstrativoFcAPI } from '../services/api'
-import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, PieChart, Pie, Cell, BarChart, Bar } from 'recharts'
-
-const CustomTooltip = ({ active, payload }) => {
-  if (active && payload && payload.length) {
-    const formatValue = v => v == null ? '—' : v.toLocaleString('pt-BR', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
-    return (
-      <div style={{ background: 'var(--surface)', border: '0.5px solid var(--border)', padding: '6px 10px', borderRadius: 4, boxShadow: 'var(--shadow)' }}>
-        <p style={{ margin: 0, fontSize: 10, color: 'var(--text-muted)' }}>{payload[0].payload.mes}</p>
-        <p style={{ margin: 0, fontSize: 11, fontWeight: 700, color: '#534AB7' }}>
-          R$ {formatValue(payload[0].value)}
-        </p>
-      </div>
-    )
-  }
-  return null
-}
-
+import { GraficoArea, GraficoBarras, GraficoRosca } from './Graficos'
 
 const CustomTooltipBars = ({ active, payload }) => {
   if (active && payload && payload.length) {
@@ -403,27 +387,16 @@ export default function PainelDetalheAgrupamento({
               Distribuição ABC
             </div>
             <div style={{ position: 'relative', width: 140, height: 140 }}>
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: 'Classe A', value: pctPorClasse.A },
-                      { name: 'Classe B', value: pctPorClasse.B },
-                      { name: 'Classe C', value: pctPorClasse.C },
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={36}
-                    outerRadius={55}
-                    paddingAngle={3}
-                    dataKey="value"
-                  >
-                    <Cell fill="#534AB7" />
-                    <Cell fill="#8F85F0" />
-                    <Cell fill="#C5C2EC" />
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
+              <GraficoRosca
+                dados={[
+                  { name: 'Classe A', value: pctPorClasse.A, color: '#534AB7' },
+                  { name: 'Classe B', value: pctPorClasse.B, color: '#8F85F0' },
+                  { name: 'Classe C', value: pctPorClasse.C, color: '#C5C2EC' },
+                ]}
+                innerRadius={36}
+                outerRadius={55}
+                altura="100%"
+              />
               <div style={{
                 position: 'absolute',
                 top: '47%',
@@ -507,38 +480,30 @@ export default function PainelDetalheAgrupamento({
             </div>
           ) : (
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-              <ResponsiveContainer width="100%" height={140}>
-                <BarChart data={top6.map(it => ({
+              <GraficoBarras
+                dados={top6.map(it => ({
                   name: nomeCurto(it),
                   Atual: Math.abs(it.valor ?? 0),
                   Anterior: Math.abs(anteriorMap.get(it.conta_origem) ?? 0),
                   origAtual: it.valor,
                   origAnterior: anteriorMap.get(it.conta_origem) ?? 0,
                   conta: nomeConta(it),
-                }))} margin={{ top: 5, right: 5, left: -22, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
-                  <XAxis dataKey="name" tickLine={false} axisLine={false} style={{ fontSize: 8, fill: 'var(--text-muted)' }} />
-                  <YAxis tickLine={false} axisLine={false} style={{ fontSize: 8.5, fill: 'var(--text-muted)' }} tickFormatter={v => {
-                    const abs = Math.abs(v)
-                    if (abs >= 1000000) return `${(v/1000000).toFixed(1)}M`
-                    if (abs >= 1000) return `${(v/1000).toFixed(0)}K`
-                    return v
-                  }} />
-                  <Tooltip content={<CustomTooltipBars />} />
-                  <Bar dataKey="Atual" radius={[2, 2, 0, 0]} barSize={8}>
-                    {top6.map((entry, index) => {
-                      const isNeg = entry.origAtual < 0 || entry.origAnterior < 0 || (entry.conta && entry.conta.includes('( - )'))
-                      return <Cell key={`cell-actual-${index}`} fill={isNeg ? '#E24B4A' : '#534AB7'} />
-                    })}
-                  </Bar>
-                  <Bar dataKey="Anterior" radius={[2, 2, 0, 0]} barSize={8}>
-                    {top6.map((entry, index) => {
-                      const isNeg = entry.origAtual < 0 || entry.origAnterior < 0 || (entry.conta && entry.conta.includes('( - )'))
-                      return <Cell key={`cell-prev-${index}`} fill={isNeg ? '#ECA4A4' : '#C5C2EC'} />
-                    })}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
+                }))}
+                chaveX="name"
+                altura={140}
+                margin={{ top: 5, right: 5, left: -22, bottom: 5 }}
+                tooltipContent={<CustomTooltipBars />}
+                barras={[
+                  {
+                    chave: 'Atual', radius: [2, 2, 0, 0], barSize: 8,
+                    cellProps: entry => ({ fill: (entry.origAtual < 0 || entry.origAnterior < 0 || entry.conta?.includes('( - )')) ? '#E24B4A' : '#534AB7' }),
+                  },
+                  {
+                    chave: 'Anterior', radius: [2, 2, 0, 0], barSize: 8,
+                    cellProps: entry => ({ fill: (entry.origAtual < 0 || entry.origAnterior < 0 || entry.conta?.includes('( - )')) ? '#ECA4A4' : '#C5C2EC' }),
+                  },
+                ]}
+              />
               <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 4, fontSize: 9, color: 'var(--text-3)' }}>
                   <span style={{ width: 8, height: 8, borderRadius: 2, background: '#534AB7' }} />
@@ -565,26 +530,13 @@ export default function PainelDetalheAgrupamento({
           </div>
           {dados.trend && dados.trend.length > 0 ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', marginTop: 5 }}>
-              <ResponsiveContainer width="100%" height={150}>
-                <AreaChart data={dados.trend} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="colorTrend" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#534AB7" stopOpacity={0.25}/>
-                      <stop offset="95%" stopColor="#534AB7" stopOpacity={0.00}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.04)" />
-                  <XAxis dataKey="mes" tickLine={false} axisLine={false} style={{ fontSize: 9, fill: 'var(--text-muted)' }} />
-                  <YAxis tickLine={false} axisLine={false} style={{ fontSize: 9, fill: 'var(--text-muted)' }} tickFormatter={v => {
-                    const abs = Math.abs(v)
-                    if (abs >= 1000000) return `${(v/1000000).toFixed(1)}M`
-                    if (abs >= 1000) return `${(v/1000).toFixed(0)}K`
-                    return v
-                  }} />
-                  <Tooltip content={<CustomTooltip />} cursor={{ stroke: 'rgba(83, 74, 183, 0.2)', strokeWidth: 1 }} />
-                  <Area type="monotone" dataKey="valor" stroke="#534AB7" strokeWidth={2} fillOpacity={1} fill="url(#colorTrend)" />
-                </AreaChart>
-              </ResponsiveContainer>
+              <GraficoArea
+                dados={dados.trend}
+                chaveX="mes"
+                altura={150}
+                margin={{ top: 10, right: 10, left: -20, bottom: 5 }}
+                areas={[{ chave: 'valor', cor: '#534AB7', opacidade: 0.25 }]}
+              />
             </div>
           ) : (
             <div style={{
