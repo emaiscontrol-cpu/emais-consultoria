@@ -11,9 +11,9 @@ Marque com [x] quando concluído. Mova para a seção ✅ CONCLUÍDO com a vers�
 ---
 
 # ═══════════════════════════════════════════════════════════════
-# EVOLUÇÃO PÓS-FASES 1-7 — Consolidado em 10/07/2026
+# EVOLUÇÃO PÓS-FASES 1-7 — Consolidado em 11/07/2026
 # Fonte: avaliação dupla (Claude chat + Claude Code CLI), verificada contra o código.
-# Pré-requisito geral: as 6 branches das fases mescladas, release feito e validado no Electron.
+# Pré-requisito geral: release v2.6.2t validado em produção. ✔ CUMPRIDO
 # ✅ Pré-requisito cumprido em 11/07/2026 — ver seção ✅ CONCLUÍDO ("Fases 1-7 — v2.6.2t")
 # ═══════════════════════════════════════════════════════════════
 
@@ -51,16 +51,18 @@ Marque com [x] quando concluído. Mova para a seção ✅ CONCLUÍDO com a vers�
 - [ ] Uploads e arquivos em object storage (Supabase Storage) — eliminar estado local
       preso na máquina Windows (impede segunda instância).
 - [ ] Error tracking (Sentry) + exception handler global. Logging estruturado (Fase 6)
-      é o degrau 1; este é o degrau 2.
+      é o degrau 1; este é o degrau 2. Motivação registrada: validar o release v2.6.2t
+      exigiu caça manual de 500s em log de 27 mil linhas sem timestamp.
 - [ ] Cache nos dashboards agregados (fluxo de caixa, DRE, orçamento) — Redis ou
       memória com TTL curto. Monitorar tempos de resposta ANTES de implementar.
 - [ ] Deploy sem downtime (hoje todo release reinicia o serviço para todos).
 
 ## TEMA 3 — Automações Headless (Claude Code CLI)
 **Quando:** três condições simultâneas — (1) fases 1-7 em produção estáveis por 1-2
-semanas sem incidente; (2) regras fiscalizáveis por escrito (✔ já cumprida pelas fases);
-(3) o operador ter rodado o ciclo manual de release 2-3 vezes com confiança — automatizar
-o que se entende é delegação; automatizar o que confunde é abdicação.
+semanas sem incidente; (2) regras fiscalizáveis por escrito (✔ cumprida — inclui a
+skill /conferencia-pre-release); (3) o operador ter rodado o ciclo manual de release
+2-3 vezes com confiança — automatizar o que se entende é delegação; automatizar o que
+confunde é abdicação.
 **Implementar NESTA ordem (da mais segura para a mais sensível — 1 e 2 são somente-leitura):**
 - [ ] **1. Revisor automático de PRs (GitHub Actions + Claude CLI headless)**: em cada PR,
       verifica eval() cru, endpoints com cliente_id sem verificar_tenant, parse monetário
@@ -68,9 +70,9 @@ o que se entende é delegação; automatizar o que confunde é abdicação.
       comentário no PR, explicando o que o diff faz e onde está o risco. NÃO bloqueia
       nem aprova merge — apenas opina. (Resolve o "aprovar sem saber o que significa":
       automatiza a EXPLICAÇÃO, não a decisão.)
-- [ ] **2. Relatório noturno (Agendador de Tarefas)**: pytest na main de madrugada +
-      comparação com o dia anterior + saúde do sistema (api/version, disco, logs WinSW)
-      gravado em RELATORIO_NOTURNO.md.
+- [ ] **2. Relatório noturno (Agendador de Tarefas)**: invocar a skill
+      /conferencia-pre-release de madrugada + comparação com o dia anterior + saúde do
+      sistema (api/version, disco, logs WinSW) gravado em documentos/sessoes/RELATORIO_NOTURNO.md.
 - [ ] **3. Validação de backup (script)**: após o backup diário, comparar contagens de
       tabelas com o dia anterior e sinalizar anomalias (queda abrupta = possível
       corrupção/deleção indevida).
@@ -78,7 +80,7 @@ o que se entende é delegação; automatizar o que confunde é abdicação.
 dados sem aprovação humana — apenas leem, analisam e reportam.
 
 ## Ordem geral recomendada entre os temas
-1. Estabilização (1-2 semanas de produção pós-release das fases)
+1. Estabilização (1-2 semanas de produção pós-v2.6.2t)
 2. Tema 2 / Estágio 1 (itens baratos que destravam o resto)
 3. Tema 3 / item 1 (revisor de PRs — maior retorno imediato)
 4. Tema 1 (teste sistemático → depois RLS junto do Estágio 2)
