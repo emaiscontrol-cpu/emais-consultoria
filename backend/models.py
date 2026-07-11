@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, DateTime, ForeignKey, Text, Enum, Date, UniqueConstraint, Index, text
+from sqlalchemy import Column, Integer, String, Float, Numeric, Boolean, DateTime, ForeignKey, Text, Enum, Date, UniqueConstraint, Index, text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from database import Base
@@ -306,7 +306,7 @@ class Lancamento(Base):
     id           = Column(Integer, primary_key=True, index=True)
     tipo         = Column(String(20), nullable=False)   # 'receita' | 'despesa'
     descricao    = Column(String(500), nullable=False)
-    valor        = Column(Float, nullable=False)
+    valor        = Column(Numeric(15, 2), nullable=False)
     data         = Column(Date, nullable=False)
     categoria_id = Column(Integer, ForeignKey("categorias_financeiras.id"), nullable=True)
     projeto_id   = Column(Integer, ForeignKey("projetos.id"), nullable=True)
@@ -344,7 +344,7 @@ class OrcamentoLinha(Base):
     projeto_id      = Column(Integer, ForeignKey("projetos.id"), nullable=True)
     ano             = Column(Integer, nullable=False)
     mes             = Column(Integer, nullable=True)
-    valor_previsto  = Column(Float, nullable=False)
+    valor_previsto  = Column(Numeric(15, 2), nullable=False)
     criado_em       = Column(DateTime(timezone=True), server_default=func.now())
     categoria       = relationship("CategoriaFinanceira")
     cliente         = relationship("Cliente")
@@ -362,7 +362,7 @@ class BalanceteLancamento(Base):
     ano        = Column(Integer, nullable=False)
     mes        = Column(Integer, nullable=False)   # 1-12
     conta      = Column(String(30), nullable=False)
-    valor      = Column(Float, default=0.0)
+    valor      = Column(Numeric(15, 2), default=0.0)
     cliente    = relationship("Cliente")
 
 
@@ -495,7 +495,7 @@ class ImportacaoPendencia(Base):
     log_id      = Column(Integer, ForeignKey("importacao_logs.id"), nullable=False)
     codigo_erp  = Column(String(60), nullable=False)
     descricao   = Column(String(300), default="")
-    valor       = Column(Float, default=0.0)
+    valor       = Column(Numeric(15, 2), default=0.0)
     mes         = Column(Integer, default=0)
     resolvido   = Column(Boolean, default=False)
     log         = relationship("ImportacaoLog", back_populates="itens_pendentes")
@@ -620,7 +620,7 @@ class LancamentoRef(Base):
     id               = Column(Integer, primary_key=True, index=True)
     conta_cliente_id = Column(Integer, ForeignKey("ref_contas_cliente.id"), nullable=False)
     unidade_codigo   = Column(String(3), nullable=True) # Quebra por filial de 3 dígitos (ex: "104")
-    valor            = Column(Float, nullable=False)
+    valor            = Column(Numeric(15, 2), nullable=False)
     ano              = Column(Integer, nullable=False)
     mes              = Column(Integer, nullable=False)   # 1–12
     data_importacao  = Column(DateTime(timezone=True), server_default=func.now())
@@ -667,7 +667,7 @@ class LancamentoFC(Base):
     descricao        = Column(String(300), nullable=True)    # descrição da conta/contrapartida
     ano              = Column(Integer, nullable=False)
     mes              = Column(Integer, nullable=False)        # 1–12
-    valor            = Column(Float, nullable=False, default=0.0)
+    valor            = Column(Numeric(15, 2), nullable=False, default=0.0)
     fonte            = Column(String(20), nullable=False, default="extrato")  # 'extrato' | 'despesa'
     importado_em     = Column(DateTime(timezone=True), server_default=func.now())
     cliente          = relationship("Cliente")
@@ -708,7 +708,7 @@ class FCOrcamento(Base):
     agrupamento_slug = Column(String(100), nullable=False)
     ano              = Column(Integer, nullable=False)
     mes              = Column(Integer, nullable=False)
-    valor            = Column(Float, nullable=False)
+    valor            = Column(Numeric(15, 2), nullable=False)
     versao           = Column(String(50), nullable=False, default="Original") # Original, Rev.1, etc.
     criado_em        = Column(DateTime(timezone=True), server_default=func.now())
     cliente          = relationship("Cliente")

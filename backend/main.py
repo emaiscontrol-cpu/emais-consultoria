@@ -10,6 +10,9 @@ from routers import auth, clientes, projetos, fases, tarefas, usuarios, dashboar
 from routers import ref_segmentos, ref_plano, ref_lancamentos, ref_depara, ref_templates, ref_demonstrativos, ref_benchmark, ref_unidades
 from routers import fc_exec
 from routers import pdf
+import logging
+
+logger = logging.getLogger("uvicorn")
 
 APP_VERSION = "2.6.2s"
 
@@ -20,7 +23,7 @@ try:
 except Exception as _ce:
     logger.exception("create_all falhou")
 
-# Add missing columns to existing tables (SQLite only ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Â ÃƒÂ¢Ã¢â€šÂ¬Ã¢â€žÂ¢ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã¢â‚¬Â¦Ãƒâ€šÃ‚Â¡ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™Ãƒâ€ Ã¢â‚¬â„¢ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã†â€™Ãƒâ€šÃ‚Â¢ÃƒÆ’Ã‚Â¢ÃƒÂ¢Ã¢â‚¬Å¡Ã‚Â¬Ãƒâ€¦Ã‚Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â¬ÃƒÆ’Ã†â€™ÃƒÂ¢Ã¢â€šÂ¬Ã…Â¡ÃƒÆ’Ã¢â‚¬Å¡Ãƒâ€šÃ‚Â Supabase starts fresh via create_all)
+# Add missing columns to existing tables (SQLite only  Supabase starts fresh via create_all)
 from sqlalchemy import text
 from database import _is_sqlite
 with engine.connect() as conn:
@@ -350,6 +353,14 @@ AND EXISTS (
             "DROP TABLE IF EXISTS planos_itens CASCADE",
             "DROP TABLE IF EXISTS planos_contas CASCADE",
             "DROP TABLE IF EXISTS planos CASCADE",
+            # Migração de colunas Float para Numeric(15, 2) (Supabase/Postgres)
+            "ALTER TABLE lancamentos ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
+            "ALTER TABLE orcamento_linhas ALTER COLUMN valor_previsto TYPE NUMERIC(15, 2) USING ROUND(valor_previsto::numeric, 2)",
+            "ALTER TABLE balancete_lancamentos ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
+            "ALTER TABLE importacao_pendencias ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
+            "ALTER TABLE ref_lancamentos ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
+            "ALTER TABLE fc_lancamentos ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
+            "ALTER TABLE fc_orcamento ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
         ]:
             try:
                 conn.execute(text(stmt))

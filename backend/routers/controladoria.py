@@ -59,9 +59,9 @@ def resumo(mes: Optional[int] = None, ano: Optional[int] = None,
         extract('year', Lancamento.data) == ano,
         extract('month', Lancamento.data) == mes,
     )
-    receitas  = sum(l.valor for l in q.filter(Lancamento.tipo == 'receita').all())
-    despesas  = sum(l.valor for l in q.filter(Lancamento.tipo == 'despesa').all())
-    resultado = receitas - despesas
+    receitas  = round(sum(float(l.valor) for l in q.filter(Lancamento.tipo == 'receita').all()), 2)
+    despesas  = round(sum(float(l.valor) for l in q.filter(Lancamento.tipo == 'despesa').all()), 2)
+    resultado = round(receitas - despesas, 2)
 
     total_lancamentos = db.query(func.count(Lancamento.id)).scalar()
 
@@ -126,7 +126,7 @@ def listar_lancamentos(
     return [
         {
             "id": l.id, "tipo": l.tipo, "descricao": l.descricao,
-            "valor": l.valor, "data": str(l.data),
+            "valor": float(l.valor) if l.valor is not None else 0.0, "data": str(l.data),
             "categoria": l.categoria.nome if l.categoria else None,
             "categoria_id": l.categoria_id,
             "projeto": l.projeto.nome if l.projeto else None,
@@ -187,7 +187,7 @@ def listar_orcamento(ano: int, cliente_id: Optional[int] = None,
     return [
         {
             "id": o.id, "ano": o.ano, "mes": o.mes,
-            "valor_previsto": o.valor_previsto,
+            "valor_previsto": float(o.valor_previsto) if o.valor_previsto is not None else 0.0,
             "categoria_id": o.categoria_id,
             "categoria": o.categoria.nome if o.categoria else None,
             "tipo": o.categoria.tipo if o.categoria else None,

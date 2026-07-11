@@ -151,7 +151,7 @@ def obter_lancamentos(
         BalanceteLancamento.ano == ano,
         BalanceteLancamento.mes == mes
     ).all()
-    return {i.conta: i.valor for i in itens}
+    return {i.conta: float(i.valor) if i.valor is not None else 0.0 for i in itens}
 
 
 @router.put("/cliente/{cliente_id}/ano/{ano}/mes/{mes}/conta/{conta}")
