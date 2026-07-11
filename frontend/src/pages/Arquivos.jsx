@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react'
 import { clientesAPI, arquivosAPI } from '../services/api'
 import { LoadingPage } from '../components/shared'
+import { BotaoExcluir } from '../components/ui'
 import {
   File, FileText, FileSpreadsheet, FileImage, Upload,
-  Download, Trash2, FolderOpen, Eye,
+  Download, FolderOpen, Eye,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -352,14 +353,7 @@ export default function Arquivos() {
                             ? <Eye size={13} />
                             : <Download size={13} />}
                         </button>
-                        <button
-                          className="btn btn-sm btn-ghost"
-                          title="Excluir"
-                          style={{ color: 'var(--red)' }}
-                          onClick={() => setDeletando(arq)}
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                        <BotaoExcluir onClick={() => setDeletando(arq)} />
                       </div>
                     </div>
                   ))}
