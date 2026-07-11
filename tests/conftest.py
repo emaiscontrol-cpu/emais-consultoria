@@ -43,6 +43,10 @@ from routers import (  # noqa: E402
     subtarefas,
     pdf,
     orcamento,
+    ref_demonstrativos,
+    bandeiras,
+    ref_unidades,
+    admin,
 )
 
 
@@ -83,6 +87,14 @@ def _montar_app() -> FastAPI:
     app.include_router(subtarefas.router,  prefix="/api/subtarefas")
     app.include_router(pdf.router,         prefix="/api/pdf")
     app.include_router(orcamento.router,   prefix="/api/orcamento")
+    app.include_router(ref_demonstrativos.router, prefix="/api/ref/demonstrativos")
+    app.include_router(bandeiras.router,   prefix="/api/bandeiras")
+    app.include_router(ref_unidades.router, prefix="/api/ref/unidades")
+    app.include_router(admin.router,       prefix="/api/admin")
+    app.version = "2.6.2s"
+    @app.get("/api/version")
+    def get_version():
+        return {"version": app.version}
     return app
 
 

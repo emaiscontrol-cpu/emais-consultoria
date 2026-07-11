@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, timezone
 from database import get_db
-from auth import get_usuario_atual
+from auth import get_usuario_atual, verificar_tenant
 import models, schemas
 
 router = APIRouter()
@@ -41,8 +41,7 @@ def resumo(db: Session = Depends(get_db), usuario = Depends(get_usuario_atual)):
 @router.get("/cliente/{cliente_id}")
 def dashboard_cliente(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
     # perfis restritos só acessam seu próprio cliente
-    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id and usuario.cliente_id != cliente_id:
-        raise HTTPException(403, "Acesso negado")
+    verificar_tenant(usuario, cliente_id)
 
     cliente = db.query(models.Cliente).filter(models.Cliente.id == cliente_id).first()
     if not cliente:

@@ -4,7 +4,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 from database import SessionLocal
 from models import Anotacao, Cliente
-from auth import get_usuario_atual as get_current_user
+from auth import get_usuario_atual as get_current_user, verificar_tenant
 
 router = APIRouter()
 
@@ -35,8 +35,7 @@ def _to_dict(r: Anotacao) -> dict:
 
 @router.get("/cliente/{cliente_id}")
 def listar(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_current_user)):
-    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id and usuario.cliente_id != cliente_id:
-        raise HTTPException(403, "Acesso negado")
+    verificar_tenant(usuario, cliente_id)
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(404, "Cliente não encontrado")
@@ -51,6 +50,7 @@ def listar(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_c
 
 @router.post("/cliente/{cliente_id}", status_code=201)
 def criar(cliente_id: int, body: AnotacaoIn, db: Session = Depends(get_db), usuario=Depends(get_current_user)):
+    verificar_tenant(usuario, cliente_id)
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(404, "Cliente não encontrado")
@@ -72,6 +72,7 @@ def atualizar(anotacao_id: int, body: AnotacaoIn, db: Session = Depends(get_db),
     anotacao = db.query(Anotacao).filter(Anotacao.id == anotacao_id).first()
     if not anotacao:
         raise HTTPException(404, "Anotação não encontrada")
+    verificar_tenant(usuario, anotacao.cliente_id)
     anotacao.texto = body.texto.strip()
     anotacao.data  = body.data
     db.commit()
@@ -80,10 +81,11 @@ def atualizar(anotacao_id: int, body: AnotacaoIn, db: Session = Depends(get_db),
 
 
 @router.delete("/{anotacao_id}")
-def deletar(anotacao_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
+def deletar(anotacao_id: int, db: Session = Depends(get_db), usuario=Depends(get_current_user)):
     anotacao = db.query(Anotacao).filter(Anotacao.id == anotacao_id).first()
     if not anotacao:
         raise HTTPException(404, "Anotação não encontrada")
+    verificar_tenant(usuario, anotacao.cliente_id)
     db.delete(anotacao)
     db.commit()
     return {"removido": anotacao_id}

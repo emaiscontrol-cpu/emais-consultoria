@@ -65,3 +65,11 @@
   - [x] Botão "Salvar na Lista" renomeado para "Concluir" (ícone trocado de `Plus` para `Check`); título do bloco de edição de unidade simplificado de "✏️ Editar Unidade na Lista" para "✏️ Editar Unidade"
   - [x] Avaliado o item 5 (inlinar os 8 campos do formulário completo — CNPJ/CEP/endereço — direto na linha da tabela) e decidido não aplicar: quebraria aparência/responsividade e o próprio pedido previa manter o formulário com um botão neutro como saída válida
   - [x] Validado com Playwright: confirmado que "Salvar na Lista" não existe mais, "Concluir" existe, clicar em "Concluir" não dispara nenhuma chamada a `/api/clientes` (só `setForm` local), e só o clique no "Salvar" do rodapé dispara o `POST`/`PUT` real
+
+- [x] Correção de Vulnerabilidades no Backend (Sessão 16 / fix/seguranca-superficie-publica)
+  - [x] TAREFA 1 — Substituir `eval()` cru no parser de fórmulas (`fc_exec.py`) por AST `safe_eval()` de `ref_formula_engine.py` e criar testes de segurança contra RCE
+  - [x] TAREFA 2 — Centralizar a Trava de Tenant no backend em uma dependência única `verificar_tenant` (`auth.py`) e aplicá-la em todos os endpoints que recebem `cliente_id`
+  - [x] TAREFA 3 — Remover vazamento de credenciais do endpoint `/api/version` (retornando apenas version) e criar o endpoint `/api/admin/diagnostico` (protegido com `requer_perfil("admin")` e com senha de connection string mascarada)
+  - [x] TAREFA 4 — Restringir CORS de `*` para origens explícitas no backend (`main.py`)
+  - [x] TAREFA 5 — Impedir boot com SECRET_KEY default em ambiente de produção (não-SQLite) levantando `RuntimeError` (`auth.py`)
+  - [x] Adicionar testes de regressão de tenant e segurança no `tests/test_api.py` (todos os 78 testes passando com sucesso total)

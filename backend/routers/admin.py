@@ -7,7 +7,9 @@ from datetime import datetime
 from pathlib import Path
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
 from fastapi.responses import FileResponse
-from auth import get_usuario_atual
+from sqlalchemy.orm import Session
+from database import get_db
+from auth import get_usuario_atual, requer_perfil
 
 router = APIRouter()
 
@@ -364,3 +366,40 @@ def restaurar_backup_local(body: dict, usuario=Depends(get_usuario_atual)):
     src.close()
     dst.close()
     return {"ok": True, "mensagem": f"Banco restaurado a partir de '{nome}'. Reinicie o servidor para aplicar."}
+
+
+@router.get("/diagnostico")
+def get_diagnostico(
+    db: Session = Depends(get_db),
+    _=Depends(requer_perfil("admin")),
+):
+    import os as _os
+    import re
+    from database import SQLALCHEMY_DATABASE_URL as _db_url
+    import models as _m
+
+    # Contagens de registros
+    try:
+        _nc = db.query(_m.Cliente).count()
+        _nu = db.query(_m.Usuario).count()
+        _np = db.query(_m.Projeto).count()
+    except Exception:
+        _nc = _nu = _np = 0
+
+    # Mascara senha se houver
+    db_url_mascarada = _db_url
+    if _db_url:
+        match = re.match(r"(^[a-zA-Z0-9\+]+://[^:]+:)([^@]+)(@.+)$", _db_url)
+        if match:
+            db_url_mascarada = f"{match.group(1)}***{match.group(3)}"
+
+    return {
+        "db_url": db_url_mascarada,
+        "db_cwd": _os.getcwd(),
+        "admin_db_path": str(DB_PATH),
+        "admin_db_exists": DB_PATH.exists() if DB_PATH else None,
+        "backup_dir": str(BACKUP_DIR),
+        "clientes": _nc,
+        "usuarios": _nu,
+        "projetos": _np,
+    }

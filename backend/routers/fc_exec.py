@@ -9,8 +9,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from database import get_db
-from auth import get_usuario_atual
+from auth import get_usuario_atual, verificar_tenant
 from models import Cliente
+from ref_formula_engine import safe_eval
 
 router = APIRouter(prefix="/api/demonstrativos", tags=["Demonstrativos FC"])
 
@@ -84,8 +85,10 @@ def _eval_formula(formula: str, row_vals: dict) -> float:
     f = f.replace('""', '0').replace("''", '0')
 
     try:
-        result = eval(f, {"__builtins__": {}})
+        result = safe_eval(f)
         return float(result) if result not in (None, '') else 0.0
+    except (ZeroDivisionError, ValueError):
+        return 0.0
     except Exception:
         return 0.0
 
@@ -268,11 +271,10 @@ def demonstrativo_fluxo_caixa(
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual),
 ):
+    verificar_tenant(usuario, cliente_id)
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(404, "Cliente não encontrado")
-    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id != cliente_id:
-        raise HTTPException(403, "Acesso negado")
     if modo == "mensal" and not mes:
         raise HTTPException(422, "Parâmetro 'mes' obrigatório no modo mensal")
 
@@ -341,11 +343,10 @@ def detalhe_comparativo(
     imediatamente anterior ao mês de referência (o mês exibido/clicado;
     no modo acumulado, o mês final do intervalo). Nunca ano anterior.
     """
+    verificar_tenant(usuario, cliente_id)
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(404, "Cliente não encontrado")
-    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id != cliente_id:
-        raise HTTPException(403, "Acesso negado")
 
     components = _parse_compound_slug(agrupamento_slug)
     slugs = list({s.lower() for s, _ in components})
@@ -415,11 +416,10 @@ def detalhe_agrupamento(
     Modo acumulado → mes (início, default 1) e mes_fim (fim, default mes); soma o intervalo.
     Modo todos   → se mes fornecido filtra pelo mês; senão retorna o ano inteiro.
     """
+    verificar_tenant(usuario, cliente_id)
     cliente = db.query(Cliente).filter(Cliente.id == cliente_id).first()
     if not cliente:
         raise HTTPException(404, "Cliente não encontrado")
-    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id != cliente_id:
-        raise HTTPException(403, "Acesso negado")
 
     components = _parse_compound_slug(agrupamento_slug)
     slugs = list({s.lower() for s, _ in components})

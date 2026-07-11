@@ -2,7 +2,7 @@ import json
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from auth import get_usuario_atual
+from auth import get_usuario_atual, verificar_tenant
 from models import Bandeira
 
 router = APIRouter()
@@ -14,8 +14,7 @@ def _b2dict(b):
 
 @router.get("/cliente/{cliente_id}")
 def listar(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
-    if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
-        raise HTTPException(403, "Acesso negado")
+    verificar_tenant(usuario, cliente_id)
     return [_b2dict(b) for b in db.query(Bandeira).filter(Bandeira.cliente_id == cliente_id).all()]
 
 
@@ -23,6 +22,7 @@ def listar(cliente_id: int, db: Session = Depends(get_db), usuario=Depends(get_u
 def criar(cliente_id: int, body: dict, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
     if usuario.perfil not in ("admin", "consultor"):
         raise HTTPException(403, "Sem permissão")
+    verificar_tenant(usuario, cliente_id)
     unidades = body.get("unidades", [])
     if not isinstance(unidades, list) or not all(isinstance(u, str) for u in unidades):
         raise HTTPException(400, "unidades deve ser uma lista de strings")

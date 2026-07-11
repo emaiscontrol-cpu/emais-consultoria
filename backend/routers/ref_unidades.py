@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from database import get_db
-from auth import get_usuario_atual, requer_perfil
+from auth import get_usuario_atual, requer_perfil, verificar_tenant
 from models import Unidade, Cliente
 import schemas
 
@@ -14,8 +14,7 @@ def listar_unidades(
     db: Session = Depends(get_db),
     usuario=Depends(get_usuario_atual)
 ):
-    if usuario.perfil == "analista" and usuario.cliente_id != cliente_id:
-        raise HTTPException(403, "Acesso negado")
+    verificar_tenant(usuario, cliente_id)
     
     unidades = db.query(Unidade).filter(Unidade.cliente_id == cliente_id).order_by(Unidade.codigo).all()
     return [{"id": u.id, "codigo": u.codigo, "nome": u.nome, "ativo": u.ativo} for u in unidades]
@@ -28,6 +27,7 @@ def criar_unidade(
     db: Session = Depends(get_db),
     usuario=Depends(requer_perfil("admin", "consultor"))
 ):
+    verificar_tenant(usuario, cliente_id)
     codigo = str(body.get("codigo", "")).strip()
     nome = str(body.get("nome", "")).strip()
     

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload, selectinload
 from typing import List, Optional
 from database import get_db
-from auth import get_usuario_atual, requer_perfil
+from auth import get_usuario_atual, requer_perfil, verificar_tenant
 from helpers import log
 import models, schemas
 
@@ -32,7 +32,7 @@ def listar(
     usuario = Depends(get_usuario_atual)
 ):
     q = db.query(models.Projeto).filter(models.Projeto.ativo == True)
-    if usuario.perfil in ("analista", "ger_projeto", "ti") and usuario.cliente_id:
+    if usuario.perfil in ("analista", "ger_projeto", "ti"):
         q = q.filter(models.Projeto.cliente_id == usuario.cliente_id)
     elif cliente_id:
         q = q.filter(models.Projeto.cliente_id == cliente_id)
@@ -58,22 +58,24 @@ def detalhe(id: int, db: Session = Depends(get_db), usuario = Depends(get_usuari
     ).filter(models.Projeto.id == id).first()
     if not p:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
-    if usuario.perfil == "analista" and p.cliente_id != usuario.cliente_id:
-        raise HTTPException(status_code=403, detail="Acesso negado")
+    verificar_tenant(usuario, p.cliente_id)
     return p
 
 @router.post("/", response_model=schemas.ProjetoOut)
 def criar(data: schemas.ProjetoCreate, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
+    verificar_tenant(usuario, data.cliente_id)
     projeto = models.Projeto(**data.model_dump())
     db.add(projeto); db.commit(); db.refresh(projeto)
     log(db, usuario.id, "Projeto criado", f'"{projeto.nome}"', projeto_id=projeto.id)
     return projeto
 
 @router.put("/{id}", response_model=schemas.ProjetoOut)
-def atualizar(id: int, data: schemas.ProjetoCreate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
+def atualizar(id: int, data: schemas.ProjetoCreate, db: Session = Depends(get_db), usuario=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
     p = db.query(models.Projeto).get(id)
     if not p:
         raise HTTPException(status_code=404, detail="Projeto não encontrado")
+    verificar_tenant(usuario, p.cliente_id)
+    verificar_tenant(usuario, data.cliente_id)
     for k, v in data.model_dump(exclude_none=True).items():
         setattr(p, k, v)
     db.commit(); db.refresh(p)

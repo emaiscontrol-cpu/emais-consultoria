@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import date
 from database import get_db
-from auth import requer_perfil, get_usuario_atual
+from auth import requer_perfil, get_usuario_atual, verificar_tenant
 import models, schemas
 from ref_formula_engine import ordenar_linhas, calcular_linha
 
@@ -176,8 +176,9 @@ def calcular(
     cliente_id: int, template_id: int, ano: int, mes: int,
     unidade_codigo: Optional[str] = None,
     db: Session = Depends(get_db),
-    _=Depends(get_usuario_atual),
+    usuario=Depends(get_usuario_atual),
 ):
+    verificar_tenant(usuario, cliente_id)
     linhas, fechado = _calcular_template(db, cliente_id, template_id, ano, mes, unidade_codigo)
     return schemas.DemonstrativoOut(
         cliente_id=cliente_id,
@@ -195,9 +196,10 @@ def comparativo(
     template_realizado_id: int, template_orcado_id: int,
     unidade_codigo: Optional[str] = None,
     db: Session = Depends(get_db),
-    _=Depends(get_usuario_atual),
+    usuario=Depends(get_usuario_atual),
 ):
     """Realizado vs Orçado lado a lado com desvio percentual por linha."""
+    verificar_tenant(usuario, cliente_id)
     linhas_real, _ = _calcular_template(db, cliente_id, template_realizado_id, ano, mes, unidade_codigo)
     linhas_orc, _  = _calcular_template(db, cliente_id, template_orcado_id,  ano, mes, unidade_codigo)
 
@@ -226,6 +228,7 @@ def fechar_periodo(
     db: Session = Depends(get_db),
     usuario=Depends(requer_perfil("admin", "consultor")),
 ):
+    verificar_tenant(usuario, cliente_id)
     existente = (
         db.query(models.PeriodoFechado)
         .filter(models.PeriodoFechado.cliente_id == cliente_id,
@@ -246,8 +249,9 @@ def fechar_periodo(
 def reabrir_periodo(
     cliente_id: int, ano: int, mes: int,
     db: Session = Depends(get_db),
-    _=Depends(requer_perfil("admin", "consultor")),
+    usuario=Depends(requer_perfil("admin", "consultor")),
 ):
+    verificar_tenant(usuario, cliente_id)
     pf = (
         db.query(models.PeriodoFechado)
         .filter(models.PeriodoFechado.cliente_id == cliente_id,
@@ -266,8 +270,9 @@ def reabrir_periodo(
 def listar_periodos(
     cliente_id: int,
     db: Session = Depends(get_db),
-    _=Depends(get_usuario_atual),
+    usuario=Depends(get_usuario_atual),
 ):
+    verificar_tenant(usuario, cliente_id)
     return (
         db.query(models.PeriodoFechado)
         .filter(models.PeriodoFechado.cliente_id == cliente_id)

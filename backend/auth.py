@@ -5,13 +5,18 @@ from passlib.context import CryptContext
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, _is_sqlite
 from dotenv import load_dotenv
 import models, os
 
 load_dotenv()
 SECRET_KEY = os.getenv("SECRET_KEY", "emais-consultoria-secret-2026-change-in-production")
 if SECRET_KEY == "emais-consultoria-secret-2026-change-in-production":
+    if not _is_sqlite:
+        raise RuntimeError(
+            "CRITICAL SECURITY ERROR: SECRET_KEY is set to default but database is not SQLite (production environment). "
+            "Please configure a secure SECRET_KEY in your .env file."
+        )
     print("[AVISO DE SEGURANÇA] SECRET_KEY usando valor padrão inseguro. "
           "Defina SECRET_KEY no arquivo .env antes de usar em produção.")
 ALGORITHM = "HS256"
@@ -64,3 +69,17 @@ def requer_perfil(*perfis):
             )
         return usuario
     return _check
+
+
+def verificar_tenant(usuario, cliente_id: int) -> None:
+    """
+    Verifica se o usuário possui permissão para acessar os dados do cliente_id especificado.
+    Levanta HTTPException 403 se o usuário for restrito (analista, ger_projeto, ti)
+    e não possuir o cliente_id correspondente ou se for nulo.
+    """
+    if usuario.perfil in ("analista", "ger_projeto", "ti"):
+        if usuario.cliente_id is None or usuario.cliente_id != cliente_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Acesso negado: este recurso pertence a outro cliente"
+            )
