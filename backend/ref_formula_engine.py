@@ -134,7 +134,7 @@ def safe_eval(expr: str) -> float:
             return _ALLOWED[op](_ev(node.operand))
         raise ValueError(f"Token não suportado: {type(node).__name__}")
 
-    tree = ast.parse(expr, mode='eval')
+    tree = ast.parse(expr.strip(), mode='eval')
     return _ev(tree.body)
 
 _safe_eval = safe_eval
