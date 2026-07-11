@@ -125,6 +125,9 @@ Footer         → todos (foto, Manual, Alterar senha, Sair)
 - Estilos: CSS variables (`var(--brand)`, `var(--border)`, `var(--text-muted)`, etc.) — não usar cores hardcoded
 - Notificações: `react-hot-toast` (`toast.success`, `toast.error`)
 
+### Arquivos de sessão
+- Arquivos de trabalho de sessão (`task.md`, `walkthrough.md`, `implementation_plan.md` e análises pontuais) vivem em `documentos/sessoes/` — nunca na raiz.
+
 ---
 
 ## Padrões de Nomenclatura

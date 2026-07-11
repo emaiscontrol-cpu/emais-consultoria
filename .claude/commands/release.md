@@ -10,6 +10,10 @@ Executa o fluxo completo de release. Argumento opcional: versão desejada — $A
 
 > ⚠️ **Branch protection ativa na `main`** — push direto é bloqueado. Todo release vai via branch `release/vX.Y.Za` + PR. O `deploy.yml` dispara automaticamente após o merge na `main`.
 
+## Passo 0 — Conferência obrigatória
+
+Execute a skill `/conferencia-pre-release`. Só prossiga com GO explícito. Com NO-GO, pare e reporte.
+
 ## Passo 1 — Partir da main atualizada
 
 ```bash
@@ -49,15 +53,15 @@ Set-Location frontend; npm run build; Set-Location ..
 
 Se o build falhar, parar e reportar — não prosseguir.
 
-## Passo 6 — Atualizar ROADMAP.md
+## Passo 6 — Atualizar ROADMAP_2.md
 
 - Atualizar `> Última atualização:` para a data de hoje
-- Mover itens implementados para `## ✅ Concluído` com a versão, se houver pendentes
+- Mover itens implementados para `## ✅ CONCLUÍDO` com a versão, se houver pendentes
 
 ## Passo 7 — Commitar
 
 ```bash
-git add backend/main.py frontend/dist/ ROADMAP.md
+git add backend/main.py frontend/dist/ ROADMAP_2.md
 git commit -m "chore: release v<nova_versao>"
 ```
 
@@ -114,7 +118,7 @@ Confirmar que `"version"` retorna `"<nova_versao>"`.
 - [ ] Branch `release/v<nova_versao>` criada a partir da `main`
 - [ ] Versão atualizada em `backend/main.py`
 - [ ] Build do frontend sem erros
-- [ ] `backend/main.py` + `frontend/dist/` + `ROADMAP.md` commitados
+- [ ] `backend/main.py` + `frontend/dist/` + `ROADMAP_2.md` commitados
 - [ ] PR aberto e CI verde
 - [ ] PR mergeado (deploy.yml dispara automaticamente)
 - [ ] `/api/version` confirmado no servidor

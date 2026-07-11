@@ -19,5 +19,5 @@ Este documento registra regras específicas de experiência do usuário (UX) par
 ## Organização de Documentos de Planejamento (IA)
 
 1. **Localização de Planos, Tarefas e Validações**:
-   - Todo plano de implementação (`implementation_plan.md`), checklist de tarefas (`task.md`) e registro de validação final (`walkthrough.md`) gerado por agentes de IA deve ser criado e mantido **diretamente na raiz do repositório** (na mesma pasta onde se encontra o `CLAUDE.md`).
+   - Todo plano de implementação (`implementation_plan.md`), checklist de tarefas (`task.md`) e registro de validação final (`walkthrough.md`) gerado por agentes de IA deve ser criado e mantido em **`documentos/sessoes/`** (não na raiz do repositório — reorganizado na sessão 17, 11/07/2026).
    - Evitar mantê-los exclusivamente nas pastas locais de cache do agente (`.gemini/antigravity/`), garantindo que o histórico e o andamento das decisões fiquem sempre registrados no controle de versão (Git).
