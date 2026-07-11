@@ -1,28 +1,11 @@
-# Checklist de Tarefas — chore/modernizacao-dependencias
+# Checklist de Tarefas — feature/dinheiro-numeric
 
-- [x] TAREFA 1: Migração de python-jose para PyJWT
-  - [x] Atualizar requirements.txt (remover python-jose, adicionar PyJWT>=2.8)
-  - [x] Migrar backend/auth.py (usar jwt.encode/decode, capturar jwt.PyJWTError)
-  - [x] Adicionar testes de expiração e assinatura em tests/test_api.py
-- [x] TAREFA 2: Substituição de passlib por bcrypt nativo
-  - [x] Atualizar requirements.txt (remover passlib, pinar bcrypt>=4.1)
-  - [x] Migrar backend/auth.py (hashpw, checkpw com try/except ValueError, docstring)
-  - [x] Adicionar teste de compatibilidade do hash $2b$ legado em tests/test_api.py
-- [x] TAREFA 3: Varredura de deprecações
-  - [x] Substituir datetime.utcnow() por datetime.now(timezone.utc) em backend/auth.py e backend/routers/auth.py
-  - [x] Substituir regex=... por pattern=... em backend/routers/fc_exec.py
-  - [x] Substituir db.query(Model).get(id) por db.get(Model, id) em todos os routers
-- [x] TAREFA 4: Logging estruturado no backend
-  - [x] Criar backend/logger.py com basicConfig e nível LOG_LEVEL
-  - [x] Importar/inicializar logger no topo de backend/main.py
-  - [x] Substituir prints por logger.info/warning/error em auth.py, main.py e routers/admin.py
-  - [x] Substituir exceções críticas por logger.exception
-- [x] TAREFA 5: Lock de dependências e workflows
-  - [x] Gerar requirements.lock.txt via pip freeze no venv
-  - [x] Atualizar .github/workflows/deploy.yml para usar requirements.lock.txt
-  - [x] Atualizar .github/workflows/ci.yml para usar requirements.lock.txt
-  - [x] Documentar fluxo de pacotes no CLAUDE.md
-- [x] VALIDAÇÃO FINAL
-  - [x] Rodar pytest com 100% verde
-  - [x] Rodar npm run build no frontend
-  - [x] Rodar uvicorn localmente e fazer login manual
+- [ ] TAREFA 2: Alterar modelos e migração
+  - [ ] Importar Numeric em backend/models.py
+  - [ ] Alterar colunas de dinheiro para Numeric(15, 2) em backend/models.py
+  - [ ] Criar scripts de migração PostgreSQL no startup em backend/main.py
+  - [ ] Implementar helpers/coerção Decimal -> float para cálculos de demonstrativos
+- [ ] TAREFA 3: Testes e Validação
+  - [ ] Adicionar teste de invariante de soma de centavos em tests/test_api.py
+  - [ ] Rodar suíte de testes com pytest (100% verde)
+  - [ ] Rodar uvicorn e validar com planilha local
