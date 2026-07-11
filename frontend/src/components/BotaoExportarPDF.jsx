@@ -16,7 +16,7 @@ function extrairNomeArquivo(headers, fallback) {
   return match ? match[1].trim() : fallback
 }
 
-export default function BotaoExportarPDF({ titulo, clienteNome, periodo, colunas, linhas, iconOnly }) {
+export default function BotaoExportarPDF({ titulo, clienteNome, periodo, colunas, linhas, iconOnly, className }) {
   const [loading, setLoading] = useState(false)
 
   const handleExportar = async () => {
@@ -43,11 +43,10 @@ export default function BotaoExportarPDF({ titulo, clienteNome, periodo, colunas
         style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           width: 32, height: 32, borderRadius: 6,
-          border: '0.5px solid var(--border)', background: 'transparent',
-          color: 'var(--text-muted)', cursor: loading ? 'not-allowed' : 'pointer',
+          cursor: loading ? 'not-allowed' : 'pointer',
           transition: 'all .15s',
         }}
-        className="fc-sidebar-btn"
+        className={className || 'fc-sidebar-btn'}
       >
         {loading
           ? <Loader2 size={15} className="spin" />

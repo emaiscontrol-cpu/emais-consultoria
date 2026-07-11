@@ -934,91 +934,91 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
                   height: 32px;
                   border-radius: 8px;
                   cursor: pointer;
-                  border: 1px solid transparent !important;
+                  border: 1px solid transparent;
                   box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
                 }
                 .fc-sidebar-btn:hover {
                   transform: scale(1.1);
                   box-shadow: 0 4px 8px rgba(0, 0, 0, 0.08);
                 }
-                /* Dashboard Toggle: Amber/Orange */
+                /* Dashboard Toggle */
                 .fc-sidebar-btn-dash {
-                  background: #fffbeb !important;
-                  color: #d97706 !important;
-                  border: 1px solid #fde68a !important;
+                  background: var(--toolbar-dash-bg);
+                  color: var(--toolbar-dash-fg);
+                  border-color: var(--toolbar-dash-border);
                 }
                 .fc-sidebar-btn-dash.active {
-                  background: #d97706 !important;
-                  color: #fff !important;
-                  border-color: #d97706 !important;
+                  background: var(--toolbar-dash-fg);
+                  color: #fff;
+                  border-color: var(--toolbar-dash-fg);
                 }
-                /* Export PDF: Red/Coral */
+                /* Export PDF */
                 .fc-sidebar-btn-pdf {
-                  background: #fef2f2 !important;
-                  color: #dc2626 !important;
-                  border: 1px solid #fecaca !important;
+                  background: var(--toolbar-pdf-bg);
+                  color: var(--toolbar-pdf-fg);
+                  border-color: var(--toolbar-pdf-border);
                 }
-                /* % Participation: Sky Blue */
+                /* % Participação */
                 .fc-sidebar-btn-pct {
-                  background: #f0f9ff !important;
-                  color: #0284c7 !important;
-                  border: 1px solid #bae6fd !important;
+                  background: var(--toolbar-pct-bg);
+                  color: var(--toolbar-pct-fg);
+                  border-color: var(--toolbar-pct-border);
                 }
                 .fc-sidebar-btn-pct.active {
-                  background: #0284c7 !important;
-                  color: #fff !important;
-                  border-color: #0284c7 !important;
+                  background: var(--toolbar-pct-fg);
+                  color: #fff;
+                  border-color: var(--toolbar-pct-fg);
                 }
-                /* Expand: Emerald Green */
+                /* Expandir */
                 .fc-sidebar-btn-expand {
-                  background: #ecfdf5 !important;
-                  color: #059669 !important;
-                  border: 1px solid #a7f3d0 !important;
+                  background: var(--toolbar-expand-bg);
+                  color: var(--toolbar-expand-fg);
+                  border-color: var(--toolbar-expand-border);
                 }
-                /* Collapse: Indigo/Purple */
+                /* Colapsar */
                 .fc-sidebar-btn-collapse {
-                  background: #faf5ff !important;
-                  color: #7c3aed !important;
-                  border: 1px solid #e9d5ff !important;
+                  background: var(--toolbar-collapse-bg);
+                  color: var(--toolbar-collapse-fg);
+                  border-color: var(--toolbar-collapse-border);
                 }
-                /* Claude IA: Soft Orange/Peach */
+                /* Claude IA */
                 .fc-sidebar-btn-claude {
-                  background: #fff7ed !important;
-                  color: #ea580c !important;
-                  border: 1px solid #ffedd5 !important;
+                  background: var(--toolbar-claude-bg);
+                  color: var(--toolbar-claude-fg);
+                  border-color: var(--toolbar-claude-border);
                 }
                 .fc-sidebar-btn-claude.active {
-                  background: #ea580c !important;
-                  color: #fff !important;
-                  border-color: #ea580c !important;
+                  background: var(--toolbar-claude-fg);
+                  color: #fff;
+                  border-color: var(--toolbar-claude-fg);
                 }
-                /* Gemini IA: Light Blue/Google Blue */
+                /* Gemini IA */
                 .fc-sidebar-btn-gemini {
-                  background: #f0f4ff !important;
-                  color: #1a73e8 !important;
-                  border: 1px solid #d2e3fc !important;
+                  background: var(--toolbar-gemini-bg);
+                  color: var(--toolbar-gemini-fg);
+                  border-color: var(--toolbar-gemini-border);
                 }
                 .fc-sidebar-btn-gemini.active {
-                  background: #1a73e8 !important;
-                  color: #fff !important;
-                  border-color: #1a73e8 !important;
+                  background: var(--toolbar-gemini-fg);
+                  color: #fff;
+                  border-color: var(--toolbar-gemini-fg);
                 }
-                /* OpenRouter IA: Yellow/Gold */
+                /* OpenRouter IA */
                 .fc-sidebar-btn-or {
-                  background: #fffbeb !important;
-                  color: #ca8a04 !important;
-                  border: 1px solid #fef08a !important;
+                  background: var(--toolbar-openrouter-bg);
+                  color: var(--toolbar-openrouter-fg);
+                  border-color: var(--toolbar-openrouter-border);
                 }
                 .fc-sidebar-btn-or.active {
-                  background: #ca8a04 !important;
-                  color: #fff !important;
-                  border-color: #ca8a04 !important;
+                  background: var(--toolbar-openrouter-fg);
+                  color: #fff;
+                  border-color: var(--toolbar-openrouter-fg);
                 }
-                /* Logout: Dark Red */
+                /* Logout */
                 .fc-sidebar-btn-logout {
-                  background: #fff5f5 !important;
-                  color: #e53e3e !important;
-                  border: 1px solid #feb2b2 !important;
+                  background: var(--toolbar-logout-bg);
+                  color: var(--toolbar-logout-fg);
+                  border-color: var(--toolbar-logout-border);
                 }
               `}</style>
               
