@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { projetosAPI, clientesAPI, modelosAPI } from '../services/api'
 import { Badge, Progress, LoadingPage, Modal } from '../components/shared'
+import { BotaoEditar, BotaoExcluir, BotaoNovo } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
-import { FolderKanban, FileDown, Plus, X, Pencil, Trash2 } from 'lucide-react'
+import { FolderKanban, FileDown, Plus, X } from 'lucide-react'
 import { relatoriosAPI } from '../services/api'
 import toast from 'react-hot-toast'
 
@@ -168,7 +169,7 @@ export default function Projetos() {
             <FileDown size={15}/> {exportando ? 'Gerando...' : 'Exportar'}
           </button>
           {isConsultor && (
-            <button className="btn btn-primary" onClick={() => setShowModal(true)}>+ Novo projeto</button>
+            <BotaoNovo onClick={() => setShowModal(true)}>Novo projeto</BotaoNovo>
           )}
         </div>
       </div>
@@ -214,14 +215,8 @@ export default function Projetos() {
                     <td onClick={e => e.stopPropagation()} style={{ whiteSpace:'nowrap' }}>
                       <button className="btn btn-sm btn-ghost" onClick={() => navigate(`/projetos/${p.id}`)}>Ver →</button>
                       {isConsultor && (<>
-                        <button className="btn btn-sm btn-ghost" style={{ padding:'3px 6px', marginLeft:2 }} title="Editar projeto"
-                          onClick={e => handleAbrirEditar(e, p)}>
-                          <Pencil size={13} />
-                        </button>
-                        <button className="btn btn-sm btn-ghost" style={{ padding:'3px 6px', marginLeft:2, color:'var(--red)' }} title="Excluir projeto"
-                          onClick={e => handleExcluir(e, p)}>
-                          <Trash2 size={13} />
-                        </button>
+                        <BotaoEditar title="Editar projeto" onClick={e => handleAbrirEditar(e, p)} style={{ marginLeft:2 }} />
+                        <BotaoExcluir title="Excluir projeto" onClick={e => handleExcluir(e, p)} style={{ marginLeft:2 }} />
                       </>)}
                     </td>
                   </tr>

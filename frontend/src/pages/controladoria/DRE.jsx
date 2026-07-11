@@ -3,8 +3,8 @@ import { useNavigate, useLocation } from 'react-router-dom'
 import { orcamentoAPI, bandeiraAPI, dreMotorAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
-import { Pencil, Trash2 } from 'lucide-react'
 import { parseValorBR } from '../../components/shared'
+import { BotaoEditar, BotaoExcluir } from '../../components/ui'
 
 const ANO_ATUAL = new Date().getFullYear()
 const MESES = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
@@ -602,10 +602,10 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                         <button onClick={() => moverItem(item,'down')} disabled={idx===itens.length-1} style={{ background:'none',border:'none',cursor:idx===itens.length-1?'default':'pointer',color:idx===itens.length-1?'#d1d5db':'var(--brand)',fontSize:14,padding:'1px 3px' }}>↓</button>
                       </td>
                       <td style={{ padding: '3px 4px', textAlign: 'center' }}>
-                        <button onClick={() => abrirEdicaoLinha(item)} title="Editar linha" style={{ background:'none',border:'none',cursor:'pointer',color:'var(--brand)',padding:'2px 3px',display:'flex',alignItems:'center',opacity:.7 }}><Pencil size={14}/></button>
+                        <BotaoEditar onClick={() => abrirEdicaoLinha(item)} title="Editar linha" />
                       </td>
                       <td style={{ padding: '3px 4px', textAlign: 'center' }}>
-                        <button onClick={() => excluirItem(item)} title="Excluir linha" style={{ background:'none',border:'none',cursor:'pointer',color:'#dc2626',padding:'2px 3px',display:'flex',alignItems:'center' }}><Trash2 size={14}/></button>
+                        <BotaoExcluir onClick={() => excluirItem(item)} title="Excluir linha" />
                       </td>
                     </tr>
                   )
@@ -666,10 +666,10 @@ function ModalTemplateDRE({ planoId, planoNome, onClose, onReload }) {
                         <button onClick={()=>moverItem(item,'down')} disabled={idx===itens.length-1} style={{background:'none',border:'none',cursor:idx===itens.length-1?'default':'pointer',color:idx===itens.length-1?'#d1d5db':'var(--brand)',fontSize:14,padding:'1px 3px'}}>↓</button>
                       </td>
                       <td style={{ padding: '4px 4px', textAlign: 'center' }}>
-                        <button onClick={()=>abrirEdicaoLinha(item)} title="Editar linha" style={{background:'none',border:'none',cursor:'pointer',color:'var(--brand)',padding:'2px 3px',display:'flex',alignItems:'center',opacity:.7}}><Pencil size={14}/></button>
+                        <BotaoEditar onClick={()=>abrirEdicaoLinha(item)} title="Editar linha" />
                       </td>
                       <td style={{ padding: '4px 4px', textAlign: 'center' }}>
-                        <button onClick={()=>excluirItem(item)} title="Excluir linha" style={{background:'none',border:'none',cursor:'pointer',color:'#dc2626',padding:'2px 3px',display:'flex',alignItems:'center'}}><Trash2 size={14}/></button>
+                        <BotaoExcluir onClick={()=>excluirItem(item)} title="Excluir linha" />
                       </td>
                     </tr>
                   )

@@ -1,7 +1,8 @@
 import { useEffect, useState, useRef } from 'react'
 import { clientesAPI, refTemplatesAPI } from '../services/api'
 import { Modal, LoadingPage } from '../components/shared'
-import { Building2, FolderKanban, TrendingUp, BarChart2, Pencil, Trash2, Store, Check, X } from 'lucide-react'
+import { BotaoEditar, BotaoExcluir, BotaoNovo } from '../components/ui'
+import { Building2, FolderKanban, TrendingUp, BarChart2, Store, Check, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const MODULOS = [
@@ -380,7 +381,7 @@ export default function Clientes() {
           <div className="page-title">Clientes</div>
           <div className="page-sub">{clientes.length} cliente(s) cadastrado(s)</div>
         </div>
-        <button className="btn btn-primary" onClick={abrirNovo}>+ Novo cliente</button>
+        <BotaoNovo onClick={abrirNovo}>Novo cliente</BotaoNovo>
       </div>
 
       <div className="card">
@@ -419,22 +420,8 @@ export default function Clientes() {
                     </td>
                     <td style={{ textAlign: 'center' }}>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'center' }}>
-                        <button 
-                          className="btn-acao-tabela" 
-                          onClick={() => abrirEditar(c)} 
-                          title="Editar cliente" 
-                          aria-label="Editar cliente"
-                        >
-                          <Pencil size={15} color="var(--text, #111827)" />
-                        </button>
-                        <button 
-                          className="btn-acao-tabela" 
-                          onClick={() => abrirExcluirCliente(c)} 
-                          title="Excluir cliente" 
-                          aria-label="Excluir cliente"
-                        >
-                          <Trash2 size={15} color="#ef4444" />
-                        </button>
+                        <BotaoEditar onClick={() => abrirEditar(c)} title="Editar cliente" />
+                        <BotaoExcluir onClick={() => abrirExcluirCliente(c)} title="Excluir cliente" />
                       </div>
                     </td>
                   </tr>
@@ -684,24 +671,8 @@ export default function Clientes() {
                             <td className="text-muted">{u.endereco_cidade ? `${u.endereco_cidade}/${u.endereco_estado || '—'}` : '—'}</td>
                             <td style={{ textAlign: 'right' }}>
                               <div style={{ display: 'flex', gap: 4, justifyContent: 'flex-end' }}>
-                                <button 
-                                  className="btn-acao-tabela" 
-                                  type="button"
-                                  onClick={() => iniciarEditarUnidadeLocal(idx)} 
-                                  style={{ padding: 4, width: 28, height: 28 }}
-                                  title="Editar unidade"
-                                >
-                                  <Pencil size={12} color="var(--text)" />
-                                </button>
-                                <button 
-                                  className="btn-acao-tabela" 
-                                  type="button"
-                                  onClick={() => setUnidadeRemovendoIdx(idx)} 
-                                  style={{ padding: 4, width: 28, height: 28 }}
-                                  title="Remover unidade"
-                                >
-                                  <Trash2 size={12} color="#ef4444" />
-                                </button>
+                                <BotaoEditar onClick={() => iniciarEditarUnidadeLocal(idx)} title="Editar unidade" />
+                                <BotaoExcluir onClick={() => setUnidadeRemovendoIdx(idx)} title="Remover unidade" />
                               </div>
                             </td>
                           </tr>

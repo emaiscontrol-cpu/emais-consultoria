@@ -65,6 +65,9 @@
   --demo-fc:#633806;  --demo-fc-bg:#FAEEDA;
   --demo-dre:#534AB7; --demo-dre-bg:#EEEDFE;
   --demo-orc:#1a6eb5; --demo-orc-bg:#E3F0FB;
+  /* Tipo de conta (Plano Referencial) */
+  --tipo-sintetica:#3C3489; --tipo-sintetica-bg:#EEEDFE;
+  --tipo-analitica:#2C2C2A; --tipo-analitica-bg:#D3D1C7;
 }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:14px; color:var(--text); background:var(--bg); line-height:1.5; }
 .app-shell { display:flex; height:100vh; }
@@ -146,6 +149,13 @@ body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-
 .badge-amber  { background:var(--amber-light); color:var(--amber); }
 .badge-red    { background:var(--red-light); color:var(--red); }
 .badge-gray   { background:var(--gray-light); color:var(--gray); }
+.badge-fc     { background:var(--demo-fc-bg); color:var(--demo-fc); }
+.badge-dre    { background:var(--demo-dre-bg); color:var(--demo-dre); }
+.badge-orc    { background:var(--demo-orc-bg); color:var(--demo-orc); }
+.badge-sintetica { background:var(--tipo-sintetica-bg); color:var(--tipo-sintetica); }
+.badge-analitica { background:var(--tipo-analitica-bg); color:var(--tipo-analitica); }
+.btn-icon-sm  { padding:5px; }
+.btn-icon-md  { padding:7px; }
 .badge-teal   { background:var(--teal-light); color:var(--teal); }
 .badge-purple { background:var(--purple-light); color:var(--purple); }
 .progress-wrap { height:5px; background:var(--bg); border-radius:4px; overflow:hidden; }

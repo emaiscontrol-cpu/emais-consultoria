@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react'
 import { clientesAPI, anotacoesAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { Modal } from '../components/shared'
-import { Pencil, Trash2, Plus, FileText, ChevronDown } from 'lucide-react'
+import { BotaoEditar, BotaoExcluir, BotaoNovo } from '../components/ui'
+import { FileText, ChevronDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 import logoUrl from '../assets/logo.jpeg'
 
@@ -199,9 +200,7 @@ export default function Anotacoes() {
                 <FileText size={15}/> Gerar Relatório
               </button>
             )}
-            <button className="btn btn-primary" onClick={abrirNova}>
-              <Plus size={15}/> Nova Anotação
-            </button>
+            <BotaoNovo onClick={abrirNova}>Nova Anotação</BotaoNovo>
           </div>
         )}
       </div>
@@ -261,13 +260,8 @@ export default function Anotacoes() {
                       </p>
                     </div>
                     <div style={{ display:'flex', gap:4, flexShrink:0 }}>
-                      <button className="btn btn-sm btn-ghost" onClick={() => abrirEditar(a)} title="Editar">
-                        <Pencil size={13}/>
-                      </button>
-                      <button className="btn btn-sm btn-ghost" onClick={() => setDeletando(a)} title="Excluir"
-                        style={{ color:'var(--red)' }}>
-                        <Trash2 size={13}/>
-                      </button>
+                      <BotaoEditar onClick={() => abrirEditar(a)} />
+                      <BotaoExcluir onClick={() => setDeletando(a)} />
                     </div>
                   </div>
                 ))}

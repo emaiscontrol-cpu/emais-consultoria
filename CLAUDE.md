@@ -18,6 +18,9 @@ Este arquivo configura o comportamento do Claude Code neste projeto.
 - **Release SOMENTE via `/conferencia-pre-release`** (GO explícito) → `/release` — nunca por conta própria.
 - **Backlog vivo:** `ROADMAP_2.md`; registrar a sessão no CLAUDE.md ao final.
 - **Mapa de leitura da arquitetura:** `documentos/ARQUITETURA*`, `DESIGN_SYSTEM.md`, `SKILLS.md`.
+- **Botões de ação, ícones-botão e cards** — proibido montar manualmente; sempre `BotaoEditar`,
+  `BotaoExcluir`, `BotaoNovo`, `IconButton`, `Card` ou `BadgeTag` de `frontend/src/components/ui.jsx`
+  (tamanhos de ícone únicos permitidos: `sm`=16px, `md`=20px). Ver DESIGN_SYSTEM.md § 9b.
 
 ---
 

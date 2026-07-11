@@ -2,8 +2,9 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { projetosAPI, fasesAPI, tarefasAPI, usuariosAPI, subtarefasAPI, historicoAPI, chatAPI } from '../services/api'
 import { Badge, Progress, Avatar, Modal, LoadingPage } from '../components/shared'
+import { BotaoEditar, BotaoExcluir } from '../components/ui'
 import { useAuth } from '../contexts/AuthContext'
-import { ChevronDown, ChevronRight, Plus, MessageSquare, Check, Lock, ArrowLeft, ListTodo, Trash2, Pencil, X, EyeOff, Eye, UserPlus, Settings, SlidersHorizontal, History, Kanban, SendHorizonal, ChevronUp, ArrowUpDown } from 'lucide-react'
+import { ChevronDown, ChevronRight, Plus, MessageSquare, Check, Lock, ArrowLeft, ListTodo, X, EyeOff, Eye, UserPlus, Settings, SlidersHorizontal, History, Kanban, SendHorizonal, ChevronUp, ArrowUpDown } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 // ── UX-4: Badge de SLA ────────────────────────────────────
@@ -150,14 +151,8 @@ function SubtarefaItem({ sub, onUpdate, onDelete, readonly, usuarios }) {
         </span>
         {!readonly && (
           <>
-            <button className="btn btn-ghost btn-sm" style={{ padding:'2px 4px', color:'var(--text-3)' }}
-              onClick={() => setEditando(v => !v)} title="Editar">
-              <Pencil size={11} />
-            </button>
-            <button className="btn btn-ghost btn-sm" style={{ padding:'2px 4px', color:'var(--text-3)' }}
-              onClick={() => onDelete(sub.id)} title="Excluir">
-              <Trash2 size={11} />
-            </button>
+            <BotaoEditar onClick={() => setEditando(v => !v)} />
+            <BotaoExcluir onClick={() => onDelete(sub.id)} />
           </>
         )}
       </div>
@@ -478,14 +473,10 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil, podeAddAtividade, onMov
               onClick={handleToggleAtivo}>
               {ativa ? <EyeOff size={12} color="var(--text-3)" /> : <Eye size={12} color="var(--brand)" />}
             </button>
-            <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px' }} title="Editar tarefa"
-              onClick={() => { setShowEdit(v => !v); setShowSubs(false); setShowComent(false) }}>
-              <Pencil size={12} color={showEdit ? 'var(--brand)' : undefined} />
-            </button>
-            <button className="btn btn-ghost btn-sm" style={{ padding:'3px 5px', color:'var(--red)' }} title="Excluir tarefa"
-              onClick={handleExcluir}>
-              <Trash2 size={12} />
-            </button>
+            <BotaoEditar title="Editar tarefa"
+              onClick={() => { setShowEdit(v => !v); setShowSubs(false); setShowComent(false) }}
+              style={{ color: showEdit ? 'var(--brand)' : undefined }} />
+            <BotaoExcluir title="Excluir tarefa" onClick={handleExcluir} />
           </>)}
         </div>
       </div>
@@ -591,9 +582,7 @@ function TarefaRow({ tarefa, usuarios, onUpdate, perfil, podeAddAtividade, onMov
                     {r.telefone && <span>{r.telefone}</span>}
                   </div>
                 </div>
-                <button className="btn btn-ghost btn-sm" style={{ padding:'2px 4px', color:'var(--red)' }} onClick={() => removerResponsavel(r.id)}>
-                  <Trash2 size={11}/>
-                </button>
+                <BotaoExcluir onClick={() => removerResponsavel(r.id)} title="Remover responsável" />
               </div>
             ))}
             {responsaveis.length === 0 && !showFormResp && (
@@ -863,10 +852,9 @@ function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, 
                 </button>
               </>
             )}
-            <button className="btn btn-ghost btn-sm" style={{ padding:'4px 6px' }} title="Editar fase"
-              onClick={() => togglePainel('editar')}>
-              <Pencil size={12} color={painel === 'editar' ? 'var(--brand)' : undefined} />
-            </button>
+            <BotaoEditar title="Editar fase"
+              onClick={() => togglePainel('editar')}
+              style={{ color: painel === 'editar' ? 'var(--brand)' : undefined }} />
             <button className="btn btn-ghost btn-sm" style={{ padding:'4px 6px' }} title="Comentários da fase"
               onClick={() => togglePainel('comentarios')}>
               <MessageSquare size={12} color={painel === 'comentarios' ? 'var(--brand)' : undefined} />
@@ -925,10 +913,9 @@ function FaseCard({ fase, usuarios, perfil, clienteIdUsuario, clienteIdProjeto, 
             </button>
             <button className="btn btn-sm" onClick={() => setPainel(null)}>Cancelar</button>
             {isAdmin && (
-              <button className="btn btn-sm" style={{ marginLeft:'auto', color:'var(--red)', borderColor:'var(--red)' }}
-                onClick={handleExcluirFase}>
-                <Trash2 size={12}/> Excluir fase
-              </button>
+              <BotaoExcluir onClick={handleExcluirFase} className="btn-sm" style={{ marginLeft:'auto' }}>
+                Excluir fase
+              </BotaoExcluir>
             )}
           </div>
         </div>

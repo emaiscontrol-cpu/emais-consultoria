@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from 'react'
-import { ChevronRight, ChevronDown, Plus, Pencil, Trash2, GitBranch, X, Zap, Link, Check } from 'lucide-react'
+import { ChevronRight, ChevronDown, Plus, GitBranch, X, Zap, Link, Check } from 'lucide-react'
 import { refPlanoAPI, fluxoCaixaAPI } from '../../services/api'
 import { Modal } from '../../components/shared'
+import { BotaoEditar, BotaoExcluir, BotaoNovo } from '../../components/ui'
 import toast from 'react-hot-toast'
 
 const TIPO_LABEL = { sintetica: 'Sintética', analitica: 'Analítica' }
@@ -397,14 +398,8 @@ function ContaRow({ conta, nivel, planoId, agrupamentos, onRefresh, expandKey, e
               style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
               <GitBranch size={13} />
             </button>
-            <button title="Editar" onClick={abrirEdicao}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}>
-              <Pencil size={13} />
-            </button>
-            <button title="Excluir" onClick={excluir}
-              style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'var(--red)' }}>
-              <Trash2 size={13} />
-            </button>
+            <BotaoEditar onClick={abrirEdicao} />
+            <BotaoExcluir onClick={excluir} />
           </div>
         </td>
       </tr>
@@ -654,9 +649,7 @@ export default function PlanoReferencial() {
             <Zap size={13} />
             {autoSugerindo ? 'Processando...' : 'Sugestão automática'}
           </button>
-          <button className="btn btn-primary" onClick={() => setCriando(true)}>
-            <Plus size={14} /> Nova Conta
-          </button>
+          <BotaoNovo onClick={() => setCriando(true)}>Nova Conta</BotaoNovo>
         </div>
       </div>
 

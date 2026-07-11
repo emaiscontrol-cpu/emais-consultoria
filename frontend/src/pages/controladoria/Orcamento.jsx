@@ -1,8 +1,9 @@
 import { useEffect, useState, useCallback, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ChevronDown, ChevronRight, Percent, ChevronsDown, ChevronsUp, LayoutDashboard, LogOut, Pencil } from 'lucide-react'
+import { ChevronDown, ChevronRight, Percent, ChevronsDown, ChevronsUp, LayoutDashboard, LogOut } from 'lucide-react'
 import { orcamentoAPI, clientesAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
+import { BotaoEditar } from '../../components/ui'
 import toast from 'react-hot-toast'
 
 import BotaoExportarPDF from '../../components/BotaoExportarPDF'
@@ -901,13 +902,11 @@ export default function Orcamento({ aiPanel, setAiPanel }) {
               </button>
 
               {/* Editar Orçamento */}
-              <button
+              <BotaoEditar
                 onClick={() => navigate(`/controladoria/orcamento/editar?cliente_id=${clienteId}&ano=${ano}&versao=${versao}`)}
                 title="Editar Orçamento"
-                className="fc-sidebar-btn"
-              >
-                <Pencil size={15} />
-              </button>
+                size="md"
+              />
 
               {/* Expandir tudo */}
               <button

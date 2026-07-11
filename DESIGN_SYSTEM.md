@@ -1,7 +1,7 @@
 # Design System — E Mais Consultoria
 
 > Arquivo de referência visual para o Claude Code. Leia antes de criar ou alterar qualquer componente de interface.
-> Última atualização: 2026-07-06
+> Última atualização: 2026-07-11
 
 ---
 
@@ -141,6 +141,12 @@ Manual / Alterar senha / Sair
 <button className="btn-danger">Excluir</button>
 // Vermelho #C0392B, somente para ações destrutivas
 ```
+
+> ⚠️ Botão de **editar**, **excluir** ou **criar novo registro** especificamente: nunca montar com
+> `<button className="...">` direto — usar `BotaoEditar`/`BotaoExcluir`/`BotaoNovo` de
+> `components/ui.jsx` (ver § 9b). As classes `btn-primary`/`btn-secondary`/`btn-danger` acima
+> continuam válidas para os demais botões (Salvar, Cancelar, ações de página que não são
+> editar/excluir/novo).
 
 ### Tabelas
 
@@ -360,6 +366,41 @@ const isDestaqueTitulo = tipo === 'agrupamento' && (
 
 ---
 
+## 9b. Componentes obrigatórios
+
+> Fonte: `frontend/src/components/ui.jsx`. Adicionado na sessão de unificação de UI (11/07/2026) —
+> antes disso, cada tela montava seus próprios botões de ação com ícones e tamanhos diferentes
+> (10 a 15px, sem padrão), incluindo casos sem `className` nenhuma (botão sem estilo) e classes
+> locais duplicadas (`.btn-acao-tabela` redefinida dentro de componentes, `+`/texto literal no
+> lugar do ícone `Plus`).
+
+**Proibido montar manualmente**: botão de editar, botão de excluir, botão de "novo/criar
+registro", ícone-botão avulso (icon-only) ou card com borda/padding de painel. Sempre importar de
+`frontend/src/components/ui.jsx`:
+
+```jsx
+import { BotaoEditar, BotaoExcluir, BotaoNovo, IconButton, Card, BadgeTag } from '../components/ui'
+
+<BotaoEditar onClick={...} />                    // ícone-só (linha de tabela)
+<BotaoEditar onClick={...}>Editar</BotaoEditar>   // com rótulo
+<BotaoExcluir onClick={...} />                    // ícone vermelho, mesma API
+<BotaoNovo onClick={...}>Novo Cliente</BotaoNovo> // CTA primária de criação
+<IconButton icon={Copy} size="sm" title="Duplicar" onClick={...} />  // qualquer outro ícone-botão
+<Card>...</Card>
+<BadgeTag variant="fc">FC</BadgeTag>
+```
+
+- **Tamanhos de ícone — únicos permitidos**: `sm` = 16px, `md` = 20px. Nenhum outro valor.
+- `BotaoEditar`/`BotaoExcluir` sem `children` renderizam ícone-só (ação de linha de tabela); com
+  `children`, renderizam ícone+texto (ex.: `<BotaoExcluir>Excluir fase</BotaoExcluir>`) — mesmo
+  componente cobre os dois formatos já usados no sistema.
+- `BadgeTag` é o badge genérico do design system (tipo de conta, demonstrativo) — **não** confundir
+  com o `Badge` de `shared.jsx`, que é especificamente para status de tarefa/projeto e continua
+  em uso (24 arquivos). Nomes diferentes de propósito, não é duplicação.
+- Cor de destaque ativo (ex.: ícone de editar ficar azul quando o painel correspondente está
+  aberto) continua possível via `style={{ color: 'var(--brand)' }}` no primitivo — não é motivo
+  para reimplementar o botão manualmente.
+
 ## 10. Regras gerais para o Claude Code
 
 1. **Nunca hardcodar cores** — sempre usar CSS variables ou a paleta definida acima
@@ -372,3 +413,5 @@ const isDestaqueTitulo = tipo === 'agrupamento' && (
 8. **Scroll em listas longas**: sempre `max-height` + `overflow-y: auto` quando lista > 6 itens
 9. **Estado de carregamento**: `LoadingPage` de `shared.jsx` — nunca spinner customizado
 10. **Confirmação de exclusão**: sempre pedir confirmação antes de deletar — nunca deletar direto
+11. **Botões de ação/ícones/cards** — proibido montar manualmente; sempre `BotaoEditar`,
+    `BotaoExcluir`, `BotaoNovo`, `IconButton`, `Card` ou `BadgeTag` de `components/ui.jsx` (ver § 9b)
