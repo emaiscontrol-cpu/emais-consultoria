@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 from typing import List, Optional
 from database import get_db
 from auth import get_usuario_atual, requer_perfil
@@ -34,14 +35,19 @@ def criar(data: schemas.ClienteCreate, db: Session = Depends(get_db), _=Depends(
     unidades_data = dados.pop("unidades", None) or []
     cliente = models.Cliente(**dados)
     db.add(cliente)
-    db.flush()
-    
-    for u_data in unidades_data:
-        u_data.pop("id", None)
-        u = models.Unidade(cliente_id=cliente.id, **u_data)
-        db.add(u)
+    try:
+        db.flush()
         
-    db.commit()
+        for u_data in unidades_data:
+            u_data.pop("id", None)
+            u = models.Unidade(cliente_id=cliente.id, **u_data)
+            db.add(u)
+            
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Já existe um cliente com este CNPJ")
+        
     db.refresh(cliente)
     return cliente
 
@@ -81,7 +87,12 @@ def atualizar(id: int, data: schemas.ClienteCreate, db: Session = Depends(get_db
             if cod not in recebidos_codigos:
                 db.delete(u_antiga)
                 
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Já existe um cliente com este CNPJ")
+        
     db.refresh(c)
     return c
 

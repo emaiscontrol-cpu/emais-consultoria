@@ -3,6 +3,7 @@ import { AlertTriangle, Lock, Unlock, RefreshCw, Check, Edit2 } from 'lucide-rea
 import { refDemonstrativosAPI, refTemplatesAPI, clientesAPI, refUnidadesAPI, refLancamentosAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { parseValorBR } from '../../components/shared'
 
 const fmt = (v) => {
   if (v === undefined || v === null) return '0,00'
@@ -122,14 +123,7 @@ export default function Demonstrativo() {
   const salvarEdicao = async () => {
     if (!celulaEditando) return
     
-    // Limpa pontos de milhar e troca vírgula decimal por ponto para conversão
-    const stringLimpa = valorEditando.replace(/\./g, '').replace(',', '.')
-    const novoValor = parseFloat(stringLimpa)
-    
-    if (isNaN(novoValor)) {
-      setCelulaEditando(null)
-      return toast.error('Valor inválido')
-    }
+    const novoValor = parseValorBR(valorEditando)
 
     try {
       await refLancamentosAPI.editarCelula(clienteId, {

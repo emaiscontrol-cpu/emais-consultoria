@@ -4,6 +4,7 @@ import { ArrowLeft, Wand2, Sparkles, AlertCircle, Sparkle, Lock, Unlock } from '
 import { orcamentoAPI, clientesAPI } from '../../services/api'
 import { useAuth } from '../../contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { parseValorBR } from '../../components/shared'
 
 const ANOS = [2024, 2025, 2026, 2027, 2028]
 const VERSOES = ['Original', 'Rev.1', 'Rev.2']
@@ -77,27 +78,7 @@ const evalJsFormula = (formula, rowState) => {
 
 // Parser robusto para tratar formatação BRL de input
 const parseBRL = (val) => {
-  if (typeof val === 'number') return val
-  if (!val) return 0.0
-  let s = String(val).trim()
-  
-  if (s.includes(',')) {
-    s = s.replace(/\./g, '') // remove pontos de milhar
-    s = s.replace(',', '.')  // substitui vírgula decimal por ponto
-  } else {
-    const parts = s.split('.')
-    if (parts.length > 2) {
-      s = s.replace(/\./g, '')
-    } else if (parts.length === 2) {
-      const decimals = parts[1]
-      if (decimals.length === 3) {
-        s = s.replace(/\./g, '')
-      }
-    }
-  }
-  
-  const parsed = parseFloat(s)
-  return isNaN(parsed) ? 0.0 : parsed
+  return parseValorBR(val)
 }
 
 export default function EditarOrcamento() {

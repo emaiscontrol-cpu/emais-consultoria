@@ -57,3 +57,21 @@ export function LoadingPage() {
     </div>
   )
 }
+
+export function parseValorBR(str) {
+  if (str === null || str === undefined) {
+    return 0.0
+  }
+  let s = String(str).trim()
+  for (const ch of ["R$", "$", "€", " "]) {
+    s = s.replaceAll(ch, "")
+  }
+  if (s.includes(",") && s.includes(".")) {
+    s = s.replaceAll(".", "").replace(",", ".")
+  } else if (s.includes(",")) {
+    s = s.replace(",", ".")
+  }
+  const val = parseFloat(s)
+  return isNaN(val) ? 0.0 : val
+}
+
