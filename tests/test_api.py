@@ -8,7 +8,7 @@ tests/conftest.py — nunca toca no Supabase de produção.
 """
 import pytest
 from sqlalchemy import text
-from auth import criar_token
+from security import criar_token
 import models
 
 
@@ -813,7 +813,7 @@ class TestSegurancaTenant:
 
     def test_usuario_restrito_cliente_id_nulo_403(self, client, db_session, cliente_teste):
         # Criamos um analista com cliente_id nulo
-        from auth import hash_senha
+        from security import hash_senha
         analista_nulo = models.Usuario(
             nome="Analista Nulo",
             email="analista.nulo@emals.com",
