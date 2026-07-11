@@ -24,7 +24,7 @@ def listar(
 
 @router.get("/{id}", response_model=schemas.ClienteOut)
 def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
-    c = db.query(models.Cliente).get(id)
+    c = db.get(models.Cliente, id)
     if not c:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     return c
@@ -53,7 +53,7 @@ def criar(data: schemas.ClienteCreate, db: Session = Depends(get_db), _=Depends(
 
 @router.put("/{id}", response_model=schemas.ClienteOut)
 def atualizar(id: int, data: schemas.ClienteCreate, db: Session = Depends(get_db), _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
-    c = db.query(models.Cliente).get(id)
+    c = db.get(models.Cliente, id)
     if not c:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     
@@ -98,7 +98,7 @@ def atualizar(id: int, data: schemas.ClienteCreate, db: Session = Depends(get_db
 
 @router.delete("/{id}")
 def desativar(id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("admin"))):
-    c = db.query(models.Cliente).get(id)
+    c = db.get(models.Cliente, id)
     if not c:
         raise HTTPException(status_code=404, detail="Cliente não encontrado")
     c.ativo = False

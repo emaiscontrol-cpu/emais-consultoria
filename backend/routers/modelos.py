@@ -44,7 +44,7 @@ def _to_detalhe(m: models.ModeloProjeto) -> schemas.ModeloDetalhe:
     )
 
 def _get_modelo(modelo_id: int, db: Session) -> models.ModeloProjeto:
-    m = db.query(models.ModeloProjeto).get(modelo_id)
+    m = db.get(models.ModeloProjeto, modelo_id)
     if not m:
         raise HTTPException(404, "Modelo não encontrado")
     return m
@@ -208,7 +208,7 @@ def deletar_subtarefa(modelo_id: int, fase_id: int, tarefa_id: int, sub_id: int,
 def aplicar(modelo_id: int, projeto_id: int, db: Session = Depends(get_db),
             _=Depends(requer_perfil("admin", "consultor", "ger_projeto"))):
     modelo = _get_modelo(modelo_id, db)
-    projeto = db.query(models.Projeto).get(projeto_id)
+    projeto = db.get(models.Projeto, projeto_id)
     if not projeto:
         raise HTTPException(404, "Projeto não encontrado")
     if projeto.fases:

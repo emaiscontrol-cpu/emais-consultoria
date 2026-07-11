@@ -47,7 +47,7 @@ def criar(data: schemas.UsuarioCreate, db: Session = Depends(get_db), _=Depends(
 @router.put("/{id}", response_model=schemas.UsuarioOut)
 def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db),
               atual=Depends(get_usuario_atual), _=Depends(requer_perfil("admin"))):
-    u = db.query(models.Usuario).get(id)
+    u = db.get(models.Usuario, id)
     if not u:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     payload = data.model_dump(exclude_none=True)
@@ -107,7 +107,7 @@ def atualizar(id: int, data: schemas.UsuarioUpdate, db: Session = Depends(get_db
 def excluir(id: int, db: Session = Depends(get_db), atual=Depends(get_usuario_atual), _=Depends(requer_perfil("admin"))):
     if atual.id == id:
         raise HTTPException(status_code=400, detail="Você não pode excluir seu próprio usuário")
-    u = db.query(models.Usuario).get(id)
+    u = db.get(models.Usuario, id)
     if not u:
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     db.delete(u)
@@ -132,7 +132,7 @@ def listar_reset_requests(db: Session = Depends(get_db), _=Depends(requer_perfil
 
 @router.delete("/reset-requests/{req_id}")
 def dispensar_reset_request(req_id: int, db: Session = Depends(get_db), _=Depends(requer_perfil("admin"))):
-    r = db.query(models.SolicitacaoReset).get(req_id)
+    r = db.get(models.SolicitacaoReset, req_id)
     if r:
         db.delete(r); db.commit()
     return {"ok": True}

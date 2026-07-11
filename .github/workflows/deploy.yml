@@ -38,7 +38,7 @@ jobs:
 
       - name: Instalar dependências do backend
         working-directory: C:\emals-app\backend
-        run: .\venv\Scripts\pip.exe install -r requirements.txt
+        run: .\venv\Scripts\pip.exe install -r requirements.lock.txt
         shell: powershell
 
       - name: Iniciar backend

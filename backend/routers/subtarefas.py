@@ -17,7 +17,7 @@ def listar(tarefa_id: int, db: Session = Depends(get_db), _=Depends(get_usuario_
 
 @router.post("/", response_model=schemas.SubtarefaOut)
 def criar(data: schemas.SubtarefaCreate, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
-    tarefa = db.query(models.Tarefa).get(data.tarefa_id)
+    tarefa = db.get(models.Tarefa, data.tarefa_id)
     if not tarefa:
         raise HTTPException(status_code=404, detail="Tarefa não encontrada")
     fase = tarefa.fase
@@ -38,7 +38,7 @@ def criar(data: schemas.SubtarefaCreate, db: Session = Depends(get_db), usuario=
 
 @router.put("/{id}", response_model=schemas.SubtarefaOut)
 def atualizar(id: int, data: schemas.SubtarefaUpdate, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
-    s = db.query(models.Subtarefa).get(id)
+    s = db.get(models.Subtarefa, id)
     if not s:
         raise HTTPException(status_code=404, detail="Subtarefa não encontrada")
     verificar_tenant(usuario, s.tarefa.fase.projeto.cliente_id)
@@ -50,7 +50,7 @@ def atualizar(id: int, data: schemas.SubtarefaUpdate, db: Session = Depends(get_
 
 @router.delete("/{id}")
 def deletar(id: int, db: Session = Depends(get_db), usuario=Depends(get_usuario_atual)):
-    s = db.query(models.Subtarefa).get(id)
+    s = db.get(models.Subtarefa, id)
     if not s:
         raise HTTPException(status_code=404, detail="Subtarefa não encontrada")
     verificar_tenant(usuario, s.tarefa.fase.projeto.cliente_id)

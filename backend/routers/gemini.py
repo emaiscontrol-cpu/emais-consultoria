@@ -1,6 +1,9 @@
 import os
 import httpx
+import logging
 from fastapi import APIRouter, Depends, HTTPException
+
+logger = logging.getLogger(__name__)
 from pydantic import BaseModel
 from security import get_usuario_atual
 
@@ -42,6 +45,7 @@ async def analisar(req: GeminiRequest, usuario=Depends(get_usuario_atual)):
     except httpx.TimeoutException:
         raise HTTPException(status_code=504, detail="Gemini demorou muito. Tente novamente.")
     except Exception as e:
+        logger.exception("Erro ao se conectar ao Gemini")
         raise HTTPException(status_code=502, detail=f"Erro de conexão com Gemini: {str(e)}")
 
     if resp.status_code != 200:

@@ -88,13 +88,13 @@ def _calcular_template(
     unidade_codigo: Optional[str] = None
 ) -> tuple[list, bool]:
     """Retorna (lista de linhas calculadas, periodo_fechado)."""
-    cliente = db.query(models.Cliente).get(cliente_id)
+    cliente = db.get(models.Cliente, cliente_id)
     if not cliente or not cliente.ativo:
         raise HTTPException(404, "Cliente não encontrado ou inativo")
     if not cliente.modulo_analises_gerenciais:
         raise HTTPException(403, "Este cliente não possui o módulo de análises gerenciais ativo.")
 
-    template = db.query(models.TemplateRef).get(template_id)
+    template = db.get(models.TemplateRef, template_id)
     if not template:
         raise HTTPException(404, "Template não encontrado")
 

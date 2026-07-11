@@ -32,7 +32,7 @@ def criar(data: schemas.TemplateRefCreate, db: Session = Depends(get_db),
 
 @router.get("/{id}", response_model=schemas.TemplateRefOut)
 def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)):
-    t = db.query(models.TemplateRef).get(id)
+    t = db.get(models.TemplateRef, id)
     if not t:
         raise HTTPException(404, "Template não encontrado")
     return t
@@ -41,7 +41,7 @@ def detalhe(id: int, db: Session = Depends(get_db), _=Depends(get_usuario_atual)
 @router.put("/{id}", response_model=schemas.TemplateRefOut)
 def atualizar(id: int, data: schemas.TemplateRefUpdate, db: Session = Depends(get_db),
               _=Depends(requer_perfil("admin", "consultor"))):
-    t = db.query(models.TemplateRef).get(id)
+    t = db.get(models.TemplateRef, id)
     if not t:
         raise HTTPException(404, "Template não encontrado")
     for k, v in data.model_dump(exclude_none=True).items():
@@ -53,7 +53,7 @@ def atualizar(id: int, data: schemas.TemplateRefUpdate, db: Session = Depends(ge
 @router.delete("/{id}")
 def deletar(id: int, db: Session = Depends(get_db),
             _=Depends(requer_perfil("admin", "consultor"))):
-    t = db.query(models.TemplateRef).get(id)
+    t = db.get(models.TemplateRef, id)
     if not t:
         raise HTTPException(404, "Template não encontrado")
     t.ativo = False
@@ -80,7 +80,7 @@ def _validar_linhas_do_template(template_id: int, db: Session, excluir_id: int =
 @router.post("/{id}/linhas", response_model=schemas.TemplateLinhaOut)
 def criar_linha(id: int, data: schemas.TemplateLinhaCreate, db: Session = Depends(get_db),
                 _=Depends(requer_perfil("admin", "consultor"))):
-    t = db.query(models.TemplateRef).get(id)
+    t = db.get(models.TemplateRef, id)
     if not t:
         raise HTTPException(404, "Template não encontrado")
 
@@ -160,7 +160,7 @@ def deletar_linha(id: int, lid: int, db: Session = Depends(get_db),
 def duplicar(id: int, req: schemas.DuplicarTemplateRequest, db: Session = Depends(get_db),
              _=Depends(requer_perfil("admin", "consultor"))):
     """Duplica o template para outro segmento, copiando todas as linhas."""
-    origem = db.query(models.TemplateRef).get(id)
+    origem = db.get(models.TemplateRef, id)
     if not origem:
         raise HTTPException(404, "Template não encontrado")
 
