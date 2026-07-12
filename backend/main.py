@@ -14,7 +14,7 @@ import logging
 
 logger = logging.getLogger("uvicorn")
 
-APP_VERSION = "2.6.2u"
+APP_VERSION = "2.6.2v"
 
 logger = logging.getLogger(__name__)
 
