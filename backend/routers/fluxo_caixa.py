@@ -33,6 +33,7 @@ def listar_agrupadores(db: Session = Depends(get_db),
         {
             "id": a.id,
             "nome": a.nome,
+            "slug": a.slug,
             "padrao": a.padrao,
             "demonstrativos": json.loads(a.demonstrativos or '["fluxo_caixa"]'),
             "dimensao": a.dimensao,
