@@ -28,9 +28,15 @@ def normalizar_texto(s: str) -> str:
     return s
 
 
-_THRESHOLD_ALTO = 0.80   # confiança mínima para auto-vínculo direto (Camada 1)
-_THRESHOLD_MEDIO = 0.55  # confiança mínima para considerar candidato em zona ambígua
-_GAP_DESAMBIGUACAO = 0.12  # diferença mínima entre 1º e 2º candidato para não ser ambíguo
+_THRESHOLD_ALTO = 0.80   # usado por aplicar_automatico() (fluxo de importação já existente — inalterado)
+
+# Usado só por classificar() (Preparo DE-PARA, Fase B): mais alto que _THRESHOLD_ALTO
+# de propósito. Contra uma base real de ~900 contas, fuzz.WRatio dá ~0.85 de ruído de
+# fundo para pares de descrições totalmente não relacionadas (efeito do partial_ratio
+# em strings curtas) — usar 0.80 como corte faria esse ruído virar candidato "forte"
+# e inflar falsamente a lista de auto-vinculadas/ambíguas. 0.92 filtra o ruído mantendo
+# variações legítimas (acento, ordem de palavras, pequenos sufixos).
+_THRESHOLD_FORTE = 0.92
 
 
 def sugerir(db: Session, conta_cliente: models.ContaClienteRef, top: int = 5) -> list[dict]:
@@ -149,9 +155,16 @@ def _resolver_por_grupo(db: Session, conta_cliente: models.ContaClienteRef, cand
 def classificar(db: Session, conta_cliente: models.ContaClienteRef, top: int = 5) -> dict:
     """
     Classifica uma conta do cliente nas 3 camadas do Preparo DE-PARA (Fase B):
-    - 'auto_vinculada': match forte e sem ambiguidade (ou desambiguado pela Camada 2)
-    - 'ambigua': 2+ candidatos próximos, sem desambiguação possível pelo grupo/pai
-    - 'sem_match': nenhum candidato com confiança suficiente
+    - 'auto_vinculada': exatamente 1 candidato cruza o limiar de confiança alta
+      (Camada 1), ou 2+ cruzam mas a Camada 2 desambigua por grupo/pai
+    - 'ambigua': 2+ candidatos cruzam o limiar alto e a Camada 2 não desambigua
+    - 'sem_match': nenhum candidato cruza o limiar alto (Camada 3)
+
+    Usa apenas o limiar ALTO (não uma zona "média") para decidir quem é candidato
+    de verdade — WRatio dá pontuação generosa (50-65%) para textos completamente
+    não relacionados quando comparados a uma base grande de contas curtas, então
+    qualquer zona "média" acaba promovendo ruído a auto-vínculo. Só o que cruza o
+    limiar alto conta como candidato plausível.
 
     Retorna {situacao, candidatos, resolvido_por (opcional)}. Não grava nada no banco
     — é só a classificação; a gravação (DeParaRef) acontece na tratativa do usuário.
@@ -160,24 +173,15 @@ def classificar(db: Session, conta_cliente: models.ContaClienteRef, top: int = 5
     if not sugestoes:
         return {"situacao": "sem_match", "candidatos": []}
 
-    melhor = sugestoes[0]
-    segunda = sugestoes[1] if len(sugestoes) > 1 else None
-    gap = (melhor["confianca"] - segunda["confianca"]) if segunda else 1.0
+    fortes = [s for s in sugestoes if s["confianca"] >= _THRESHOLD_FORTE]
 
-    if melhor["confianca"] >= _THRESHOLD_ALTO and gap >= _GAP_DESAMBIGUACAO:
-        return {"situacao": "auto_vinculada", "candidatos": [melhor]}
+    if len(fortes) == 1:
+        return {"situacao": "auto_vinculada", "candidatos": fortes}
 
-    proximos = [
-        s for s in sugestoes
-        if s["confianca"] >= _THRESHOLD_MEDIO and (melhor["confianca"] - s["confianca"]) < _GAP_DESAMBIGUACAO
-    ]
-    if len(proximos) >= 2:
-        resolvido = _resolver_por_grupo(db, conta_cliente, proximos)
+    if len(fortes) >= 2:
+        resolvido = _resolver_por_grupo(db, conta_cliente, fortes)
         if resolvido:
             return {"situacao": "auto_vinculada", "candidatos": [resolvido], "resolvido_por": "grupo"}
-        return {"situacao": "ambigua", "candidatos": proximos}
-
-    if melhor["confianca"] >= _THRESHOLD_MEDIO:
-        return {"situacao": "auto_vinculada", "candidatos": [melhor]}
+        return {"situacao": "ambigua", "candidatos": fortes}
 
     return {"situacao": "sem_match", "candidatos": sugestoes[:3]}
