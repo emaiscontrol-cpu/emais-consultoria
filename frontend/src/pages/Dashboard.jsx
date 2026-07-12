@@ -4,11 +4,7 @@ import { ChevronDown, ChevronUp, CheckCircle2, Clock, AlertTriangle } from 'luci
 import { dashboardAPI, projetosAPI, relatoriosAPI, tarefasAPI } from '../services/api'
 import { Badge, Progress, LoadingPage } from '../components/shared'
 import { useAuth } from '../contexts/AuthContext'
-import {
-  PieChart, Pie, Cell, Tooltip, Legend, Label, ResponsiveContainer,
-  LineChart, Line, XAxis, YAxis, CartesianGrid,
-  BarChart, Bar,
-} from 'recharts'
+import { GraficoRosca, GraficoLinha, GraficoBarras } from '../components/Graficos'
 import toast from 'react-hot-toast'
 
 // ── Tema escuro (gráficos) ───────────────────────────────
@@ -99,23 +95,19 @@ function DonutGeral({ data, total, perc }) {
       height:190, color:D.text2, fontSize:12 }}>Sem tarefas</div>
   )
   return (
-    <ResponsiveContainer width="100%" height={190}>
-      <PieChart>
-        <Pie data={data} cx="40%" cy="50%" innerRadius={52} outerRadius={78}
-          dataKey="value" paddingAngle={3} strokeWidth={0}>
-          {data.map((e, i) => <Cell key={i} fill={e.color}/>)}
-          <Label position="center" content={({ viewBox: { cx, cy } }) => (
-            <g>
-              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                fontSize={22} fontWeight={800} fill={D.text}>{perc}%</text>
-              <text x={cx} y={cy + 18} textAnchor="middle" dominantBaseline="middle"
-                fontSize={10} fill={D.text2}>{total} tarefas</text>
-            </g>
-          )}/>
-        </Pie>
-        <Legend content={LegendaPizza} layout="vertical" align="right" verticalAlign="middle"/>
-      </PieChart>
-    </ResponsiveContainer>
+    <GraficoRosca
+      dados={data} altura={190} innerRadius={52} outerRadius={78} cx="40%"
+      centroContent={({ viewBox: { cx, cy } }) => (
+        <g>
+          <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
+            fontSize={22} fontWeight={800} fill={D.text}>{perc}%</text>
+          <text x={cx} y={cy + 18} textAnchor="middle" dominantBaseline="middle"
+            fontSize={10} fill={D.text2}>{total} tarefas</text>
+        </g>
+      )}
+      legenda legendaContent={LegendaPizza} legendaLayout="vertical" legendaAlign="right"
+      dark
+    />
   )
 }
 
@@ -125,45 +117,6 @@ function labelPizza(cor) {
   if (c.includes('c97d10')) return 'Em andamento'
   if (c.includes('3b6d11')) return 'Feito'
   return null
-}
-
-function TooltipDonut({ active, payload }) {
-  if (!active || !payload?.length) return null
-  const item  = payload[0]
-  const cor   = item?.payload?.color ?? item?.color ?? item?.fill ?? ''
-  const nome  = labelPizza(cor) ?? 'Parado'
-  const valor = item?.value ?? item?.payload?.value ?? 0
-  return (
-    <div style={{ background:D.card2, border:`1px solid ${D.border}`, borderRadius:8,
-      padding:'7px 12px', fontSize:12, color:D.text }}>
-      <span style={{ color:cor, marginRight:6 }}>●</span>{nome}: <strong>{valor}</strong>
-    </div>
-  )
-}
-
-function DonutFase({ data, total, perc }) {
-  if (!total) return (
-    <div style={{ display:'flex', alignItems:'center', justifyContent:'center',
-      height:140, color:D.text2, fontSize:12 }}>Sem tarefas</div>
-  )
-  return (
-    <ResponsiveContainer width="100%" height={140}>
-      <PieChart>
-        <Pie data={data} cx="50%" cy="50%" innerRadius={38} outerRadius={58}
-          dataKey="value" paddingAngle={3} strokeWidth={0}>
-          {data.map((e, i) => <Cell key={i} fill={e.color}/>)}
-          <Label position="center" content={({ viewBox: { cx, cy } }) => (
-            <g>
-              <text x={cx} y={cy} textAnchor="middle" dominantBaseline="middle"
-                fontSize={18} fontWeight={800} fill={D.text}>{perc}%</text>
-              <text x={cx} y={cy + 15} textAnchor="middle" dominantBaseline="middle"
-                fontSize={9} fill={D.text2}>{total} tar.</text>
-            </g>
-          )}/>
-        </Pie>
-      </PieChart>
-    </ResponsiveContainer>
-  )
 }
 
 function ProgressoFases({ itens, porFase }) {
@@ -271,40 +224,43 @@ function ProgressoFases({ itens, porFase }) {
           textTransform:'uppercase', letterSpacing:'.07em', marginBottom:12 }}>
           Progresso por fase (%)
         </div>
-        <ResponsiveContainer width="100%" height={Math.max(200, grupos.length * 52 + 60)}>
-          <BarChart data={grupos.map(g => ({
+        <GraficoBarras
+          dados={grupos.map(g => ({
             nome: g.fase.nome.length > 14 ? g.fase.nome.slice(0,14)+'…' : g.fase.nome,
             Progresso: Math.round(g.fase.progresso),
             status: g.fase.status,
             id: g.fase.id,
-          }))} margin={{ left:0, right:16, top:8, bottom:40 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke={D.grid} vertical={false}/>
-            <XAxis dataKey="nome" tick={{ fontSize:9, fill:D.text2 }}
-              angle={-30} textAnchor="end" interval={0}/>
-            <YAxis domain={[0,100]} tick={{ fontSize:9, fill:D.text2 }}
-              tickFormatter={v => `${v}%`}/>
-            <Tooltip
-              cursor={false}
-              formatter={v => [`${v}%`, 'Progresso']}
-              contentStyle={{ background:D.card2, border:`1px solid ${D.border}`,
-                color:D.text, borderRadius:8, fontSize:12 }}/>
-            <Bar dataKey="Progresso" radius={[4,4,0,0]} maxBarSize={48}
-              activeBar={false}
-              background={props => <rect {...props} fill="transparent" stroke="none"/>}>
-              {grupos.map(g => {
-                const exp = !!aberto[g.fase.id]
-                const temExp = expandidas.length > 0
-                return (
-                  <Cell key={g.fase.id}
-                    fill={cor(g.fase.status)}
-                    opacity={temExp ? (exp ? 1 : 0.25) : 0.85}
-                    stroke={exp ? cor(g.fase.status) : 'none'}
-                    strokeWidth={exp ? 2 : 0}/>
-                )
-              })}
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
+          }))}
+          chaveX="nome"
+          altura={Math.max(200, grupos.length * 52 + 60)}
+          margin={{ left:0, right:16, top:8, bottom:40 }}
+          xAxisProps={{ tick: { fontSize:9, fill:D.text2 }, angle:-30, textAnchor:'end', interval:0 }}
+          yAxisProps={{ domain:[0,100], tick: { fontSize:9, fill:D.text2 }, tickFormatter: v => `${v}%` }}
+          tooltipCursor={false}
+          tooltipContent={({ active, payload }) => {
+            if (!active || !payload?.length) return null
+            return (
+              <div style={{ background:D.card2, border:`1px solid ${D.border}`, color:D.text,
+                borderRadius:8, fontSize:12, padding:'8px 12px' }}>
+                Progresso: {payload[0].value}%
+              </div>
+            )
+          }}
+          barras={[{
+            chave: 'Progresso', radius: [4,4,0,0], maxBarSize: 48,
+            extra: { activeBar: false, background: props => <rect {...props} fill="transparent" stroke="none" /> },
+            cellProps: g => {
+              const exp = !!aberto[g.id]
+              const temExp = expandidas.length > 0
+              return {
+                fill: cor(g.status),
+                opacity: temExp ? (exp ? 1 : 0.25) : 0.85,
+                stroke: exp ? cor(g.status) : 'none',
+                strokeWidth: exp ? 2 : 0,
+              }
+            },
+          }]}
+        />
       </div>
 
     </div>
@@ -582,20 +538,21 @@ export default function Dashboard() {
                     Adicione datas de início e fim ao projeto para ver o burndown.
                   </p>
                 : (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={dados.burndown} margin={{ top:4, right:12, bottom:0, left:-20 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={D.grid}/>
-                      <XAxis dataKey="data" tick={{ fontSize:9, fill:D.text2 }} interval="preserveStartEnd"/>
-                      <YAxis tick={{ fontSize:9, fill:D.text2 }} allowDecimals={false}/>
-                      <Tooltip content={<TipBurndown/>}/>
-                      <Line type="monotone" dataKey="ideal" name="Ideal"
-                        stroke={COR.azul} strokeWidth={2} dot={false}/>
-                      <Line type="monotone" dataKey="real" name="Real"
-                        stroke={COR.vermelho} strokeWidth={2.5} dot={false} connectNulls={false}/>
-                      <Legend iconType="plainline" iconSize={16}
-                        formatter={v => <span style={{ fontSize:11, color:D.text2 }}>{v}</span>}/>
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <GraficoLinha
+                    dados={dados.burndown}
+                    chaveX="data"
+                    altura={200}
+                    margin={{ top:4, right:12, bottom:0, left:-20 }}
+                    xAxisProps={{ tick: { fontSize:9, fill:D.text2 }, interval:'preserveStartEnd' }}
+                    yAxisProps={{ tick: { fontSize:9, fill:D.text2 } }}
+                    tooltipContent={<TipBurndown/>}
+                    legenda
+                    dark
+                    linhas={[
+                      { chave:'ideal', nome:'Ideal', cor:COR.azul, strokeWidth:2 },
+                      { chave:'real', nome:'Real', cor:COR.vermelho, strokeWidth:2.5 },
+                    ]}
+                  />
                 )
               }
             </div>

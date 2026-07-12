@@ -1,27 +1,10 @@
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { clientesAPI, dashboardAPI } from '../services/api'
 import { useAuth } from '../contexts/AuthContext'
 import { LoadingPage } from '../components/shared'
+import { GraficoRosca, GraficoBarras, GraficoProgresso, fmtNumeroBR } from '../components/Graficos'
 import { ChevronDown, AlertTriangle, CheckCircle2, Clock, Layers } from 'lucide-react'
-
-function PlotChart({ data, layout, config, style }) {
-  const el = useRef(null)
-  useEffect(() => {
-    let P
-    let cancelled = false
-    import('plotly.js-dist-min').then(mod => {
-      if (cancelled || !el.current) return
-      P = mod.default ?? mod
-      P.newPlot(el.current, data, layout, config ?? { displayModeBar: false, responsive: true })
-    })
-    return () => {
-      cancelled = true
-      if (P && el.current) P.purge(el.current)
-    }
-  }, [JSON.stringify(data), JSON.stringify(layout)])
-  return <div ref={el} style={style} />
-}
 
 const STATUS_COR = {
   concluido:    '#4CAF50',
@@ -42,18 +25,6 @@ const STATUS_LABEL = {
 
 const DARK_BG   = '#0f0f15'
 const DARK_CARD = '#16161f'
-const DARK_GRID = '#2a2a3a'
-
-const plotLayout = (extra = {}) => ({
-  paper_bgcolor: DARK_CARD,
-  plot_bgcolor:  DARK_BG,
-  font:          { color: '#c9d1d9', family: 'Segoe UI, Arial, sans-serif', size: 12 },
-  margin:        { t: 16, b: 36, l: 16, r: 16 },
-  showlegend:    true,
-  legend:        { font: { color: '#8b949e', size: 11 }, bgcolor: 'transparent', orientation: 'h', y: -0.18 },
-  ...extra,
-})
-
 
 function CardResumo({ icon: Icon, label, valor, cor }) {
   return (
@@ -68,18 +39,6 @@ function CardResumo({ icon: Icon, label, valor, cor }) {
         <div style={{ fontSize: 22, fontWeight: 800, color: '#e6edf3' }}>{valor}</div>
         <div style={{ fontSize: 12, color: '#8b949e', marginTop: 2 }}>{label}</div>
       </div>
-    </div>
-  )
-}
-
-function BarraProgresso({ valor, cor }) {
-  return (
-    <div style={{ background: '#21262d', borderRadius: 99, height: 8, width: '100%' }}>
-      <div style={{
-        width: `${Math.min(valor, 100)}%`, height: '100%',
-        borderRadius: 99, background: cor || 'var(--brand)',
-        transition: 'width .4s ease',
-      }} />
     </div>
   )
 }
@@ -108,45 +67,22 @@ export default function DashboardCliente() {
       .finally(() => setLoading(false))
   }, [clienteId])
 
-  // ── dados Plotly ──────────────────────────────────────────────────────────
-  const pieTrace = dados ? [{
-    type: 'pie',
-    labels: ['Concluídas', 'Em andamento', 'Pendentes', 'Atrasadas'].filter((_, i) => [
-      dados.resumo.concluidas, dados.resumo.andamento,
-      dados.resumo.pendentes,  dados.resumo.atrasadas,
-    ][i] > 0),
-    values: [
-      dados.resumo.concluidas, dados.resumo.andamento,
-      dados.resumo.pendentes,  dados.resumo.atrasadas,
-    ].filter(v => v > 0),
-    marker: {
-      colors: ['#4CAF50', '#1E88E5', '#9ca3af', '#E53935'].filter((_, i) => [
-        dados.resumo.concluidas, dados.resumo.andamento,
-        dados.resumo.pendentes,  dados.resumo.atrasadas,
-      ][i] > 0),
-      line: { color: DARK_BG, width: 2 },
-    },
-    textinfo: 'percent',
-    textfont: { color: '#e6edf3', size: 12 },
-    hole: 0.38,
-    hovertemplate: '<b>%{label}</b><br>%{value} tarefas (%{percent})<extra></extra>',
-  }] : []
+// ── dados dos gráficos ───────────────────────────────────────────────────
+  const pieDados = dados ? [
+    { name: 'Concluídas',    value: dados.resumo.concluidas, color: '#4CAF50' },
+    { name: 'Em andamento',  value: dados.resumo.andamento,  color: '#1E88E5' },
+    { name: 'Pendentes',     value: dados.resumo.pendentes,  color: '#9ca3af' },
+    { name: 'Atrasadas',     value: dados.resumo.atrasadas,  color: '#E53935' },
+  ].filter(d => d.value > 0) : []
 
-  const barTrace = dados ? [{
-    type: 'bar',
-    orientation: 'h',
-    x: dados.projetos.map(p => p.progresso),
-    y: dados.projetos.map(p => p.nome.length > 22 ? p.nome.slice(0, 22) + '…' : p.nome),
-    marker: {
-      color: dados.projetos.map(p => STATUS_COR[p.status] || '#6366f1'),
-      opacity: 0.85,
-    },
-    text: dados.projetos.map(p => `${p.progresso}%`),
-    textposition: 'outside',
-    textfont: { color: '#c9d1d9', size: 11 },
-    hovertemplate: '<b>%{y}</b>: %{x}%<extra></extra>',
-    cliponaxis: false,
-  }] : []
+  const totalTarefas = pieDados.reduce((s, d) => s + d.value, 0)
+  const percConcluido = totalTarefas > 0 ? Math.round((dados?.resumo.concluidas ?? 0) / totalTarefas * 100) : 0
+
+  const barDados = dados ? dados.projetos.map(p => ({
+    nome: p.nome.length > 22 ? p.nome.slice(0, 22) + '…' : p.nome,
+    progresso: p.progresso,
+    status: p.status,
+  })) : []
 
   return (
     <div className="page" style={{ background: DARK_BG }}>
@@ -200,10 +136,14 @@ export default function DashboardCliente() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#c9d1d9', marginBottom: 12 }}>
                 Tarefas por Status
               </div>
-              <PlotChart
-                data={pieTrace}
-                layout={plotLayout({ height: 260 })}
-                style={{ width: '100%' }}
+              <GraficoRosca
+                dados={pieDados}
+                altura={260}
+                legenda legendaDetalhada
+                tooltip tooltipFormatter={fmtNumeroBR}
+                valorCentro={`${percConcluido}%`}
+                rotuloCentro={`${totalTarefas} tarefas`}
+                dark
               />
             </div>
 
@@ -215,22 +155,18 @@ export default function DashboardCliente() {
               <div style={{ fontSize: 13, fontWeight: 700, color: '#c9d1d9', marginBottom: 12 }}>
                 Progresso por Projeto (%)
               </div>
-              <PlotChart
-                data={barTrace}
-                layout={plotLayout({
-                  height: 260,
-                  xaxis: {
-                    range: [0, 115], gridcolor: DARK_GRID,
-                    tickfont: { color: '#6b7280', size: 10 }, zeroline: false,
-                  },
-                  yaxis: {
-                    tickfont: { color: '#8b949e', size: 10 }, automargin: true,
-                  },
-                  margin: { t: 10, b: 30, l: 8, r: 40 },
-                  showlegend: false,
-                  bargap: 0.35,
-                })}
-                style={{ width: '100%' }}
+              <GraficoBarras
+                dados={barDados}
+                chaveX="nome"
+                layout="vertical"
+                altura={260}
+                formatoY={v => `${v}%`}
+                tooltipFormatter={v => `${v}%`}
+                barras={[{
+                  chave: 'progresso', nome: 'Progresso',
+                  cellProps: entry => ({ fill: STATUS_COR[entry.status] || '#6366f1' }),
+                }]}
+                dark
               />
             </div>
           </div>
@@ -253,7 +189,7 @@ export default function DashboardCliente() {
                 </div>
                 <div style={{ fontSize: 20, fontWeight: 800, color: STATUS_COR[p.status] || '#6366f1' }}>{p.progresso}%</div>
               </div>
-              <BarraProgresso valor={p.progresso} cor={STATUS_COR[p.status]} />
+              <GraficoProgresso valor={p.progresso} cor={STATUS_COR[p.status]} corTrilho="#21262d" />
 
               <div style={{ display: 'flex', gap: 16, margin: '10px 0 16px', fontSize: 12, color: '#6b7280' }}>
                 <span style={{ color: '#4CAF50' }}>&#10003; {p.concluidas} concluídas</span>
@@ -282,7 +218,7 @@ export default function DashboardCliente() {
                       </div>
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#e6edf3' }}>{f.progresso}%</span>
                     </div>
-                    <BarraProgresso valor={f.progresso} cor={STATUS_COR[f.status]} />
+                    <GraficoProgresso valor={f.progresso} cor={STATUS_COR[f.status]} corTrilho="#21262d" />
                     <div style={{ display: 'flex', gap: 12, marginTop: 6, fontSize: 11, color: '#484f58' }}>
                       <span>{f.total} tarefa(s)</span>
                       <span style={{ color: '#4CAF50' }}>{f.concluidas} concluídas</span>

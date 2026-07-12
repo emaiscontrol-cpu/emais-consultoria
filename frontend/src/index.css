@@ -68,6 +68,16 @@
   /* Tipo de conta (Plano Referencial) */
   --tipo-sintetica:#3C3489; --tipo-sintetica-bg:#EEEDFE;
   --tipo-analitica:#2C2C2A; --tipo-analitica-bg:#D3D1C7;
+  /* Toolbar de ações do Orçamento (cor decorativa por função — ver Orcamento.jsx) */
+  --toolbar-dash-bg:#fffbeb;       --toolbar-dash-fg:#d97706;       --toolbar-dash-border:#fde68a;
+  --toolbar-pdf-bg:#fef2f2;        --toolbar-pdf-fg:#dc2626;        --toolbar-pdf-border:#fecaca;
+  --toolbar-pct-bg:#f0f9ff;        --toolbar-pct-fg:#0284c7;        --toolbar-pct-border:#bae6fd;
+  --toolbar-expand-bg:#ecfdf5;     --toolbar-expand-fg:#059669;     --toolbar-expand-border:#a7f3d0;
+  --toolbar-collapse-bg:#faf5ff;   --toolbar-collapse-fg:#7c3aed;   --toolbar-collapse-border:#e9d5ff;
+  --toolbar-claude-bg:#fff7ed;     --toolbar-claude-fg:#ea580c;     --toolbar-claude-border:#ffedd5;
+  --toolbar-gemini-bg:#f0f4ff;     --toolbar-gemini-fg:#1a73e8;     --toolbar-gemini-border:#d2e3fc;
+  --toolbar-openrouter-bg:#fffbeb; --toolbar-openrouter-fg:#ca8a04; --toolbar-openrouter-border:#fef08a;
+  --toolbar-logout-bg:#fff5f5;     --toolbar-logout-fg:#e53e3e;     --toolbar-logout-border:#feb2b2;
 }
 body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; font-size:14px; color:var(--text); background:var(--bg); line-height:1.5; }
 .app-shell { display:flex; height:100vh; }

@@ -1,7 +1,7 @@
 # Design System — E Mais Consultoria
 
 > Arquivo de referência visual para o Claude Code. Leia antes de criar ou alterar qualquer componente de interface.
-> Última atualização: 2026-07-11
+> Última atualização: 2026-07-11 (seção 11 · Gráficos)
 
 ---
 
@@ -401,7 +401,55 @@ import { BotaoEditar, BotaoExcluir, BotaoNovo, IconButton, Card, BadgeTag } from
   aberto) continua possível via `style={{ color: 'var(--brand)' }}` no primitivo — não é motivo
   para reimplementar o botão manualmente.
 
-## 10. Regras gerais para o Claude Code
+## 11. Gráficos
+
+> Fonte: `frontend/src/components/chartTheme.js` (tokens/paleta) e `frontend/src/components/
+> Graficos.jsx` (wrappers). Padrão extraído de `PainelDetalheAgrupamento.jsx` — painel de
+> detalhamento do Fluxo de Caixa, aprovado pelo usuário como referência visual oficial.
+
+**Regra central: proibido importar `recharts` (ou qualquer outra lib de gráfico) direto numa
+tela ou componente.** Todo gráfico do sistema consome os wrappers de `Graficos.jsx`, que por sua
+vez é o único arquivo do projeto que importa `recharts`.
+
+### Paleta oficial
+
+```js
+VIOLETA.forte = '#534AB7'   // série principal, linha/barra "atual", classe A (ABC)
+VIOLETA.medio = '#8F85F0'   // série secundária, classe B
+VIOLETA.claro = '#C5C2EC'   // série terciária/"anterior", classe C
+```
+
+Vermelho (`#C0392B`/`#E24B4A`) só aparece para valores negativos ou de saída (despesa); verde
+(`#1E8449`) para variação positiva. Cores de status (verde/âmbar/vermelho/azul) das dashboards do
+módulo Projetos continuam sendo as cores semânticas já documentadas na seção 2 — a paleta violeta
+é para séries neutras/financeiras, não substitui cor de status.
+
+### Quando usar cada wrapper
+
+| Wrapper | Uso |
+|---|---|
+| `GraficoArea` | Tendência/evolução mensal — curva suavizada (`monotone`) com gradiente de preenchimento |
+| `GraficoBarras` | Comparativos (atual × anterior, realizado × planejado), rankings horizontais (`layout="vertical"`), barras empilhadas |
+| `GraficoLinha` | Séries no tempo com múltiplas linhas (ex.: burndown ideal × real) |
+| `GraficoRosca` | Distribuição percentual com destaque central (`valorCentro`/`rotuloCentro`) — número grande + rótulo embaixo |
+| `GraficoProgresso` | Barra horizontal única de percentual (sem gráfico "de verdade") |
+| `GraficoComposto` | Combinação área+linha+barra no mesmo eixo (ex.: receita × custos × margem) |
+
+Todos aceitam `dark` (para as dashboards do módulo Projetos, que mantêm fundo escuro próprio por
+decisão do usuário — mesma gramática de gráfico, só tooltip/grid/eixo mudam de tom) e escape
+hatches (`tooltipContent`, `legendaContent`, `centroContent`, `xAxisProps`/`yAxisProps`) para telas
+com lógica de tooltip/legenda bespoke (ex.: variação % no tooltip comparativo).
+
+### Gramática visual (não pedir para o usuário aprovar de novo — já é o padrão)
+
+- Grid: só linhas horizontais, tracejadas (`strokeDasharray: '3 3'`), opacidade bem baixa
+- Eixos: sem linha/tick, fonte pequena (9px) na cor de texto apagado da superfície
+- Eixo Y numérico: valores abreviados (`10.0M`, `25K`) via `tickFormatterAbreviado`
+- Tooltip: card (`var(--surface)` ou escuro), título pequeno em cima, valor(es) em destaque embaixo
+- Números: sempre `fontVariantNumeric: 'tabular-nums'` (constante `TABULAR_NUMS`)
+- Área/linha: sempre `type="monotone"` (curva suavizada, nunca linear/step)
+
+## 12. Regras gerais para o Claude Code
 
 1. **Nunca hardcodar cores** — sempre usar CSS variables ou a paleta definida acima
 2. **Nunca usar modais** para ações simples de vinculação — usar painel inline
@@ -415,3 +463,5 @@ import { BotaoEditar, BotaoExcluir, BotaoNovo, IconButton, Card, BadgeTag } from
 10. **Confirmação de exclusão**: sempre pedir confirmação antes de deletar — nunca deletar direto
 11. **Botões de ação/ícones/cards** — proibido montar manualmente; sempre `BotaoEditar`,
     `BotaoExcluir`, `BotaoNovo`, `IconButton`, `Card` ou `BadgeTag` de `components/ui.jsx` (ver § 9b)
+12. **Gráficos** — proibido importar `recharts` direto; sempre `GraficoBarras`/`GraficoLinha`/
+    `GraficoArea`/`GraficoRosca`/`GraficoProgresso`/`GraficoComposto` de `components/Graficos.jsx` (ver § 11)

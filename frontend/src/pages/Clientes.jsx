@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { clientesAPI, refTemplatesAPI } from '../services/api'
 import { Modal, LoadingPage } from '../components/shared'
-import { BotaoEditar, BotaoExcluir, BotaoNovo } from '../components/ui'
+import { BotaoEditar, BotaoExcluir, BotaoNovo, IconButton } from '../components/ui'
 import { Building2, FolderKanban, TrendingUp, BarChart2, Store, Check, X } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -359,23 +359,6 @@ export default function Clientes() {
 
   return (
     <div className="page">
-      <style>{`
-        .btn-acao-tabela {
-          width: 32px;
-          height: 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: none;
-          background: transparent;
-          border-radius: 6px;
-          cursor: pointer;
-          transition: background .2s, color .2s;
-        }
-        .btn-acao-tabela:hover {
-          background: var(--border-color, rgba(0, 0, 0, 0.05));
-        }
-      `}</style>
       <div className="page-header">
         <div>
           <div className="page-title">Clientes</div>
@@ -633,12 +616,8 @@ export default function Clientes() {
                                     maxLength={3}
                                     style={{ width: 36, fontFamily: 'monospace', fontWeight: 600, padding: '2px 4px' }}
                                   />
-                                  <button type="button" className="btn-acao-tabela" style={{ width: 20, height: 20, padding: 0 }} title="Confirmar" onMouseDown={e => e.preventDefault()} onClick={confirmarEdicaoInlineUnidade}>
-                                    <Check size={12} color="#16a34a" />
-                                  </button>
-                                  <button type="button" className="btn-acao-tabela" style={{ width: 20, height: 20, padding: 0 }} title="Cancelar" onMouseDown={e => e.preventDefault()} onClick={cancelarEdicaoInlineUnidade}>
-                                    <X size={12} color="#ef4444" />
-                                  </button>
+                                  <IconButton icon={Check} size="sm" title="Confirmar" style={{ color: 'var(--green)' }} onMouseDown={e => e.preventDefault()} onClick={confirmarEdicaoInlineUnidade} />
+                                  <IconButton icon={X} size="sm" title="Cancelar" danger onMouseDown={e => e.preventDefault()} onClick={cancelarEdicaoInlineUnidade} />
                                 </div>
                               ) : u.codigo}
                             </td>
@@ -658,12 +637,8 @@ export default function Clientes() {
                                     onFocus={e => e.target.select()}
                                     style={{ flex: 1, minWidth: 80, padding: '2px 4px' }}
                                   />
-                                  <button type="button" className="btn-acao-tabela" style={{ width: 20, height: 20, padding: 0, flexShrink: 0 }} title="Confirmar" onMouseDown={e => e.preventDefault()} onClick={confirmarEdicaoInlineUnidade}>
-                                    <Check size={12} color="#16a34a" />
-                                  </button>
-                                  <button type="button" className="btn-acao-tabela" style={{ width: 20, height: 20, padding: 0, flexShrink: 0 }} title="Cancelar" onMouseDown={e => e.preventDefault()} onClick={cancelarEdicaoInlineUnidade}>
-                                    <X size={12} color="#ef4444" />
-                                  </button>
+                                  <IconButton icon={Check} size="sm" title="Confirmar" style={{ color: 'var(--green)', flexShrink: 0 }} onMouseDown={e => e.preventDefault()} onClick={confirmarEdicaoInlineUnidade} />
+                                  <IconButton icon={X} size="sm" title="Cancelar" danger style={{ flexShrink: 0 }} onMouseDown={e => e.preventDefault()} onClick={cancelarEdicaoInlineUnidade} />
                                 </div>
                               ) : u.nome}
                             </td>
@@ -715,27 +690,23 @@ export default function Clientes() {
                             {(() => {
                               const podeConfirmar = validarNovaUnidade(novaUnidade.codigo, novaUnidade.nome, form.unidades || []).ok
                               return (
-                                <button
-                                  type="button"
-                                  className="btn-acao-tabela"
+                                <IconButton
+                                  icon={Check}
+                                  size="sm"
                                   disabled={!podeConfirmar}
                                   onClick={confirmarNovaUnidadeInline}
-                                  style={{ padding: 4, width: 28, height: 28, opacity: podeConfirmar ? 1 : 0.35, cursor: podeConfirmar ? 'pointer' : 'default' }}
+                                  style={{ color: 'var(--green)', opacity: podeConfirmar ? 1 : 0.35, cursor: podeConfirmar ? 'pointer' : 'default' }}
                                   title="Adicionar unidade"
-                                >
-                                  <Check size={14} color="#16a34a" />
-                                </button>
+                                />
                               )
                             })()}
-                            <button
-                              type="button"
-                              className="btn-acao-tabela"
+                            <IconButton
+                              icon={X}
+                              size="sm"
+                              danger
                               onClick={() => { setNovaUnidade({ codigo: '', nome: '' }); setNovaUnidadeErro(null) }}
-                              style={{ padding: 4, width: 28, height: 28 }}
                               title="Limpar"
-                            >
-                              <X size={14} color="#ef4444" />
-                            </button>
+                            />
                           </div>
                         </td>
                       </tr>
