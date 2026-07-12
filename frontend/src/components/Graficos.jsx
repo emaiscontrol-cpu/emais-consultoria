@@ -113,15 +113,14 @@ export function GraficoBarras({
       <BarChart data={dados} layout={layout} margin={margin || { top: 5, right: 5, left: -10, bottom: 5 }}>
         {grid && <CartesianGrid {...gridProps(dark)} vertical={layout === 'vertical'} horizontal={layout !== 'vertical'} />}
         {layout === 'vertical' ? (
-          <>
-            <XAxis type="number" {...eixoProps(dark)} tickFormatter={formatoY} {...xAxisProps} />
-            <YAxis type="category" dataKey={chaveX} {...eixoProps(dark)} width={120} {...yAxisProps} />
-          </>
+          <XAxis type="number" tickFormatter={formatoY} {...eixoProps(dark)} {...xAxisProps} />
         ) : (
-          <>
-            <XAxis dataKey={chaveX} {...eixoProps(dark)} {...xAxisProps} />
-            <YAxis {...eixoProps(dark)} tickFormatter={formatoY} {...yAxisProps} />
-          </>
+          <XAxis dataKey={chaveX} {...eixoProps(dark)} {...xAxisProps} />
+        )}
+        {layout === 'vertical' ? (
+          <YAxis type="category" dataKey={chaveX} width={120} {...eixoProps(dark)} {...yAxisProps} />
+        ) : (
+          <YAxis tickFormatter={formatoY} {...eixoProps(dark)} {...yAxisProps} />
         )}
         {tooltip && <Tooltip content={tooltipContent || <CustomTooltip dark formatter={tooltipFormatter} />} cursor={tooltipCursor ?? { fill: 'rgba(0,0,0,0.03)' }} />}
         {legenda && <Legend content={legendaContent} formatter={!legendaContent ? (v => <span style={{ fontSize: 11, color: superficie(dark).tooltipTitle }}>{v}</span>) : undefined} iconType="circle" iconSize={8} />}
