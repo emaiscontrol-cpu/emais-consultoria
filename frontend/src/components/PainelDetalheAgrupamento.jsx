@@ -123,7 +123,10 @@ export default function PainelDetalheAgrupamento({
         if (mes != null) {
           mesRef = Number(mes)
         } else {
+          // Coluna TOTAL: sem mês, mas com o intervalo acumulado (só meses com
+          // movimento) vindo em mesFim — ver ultimoMesComMovimento no FluxoCaixa.
           mesRef = null
+          mesFimRef = mesFim != null ? Number(mesFim) : null
         }
       } else if (modo === 'mensal') {
         mesRef = mes
@@ -182,7 +185,9 @@ export default function PainelDetalheAgrupamento({
         return `${MESES_ABR[mIni - 1]} a ${MESES_ABR[mFim - 1]}/${a}`
       }
 
-      let pAtual = obterRotuloPeriodo(mesRef, mesFimRef, ano)
+      let pAtual = (modo === 'todos' && mesRef === null && mesFimRef)
+        ? obterRotuloPeriodo(1, mesFimRef > 1 ? mesFimRef : null, ano)
+        : obterRotuloPeriodo(mesRef, mesFimRef, ano)
       let pAnterior = '—'
       if (modo === 'acumulado') {
         const ultimoMes = mesFimRef ?? mesRef
