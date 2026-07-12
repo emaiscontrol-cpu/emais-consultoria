@@ -333,7 +333,7 @@ export default function TemplatesRef() {
               <div style={{ fontWeight: 600 }}>{t.nome}</div>
               <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>
                 {TIPO_LABEL[t.tipo]} · {t.linhas?.length ?? 0} linha{(t.linhas?.length ?? 0) !== 1 ? 's' : ''}
-                {' · '}{segmentos.find(s => s.id === t.segmento_id)?.nome || `Segmento ${t.segmento_id}`}
+                {' · '}{t.segmento_id ? (segmentos.find(s => s.id === t.segmento_id)?.nome || `Segmento ${t.segmento_id}`) : 'Universal'}
               </div>
             </div>
             <div style={{ display: 'flex', gap: 6 }}>

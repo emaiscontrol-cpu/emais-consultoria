@@ -582,7 +582,7 @@ class TemplateLinhaOut(BaseModel):
 class TemplateRefOut(BaseModel):
     id: int
     tipo: str
-    segmento_id: int
+    segmento_id: Optional[int]
     nome: str
     ativo: bool
     linhas: List[TemplateLinhaOut] = []
