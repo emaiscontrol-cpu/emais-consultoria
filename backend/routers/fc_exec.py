@@ -403,6 +403,13 @@ def detalhe_comparativo(
 ):
     """Contas do período atual + período anterior (comparativo) de um agrupamento.
 
+    Modo mensal  → mes obrigatório, período = o próprio mês.
+    Modo acumulado → mes (início, default 1) e mes_fim (fim, default mes ou 12).
+    Modo todos   → se mes vier, filtra por aquele mês (clique numa coluna de mês);
+                   se mes vier ausente (clique na coluna TOTAL), soma o intervalo
+                   mes_fim informado a partir de janeiro (ou o ano inteiro, se
+                   mes_fim também vier ausente) — mesma regra do modo acumulado.
+
     Regra do período anterior — única para os 3 modos: sempre o mês
     imediatamente anterior ao mês de referência (o mês exibido/clicado;
     no modo acumulado, o mês final do intervalo). Nunca ano anterior.
@@ -415,7 +422,10 @@ def detalhe_comparativo(
     components = _parse_compound_slug(agrupamento_slug)
     slugs = list({s.lower() for s, _ in components})
 
-    if modo == "acumulado":
+    if modo == "acumulado" or (modo == "todos" and mes is None):
+        # Coluna TOTAL da grade "todos os meses" (mes ausente): agrega o
+        # intervalo informado (ou o ano inteiro, se mes_fim também vier vazio) —
+        # meses sem lançamento simplesmente somam 0.
         mes_ini_atual = mes or 1
         mes_fim_atual = mes_fim if mes_fim is not None else (mes or 12)
     else:
