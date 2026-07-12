@@ -197,6 +197,8 @@ with engine.connect() as conn:
         "ALTER TABLE unidades ADD COLUMN endereco_cidade VARCHAR(100)",
         "ALTER TABLE unidades ADD COLUMN endereco_estado VARCHAR(2)",
         "ALTER TABLE unidades ADD COLUMN endereco_cep VARCHAR(10)",
+        # Projeto Referencial Fase A: dimensao do agrupamento (contabil | departamento)
+        "ALTER TABLE agrupamentos ADD COLUMN dimensao TEXT NOT NULL DEFAULT 'contabil'",
     ]):
         try:
             conn.execute(text(stmt))
@@ -361,6 +363,8 @@ AND EXISTS (
             "ALTER TABLE ref_lancamentos ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
             "ALTER TABLE fc_lancamentos ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
             "ALTER TABLE fc_orcamento ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
+            # Projeto Referencial Fase A: dimensao do agrupamento (contabil | departamento)
+            "ALTER TABLE agrupamentos ADD COLUMN IF NOT EXISTS dimensao VARCHAR(20) NOT NULL DEFAULT 'contabil'",
         ]:
             try:
                 conn.execute(text(stmt))
@@ -374,12 +378,14 @@ AND EXISTS (
                     pass
 
 # Seed dados padrÃ£o (executa apenas uma vez)
+# seed_controladoria.seed_agrupadores (modelo antigo de Fluxo de Caixa) foi
+# desativado do startup: Projeto Referencial Fase A substitui os agrupamentos
+# por backend/seed_agrupamentos_ref.py, disparado manualmente (nunca automatico,
+# nunca no boot) â€” ver documentos/PROJETO_REFERENCIAL.md
 from database import SessionLocal
-from seed_controladoria import seed_agrupadores
 from seed_ref_plano import seed_ref_plano
 _db = SessionLocal()
 try:
-    seed_agrupadores(_db)
     try:
         seed_ref_plano(_db)
     except Exception as _e:
