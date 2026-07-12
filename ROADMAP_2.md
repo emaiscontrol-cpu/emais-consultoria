@@ -79,6 +79,30 @@ confunde é abdicação.
 **REGRA PERMANENTE:** automações headless NUNCA fazem merge, deploy ou alteração de
 dados sem aprovação humana — apenas leem, analisam e reportam.
 
+## TEMA 4 — Experiência de Apresentação (o sistema é o palco)
+**Contexto:** relatórios apresentados AO VIVO no sistema para diretores/CEOs; exportações
+são acessórios. **Visão aprovada:** "Apresentações" — playlists de dashboards existentes,
+estilo revista paginável com modo automático (referência: dashboards do Power BI).
+**Princípio arquitetural:** módulo SOMENTE-LEITURA sobre os relatórios existentes — zero
+impacto no motor.
+- [ ] **1. Fundação — Modo Apresentação**: renderização fullscreen sem chrome (sem
+      sidebar/botões de edição/filtros admin), tipografia e valores ampliados para
+      projetor/TV. Pré-requisito: `feature/tema-graficos` mergeada (✔ cumprido — PR #123).
+- [ ] **2. Apresentações (o produto)**: tabelas `apresentacoes` + `apresentacao_paginas`
+      (nome, cliente, páginas ordenadas com relatório + parâmetros + duração); tela de
+      montagem (CRUD padrão do sistema); player em rota `/apresentacao/{id}` usando a
+      fundação do item 1 — paginação por setas/teclado, indicador de páginas, modo
+      automático (avança a cada X segundos configurável por página, pausa ao interagir,
+      loop), drill-down ativo no modo manual e desativado no automático.
+- [ ] **3. Drill-down universal**: padronizar "linha/elemento abre painel de detalhe" em
+      todos os dashboards apresentáveis (padrão `PainelDetalheAgrupamento` + painel
+      acumulado do `fix/detalhe-coluna-total`).
+- [ ] **4. Performance de apresentação**: cache dos dashboards agregados + paginação das
+      listagens (antecipados do Tema 2) — fluidez ao vivo e nas extrações dos analistas.
+- [ ] **5. Exportações opcionais**: PDF formal via `pdf_service.py` com identidade do
+      `chartTheme` (envio por e-mail/WhatsApp); gráficos como imagem em alta resolução.
+- [ ] **6. (Prateleira) Decks narrativos** via Canva/pptx — somente se surgir demanda real.
+
 ## Ordem geral recomendada entre os temas
 1. Estabilização (1-2 semanas de produção pós-v2.6.2t)
 2. Tema 2 / Estágio 1 (itens baratos que destravam o resto)
@@ -86,6 +110,9 @@ dados sem aprovação humana — apenas leem, analisam e reportam.
 4. Tema 1 (teste sistemático → depois RLS junto do Estágio 2)
 5. Tema 3 / itens 2 e 3
 6. Tema 2 / Estágio 2 (quando a base de clientes justificar)
+7. Tema 4 — pode começar em paralelo a qualquer momento: item 1 (Modo Apresentação) já
+   tem o pré-requisito cumprido; item 4 (cache/paginação) deve ser feito junto do Tema 2 /
+   Estágio 1 quando chegar sua vez (mesmo trabalho, motivação dupla — não duplicar esforço)
 
 ---
 
