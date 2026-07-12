@@ -83,6 +83,40 @@ def _get_valores_agrupamento(db: Session, cliente_id: int, ano: int, mes: int) -
     return totais
 
 
+def _modo_efetivo(linha) -> str:
+    """
+    Resolve o modo de calculo efetivo de uma linha.
+    Fallback legado: templates anteriores a Fase A' nao tem modo_calculo explicito
+    (migracao aplica default 'agrupamento' em massa) — uma linha com formula_texto e
+    sem agrupamento_slug e, na pratica, um totalizador, mesmo com modo_calculo default.
+    """
+    if linha.modo_calculo == "soma_filhos":
+        return "soma_filhos"
+    if linha.modo_calculo == "formula":
+        return "formula"
+    if linha.formula_texto and not linha.agrupamento_slug:
+        return "formula"
+    return "agrupamento"
+
+
+def _construir_filhos_diretos(linhas: list) -> dict:
+    """
+    Mapeia id da linha -> lista de linhas-filhas diretas, inferida por nivel/ordem
+    (indentacao da planilha) — ver documentos/PROJETO_REFERENCIAL.md. `linhas` deve
+    vir na ordem de exibicao (ordem crescente).
+    """
+    filhos: dict = {l.id: [] for l in linhas}
+    pilha: list = []  # pilha de (nivel, linha) dos ancestrais em aberto
+    for linha in linhas:
+        nivel = linha.nivel if linha.nivel is not None else 4
+        while pilha and pilha[-1][0] >= nivel:
+            pilha.pop()
+        if pilha:
+            filhos[pilha[-1][1].id].append(linha)
+        pilha.append((nivel, linha))
+    return filhos
+
+
 def _calcular_template(
     db: Session, cliente_id: int, template_id: int, ano: int, mes: int,
     unidade_codigo: Optional[str] = None
@@ -119,33 +153,51 @@ def _calcular_template(
     else:
         todas_unidades.add("Consolidado")
 
-    # Calcula de forma isolada para cada unidade e consolidado
-    val_lin_por_unidade: dict[str, dict[str, float]] = {u: {} for u in todas_unidades}
-    linhas_ordenadas = ordenar_linhas(list(template.linhas))
+    # Calcula de forma isolada para cada unidade e consolidado.
+    # Ordem: folhas ('agrupamento') → soma_filhos (de baixo p/ cima, por nivel) →
+    # formulas (ordenacao topologica existente) — ver documentos/PROJETO_REFERENCIAL.md.
+    linhas_todas = list(template.linhas)
+    filhos_diretos = _construir_filhos_diretos(linhas_todas)
+    linhas_por_nivel_desc = sorted(linhas_todas, key=lambda l: -(l.nivel if l.nivel is not None else 4))
 
-    ciclo_detectado = detectar_ciclo(list(template.linhas))
+    val_lin_por_unidade: dict[str, dict[str, float]] = {u: {} for u in todas_unidades}
+    linhas_ordenadas = ordenar_linhas(linhas_todas)
+
+    ciclo_detectado = detectar_ciclo(linhas_todas)
     ciclo_set = set(ciclo_detectado) if ciclo_detectado else set()
 
-    erros_por_linha: dict[str, dict[str, str | None]] = {}
+    erros_por_linha: dict[str, dict[str, str | None]] = {l.rotulo: {} for l in linhas_todas}
 
-    for linha in linhas_ordenadas:
-        rotulo = linha.rotulo
-        erros_por_linha[rotulo] = {}
+    for u in todas_unidades:
+        val_agr_u = {agr: valores.get(u, 0.0) for agr, valores in val_agr.items()}
+        val_lin_u = val_lin_por_unidade[u]
 
-        # Determina a fórmula a ser executada. Se for vazia e tiver agrupamento_slug, considera o agrupamento.
-        formula = linha.formula_texto
-        if not formula and linha.agrupamento_slug:
-            formula = f"{{agrupamento:{linha.agrupamento_slug}}}"
+        # 1) folhas — modo 'agrupamento', nao dependem de outras linhas
+        for linha in linhas_todas:
+            if _modo_efetivo(linha) != "agrupamento":
+                continue
+            formula = f"{{agrupamento:{linha.agrupamento_slug}}}" if linha.agrupamento_slug else ""
+            valor, erro_str = calcular_linha(formula, val_agr_u, val_lin_u)
+            val_lin_u[linha.rotulo] = valor
+            erros_por_linha[linha.rotulo][u] = erro_str
 
-        for u in todas_unidades:
-            val_agr_u = {agr: valores.get(u, 0.0) for agr, valores in val_agr.items()}
-            val_lin_u = val_lin_por_unidade[u]
+        # 2) soma_filhos — de baixo para cima (niveis mais profundos primeiro)
+        for linha in linhas_por_nivel_desc:
+            if _modo_efetivo(linha) != "soma_filhos":
+                continue
+            total = sum(val_lin_u.get(filho.rotulo, 0.0) for filho in filhos_diretos.get(linha.id, []))
+            val_lin_u[linha.rotulo] = total
+            erros_por_linha[linha.rotulo][u] = None
 
+        # 3) formulas — ordem topologica existente, com deteccao de ciclo preservada
+        for linha in linhas_ordenadas:
+            if _modo_efetivo(linha) != "formula":
+                continue
+            rotulo = linha.rotulo
             if rotulo in ciclo_set:
-                valor = 0.0
-                erro_str = "ciclo"
+                valor, erro_str = 0.0, "ciclo"
             else:
-                valor, erro_str = calcular_linha(formula or "", val_agr_u, val_lin_u)
+                valor, erro_str = calcular_linha(linha.formula_texto or "", val_agr_u, val_lin_u)
             val_lin_u[rotulo] = valor
             erros_por_linha[rotulo][u] = erro_str
 

@@ -549,12 +549,20 @@ class TemplateLinhaCreate(BaseModel):
     rotulo: str
     ordem: int = 0
     negrito_totalizador: bool = False
+    tipo: str = "agrupamento"
+    modo_calculo: str = "agrupamento"   # 'agrupamento' | 'soma_filhos' | 'formula'
+    nivel: int = 4                      # 1=A 2=C 3=D 4=E
+    agrupamento_slug: Optional[str] = None
     formula_texto: Optional[str] = None
 
 class TemplateLinhaUpdate(BaseModel):
     rotulo: Optional[str] = None
     ordem: Optional[int] = None
     negrito_totalizador: Optional[bool] = None
+    tipo: Optional[str] = None
+    modo_calculo: Optional[str] = None
+    nivel: Optional[int] = None
+    agrupamento_slug: Optional[str] = None
     formula_texto: Optional[str] = None
 
 class TemplateLinhaOut(BaseModel):
@@ -563,6 +571,10 @@ class TemplateLinhaOut(BaseModel):
     rotulo: str
     ordem: int
     negrito_totalizador: bool
+    tipo: Optional[str]
+    modo_calculo: str
+    nivel: int
+    agrupamento_slug: Optional[str]
     formula_texto: Optional[str]
     class Config:
         from_attributes = True
@@ -570,7 +582,7 @@ class TemplateLinhaOut(BaseModel):
 class TemplateRefOut(BaseModel):
     id: int
     tipo: str
-    segmento_id: int
+    segmento_id: Optional[int]
     nome: str
     ativo: bool
     linhas: List[TemplateLinhaOut] = []

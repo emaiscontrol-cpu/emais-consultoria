@@ -653,9 +653,17 @@ class TemplateLinhaRef(Base):
     rotulo               = Column(String(300), nullable=False)
     ordem                = Column(Integer, nullable=False, default=0)
     negrito_totalizador  = Column(Boolean, default=False)
-    tipo                 = Column(String(20), nullable=True, default="agrupamento")  # 'agrupamento' | 'totalizador' | 'titulo'
-    agrupamento_slug     = Column(String(200), nullable=True)   # slug(s) do Excel (ex: "Vda_Din" ou "Vda_Che-Vda_Che_S")
-    # ex: '( {agrupamento:receita_bruta} - {agrupamento:cmv} ) / {agrupamento:receita_bruta} * 100'
+    tipo                 = Column(String(20), nullable=True, default="agrupamento")  # ESTILO visual apenas ('agrupamento'|'totalizador'|'titulo') — nao usado na logica de calculo, ver modo_calculo
+    # Como calcular o valor da linha — ver documentos/PROJETO_REFERENCIAL.md:
+    # 'agrupamento': linha-folha (nivel E), soma os lancamentos de 1 agrupamento (agrupamento_slug)
+    # 'soma_filhos': linha-titulo, auto-soma das linhas-filhas diretas (por nivel/ordem), sem formula
+    # 'formula': linha-totalizador, avalia formula_texto ({linha:...} e/ou {agrupamento:...})
+    modo_calculo         = Column(String(20), nullable=False, default="agrupamento", server_default="agrupamento")
+    # Nivel de indentacao da planilha: 1=A(bloco) 2=C(grupo) 3=D(subgrupo) 4=E(folha).
+    # Define a hierarquia (pai = container de nivel menor imediatamente acima na ordem) — sem campo pai manual.
+    nivel                = Column(Integer, nullable=False, default=4, server_default="4")
+    agrupamento_slug     = Column(String(200), nullable=True)   # 1 slug — usado só quando modo_calculo='agrupamento'
+    # usado só quando modo_calculo='formula'; ex: '{linha:receita_bruta}-{linha:cancelamentos}'
     formula_texto        = Column(Text, nullable=True)
     template             = relationship("TemplateRef", back_populates="linhas")
 
