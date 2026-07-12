@@ -35,6 +35,7 @@ import DashboardSubtarefas from './pages/DashboardSubtarefas'
 import SaibaMais from './pages/SaibaMais'
 import PlanoReferencial from './pages/controladoria/PlanoReferencial'
 import RevisaoDepara from './pages/controladoria/RevisaoDepara'
+import PreparoDePara from './pages/controladoria/PreparoDePara'
 import TemplatesRef from './pages/controladoria/TemplatesRef'
 import Demonstrativo from './pages/controladoria/Demonstrativo'
 import BenchmarkSegmento from './pages/controladoria/BenchmarkSegmento'
@@ -144,6 +145,7 @@ function ProtectedLayout() {
           <Route path="/saiba-mais/:modulo"               element={<SaibaMais />} />
           <Route path="/controladoria/plano-referencial"  element={<PlanoReferencial />} />
           <Route path="/controladoria/revisao-depara"     element={<RevisaoDepara />} />
+          <Route path="/controladoria/preparo-depara"     element={<PreparoDePara />} />
           <Route path="/controladoria/templates-ref"      element={<TemplatesRef />} />
           <Route path="/controladoria/demonstrativo"      element={<Demonstrativo />} />
           <Route path="/controladoria/benchmark"          element={<BenchmarkSegmento />} />

@@ -423,6 +423,7 @@ function ProcSection() {
     location.pathname.startsWith('/controladoria/plano-referencial') ||
     location.pathname.startsWith('/controladoria/templates-ref') ||
     location.pathname.startsWith('/controladoria/revisao-depara') ||
+    location.pathname.startsWith('/controladoria/preparo-depara') ||
     location.pathname.startsWith('/modelos') ||
     location.pathname.startsWith('/importacoes')
   const [open, setOpen] = useState(isActive)
@@ -448,6 +449,9 @@ function ProcSection() {
           </div>
           <NavLink to="/controladoria/plano-referencial" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
             <List size={13} /> Plano de Contas
+          </NavLink>
+          <NavLink to="/controladoria/preparo-depara" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
+            <ListTodo size={13} /> Preparo DE-PARA
           </NavLink>
           <NavLink to="/controladoria/templates-ref" className={({ isActive }) => `nav-item${isActive ? ' active' : ''}`} style={{ fontSize: 12, paddingTop: 7, paddingBottom: 7, gap: 7 }}>
             <FileSpreadsheet size={13} /> Templates DRE/FC/Orç.
