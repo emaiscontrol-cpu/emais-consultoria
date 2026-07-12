@@ -202,6 +202,8 @@ with engine.connect() as conn:
         # Projeto Referencial Fase A': modo_calculo + nivel em linhas de template
         "ALTER TABLE ref_template_linhas ADD COLUMN modo_calculo TEXT NOT NULL DEFAULT 'agrupamento'",
         "ALTER TABLE ref_template_linhas ADD COLUMN nivel INTEGER NOT NULL DEFAULT 4",
+        # Projeto Referencial Fase B: tratativa "ignorar" no preparo DE-PARA
+        "ALTER TABLE ref_contas_cliente ADD COLUMN ignorada BOOLEAN NOT NULL DEFAULT 0",
     ]):
         try:
             conn.execute(text(stmt))
@@ -371,6 +373,8 @@ AND EXISTS (
             # Projeto Referencial Fase A': modo_calculo + nivel em linhas de template
             "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS modo_calculo VARCHAR(20) NOT NULL DEFAULT 'agrupamento'",
             "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS nivel INTEGER NOT NULL DEFAULT 4",
+            # Projeto Referencial Fase B: tratativa "ignorar" no preparo DE-PARA
+            "ALTER TABLE ref_contas_cliente ADD COLUMN IF NOT EXISTS ignorada BOOLEAN NOT NULL DEFAULT FALSE",
         ]:
             try:
                 conn.execute(text(stmt))
