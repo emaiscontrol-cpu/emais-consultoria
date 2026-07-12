@@ -199,6 +199,9 @@ with engine.connect() as conn:
         "ALTER TABLE unidades ADD COLUMN endereco_cep VARCHAR(10)",
         # Projeto Referencial Fase A: dimensao do agrupamento (contabil | departamento)
         "ALTER TABLE agrupamentos ADD COLUMN dimensao TEXT NOT NULL DEFAULT 'contabil'",
+        # Projeto Referencial Fase A': modo_calculo + nivel em linhas de template
+        "ALTER TABLE ref_template_linhas ADD COLUMN modo_calculo TEXT NOT NULL DEFAULT 'agrupamento'",
+        "ALTER TABLE ref_template_linhas ADD COLUMN nivel INTEGER NOT NULL DEFAULT 4",
     ]):
         try:
             conn.execute(text(stmt))
@@ -365,6 +368,9 @@ AND EXISTS (
             "ALTER TABLE fc_orcamento ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
             # Projeto Referencial Fase A: dimensao do agrupamento (contabil | departamento)
             "ALTER TABLE agrupamentos ADD COLUMN IF NOT EXISTS dimensao VARCHAR(20) NOT NULL DEFAULT 'contabil'",
+            # Projeto Referencial Fase A': modo_calculo + nivel em linhas de template
+            "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS modo_calculo VARCHAR(20) NOT NULL DEFAULT 'agrupamento'",
+            "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS nivel INTEGER NOT NULL DEFAULT 4",
         ]:
             try:
                 conn.execute(text(stmt))

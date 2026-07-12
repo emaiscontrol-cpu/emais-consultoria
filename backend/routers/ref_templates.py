@@ -84,6 +84,9 @@ def criar_linha(id: int, data: schemas.TemplateLinhaCreate, db: Session = Depend
     if not t:
         raise HTTPException(404, "Template não encontrado")
 
+    if data.modo_calculo not in ("agrupamento", "soma_filhos", "formula"):
+        raise HTTPException(400, "modo_calculo deve ser 'agrupamento', 'soma_filhos' ou 'formula'")
+
     # Obter referências válidas
     agrs_validos = {a.slug for a in db.query(models.Agrupamento).filter(models.Agrupamento.ativo == True).all() if a.slug}
     linhas_t = db.query(models.TemplateLinhaRef).filter(models.TemplateLinhaRef.template_id == id).all()
@@ -114,6 +117,9 @@ def atualizar_linha(id: int, lid: int, data: schemas.TemplateLinhaUpdate,
     ).first()
     if not linha:
         raise HTTPException(404, "Linha não encontrada")
+
+    if data.modo_calculo is not None and data.modo_calculo not in ("agrupamento", "soma_filhos", "formula"):
+        raise HTTPException(400, "modo_calculo deve ser 'agrupamento', 'soma_filhos' ou 'formula'")
 
     if data.formula_texto is not None:
         # Obter referências válidas
@@ -178,6 +184,10 @@ def duplicar(id: int, req: schemas.DuplicarTemplateRequest, db: Session = Depend
             rotulo=linha.rotulo,
             ordem=linha.ordem,
             negrito_totalizador=linha.negrito_totalizador,
+            tipo=linha.tipo,
+            modo_calculo=linha.modo_calculo,
+            nivel=linha.nivel,
+            agrupamento_slug=linha.agrupamento_slug,
             formula_texto=linha.formula_texto,
         ))
 
