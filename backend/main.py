@@ -378,12 +378,14 @@ AND EXISTS (
                     pass
 
 # Seed dados padrÃ£o (executa apenas uma vez)
+# seed_controladoria.seed_agrupadores (modelo antigo de Fluxo de Caixa) foi
+# desativado do startup: Projeto Referencial Fase A substitui os agrupamentos
+# por backend/seed_agrupamentos_ref.py, disparado manualmente (nunca automatico,
+# nunca no boot) â€” ver documentos/PROJETO_REFERENCIAL.md
 from database import SessionLocal
-from seed_controladoria import seed_agrupadores
 from seed_ref_plano import seed_ref_plano
 _db = SessionLocal()
 try:
-    seed_agrupadores(_db)
     try:
         seed_ref_plano(_db)
     except Exception as _e:
