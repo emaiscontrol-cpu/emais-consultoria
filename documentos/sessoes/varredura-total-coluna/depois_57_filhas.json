@@ -1,0 +1,401 @@
+[
+  {
+    "ordem": 4,
+    "rotulo": "Vendas - Dinheiro",
+    "slug": "Vda_Din",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 5,
+    "rotulo": "Vendas - Crédito",
+    "slug": "Vda_CRE",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 6,
+    "rotulo": "Vendas - Débito",
+    "slug": "Vda_DEB",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 7,
+    "rotulo": "Vendas - Clientes",
+    "slug": "Vda_CLI",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 8,
+    "rotulo": "Vendas - Private",
+    "slug": "Vda_pri",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 9,
+    "rotulo": "Vendas - Pix",
+    "slug": "Vda_PIX",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 10,
+    "rotulo": "Vendas - Cheques",
+    "slug": "Vda_Che-Vda_Che_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 11,
+    "rotulo": "Vendas - Delivery",
+    "slug": "Vda_DLY",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 13,
+    "rotulo": "( - ) Devolução de Vendas",
+    "slug": "Trocas",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 14,
+    "rotulo": "( - ) Extra - Caixa",
+    "slug": "Vda_s",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 15,
+    "rotulo": "( - ) Repasse Private",
+    "slug": "Vda_pri_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 17,
+    "rotulo": "( - ) Compras",
+    "slug": "COMPRAS+Compras",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 19,
+    "rotulo": "( - ) Impostos Sobre Vendas",
+    "slug": "I_Vda",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 21,
+    "rotulo": "( + ) Crédito Operacionais",
+    "slug": "ENOP-ENOP_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 22,
+    "rotulo": "( + ) Acordos Comerciais",
+    "slug": "Acordo_E-Acordo_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 23,
+    "rotulo": "( + ) Devoluções",
+    "slug": "devf_e",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 25,
+    "rotulo": "( +/- ) Mvto Chq. Devolvidos",
+    "slug": "CHQ_E-CHQ_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 29,
+    "rotulo": "( - ) Pessoal - Salário",
+    "slug": "PESSOAL-PESSOAL_E+PESSOAL",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 30,
+    "rotulo": "( - ) Pessoal - Férias",
+    "slug": "FERIAS+FERIAS",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 31,
+    "rotulo": "( - ) Pessoal - 13º",
+    "slug": "13+13",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 32,
+    "rotulo": "( - ) Pessoal - Encargos Socias",
+    "slug": "ENCARGOS+ENCARGOS",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 33,
+    "rotulo": "( - ) Pessoal - Recisões",
+    "slug": "RES+RES",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 34,
+    "rotulo": "( - ) Pessoal - Benefícios",
+    "slug": "BEN+BEN",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 35,
+    "rotulo": "( - ) Pessoal - PJ",
+    "slug": "PJ+PJ",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 36,
+    "rotulo": "( - ) Pessoal - Outros Pagamentos",
+    "slug": "Outros+Outros",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 37,
+    "rotulo": "( - ) Tributária",
+    "slug": "Trib+Trib",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 38,
+    "rotulo": "( - ) Energia Elétrica",
+    "slug": "Energia",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 39,
+    "rotulo": "( - ) Utilidades e Serviços",
+    "slug": "Utilidades",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 40,
+    "rotulo": "( - ) Manutenções",
+    "slug": "Manut",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 41,
+    "rotulo": "( - ) Veículos",
+    "slug": "Veiculos",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 42,
+    "rotulo": "( - ) Manutenção Imóveis",
+    "slug": "M_imovel",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 43,
+    "rotulo": "( - ) Propaganda/Marketing",
+    "slug": "Mkt",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 44,
+    "rotulo": "( - ) Informática",
+    "slug": "TI",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 45,
+    "rotulo": "( - ) Corporativo",
+    "slug": "Corporativo",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 46,
+    "rotulo": "( - ) Ligadas",
+    "slug": "Ligadas",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 47,
+    "rotulo": "( - ) Prestadores de Serviços Operacionais",
+    "slug": "Operacional",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 48,
+    "rotulo": "( - ) Viagens",
+    "slug": "Viagens",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 49,
+    "rotulo": "( - ) Expediente",
+    "slug": "Expediente",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 50,
+    "rotulo": "( - ) Embalagens",
+    "slug": "Embalagens",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 51,
+    "rotulo": "( - ) Fretes",
+    "slug": "Fretes",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 52,
+    "rotulo": "( - ) Indedutiveis",
+    "slug": "Indedutiveis",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 53,
+    "rotulo": "( - ) Almoxarifado",
+    "slug": "Almoxarifado",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 54,
+    "rotulo": "( - ) Cheques Compensandos",
+    "slug": "Cheque",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 55,
+    "rotulo": "( - ) Taxas Adm de Cartões",
+    "slug": "Taxa",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 56,
+    "rotulo": "( - ) Aluguel",
+    "slug": "Aluguel",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 57,
+    "rotulo": "( - ) Seguros",
+    "slug": "Seguros",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 62,
+    "rotulo": "( + ) Ganhos Financeiros",
+    "slug": "Ganho",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 63,
+    "rotulo": "( - ) Gastos Financeiros",
+    "slug": "Gasto",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 66,
+    "rotulo": "( - ) Despesa de Imposto de Renda",
+    "slug": "IR",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 71,
+    "rotulo": "( - ) Empréstimos",
+    "slug": "EMP_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 72,
+    "rotulo": "( - ) Investimentos/Imobilizado",
+    "slug": "Imobilizado+Imobilizado",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 73,
+    "rotulo": "( - ) Juros/IOF S/ Empréstimos",
+    "slug": "EMPJ_S-EMPJ_E",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 74,
+    "rotulo": "( - ) Adiantamentos Efetuados",
+    "slug": "Adto_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 79,
+    "rotulo": "( - ) Sócios",
+    "slug": "socios",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 80,
+    "rotulo": "( - ) Coligadas",
+    "slug": "ligadas_s",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 84,
+    "rotulo": "Terceiros",
+    "slug": "Recarga_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  },
+  {
+    "ordem": 85,
+    "rotulo": "(+/-) Mvto Transitório",
+    "slug": "Trans_S",
+    "status": 200,
+    "periodo": "Janeiro a Dezembro/2026"
+  }
+]
