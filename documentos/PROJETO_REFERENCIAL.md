@@ -40,9 +40,9 @@ lançamentos (cliente/unidade/mês) → Conferência de valores → Demonstrativ
 
 ## Fases
 
-- **A**: Reset e carga dos agrupamentos-padrão (DRE varejo). **[ESTA]**
+- **A**: Reset e carga dos agrupamentos-padrão (DRE varejo). **[✔ concluída — PR #128]**
 - **A′**: Editor de template evoluído (`modo_calculo` + nível) + Template DRE-espelho do
-  cliente Leal (fórmulas reais). **[próxima]**
+  cliente Leal (fórmulas reais). **[✔ concluída — PR #130]**
 - **B**: Preparo DE-PARA de contas (tela em Procedimentos → Plano de Contas Referencial),
   com tratativas: incluir no PR / vincular / ignorar.
 - **C**: Aderência de templates prontos (atalho para clientes com histórico).
