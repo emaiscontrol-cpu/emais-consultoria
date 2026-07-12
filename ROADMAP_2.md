@@ -247,7 +247,7 @@ dados sem aprovação humana — apenas leem, analisam e reportam.
 
 ## ✅ CONCLUÍDO
 
-### Tema visual — Gráficos padronizados (branch `feature/tema-graficos`, aguardando release)
+### Tema visual — Gráficos padronizados — v2.6.2u (11/07/2026)
 - Padrão violeta do `PainelDetalheAgrupamento.jsx` extraído para `chartTheme.js` + wrappers `Graficos.jsx` (`GraficoBarras`/`Linha`/`Area`/`Rosca`/`Progresso`/`Composto`) — nenhuma tela importa `recharts` direto
 - `DashboardCliente.jsx` migrado de `plotly.js-dist-min` para os wrappers; `plotly.js`/`plotly.js-dist-min`/`react-plotly.js` removidos do projeto
 - Todos os demais gráficos recharts do sistema migrados (Dashboard, DashboardFases, DashboardSubtarefas, DreDashboard2, PainelDetalheOrcamento, PainelDetalheAgrupamento)
