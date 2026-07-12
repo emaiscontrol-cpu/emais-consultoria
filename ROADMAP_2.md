@@ -79,6 +79,25 @@ confunde é abdicação.
 **REGRA PERMANENTE:** automações headless NUNCA fazem merge, deploy ou alteração de
 dados sem aprovação humana — apenas leem, analisam e reportam.
 
+## TEMA 4 — Experiência de Apresentação (o sistema é o palco)
+**Contexto:** os relatórios são apresentados AO VIVO no próprio sistema para diretores e
+CEOs; múltiplos analistas operam e extraem relatórios diariamente. Exportações são
+acessório — o destino é a tela.
+- [ ] **1. Modo Apresentação**: alternância que oculta sidebar, botões de edição e filtros
+      administrativos, amplia tipografia e valores para leitura em projetor/TV, foco total
+      no dashboard. Pré-requisito: `feature/tema-graficos` mergeada (✔ cumprido — PR #123).
+- [ ] **2. Drill-down universal**: padronizar a interação "linha/elemento abre painel de
+      detalhe" (padrão `PainelDetalheAgrupamento`) em todos os dashboards da controladoria
+      — nenhum número apresentável sem detalhamento ao clique.
+- [ ] **3. Performance de apresentação**: antecipar do Tema 2 o cache dos dashboards
+      agregados e a paginação das listagens — motivação presente (não só "quando a base
+      crescer"): fluidez ao vivo diante de diretoria e nas extrações diárias dos analistas.
+- [ ] **4. Exportações opcionais**: (a) PDF formal via `pdf_service.py` com a identidade
+      visual do `chartTheme` (paleta, tipografia, gráficos), para envio por e-mail/WhatsApp;
+      (b) exportação de gráficos como imagem em alta resolução.
+- [ ] **5. (Prateleira) Decks narrativos** via Canva/pptx — só iniciar se surgir demanda
+      real; não antecipar por especulação.
+
 ## Ordem geral recomendada entre os temas
 1. Estabilização (1-2 semanas de produção pós-v2.6.2t)
 2. Tema 2 / Estágio 1 (itens baratos que destravam o resto)
@@ -86,6 +105,9 @@ dados sem aprovação humana — apenas leem, analisam e reportam.
 4. Tema 1 (teste sistemático → depois RLS junto do Estágio 2)
 5. Tema 3 / itens 2 e 3
 6. Tema 2 / Estágio 2 (quando a base de clientes justificar)
+7. Tema 4 — pode começar em paralelo a qualquer momento: item 1 (Modo Apresentação) já
+   tem o pré-requisito cumprido; item 3 (cache/paginação) deve ser feito junto do Tema 2 /
+   Estágio 1 quando chegar sua vez (mesmo trabalho, motivação dupla — não duplicar esforço)
 
 ---
 
