@@ -35,6 +35,7 @@ def listar_agrupadores(db: Session = Depends(get_db),
             "nome": a.nome,
             "padrao": a.padrao,
             "demonstrativos": json.loads(a.demonstrativos or '["fluxo_caixa"]'),
+            "dimensao": a.dimensao,
         }
         for a in db.query(Agrupamento).filter(Agrupamento.ativo == True).order_by(Agrupamento.nome).all()
     ]

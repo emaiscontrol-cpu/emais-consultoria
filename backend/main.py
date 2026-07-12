@@ -197,6 +197,8 @@ with engine.connect() as conn:
         "ALTER TABLE unidades ADD COLUMN endereco_cidade VARCHAR(100)",
         "ALTER TABLE unidades ADD COLUMN endereco_estado VARCHAR(2)",
         "ALTER TABLE unidades ADD COLUMN endereco_cep VARCHAR(10)",
+        # Projeto Referencial Fase A: dimensao do agrupamento (contabil | departamento)
+        "ALTER TABLE agrupamentos ADD COLUMN dimensao TEXT NOT NULL DEFAULT 'contabil'",
     ]):
         try:
             conn.execute(text(stmt))
@@ -361,6 +363,8 @@ AND EXISTS (
             "ALTER TABLE ref_lancamentos ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
             "ALTER TABLE fc_lancamentos ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
             "ALTER TABLE fc_orcamento ALTER COLUMN valor TYPE NUMERIC(15, 2) USING ROUND(valor::numeric, 2)",
+            # Projeto Referencial Fase A: dimensao do agrupamento (contabil | departamento)
+            "ALTER TABLE agrupamentos ADD COLUMN IF NOT EXISTS dimensao VARCHAR(20) NOT NULL DEFAULT 'contabil'",
         ]:
             try:
                 conn.execute(text(stmt))

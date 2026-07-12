@@ -328,6 +328,9 @@ class Agrupamento(Base):
     nome           = Column(String(200), nullable=False, unique=True)
     slug           = Column(String(100), nullable=True)
     demonstrativos = Column(Text, nullable=True, server_default='["fluxo_caixa"]')
+    # 'contabil' (balde de contas via DE-PARA) ou 'departamento' (dimensao paralela,
+    # origem "itens", nao e subconta) — ver documentos/PROJETO_REFERENCIAL.md
+    dimensao       = Column(String(20), nullable=False, server_default='contabil')
     padrao         = Column(Boolean, default=True)
     ativo          = Column(Boolean, default=True)
     criado_em      = Column(DateTime(timezone=True), server_default=func.now())
