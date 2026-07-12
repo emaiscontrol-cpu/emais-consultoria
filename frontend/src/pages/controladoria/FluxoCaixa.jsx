@@ -375,7 +375,12 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
       return `${MESES_ABR[mIni - 1]} a ${MESES_ABR[mFim - 1]}/${a}`
     }
 
-    let pAtual = obterRotuloPeriodo(mesRef, mesFimRef, ano)
+    // Clique na coluna TOTAL (modoClique === 'todos', mesRef null): acumulado
+    // só até o último mês com movimento, não o ano inteiro — mesmo critério
+    // usado para linhas filhas (ver ultimoMesComMovimento/periodoTotalLabel).
+    let pAtual = (modoClique === 'todos' && mesRef === null)
+      ? obterRotuloPeriodo(1, ultimoMesComMovimento > 1 ? ultimoMesComMovimento : null, ano)
+      : obterRotuloPeriodo(mesRef, mesFimRef, ano)
     let pAnterior = '—'
     if (modoClique === 'acumulado') {
       const ultimoMes = mesFimRef ?? mesRef
@@ -533,6 +538,28 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
           ? `Jan–${MESES[(dados.mes ?? 1) - 1]}/${dados.ano}`
           : `${MESES[(dados.mes ?? 1) - 1]}/${dados.ano}`)
     : ''
+
+  // Último mês do ano com algum lançamento em qualquer conta — usado para o
+  // clique na coluna TOTAL (ver handleCellClick): o acumulado deve cobrir só
+  // os meses com movimento, não o ano inteiro (meses futuros ficam de fora).
+  const ultimoMesComMovimento = useMemo(() => {
+    if (!dados?.linhas) return 12
+    let max = 0
+    for (const l of dados.linhas) {
+      if (l.tipo === 'agrupamento' && l.valores_mensais) {
+        for (const [m, v] of Object.entries(l.valores_mensais)) {
+          if (v) max = Math.max(max, Number(m))
+        }
+      }
+    }
+    return max || 12
+  }, [dados])
+
+  // Rótulo do período mostrado no painel de detalhe ao clicar na coluna TOTAL
+  // (linhas filhas e totalizadoras — ver os dois onClick da coluna Total abaixo).
+  const periodoTotalLabel = ultimoMesComMovimento > 1
+    ? `Acumulado ${MESES[0]}–${MESES[ultimoMesComMovimento - 1]}/${ano}`
+    : `Acumulado ${MESES[0]}/${ano}`
 
   const thBase = {
     background: 'var(--surface)', color: 'var(--text-muted)', fontSize: '10px', fontWeight: 700,
@@ -692,7 +719,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
               style={{ ...tdBase, position: 'sticky', left: 0, background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : '#F5F4FB',
                 borderRight: '0.5px solid var(--border)', minWidth: 200, maxWidth: 260,
                 whiteSpace: 'normal', cursor: isClickable ? 'pointer' : 'default', zIndex: 1 }}
-              onClick={isTotalizador && perfil === 'padrao' ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined)}
+              onClick={isTotalizador && perfil === 'padrao' ? (e) => { e.stopPropagation(); toggleTotalizador(ordem); } : (isClickable ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoTotalLabel, clienteId, ano, mes: null, mesFim: ultimoMesComMovimento, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined)}
             >
               {rotuloContent}
             </td>
@@ -722,7 +749,7 @@ export default function FluxoCaixa({ aiPanel, setAiPanel }) {
                 position: 'sticky', right: 0, zIndex: 1,
                 background: bgRow === 'transparent' ? 'var(--surface, #ffffff)' : '#F5F4FB',
                 borderLeft: '1.5px solid var(--border)', whiteSpace: 'nowrap', cursor: isClickable && !erro ? 'pointer' : 'inherit' }}
-              onClick={isClickable && !erro ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoLabel, clienteId, ano, mes: dados.mes, mesFim: dados.mes_fim, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined}
+              onClick={isClickable && !erro ? (e) => { e.stopPropagation(); handleCellClick(ordem, `${clienteId}:${ano}:m:all:${agrupamento_slug || 'total-' + ordem}`, { agrupamentoSlug: detailSlug, agrupamentoNome: rotulo, periodo: periodoTotalLabel, clienteId, ano, mes: null, mesFim: ultimoMesComMovimento, modo, totalAgrupamento: totalRow, isOutflow: isOutflow(rotulo) }); } : undefined}
               title={getErroDesc(erro)}
             >
               <CelulaValorPct
