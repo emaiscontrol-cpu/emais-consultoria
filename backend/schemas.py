@@ -472,8 +472,19 @@ class ContaClienteRefOut(BaseModel):
     cliente_id: int
     codigo_origem: str
     descricao_origem: str
+    ignorada: bool = False
     class Config:
         from_attributes = True
+
+class PlanoContasClienteItem(BaseModel):
+    codigo_origem: str
+    descricao_origem: str
+
+class PlanoContasClienteIn(BaseModel):
+    contas: List[PlanoContasClienteItem]
+
+class IgnorarContaClienteRequest(BaseModel):
+    ignorar: bool = True
 
 # ── DE-PARA REF ───────────────────────────────────────────────────────────────
 
@@ -507,6 +518,7 @@ class SugestaoDeParaOut(BaseModel):
     origem_vinculo: str
     descricao: str
     codigo: str
+    usado_em_n_clientes: int = 0
 
 # ── LANÇAMENTO REF ────────────────────────────────────────────────────────────
 

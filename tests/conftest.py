@@ -48,6 +48,8 @@ from routers import (  # noqa: E402
     ref_unidades,
     admin,
     ref_templates,
+    ref_plano,
+    ref_depara,
     fc_exec,
     controladoria,
 )
@@ -95,6 +97,8 @@ def _montar_app() -> FastAPI:
     app.include_router(ref_unidades.router, prefix="/api/ref/unidades")
     app.include_router(admin.router,       prefix="/api/admin")
     app.include_router(ref_templates.router, prefix="/api/ref/templates")
+    app.include_router(ref_plano.router,    prefix="/api/ref/plano")
+    app.include_router(ref_depara.router,   prefix="/api/ref/depara")
     app.include_router(fc_exec.router)
     app.include_router(controladoria.router, prefix="/api/controladoria")
     app.version = "2.6.2s"

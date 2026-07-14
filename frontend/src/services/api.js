@@ -349,6 +349,10 @@ export const refDeParaAPI = {
   confirmar:        data       => api.post('/ref/depara/confirmar', data),
   porCliente:       clienteId  => api.get(`/ref/depara/cliente/${clienteId}`),
   contasCliente:    clienteId  => api.get(`/ref/depara/contas-cliente/${clienteId}`),
+  // Fase B — Preparo DE-PARA
+  registrarPlanoDeContas: (clienteId, contas) => api.post(`/ref/depara/cliente/${clienteId}/plano-de-contas`, { contas }),
+  preparar:               clienteId           => api.post(`/ref/depara/cliente/${clienteId}/preparar`),
+  ignorarContaCliente:    (ccId, ignorar)     => api.put(`/ref/depara/contas-cliente/${ccId}/ignorar`, { ignorar }),
 }
 
 export const refTemplatesAPI = {

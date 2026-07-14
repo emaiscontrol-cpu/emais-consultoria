@@ -570,6 +570,9 @@ class ContaClienteRef(Base):
     cliente_id       = Column(Integer, ForeignKey("clientes.id"), nullable=False)
     codigo_origem    = Column(String(60), nullable=False)
     descricao_origem = Column(String(300), nullable=False)
+    # Fase B (Preparo DE-PARA): tratativa "ignorar" — conta nao entra no referencial,
+    # nao aparece mais no preparo. Reversivel (nunca exclusao).
+    ignorada         = Column(Boolean, nullable=False, default=False, server_default='0')
     criado_em        = Column(DateTime(timezone=True), server_default=func.now())
     cliente          = relationship("Cliente")
     de_paras         = relationship("DeParaRef", back_populates="conta_cliente",
