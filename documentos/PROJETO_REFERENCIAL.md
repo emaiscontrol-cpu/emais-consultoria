@@ -74,11 +74,23 @@ basta, sem camada de classificação de movimento.
 O modelo de FC (Rio das Pedras) **JÁ FUNCIONA em produção — não mexer.** Os 74 agrupamentos
 de FC ficam intactos.
 
-> **`ContaReferencial` / `DeParaRef`: mantidos** — ainda consumidos pelo Balancete
-> (`ref_lancamentos.py`, filtro por `agrupamento_slug`). Como o Balancete opera e não está
-> no escopo atual, não aposentar essa camada. A avaliação de aposentadoria fica para o
-> redesenho futuro do Balancete Gerencial (que também é um demonstrativo). O de-para direto
-> conta→linha (`DeParaDreLinha`) é EXCLUSIVO da DRE e não substitui o `DeParaRef`.
+## Mapa de âncoras por demonstrativo [DEFINITIVO]
+
+Cada demonstrativo tem seu **de-para próprio**, com uma âncora distinta — **sem
+redundância** entre eles:
+
+| Demonstrativo | A folha/linha ancora em | De-para (tabela) | Situação |
+|---|---|---|---|
+| **DRE** | linha do template (direto) | `DeParaDreLinha` (conta→linha) | ✔ implementado |
+| **Fluxo de Caixa** | agrupamento (dos 74) | `FcSlugDepara` (movimento→agrupamento) | ✔ produção, intacto |
+| **Balancete Gerencial** | `ContaReferencial` (plano-mestre) | `DeParaRef` (conta→conta_ref) | fase futura, fundação pronta |
+| **Orçamento** | a definir | a definir | a definir |
+
+- **`ContaReferencial` / `DeParaRef`: papel DEFINIDO — plano-mestre do Balancete Gerencial**
+  (consumido hoje em `ref_lancamentos.py`, filtro por `agrupamento_slug`). **Mantidos e NÃO
+  aposentados** — o Balancete entra como fase futura reaproveitando essa fundação.
+- **`DeParaDreLinha` é EXCLUSIVO da DRE** e não substitui o `DeParaRef` (âncoras diferentes,
+  demonstrativos diferentes).
 
 ## Fluxo (MODELO DEFINITIVO)
 
