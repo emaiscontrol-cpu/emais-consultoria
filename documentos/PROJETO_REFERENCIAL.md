@@ -81,7 +81,7 @@ redundância** entre eles:
 
 | Demonstrativo | A folha/linha ancora em | De-para (tabela) | Situação |
 |---|---|---|---|
-| **DRE** | linha do template (direto) | `DeParaDreLinha` (conta→linha) | ✔ implementado |
+| **DRE** | linha do template (direto) | `DeParaDreLinha` (conta→linha) | **motor ✔ implementado e validado localmente** (PR #135) |
 | **Fluxo de Caixa** | agrupamento (dos 74) | `FcSlugDepara` (movimento→agrupamento) | ✔ produção, intacto |
 | **Balancete Gerencial** | `ContaReferencial` (plano-mestre) | `DeParaRef` (conta→conta_ref) | fase futura, fundação pronta |
 | **Orçamento** | a definir | a definir | a definir |
@@ -91,6 +91,22 @@ redundância** entre eles:
   aposentados** — o Balancete entra como fase futura reaproveitando essa fundação.
 - **`DeParaDreLinha` é EXCLUSIVO da DRE** e não substitui o `DeParaRef` (âncoras diferentes,
   demonstrativos diferentes).
+
+## Status da etapa DRE
+
+- **Motor: IMPLEMENTADO e VALIDADO LOCALMENTE** (PR #135). Folha soma direto as contas
+  nativas vinculadas (`DeParaDreLinha`); totalizadores calculam a cadeia sozinhos.
+  Validado com balancete de demonstração (Leal, jan/2026, unidade 101): cadeia
+  `3.250 → 3.000 → 2.600 → 1.000 → 800 → −700` conferida na tela, com folha de 2 contas
+  somando (1.250) e rateio 70/30 funcionando. Drill-down por unidade + Consolidado OK.
+- **Próximos passos da etapa DRE (pré-requisitos do release):**
+  - **(a) UI de tratativa** do de-para direto conta→linha — evoluir a **Fase B / PR #132**
+    (Preparo DE-PARA) para o modelo DRE (`DeParaDreLinha`): sugerir/confirmar/ignorar
+    vínculos de conta nativa a linhas do template.
+  - **(b) Importação real** (**Fase D**) — respeitando a ordem DE-PARA-antes-dos-valores
+    (valor de conta sem vínculo fica retido).
+- ⚠️ **O release da etapa DRE só acontece quando (a) e (b) estiverem prontos.** Hoje só o
+  motor está pronto (semeadura manual serve para teste; não há entrada de dados pela UI).
 
 ## Fluxo (MODELO DEFINITIVO)
 
