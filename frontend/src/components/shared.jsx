@@ -31,12 +31,12 @@ export function Avatar({ nome, color = 'blue' }) {
   return <div className={`avatar avatar-${color}`}>{initials}</div>
 }
 
-export function Modal({ title, onClose, children, footer }) {
+export function Modal({ title, titulo, onClose, children, footer, style }) {
   return (
     <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
-      <div className="modal">
+      <div className="modal" style={style}>
         <div className="modal-header">
-          <span className="modal-title">{title}</span>
+          <span className="modal-title">{title || titulo}</span>
           <button className="btn btn-ghost btn-sm" onClick={onClose}><X size={16}/></button>
         </div>
         <div className="modal-body">{children}</div>
