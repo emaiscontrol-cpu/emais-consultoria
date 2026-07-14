@@ -178,7 +178,7 @@ export default function Demonstrativo() {
   }
 
   return (
-    <div style={{ padding: 24 }}>
+    <div className="page">
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
         <div>
           <h1 style={{ fontSize: 20, fontWeight: 700, margin: 0 }}>DRE Referencial</h1>
