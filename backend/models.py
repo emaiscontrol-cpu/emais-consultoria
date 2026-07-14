@@ -595,6 +595,29 @@ class DeParaRef(Base):
     conta_referencial    = relationship("ContaReferencial")
 
 
+class DeParaDreLinha(Base):
+    """De-para DIRETO conta nativa do cliente → linha-folha de template DRE (modelo definitivo).
+
+    Exclusivo da DRE: a folha da DRE aponta direto para N contas nativas do cliente, sem
+    passar por agrupamento (o FC continua usando agrupamento via FcSlugDepara). Não
+    substitui o DeParaRef (que segue conta→ContaReferencial p/ o Balancete). Ver
+    documentos/PROJETO_REFERENCIAL.md. Versionamento por data igual ao DeParaRef.
+    """
+    __tablename__ = "ref_depara_dre_linha"
+    id                = Column(Integer, primary_key=True, index=True)
+    conta_cliente_id  = Column(Integer, ForeignKey("ref_contas_cliente.id"), nullable=False)
+    template_linha_id = Column(Integer, ForeignKey("ref_template_linhas.id"), nullable=False)
+    percentual        = Column(Float, default=100.0)   # rateio: 1 conta pode dividir entre linhas; soma ≤ 100
+    status            = Column(String(20), default="pendente_revisao")   # 'confirmado' | 'pendente_revisao'
+    confianca         = Column(Float, default=0.0)     # 0.0–1.0
+    origem_vinculo    = Column(String(50), default="sugestao_automatica")
+    # 'sugestao_automatica' | 'manual' | 'aprendido_de_outro_cliente'
+    vigente_a_partir  = Column(Date, nullable=False)   # ao criar novo, não apaga o anterior
+    criado_em         = Column(DateTime(timezone=True), server_default=func.now())
+    conta_cliente     = relationship("ContaClienteRef")
+    template_linha    = relationship("TemplateLinhaRef")
+
+
 class Unidade(Base):
     """Unidades de negócio (filiais) do cliente contendo código de 3 dígitos, nome, CNPJ e endereço."""
     __tablename__ = "unidades"
