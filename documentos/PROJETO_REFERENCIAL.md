@@ -74,6 +74,12 @@ basta, sem camada de classificação de movimento.
 O modelo de FC (Rio das Pedras) **JÁ FUNCIONA em produção — não mexer.** Os 74 agrupamentos
 de FC ficam intactos.
 
+> **`ContaReferencial` / `DeParaRef`: mantidos** — ainda consumidos pelo Balancete
+> (`ref_lancamentos.py`, filtro por `agrupamento_slug`). Como o Balancete opera e não está
+> no escopo atual, não aposentar essa camada. A avaliação de aposentadoria fica para o
+> redesenho futuro do Balancete Gerencial (que também é um demonstrativo). O de-para direto
+> conta→linha (`DeParaDreLinha`) é EXCLUSIVO da DRE e não substitui o `DeParaRef`.
+
 ## Fluxo (MODELO DEFINITIVO)
 
 1. **Plano Nativo**: contas do cliente entram (import de balancete OU export do ERP).
