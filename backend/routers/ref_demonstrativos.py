@@ -83,6 +83,71 @@ def _get_valores_agrupamento(db: Session, cliente_id: int, ano: int, mes: int) -
     return totais
 
 
+def _get_valores_dre_por_linha(
+    db: Session, cliente_id: int, template, ano: int, mes: int
+) -> dict[int, dict[str, float]]:
+    """
+    MODELO DEFINITIVO da DRE: soma os LancamentoRef das contas nativas do cliente
+    vinculadas DIRETO a cada linha-folha do template (via DeParaDreLinha), por unidade.
+    Sem agrupamento e sem sinal por natureza — o valor entra bruto; a subtração fica nas
+    linhas totalizadoras (fórmula). Ver documentos/PROJETO_REFERENCIAL.md.
+
+    Retorna { template_linha_id: { unidade_codigo: valor, "Consolidado": valor } }.
+    """
+    comp = date(ano, mes, 1)
+
+    cc_ids = [
+        cc.id for cc in db.query(models.ContaClienteRef)
+        .filter(models.ContaClienteRef.cliente_id == cliente_id).all()
+    ]
+    if not cc_ids:
+        return {}
+
+    linha_ids = [l.id for l in template.linhas]
+    if not linha_ids:
+        return {}
+
+    todos_dp = (
+        db.query(models.DeParaDreLinha)
+        .filter(models.DeParaDreLinha.conta_cliente_id.in_(cc_ids),
+                models.DeParaDreLinha.template_linha_id.in_(linha_ids),
+                models.DeParaDreLinha.vigente_a_partir <= comp)
+        .all()
+    )
+    if not todos_dp:
+        return {}
+
+    # Versionamento: por conta_cliente, valem só os vínculos da vigência mais recente.
+    dp_por_cc: dict[int, list] = {}
+    for dp in todos_dp:
+        dp_por_cc.setdefault(dp.conta_cliente_id, []).append(dp)
+
+    def _ativos(lista):
+        max_data = max(d.vigente_a_partir for d in lista)
+        return [d for d in lista if d.vigente_a_partir == max_data]
+
+    lancs = (
+        db.query(models.LancamentoRef)
+        .filter(models.LancamentoRef.conta_cliente_id.in_(cc_ids),
+                models.LancamentoRef.ano == ano,
+                models.LancamentoRef.mes == mes)
+        .all()
+    )
+
+    totais: dict[int, dict[str, float]] = {}
+    for l in lancs:
+        valor_bruto = float(l.valor) if l.valor is not None else 0.0
+        unidade_cod = l.unidade_codigo or "Consolidado"
+        for dp in _ativos(dp_por_cc.get(l.conta_cliente_id, [])) if dp_por_cc.get(l.conta_cliente_id) else []:
+            contribuicao = valor_bruto * (dp.percentual / 100.0)
+            dict_lin = totais.setdefault(dp.template_linha_id, {})
+            if unidade_cod != "Consolidado":
+                dict_lin[unidade_cod] = dict_lin.get(unidade_cod, 0.0) + contribuicao
+            dict_lin["Consolidado"] = dict_lin.get("Consolidado", 0.0) + contribuicao
+
+    return totais
+
+
 def _modo_efetivo(linha) -> str:
     """
     Resolve o modo de calculo efetivo de uma linha.
@@ -140,12 +205,16 @@ def _calcular_template(
         .first()
     )
 
-    # val_agr: { agrupamento_slug: { unidade_codigo: valor, "Consolidado": valor } }
+    # val_agr: { agrupamento_slug: {unid: valor} } — folhas de FC/legado (via agrupamento)
     val_agr = _get_valores_agrupamento(db, cliente_id, ano, mes)
+    # val_dre: { template_linha_id: {unid: valor} } — folhas de DRE (de-para direto conta→linha)
+    val_dre = _get_valores_dre_por_linha(db, cliente_id, template, ano, mes)
 
-    # Descobre todas as unidades que possuem dados na competência
+    # Descobre todas as unidades que possuem dados na competência (de ambos os modelos)
     todas_unidades = set()
     for valores in val_agr.values():
+        todas_unidades.update(valores.keys())
+    for valores in val_dre.values():
         todas_unidades.update(valores.keys())
 
     if not todas_unidades:
@@ -172,12 +241,19 @@ def _calcular_template(
         val_agr_u = {agr: valores.get(u, 0.0) for agr, valores in val_agr.items()}
         val_lin_u = val_lin_por_unidade[u]
 
-        # 1) folhas — modo 'agrupamento', nao dependem de outras linhas
+        # 1) folhas (apontamento) — nao dependem de outras linhas.
+        #    Discriminador: folha COM agrupamento_slug -> FC/legado (caminho do agrupamento);
+        #    folha SEM agrupamento_slug -> DRE modelo definitivo (soma direta das contas
+        #    nativas vinculadas via DeParaDreLinha). Ver documentos/PROJETO_REFERENCIAL.md.
         for linha in linhas_todas:
             if _modo_efetivo(linha) != "agrupamento":
                 continue
-            formula = f"{{agrupamento:{linha.agrupamento_slug}}}" if linha.agrupamento_slug else ""
-            valor, erro_str = calcular_linha(formula, val_agr_u, val_lin_u)
+            if linha.agrupamento_slug:
+                formula = f"{{agrupamento:{linha.agrupamento_slug}}}"
+                valor, erro_str = calcular_linha(formula, val_agr_u, val_lin_u)
+            else:
+                valor = val_dre.get(linha.id, {}).get(u, 0.0)
+                erro_str = None
             val_lin_u[linha.rotulo] = valor
             erros_por_linha[linha.rotulo][u] = erro_str
 
