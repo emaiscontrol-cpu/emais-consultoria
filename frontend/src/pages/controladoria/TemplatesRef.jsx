@@ -149,7 +149,7 @@ function LinhaRow({ linha, templateId, agrupamentos, agrupamentosReais, rotulosD
         {linha.rotulo}
       </td>
       <td style={{ padding: '8px 16px', fontSize: 11, color: 'var(--text-muted)' }}>{MODO_LABEL[modo]}</td>
-      <td style={{ padding: '8px 16px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)', maxWidth: 320, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+      <td style={{ padding: '8px 16px', fontFamily: 'monospace', fontSize: 11, color: 'var(--text-muted)', maxWidth: 640, wordBreak: 'break-word', whiteSpace: 'normal' }}>
         {modo === 'formula' && (linha.formula_texto || <em style={{ opacity: 0.5 }}>sem fórmula</em>)}
         {modo === 'agrupamento' && (linha.agrupamento_slug || <em style={{ opacity: 0.5 }}>sem agrupamento</em>)}
         {modo === 'soma_filhos' && <em style={{ opacity: 0.5 }}>soma dos filhos</em>}
@@ -204,30 +204,33 @@ function EditorTemplate({ template, onFechar, onRefresh }) {
   const rotulosDisponiveis = t.linhas.map(l => l.rotulo)
 
   return (
-    <Modal titulo={`Editar Template: ${t.nome}`} onClose={onFechar} style={{ maxWidth: 900 }}>
+    <Modal titulo={`Editar Template: ${t.nome}`} onClose={onFechar}
+           style={{ maxWidth: '95vw', width: 1400 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--text-muted)', marginBottom: 12 }}>
         <AlertTriangle size={13} />
         O relatório nunca é editado — toda alteração de fórmula, agrupamento ou hierarquia acontece aqui, no template.
       </div>
-      <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse', marginBottom: 12 }}>
-        <thead>
-          <tr style={{ borderBottom: '2px solid var(--border)' }}>
-            <th style={{ textAlign: 'left', padding: '8px 16px' }}>Rótulo</th>
-            <th style={{ textAlign: 'left', padding: '8px 16px' }}>Modo</th>
-            <th style={{ textAlign: 'left', padding: '8px 16px' }}>Fórmula / Agrupamento</th>
-            <th style={{ textAlign: 'center', padding: '8px 16px' }}>Ordem</th>
-            <th style={{ textAlign: 'right', padding: '8px 16px' }}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {t.linhas.sort((a, b) => a.ordem - b.ordem).map(l => (
-            <LinhaRow key={l.id} linha={l} templateId={t.id}
-              agrupamentos={agrupamentos} agrupamentosReais={agrupamentosReais}
-              rotulosDisponiveis={rotulosDisponiveis}
-              onRefresh={carregar} />
-          ))}
-        </tbody>
-      </table>
+      <div style={{ maxHeight: '65vh', overflowY: 'auto', marginBottom: 12 }}>
+        <table style={{ width: '100%', fontSize: 13, borderCollapse: 'collapse' }}>
+          <thead>
+            <tr style={{ borderBottom: '2px solid var(--border)', position: 'sticky', top: 0, background: 'var(--surface)', zIndex: 1 }}>
+              <th style={{ textAlign: 'left', padding: '8px 16px' }}>Rótulo</th>
+              <th style={{ textAlign: 'left', padding: '8px 16px' }}>Modo</th>
+              <th style={{ textAlign: 'left', padding: '8px 16px', minWidth: 520 }}>Fórmula / Agrupamento</th>
+              <th style={{ textAlign: 'center', padding: '8px 16px' }}>Ordem</th>
+              <th style={{ textAlign: 'right', padding: '8px 16px' }}></th>
+            </tr>
+          </thead>
+          <tbody>
+            {t.linhas.sort((a, b) => a.ordem - b.ordem).map(l => (
+              <LinhaRow key={l.id} linha={l} templateId={t.id}
+                agrupamentos={agrupamentos} agrupamentosReais={agrupamentosReais}
+                rotulosDisponiveis={rotulosDisponiveis}
+                onRefresh={carregar} />
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {adicionando ? (
         <div style={{ border: '1px dashed var(--brand)', borderRadius: 8, padding: 16, marginBottom: 12 }}>

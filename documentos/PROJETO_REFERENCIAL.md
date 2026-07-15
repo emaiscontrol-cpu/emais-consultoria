@@ -108,6 +108,34 @@ redundância** entre eles:
 - ⚠️ **O release da etapa DRE só acontece quando (a) e (b) estiverem prontos.** Hoje só o
   motor está pronto (semeadura manual serve para teste; não há entrada de dados pela UI).
 
+## Camadas do template DRE [sequência de construção]
+
+O template DRE real é construído em camadas incrementais:
+
+- **Camada 1 [FEITA]**: **esqueleto estrutural** — as 56 linhas totalizadoras/subgrupos
+  (níveis A/C/D/E; folha/soma_filhos/formula), com as fórmulas reais entre linhas. Motor
+  aprende `*`, `/` e constantes numéricas (ex.: `depreciacao = receita_liquida * 0.007`).
+  Seed: `backend/seed_dre_controladoria.py` (template "Controladoria - DRE Varejo",
+  referencial universal por segmento). Folhas ainda **sem vínculo** de conta.
+- **Camada 1.5**: **Configuração do Cliente** (salva no Cadastro de Cliente) — parâmetros/
+  constantes por cliente (ex.: taxa de depreciação, hoje fixa em 0.007), inputs manuais
+  (nº de funcionários, m²), **regra de PRESUNÇÃO de perdas** (SE perda% ≥ limiar ENTÃO real
+  SENÃO receita × presumido) e **MOTOR DE RATEIO configurável** (distribui despesas ADM/
+  matriz entre unidades por regra do cliente: faturamento, percentual, etc.). Tudo
+  pertinente ao cliente vive no Cadastro de Cliente.
+- **Camada 2**: **folhas contábeis detalhadas** (≈321 contas analíticas) sob os subgrupos,
+  com o de-para conta nativa → folha.
+- **Camada 3**: **departamentos** (≈115, dimensão que se repete ~5×).
+
+### Pendências explícitas da Camada 2
+
+- **`devolucoes`: ajustar nível/hierarquia** para não somar 2× — hoje, pela hierarquia por
+  indentação, `devolucoes` (folha, nível E) fica como filha de `impostos_venda`
+  (soma_filhos), e ao mesmo tempo é somada pela fórmula de `deducoes`
+  (`{linha:impostos_venda}+{linha:devolucoes}`). Inócuo na Camada 1 (tudo 0); ao entrar
+  dados nas folhas contábeis, resolver para não contar `devolucoes` via soma_filhos de
+  `impostos_venda` **e** via fórmula de `deducoes`.
+
 ## Fluxo (MODELO DEFINITIVO)
 
 1. **Plano Nativo**: contas do cliente entram (import de balancete OU export do ERP).

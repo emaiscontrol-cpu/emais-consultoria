@@ -90,7 +90,10 @@ def ordenar_linhas(linhas):
         _, refs = extrair_refs(l.formula_texto or '')
         deps[l.rotulo] = refs & rotulo_map.keys()
 
-    in_deg = {r: 0 for r in deps}
+    # grau de entrada = quantas linhas cada rótulo depende (correção: antes ficava 0 para
+    # todos, o que fazia a topológica cair no fallback de ordem original — quebrava fórmula
+    # que depende de outra fórmula listada depois dela, ex.: pai exibido antes dos filhos)
+    in_deg = {r: len(d) for r, d in deps.items()}
     rev = {r: set() for r in deps}
     for r, d in deps.items():
         for dep in d:
