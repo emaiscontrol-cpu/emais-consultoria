@@ -127,6 +127,15 @@ O template DRE real é construído em camadas incrementais:
   com o de-para conta nativa → folha.
 - **Camada 3**: **departamentos** (≈115, dimensão que se repete ~5×).
 
+### Pendências explícitas da Camada 2
+
+- **`devolucoes`: ajustar nível/hierarquia** para não somar 2× — hoje, pela hierarquia por
+  indentação, `devolucoes` (folha, nível E) fica como filha de `impostos_venda`
+  (soma_filhos), e ao mesmo tempo é somada pela fórmula de `deducoes`
+  (`{linha:impostos_venda}+{linha:devolucoes}`). Inócuo na Camada 1 (tudo 0); ao entrar
+  dados nas folhas contábeis, resolver para não contar `devolucoes` via soma_filhos de
+  `impostos_venda` **e** via fórmula de `deducoes`.
+
 ## Fluxo (MODELO DEFINITIVO)
 
 1. **Plano Nativo**: contas do cliente entram (import de balancete OU export do ERP).
