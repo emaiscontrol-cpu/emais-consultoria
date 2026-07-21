@@ -77,6 +77,8 @@ class Cliente(Base):
     modulo_analises_gerenciais = Column(Boolean, default=False)
     segmento_id   = Column(Integer, ForeignKey("ref_segmentos.id"), nullable=True)
     template_dre_padrao_id = Column(Integer, ForeignKey("ref_templates.id"), nullable=True)
+    percentual_perdas_presumido = Column(Float, default=2.0)
+    criterio_rateio_adm   = Column(String(50), default="faturamento")
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     projetos      = relationship("Projeto", back_populates="cliente")
     usuarios      = relationship("Usuario", back_populates="cliente", foreign_keys=[Usuario.cliente_id])
@@ -634,6 +636,8 @@ class Unidade(Base):
     endereco_estado     = Column(String(2), nullable=True)
     endereco_cep        = Column(String(10), nullable=True)
     ativo         = Column(Boolean, default=True)
+    eh_adm        = Column(Boolean, default=False)
+    percentual_rateio   = Column(Float, default=0.0)
     criado_em     = Column(DateTime(timezone=True), server_default=func.now())
     
     cliente       = relationship("Cliente", back_populates="unidades")

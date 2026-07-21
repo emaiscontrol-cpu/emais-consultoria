@@ -603,6 +603,7 @@ class LinhaDemonstrativoOut(BaseModel):
     valores_unidades: Optional[dict[str, float]] = None
     erro: Optional[str] = None
     erros_unidades: Optional[dict[str, Optional[str]]] = None
+    nivel: int = 4
 
 class DemonstrativoOut(BaseModel):
     cliente_id: int

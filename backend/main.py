@@ -1,4 +1,4 @@
-﻿import logger as _logger_init
+import logger as _logger_init
 import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -202,6 +202,11 @@ with engine.connect() as conn:
         # Projeto Referencial Fase A': modo_calculo + nivel em linhas de template
         "ALTER TABLE ref_template_linhas ADD COLUMN modo_calculo TEXT NOT NULL DEFAULT 'agrupamento'",
         "ALTER TABLE ref_template_linhas ADD COLUMN nivel INTEGER NOT NULL DEFAULT 4",
+        # Evolução DRE: rateio e perdas
+        "ALTER TABLE clientes ADD COLUMN percentual_perdas_presumido REAL NOT NULL DEFAULT 2.0",
+        "ALTER TABLE clientes ADD COLUMN criterio_rateio_adm VARCHAR(50) NOT NULL DEFAULT 'faturamento'",
+        "ALTER TABLE unidades ADD COLUMN eh_adm BOOLEAN NOT NULL DEFAULT 0",
+        "ALTER TABLE unidades ADD COLUMN percentual_rateio REAL NOT NULL DEFAULT 0.0",
     ]):
         try:
             conn.execute(text(stmt))
@@ -371,6 +376,11 @@ AND EXISTS (
             # Projeto Referencial Fase A': modo_calculo + nivel em linhas de template
             "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS modo_calculo VARCHAR(20) NOT NULL DEFAULT 'agrupamento'",
             "ALTER TABLE ref_template_linhas ADD COLUMN IF NOT EXISTS nivel INTEGER NOT NULL DEFAULT 4",
+            # Evolução DRE: rateio e perdas
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS percentual_perdas_presumido FLOAT NOT NULL DEFAULT 2.0",
+            "ALTER TABLE clientes ADD COLUMN IF NOT EXISTS criterio_rateio_adm VARCHAR(50) NOT NULL DEFAULT 'faturamento'",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS eh_adm BOOLEAN NOT NULL DEFAULT FALSE",
+            "ALTER TABLE unidades ADD COLUMN IF NOT EXISTS percentual_rateio FLOAT NOT NULL DEFAULT 0.0",
         ]:
             try:
                 conn.execute(text(stmt))

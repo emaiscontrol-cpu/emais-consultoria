@@ -210,12 +210,83 @@ def _calcular_template(
     # val_dre: { template_linha_id: {unid: valor} } — folhas de DRE (de-para direto conta→linha)
     val_dre = _get_valores_dre_por_linha(db, cliente_id, template, ano, mes)
 
+    # Motor de Rateio ADM (Evolução DRE)
+    unidades_db = db.query(models.Unidade).filter(models.Unidade.cliente_id == cliente_id, models.Unidade.ativo == True).all()
+    eh_adm_map = {u.codigo: u.eh_adm for u in unidades_db}
+    pct_rateio_map = {u.codigo: (u.percentual_rateio or 0.0) for u in unidades_db}
+    unidades_op = [u.codigo for u in unidades_db if not u.eh_adm]
+    unidades_adm = [u.codigo for u in unidades_db if u.eh_adm]
+
+    criterio = cliente.criterio_rateio_adm or "faturamento"
+    if criterio != "nenhum" and unidades_op and unidades_adm:
+        faturamento_por_unidade = {}
+        receita_line_ids = []
+        linhas_todas = list(template.linhas)
+        filhos_dir_local = {}
+        pilha_local = []
+        for linha in linhas_todas:
+            filhos_dir_local[linha.id] = []
+            nivel = linha.nivel if linha.nivel is not None else 4
+            while pilha_local and pilha_local[-1][0] >= nivel:
+                pilha_local.pop()
+            if pilha_local:
+                filhos_dir_local[pilha_local[-1][1].id].append(linha)
+            pilha_local.append((nivel, linha))
+
+        def _modo_ef_local(l):
+            if l.modo_calculo == "soma_filhos": return "soma_filhos"
+            if l.modo_calculo == "formula": return "formula"
+            if l.formula_texto and not l.agrupamento_slug: return "formula"
+            return "agrupamento"
+
+        for l in linhas_todas:
+            if l.rotulo in ["venda_avista", "venda_aprazo"]:
+                def _coletar_folhas(id_linha):
+                    res = []
+                    for filho in filhos_dir_local.get(id_linha, []):
+                        if _modo_ef_local(filho) == "agrupamento":
+                            res.append(filho.id)
+                        else:
+                            res.extend(_coletar_folhas(filho.id))
+                    return res
+                receita_line_ids.extend(_coletar_folhas(l.id))
+
+        for u in unidades_op:
+            faturamento_por_unidade[u] = sum(val_dre.get(lin_id, {}).get(u, 0.0) for lin_id in receita_line_ids)
+
+        if criterio == "percentual":
+            total_pct = sum(pct_rateio_map.get(u, 0.0) for u in unidades_op)
+            if total_pct > 0:
+                share_map = {u: pct_rateio_map.get(u, 0.0) / total_pct for u in unidades_op}
+            else:
+                share_map = {u: 1.0 / len(unidades_op) for u in unidades_op}
+        else:  # default faturamento
+            faturamento_total = sum(faturamento_por_unidade.values())
+            if faturamento_total > 0:
+                share_map = {u: faturamento_por_unidade[u] / faturamento_total for u in unidades_op}
+            else:
+                share_map = {u: 1.0 / len(unidades_op) for u in unidades_op}
+
+        for lin_id in list(val_dre.keys()):
+            valores_unid = val_dre[lin_id]
+            total_adm_val = sum(valores_unid.get(adm_u, 0.0) for adm_u in unidades_adm)
+            if total_adm_val != 0.0:
+                for u in unidades_op:
+                    valores_unid[u] = valores_unid.get(u, 0.0) + (total_adm_val * share_map[u])
+                for adm_u in unidades_adm:
+                    valores_unid[adm_u] = 0.0
+
     # Descobre todas as unidades que possuem dados na competência (de ambos os modelos)
     todas_unidades = set()
     for valores in val_agr.values():
         todas_unidades.update(valores.keys())
     for valores in val_dre.values():
         todas_unidades.update(valores.keys())
+
+    # Remove as unidades administrativas da listagem de colunas para exibição
+    for adm_u in unidades_adm:
+        if adm_u in todas_unidades:
+            todas_unidades.remove(adm_u)
 
     if not todas_unidades:
         todas_unidades = {"Consolidado"}
@@ -270,7 +341,16 @@ def _calcular_template(
             if _modo_efetivo(linha) != "formula":
                 continue
             rotulo = linha.rotulo
-            if rotulo in ciclo_set:
+            if rotulo == "perdas":
+                limiar = (cliente.percentual_perdas_presumido or 2.0) / 100.0
+                receita_liq = val_lin_u.get("receita_liquida", 0.0)
+                perda_real = val_lin_u.get("perdas_totais_reais", 0.0)
+                if receita_liq > 0 and (perda_real / receita_liq) >= limiar:
+                    valor = perda_real
+                else:
+                    valor = receita_liq * limiar
+                erro_str = None
+            elif rotulo in ciclo_set:
                 valor, erro_str = 0.0, "ciclo"
             else:
                 valor, erro_str = calcular_linha(linha.formula_texto or "", val_agr_u, val_lin_u)
@@ -299,7 +379,8 @@ def _calcular_template(
             tem_divisao_por_zero=tem_dz_principal,
             valores_unidades=valores_unidades,
             erro=erro_principal,
-            erros_unidades=erros_unidades
+            erros_unidades=erros_unidades,
+            nivel=linha.nivel if linha.nivel is not None else 4
         ))
 
     # Reordena pelo campo `ordem` para exibição
