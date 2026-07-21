@@ -94,19 +94,24 @@ redundância** entre eles:
 
 ## Status da etapa DRE
 
-- **Motor: IMPLEMENTADO e VALIDADO LOCALMENTE** (PR #135). Folha soma direto as contas
+- **Motor (Camadas 1 e 1.5): IMPLEMENTADO e VALIDADO LOCALMENTE** (PR #135, Sessão 23). Folha soma direto as contas
   nativas vinculadas (`DeParaDreLinha`); totalizadores calculam a cadeia sozinhos.
   Validado com balancete de demonstração (Leal, jan/2026, unidade 101): cadeia
-  `3.250 → 3.000 → 2.600 → 1.000 → 800 → −700` conferida na tela, com folha de 2 contas
-  somando (1.250) e rateio 70/30 funcionando. Drill-down por unidade + Consolidado OK.
-- **Próximos passos da etapa DRE (pré-requisitos do release):**
+  `3.250 → 3.000 → 2.600 → 1.000 → 800 → −700` e rateios complexos de ADM (faturamento/percentual) e perdas presumidas.
+  Todos os 111 testes da suíte estão verdes.
+- **Editor de Templates (Fase A' evoluída): IMPLEMENTADO LOCALMENTE** (Sessão 24). Interface reestruturada com
+  controles estruturais na grade (⬆️/⬇️ para reordenação, ⬅️/➡️ para recuo visual/indentação/outdent) e remoção
+  dos inputs manuais de Modo de Cálculo, Nível e Ordem. Modo é calculado implicitamente. Adicionado filtro de
+  busca para variáveis e inserção de nome limpo (sem chaves `{}`). Exibe visualizador colapsável de filhas para
+  demonstrativos do tipo `soma_filhos`.
+- **Próximos passos da etapa DRE (não concluída):**
   - **(a) UI de tratativa** do de-para direto conta→linha — evoluir a **Fase B / PR #132**
     (Preparo DE-PARA) para o modelo DRE (`DeParaDreLinha`): sugerir/confirmar/ignorar
     vínculos de conta nativa a linhas do template.
   - **(b) Importação real** (**Fase D**) — respeitando a ordem DE-PARA-antes-dos-valores
     (valor de conta sem vínculo fica retido).
 - ⚠️ **O release da etapa DRE só acontece quando (a) e (b) estiverem prontos.** Hoje só o
-  motor está pronto (semeadura manual serve para teste; não há entrada de dados pela UI).
+  motor e o editor de templates estão prontos (semeadura manual serve para teste; não há entrada de dados pela UI).
 
 ## Camadas do template DRE [sequência de construção]
 
@@ -114,15 +119,12 @@ O template DRE real é construído em camadas incrementais:
 
 - **Camada 1 [FEITA]**: **esqueleto estrutural** — as 56 linhas totalizadoras/subgrupos
   (níveis A/C/D/E; folha/soma_filhos/formula), com as fórmulas reais entre linhas. Motor
-  aprende `*`, `/` e constantes numéricas (ex.: `depreciacao = receita_liquida * 0.007`).
+  aprende `*`, `/` e constantes numéricas.
   Seed: `backend/seed_dre_controladoria.py` (template "Controladoria - DRE Varejo",
-  referencial universal por segmento). Folhas ainda **sem vínculo** de conta.
-- **Camada 1.5**: **Configuração do Cliente** (salva no Cadastro de Cliente) — parâmetros/
-  constantes por cliente (ex.: taxa de depreciação, hoje fixa em 0.007), inputs manuais
-  (nº de funcionários, m²), **regra de PRESUNÇÃO de perdas** (SE perda% ≥ limiar ENTÃO real
-  SENÃO receita × presumido) e **MOTOR DE RATEIO configurável** (distribui despesas ADM/
-  matriz entre unidades por regra do cliente: faturamento, percentual, etc.). Tudo
-  pertinente ao cliente vive no Cadastro de Cliente.
+  referencial universal por segmento).
+- **Camada 1.5 [FEITA]**: **Configuração do Cliente** — parâmetros/constantes por cliente 
+  (salva no Cadastro de Cliente), **regra de PRESUNÇÃO de perdas** e **MOTOR DE RATEIO configurável** 
+  (distribui despesas ADM/matriz entre filiais por faturamento, percentual fixo, etc.).
 - **Camada 2**: **folhas contábeis detalhadas** (≈321 contas analíticas) sob os subgrupos,
   com o de-para conta nativa → folha.
 - **Camada 3**: **departamentos** (≈115, dimensão que se repete ~5×).

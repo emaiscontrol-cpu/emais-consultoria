@@ -1,11 +1,9 @@
-# Checklist de Tarefas — feature/dinheiro-numeric
+# Checklist de Tarefas — Fórmulas Estruturadas e Controle Visual de DRE
 
-- [x] TAREFA 2: Alterar modelos e migração
-  - [x] Importar Numeric em backend/models.py
-  - [x] Alterar colunas de dinheiro para Numeric(15, 2) em backend/models.py
-  - [x] Criar scripts de migração PostgreSQL no startup em backend/main.py
-  - [x] Implementar helpers/coerção Decimal -> float para cálculos de demonstrativos
-- [x] TAREFA 3: Testes e Validação
-  - [x] Adicionar teste de invariante de soma de centavos em tests/test_api.py
-  - [x] Rodar suíte de testes com pytest (100% verde)
-  - [x] Rodar uvicorn e validar com planilha local
+- [x] Backend: Atualizar o motor de fórmulas (`backend/ref_formula_engine.py`) para suportar multi-linhas, atribuições locais, variáveis diretas (sem `{}`) e funções nativas.
+- [x] Backend: Adequar a validação de fórmulas e detecção de dependências (`backend/routers/ref_templates.py` e `ref_formula_engine.py`).
+- [x] Frontend: Remover inputs de Modo de Cálculo, Nível e Ordem dos formulários de linha (`frontend/src/pages/controladoria/TemplatesRef.jsx`).
+- [x] Frontend: Adicionar botões de movimentação (Subir/Descer) e recuo (Avançar/Recuar Nível) na grade de linhas.
+- [x] Frontend: Exibir indicador de "Soma de: X filhas" com exibição das contas subordinadas para os títulos.
+- [x] Frontend: Atualizar botões de variáveis para inserir apenas o nome limpo no editor de fórmulas.
+- [x] Validação: Recompilar frontend (`npm run build`) e rodar pytest (100% verde).

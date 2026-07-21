@@ -1,62 +1,58 @@
-# Plano de Implementação — Migração de Float para Numeric(15,2) — v2.6.4a
+# Plano de Implementação — Fórmulas Estruturadas e Hierarquia Visual na DRE
 
-Este plano descreve o mapeamento das colunas numéricas de dinheiro no banco de dados, a proposta de alteração dos tipos de dados de `Float` para `Numeric(15, 2)` (evitando erros de precisão e arredondamento), e as estratégias de migração no startup do backend e coerção de tipos na API.
-
----
-
-## Mapeamento e Classificação de Colunas `Float` (backend/models.py)
-
-De acordo com as regras de negócio, as colunas foram classificadas em:
-* **DINHEIRO:** Devem ser migradas para `Numeric(15, 2)`.
-* **PERCENTUAL / PROGRESSO:** Devem permanecer como `Float`.
-
-### Colunas Classificadas como [DINHEIRO] (A Migrar)
-
-| Tabela (Classe Model) | Coluna | Descrição |
-| --- | --- | --- |
-| `lancamentos` (`Lancamento`) | `valor` | Valor real de uma receita ou despesa comercial |
-| `orcamento_linhas` (`OrcamentoLinha`) | `valor_previsto` | Valor planejado de orçamento para projetos/categorias |
-| `balancete_lancamentos` (`BalanceteLancamento`) | `valor` | Saldo/valor mensal de uma conta ERP importada do balancete |
-| `importacao_pendencias` (`ImportacaoPendencia`) | `valor` | Valor de lançamento contábil sem De-Para associado |
-| `ref_lancamentos` (`LancamentoRef`) | `valor` | Valor bruto de movimentação contábil para DRE |
-| `fc_lancamentos` (`LancamentoFC`) | `valor` | Valor real de movimentação importada para Fluxo de Caixa Executivo |
-| `fc_orcamento` (`FCOrcamento`) | `valor` | Valor orçado para Fluxo de Caixa Executivo |
-
-### Colunas Classificadas como [PERCENTUAL] (NÃO Migrar)
-
-| Tabela (Classe Model) | Coluna | Descrição |
-| --- | --- | --- |
-| `projetos` (`Projeto`) | `progresso` | Progresso global do projeto (0% a 100%) |
-| `fases` (`Fase`) | `progresso` | Progresso da fase (0% a 100%) |
-| `fases` (`Fase`) | `perc_desbloqueio` | Percentual mínimo para liberar a fase seguinte |
-| `tarefas` (`Tarefa`) | `percentual` | Percentual de conclusão da atividade/tarefa |
-| `modelos_fases` (`ModeloFase`) | `perc_desbloqueio` | Percentual padrão de desbloqueio do template |
-| `ref_de_para` (`DeParaRef`) | `percentual` | Percentual de rateio da conta contábil (0% a 100%) |
-| `ref_de_para` (`DeParaRef`) | `confianca` | Nível de confiança da sugestão da IA (0.0 a 1.0) |
+Este plano propõe uma reestruturação completa da usabilidade e do motor de cálculo de DRE/templates no sistema **E Mais Consultoria**:
+1. **Hierarquia Visual Direta (Grid Control):** Remoção de controles manuais e caóticos de Nível, Modo de Cálculo e Ordem de dentro do formulário de edição de linha. Passa a ser controlado por ações diretas na grade (botões de Subir ⬆️, Descer ⬇️, Recuar/Outdent ⬅️, Avançar/Indent ➡️).
+2. **Resolução de Soma Automática (Títulos):** As linhas de nível superior (1, 2, 3) sem fórmulas são automaticamente consideradas `soma_filhos`. Suas filhas são inferidas a partir do layout visual e podem ser consultadas através de um botão ou área informativa ("Ver Filhas"), sem abrir campos de fórmula.
+3. **Fórmulas Matemáticas Simples:** Contas de resultado matemático (Fórmulas) são as únicas com editor de fórmula. Elas passam a aceitar referências diretas a outras linhas e blocos multi-linhas com atribuição (ex: `margem = receita - custos`).
+4. **Melhorias de UI:** Botões de variáveis inserem o nome direto sem chaves (`{}`).
 
 ---
 
 ## Proposta de Alterações
 
-### 1. Alteração do models.py
-Substituiremos `Float` por `Numeric(15, 2)` (importado de `sqlalchemy`) nas 7 colunas mapeadas acima como **DINHEIRO**.
+### 1. Backend: Evolução do Motor de Fórmulas (`backend/ref_formula_engine.py`)
 
-### 2. Estratégia de Migração no Startup (backend/main.py)
-* **PostgreSQL (Supabase):** Roda comandos incondicionais e tolerantes a falhas no startup, utilizando `ALTER TABLE ... ALTER COLUMN ... TYPE NUMERIC(15, 2) USING ROUND(coluna::numeric, 2)`.
-* **SQLite (Dev/Local):** Como o SQLite possui suporte a *type affinity* e lida nativamente com coerção de floats para numéricos nas tabelas sem erros de type-matching complexos, apenas executaremos a atualização se a tabela existir, evitando quebrar o startup local do SQLite.
-
-### 3. Tratamento de Tipos na API (Decimal vs Float)
-Como o SQLAlchemy retornará objetos `decimal.Decimal` para colunas `Numeric`, faremos o seguinte:
-* **Pydantic Schemas:** O Pydantic coage `decimal.Decimal` para `float` no JSON de resposta automaticamente quando o tipo de destino do Schema é `float`.
-* **Cálculos e Operações:** Em Python, operações aritméticas que envolvem `float` e `Decimal` resultam em `TypeError`. Para resolver isso de forma robusta e limpa:
-  * Manteremos os demonstrativos e cálculos internos operando predominantemente em `float` (para consistência de fórmulas do AST e math helpers, incluindo `_safe_eval`), convertendo os retornos do banco para `float` na camada do repositório/demonstrativo através de um helper de leitura.
-  * O helper converterá qualquer valor `Decimal` para `float` antes de alimentar os motores de cálculo (como a geração da DRE e FC).
-  * Exemplo de helper: `def parse_numeric(v) -> float: return float(v) if v is not None else 0.0`
+* **Parse AST em modo de bloco (`mode='exec'`):**
+  * Habilita a escrita de múltiplas instruções, incluindo atribuições locais (`var = expression`) e expressões simples. O resultado final da fórmula é a última instrução executada.
+* **Resolução de Nomes Diretos:**
+  * O motor de avaliação (`safe_eval`) resolverá referências a variáveis consultando um dicionário de variáveis de contexto (que une todos os valores de outras linhas do demonstrativo na mesma competência/unidade).
+* **Varredura Inteligente (`extrair_refs`):**
+  * Em vez de depender exclusivamente de Regex para chaves `{linha:xyz}`, analisaremos a árvore AST coletando todos os `Name` nodes que não sejam funções nativas (`max`, `min`, `sum`) ou variáveis locais declaradas no escopo, garantindo a ordenação topológica precisa e a detecção de ciclos.
+* **Funções e Condicionais Suportados:**
+  * `max(a, b)`, `min(a, b)`, `sum(a, b, ...)`
+  * Ternários nativos de comparação: `x if condicao else y` (ex: `reais if reais > 10 else 10`).
 
 ---
 
-## Janela de Homologação e Backup de Produção
-Antes de aplicar as migrações em produção:
-1. Validaremos no localhost que todas as tabelas foram criadas e as dependências operam sem erros.
-2. Solicitaremos o log de diagnóstico do admin (`GET /api/admin/diagnostico`) para confirmar estabilidade.
-3. Faremos um backup manual integral do banco de dados de produção antes do deploy.
+### 2. Frontend: Grade de Controle e Ações Estruturais (`frontend/src/pages/controladoria/TemplatesRef.jsx`)
+
+* **Remoção de Inputs de Edição de Linha:**
+  * Retirar os campos **Modo de cálculo**, **Nível** e **Ordem** do formulário de edição de linha e do formulário de inserção de nova linha.
+* **Ações Estruturais Diretas (Grade):**
+  * Na própria linha da tabela, exibir botões rápidos para controle de layout:
+    * ⬆️ **Subir (Up):** Troca a ordem da linha atual com a linha imediatamente acima dela.
+    * ⬇️ **Descer (Down):** Troca a ordem da linha atual com a linha imediatamente abaixo dela.
+    * ⬅️ **Recuar Nível (Outdent):** Reduz o nível lógico da linha (`nivel = max(1, nivel - 1)`).
+    * ➡️ **Avançar Nível (Indent):** Aumenta o nível lógico da linha (`nivel = min(4, nivel + 1)`).
+* **Modo de Cálculo Automático:**
+  * A atribuição do tipo de cálculo será implícita:
+    * Se a linha tiver a opção **"Conta de Resultado (Fórmula)"** ativada e preenchida, o tipo é `formula`.
+    * Caso contrário, se o nível for menor que 4, é considerado `soma_filhos`.
+    * Se o nível for igual a 4, é considerado `agrupamento` (conta-folha contábil).
+* **Solução Visual para "Ver Filhas":**
+  * Para linhas de título (`soma_filhos`), exibir na coluna Fórmula o rótulo `"Soma de: (N filhas)"` ou um ícone/botão clicável `[👁️ Ver filhas]`.
+  * Ao clicar, expande-se uma área de exibição ou popover que lista de forma clara os nomes das linhas filhas associadas àquele título, conforme determinado pela hierarquia atual do layout.
+* **Inserção Direta de Variáveis:**
+  * Os botões de variáveis disponíveis na UI passarão a inserir a variável direto pelo nome limpo (ex: `venda_avista`), sem chaves `{linha:venda_avista}`.
+
+---
+
+## Plano de Validação
+
+### Testes Automatizados
+* Atualizaremos a suíte de testes em `tests/test_ref_dre_vinculo_direto.py` e `tests/test_formulas.py` para garantir que:
+  * Expressões com variáveis diretas e atribuições de múltiplas linhas calculem corretamente.
+  * O grafo de dependências seja detectado com sucesso a partir de nomes de variáveis diretas.
+
+### Verificação Manual na UI
+* Validaremos visualmente o editor de templates no navegador para garantir que o recuo (Indent/Outdent) e reordenação (Up/Down) funcionem em tempo real, atualizando as linhas no banco de dados e reorganizando a planilha adequadamente.

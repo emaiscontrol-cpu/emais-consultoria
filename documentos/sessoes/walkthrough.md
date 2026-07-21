@@ -1,41 +1,35 @@
-# Registro de Validação — feature/dinheiro-numeric
+# Registro de Validação — Fórmulas Estruturadas e Controle Visual de DRE
 
-Nesta fase de migração das colunas monetárias de dinheiro do tipo `Float` para `Numeric(15, 2)`, todas as tarefas foram concluídas com sucesso.
+Nesta fase de reestruturação da usabilidade e do motor de fórmulas de DRE/templates no sistema **E Mais Consultoria**, todas as tarefas propostas foram concluídas e validadas com sucesso.
 
 ## Alterações Realizadas
 
-1. **Alteração de Modelos (Tarefa 2):**
-   * Migradas as seguintes 7 colunas em [models.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/models.py) de `Column(Float)` para `Column(Numeric(15, 2))`:
-     * `Lancamento.valor`
-     * `OrcamentoLinha.valor_previsto`
-     * `BalanceteLancamento.valor`
-     * `ImportacaoPendencia.valor`
-     * `LancamentoRef.valor`
-     * `LancamentoFC.valor`
-     * `FCOrcamento.valor`
-   * As demais colunas de percentuais e progresso continuaram como `Float` de acordo com a especificação técnica.
+### 1. Frontend: Controle Hierárquico e Limpeza de Formulários
+* **Remoção de Controles Manuais:** Retirados os campos **Modo de cálculo**, **Nível** e **Ordem** dos formulários de adição e edição de linha em [TemplatesRef.jsx](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/frontend/src/pages/controladoria/TemplatesRef.jsx).
+* **Ações Estruturais na Grade:** Inseridos botões rápidos diretamente na tabela de linhas para manipulação de layout:
+  * ⬆️ **Subir** e ⬇️ **Descer** trocam a `ordem` das linhas vizinhas de forma transacional.
+  * ⬅️ **Recuar Nível (Outdent)** e ➡️ **Avançar Nível (Indent)** ajustam o nível lógico (`nivel` de 1 a 4) com transição de modo de cálculo automática.
+* **Cálculo Implícito de Modo:** 
+  * Se a linha for marcada como "Conta de Resultado (Fórmula)", ela adota o modo `formula`.
+  * Caso contrário, se o seu nível for menor que 4, ela adota o modo `soma_filhos` (título).
+  * Se o nível for 4, ela adota o modo `agrupamento` (vínculo de conta-folha).
+* **Visualizador de Linhas Filhas ("Soma de: X filhas"):** Para linhas de título (`soma_filhos`), a coluna de Fórmula exibe a contagem de filhas diretas com um botão colapsável `[👁️ Ver / Ocultar]` para inspecionar os nomes das linhas associadas àquela soma hierárquica.
+* **Busca e Inserção Limpa de Variáveis:**
+  * Adicionado um campo de busca rápida (`Filtrar...`) para localizar agrupamentos ou linhas do template.
+  * Configurados os botões de variáveis para inserir apenas o nome limpo no editor de fórmulas (ex: `venda_avista`), sem chaves ou prefixos.
 
-2. **Scripts de Migração no Startup (Tarefa 2):**
-   * Adicionados os comandos `ALTER TABLE ... ALTER COLUMN ... TYPE NUMERIC(15, 2) USING ROUND(coluna::numeric, 2)` dentro do array de migrações automáticas de PostgreSQL/Supabase no startup em [main.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/main.py), de forma incondicional e tolerante a falhas (com rollback automático se houver erro transacional).
-
-3. **Coerção de Tipos e Helpers na API (Tarefa 2):**
-   * Cast explícito para `float` ao ler os valores de dinheiro do banco em rotas críticas onde os valores alimentam motores de fórmulas, loops aritméticos ou listas JSON:
-     * Em [ref_demonstrativos.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/ref_demonstrativos.py) (na leitura de `valor_bruto` de `LancamentoRef`).
-     * Em [controladoria.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/controladoria.py) (na soma e listagem de receitas/despesas e orçamentos).
-     * Em [orcamento.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/orcamento.py) (nos valores mensais e auditoria do orçamento editável).
-     * Em [balancete.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/routers/balancete.py) (no retorno do dicionário de saldos).
-
-4. **Registro de Rota de Testes (Tarefa 3):**
-   * Importada e registrada a rota de `controladoria` em [tests/conftest.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/tests/conftest.py) para viabilizar testes de controladoria automatizados.
+### 2. Backend: Correção do Motor de Fórmulas
+* **Resolução de Chaves Legadas em `calcular_linha`:** Refatorado o método `calcular_linha` em [ref_formula_engine.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/backend/ref_formula_engine.py) para disparar `NameError` caso as variáveis marcadas em chaves legadas `{agrupamento:xyz}` ou `{linha:abc}` não estejam presentes nos dicionários do período. Isso garante a correta propagação do erro `ref_inexistente` em vez de mascarar a ausência com `0.0`.
 
 ---
 
 ## Validação Executada
 
-### Testes Automatizados (Invariante de Soma de Centavos)
-* Criado o caso de teste `test_invariante_soma_centavos` em [tests/test_api.py](file:///c:/Users/luiz/OneDrive/Anexos/Administrador/Documentos/Projetos/emals_consultoria/tests/test_api.py).
-* Este teste insere 10 lançamentos de `0.10` e verifica se o resumo de receitas retorna exatamente `1.0` (invariante matemática que falhava anteriormente por conta da imprecisão de float binário IEEE 754).
-* A suíte inteira de **73 testes passou com sucesso (100% verde)**.
+### 1. Testes Automatizados (Pytest)
+* Executada a suíte de testes locais contra o SQLite de desenvolvimento:
+  * Todos os **111 testes passaram com sucesso (100% verde)**.
+  * Corrigida a regressão no teste `test_referencia_inexistente`.
 
-### Startup Local
-* O uvicorn foi iniciado localmente e as conexões e logs estruturados operam perfeitamente sem falhas.
+### 2. Compilação do Frontend
+* Executado `npm run build` no diretório `frontend/` com sucesso total.
+* O build estático foi atualizado em `frontend/dist/` e está pronto para ser servido pelo uvicorn local e de produção.
